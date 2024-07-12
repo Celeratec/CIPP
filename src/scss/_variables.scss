@@ -37,10 +37,10 @@
 // fusv-enable
 
 // $high-emphasis:            rgba(shift-color($gray-base, +26), .95) !default;
-//$medium-emphasis: rgba(247, 127, 0) !default;
+//$medium-emphasis: rgba(0 163 224) !default;
 // $disabled:                 rgba(shift-color($gray-base, +26), .38) !default;
 
-//$high-emphasis-inverse: rgba(247, 127, 0) !default;
+//$high-emphasis-inverse: rgba(0 163 224) !default;
 // $medium-emphasis-inverse:  rgba($white, .6) !default;
 // $disabled-inverse:         rgba($white, .38) !default;
 
@@ -50,7 +50,7 @@
 // $purple:  #6f42c1 !default;
 // $pink:    #d63384 !default;
 // $red:     #dc3545 !default;
-// $orange:  #fd7e14 !default;
+// $orange:  #00a3e0 !default;
 // $yellow:  #ffc107 !default;
 // $green:   #198754 !default;
 // $teal:    #20c997 !default;
@@ -76,8 +76,8 @@
 // scss-docs-end colors-map
 
 // fusv-disable
-$primary-dark: rgb(226, 92, 9) !default;
-$primary-base: rgba(247, 127, 0) !default;
+$primary-dark: rgb(0 163 224) !default;
+$primary-base: rgba(0 163 224) !default;
 $primary-50: rgba(247, 128, 0, 0.514) !default;
 $primary-25: rgba(247, 128, 0, 0.219) !default;
 
@@ -102,7 +102,7 @@ $search-selected-option-highlight-color: #ffffff;
 $search-group-header-bg: #eeeeee;
 
 // If you want to change these variables please also update the _themes.scss file.
-$cyberdrain-primary: #f77f00; // Orange
+$cyberdrain-primary: #00a3e0; // Orange
 $cyberdrain-secondary: #003049; // Prussian Blue
 $cyberdrain-secondary-rgb: rgb(0 48 73); // Prussian Blue
 $cyberdrain-lighter: #fff; // White
@@ -125,8 +125,8 @@ $cyberdrain-info: #0096d8; // Carolina Blue
 $cyberdrain-info-rgb: rgb(0 150 216); // Carolina Blue
 $cyberdrain-warning: #bf7f00; // Dark Goldenrod
 $cyberdrain-warning-rgb: rgb(191 127 0); // Dark Goldenrod
-$cyberdrain-danger: #eb603d; // Orange Soda
-$cyberdrain-danger-rgb: rgb(235 96 61); // Orange Soda
+$cyberdrain-danger: #ed1e79; // Orange Soda
+$cyberdrain-danger-rgb: rgb(237 30 121); // Orange Soda
 
 // $success-dark:  #1b9e3e !default;
 // $success-base:  #2eb85c !default;
@@ -1696,9 +1696,9 @@ $sidebar-nav-link-padding-x: 0.6rem !default;
 // $sidebar-nav-link-hover-bg:                rgba($white, .05) !default;
 // $sidebar-nav-link-hover-icon-color:        $high-emphasis-inverse !default;
 
-$sidebar-nav-link-active-color: rgba(247, 127, 0) !default;
+$sidebar-nav-link-active-color: rgba(0 163 224) !default;
 // $sidebar-nav-link-active-bg:               rgba($white, .05) !default;
-$sidebar-nav-link-active-icon-color: rgba(247, 127, 0) !default;
+$sidebar-nav-link-active-icon-color: rgba(0 163 224) !default;
 
 // $sidebar-nav-link-disabled-color:          $disabled-inverse !default;
 // $sidebar-nav-link-disabled-icon-color:     $sidebar-nav-link-icon-color !default;
