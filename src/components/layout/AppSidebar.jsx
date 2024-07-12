@@ -17,24 +17,35 @@ import routes from 'src/routes'
 import { useRouteNavCompare } from 'src/hooks/useRouteNavCompare'
 import { useNavFavouriteCheck } from 'src/hooks/useNavFavouriteCheck'
 
-// Import the new image
-import CippLogo from 'src/assets/images/CIPP.png'
+import CIPPImage from 'src/assets/images/CIPP.png'
 
 const AppSidebar = () => {
+  const dispatch = useDispatch()
+  const sidebarShow = useSelector((state) => state.app.sidebarShow)
+
+  const newNav = useRouteNavCompare(navigation)
+  const navwithFavourites = useNavFavouriteCheck(newNav)
+
   return (
-    <CSidebar>
-      <CSidebarBrand className="d-none d-md-flex">
-        <CImage
-          src={CippLogo} // Use the imported image here
-          height={116}
-          width={170}
-          alt="CIPP Logo"
-        />
-        <CCloseButton className="d-md-none" />
+    <CSidebar
+      onVisibleChange={(visible) => {
+        dispatch({ type: 'set', sidebarShow: visible })
+      }}
+      position="fixed"
+      unfoldable={false}
+      visible={sidebarShow}
+    >
+      <CSidebarBrand className="me-auto pt-xs-2 p-md-2" to="/">
+        <CImage className="sidebar-brand-full mt-3" src={CIPPImage} height={116} width={170} />
+        <CHeaderNav className="me-2 p-2"></CHeaderNav>
       </CSidebarBrand>
+      <CCloseButton
+        className="d-lg-none"
+        onClick={() => dispatch({ type: 'set', sidebarShow: false })}
+      />
       <CSidebarNav>
         <SimpleBar>
-          <AppSidebarNav items={navigation} />
+          <AppSidebarNav items={navwithFavourites} />
         </SimpleBar>
       </CSidebarNav>
     </CSidebar>
