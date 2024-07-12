@@ -26,8 +26,8 @@ const AppSidebar = () => {
       <CSidebarBrand className="d-none d-md-flex">
         <CImage
           src={CippLogo} // Use the imported image here
-          height={35}
-          width={170}
+          height={384}
+          width={960}
           alt="CIPP Logo"
         />
         <CCloseButton className="d-md-none" />
