@@ -712,7 +712,7 @@ export default function CippTable({
                 className="btn btn-primary btn-sm m-1"
                 size="sm"
                 style={{
-                  backgroundColor: '#f88c1a',
+                  backgroundColor: '#00a3e0',
                 }}
               >
                 <FontAwesomeIcon icon={faColumns} />
@@ -741,7 +741,7 @@ export default function CippTable({
               className="btn btn-primary btn-sm m-1"
               size="sm"
               style={{
-                backgroundColor: '#f88c1a',
+                backgroundColor: '#00a3e0',
               }}
             >
               <FontAwesomeIcon icon={faFilePdf} />
@@ -772,7 +772,7 @@ export default function CippTable({
                 className="btn btn-primary btn-sm m-1"
                 size="sm"
                 style={{
-                  backgroundColor: '#f88c1a',
+                  backgroundColor: '#00a3e0',
                 }}
               >
                 <FontAwesomeIcon icon={faFileCsv} />
@@ -812,7 +812,7 @@ export default function CippTable({
               className="btn btn-primary btn-sm m-1"
               size="sm"
               style={{
-                backgroundColor: '#f88c1a',
+                backgroundColor: '#00a3e0',
               }}
             >
               Actions
