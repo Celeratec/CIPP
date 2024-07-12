@@ -25,7 +25,7 @@ const AppSidebar = () => {
     <CSidebar>
       <CSidebarBrand className="d-none d-md-flex">
         <CImage
-          src={CippLogo}  // Use the imported image here
+          src={CippLogo} // Use the imported image here
           height={35}
           width={170}
           alt="CIPP Logo"
