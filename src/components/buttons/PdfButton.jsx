@@ -29,7 +29,7 @@ function ExportPDFButton(props) {
       columns: headerObj,
       body: pdfData,
       theme: 'striped',
-      headStyles: { fillColor: [247, 127, 0] },
+      headStyles: { fillColor: [0, 163, 224] },
     }
     if (base64) {
       doc.addImage(base64, 'png', 20, 20, 120, 100)
