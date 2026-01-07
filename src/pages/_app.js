@@ -368,7 +368,7 @@ const App = (props) => {
                 {(settings) => {
                   // Create theme even while initializing to avoid blank screen
                   const theme = createTheme({
-                    colorPreset: "orange",
+                    colorPreset: "cerulean",
                     direction: settings.direction || "ltr",
                     paletteMode:
                       settings.currentTheme?.value !== "browser"

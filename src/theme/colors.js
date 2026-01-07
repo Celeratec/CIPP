@@ -38,6 +38,13 @@ export const orange = withAlphas({
   contrastText: "#FFFFFF",
 });
 
+export const cerulean = withAlphas({
+  light: "#5AB4E5",
+  main: "#007BA7",
+  dark: "#005F82",
+  contrastText: "#FFFFFF",
+});
+
 export const indigo = withAlphas({
   light: "#EBEEFE",
   main: "#635dff",
