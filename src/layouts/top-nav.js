@@ -163,11 +163,12 @@ export const TopNav = (props) => {
             href={paths.index}
             sx={{
               display: "inline-flex",
-              height: 24,
-              width: 24,
+              alignItems: "center",
+              height: 36,
+              width: "auto",
             }}
           >
-            <Logo />
+            <Logo height={36} />
           </Box>
           {!mdDown && <CippTenantSelector refreshButton={true} tenantButton={true} />}
           {mdDown && (

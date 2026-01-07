@@ -109,11 +109,12 @@ export const MobileNav = (props) => {
             href={paths.index}
             sx={{
               display: "inline-flex",
-              height: 24,
-              width: 24,
+              alignItems: "center",
+              height: 36,
+              width: "auto",
             }}
           >
-            <Logo />
+            <Logo height={36} />
           </Box>
         </Box>
         <Box sx={{ ml: 2, mt: 2 }}>
