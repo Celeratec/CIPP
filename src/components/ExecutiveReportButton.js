@@ -60,7 +60,7 @@ const ExecutiveReportDocument = ({
     month: "long",
     day: "numeric",
   });
-  const brandColor = brandingSettings?.colour || "#F77F00";
+  const brandColor = brandingSettings?.colour || "#007BA7";
 
   // ENTERPRISE DESIGN SYSTEM - JOBS/RAMS/IVE PRINCIPLES
   const styles = StyleSheet.create({

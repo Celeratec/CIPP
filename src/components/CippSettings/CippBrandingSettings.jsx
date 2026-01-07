@@ -16,7 +16,7 @@ const CippBrandingSettings = () => {
   const formControl = useForm({
     mode: "onChange",
     defaultValues: {
-      colour: settings?.customBranding?.colour || "#F77F00",
+      colour: settings?.customBranding?.colour || "#007BA7",
     },
   });
 
@@ -71,13 +71,13 @@ const CippBrandingSettings = () => {
     setLogoFile(null);
     setLogoPreview(null);
     formControl.reset({
-      colour: "#F77F00",
+      colour: "#007BA7",
     });
 
     // Reset local settings
     settings.handleUpdate({
       customBranding: {
-        colour: "#F77F00",
+        colour: "#007BA7",
         logo: null,
       },
     });
@@ -180,7 +180,7 @@ const CippBrandingSettings = () => {
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <input
               type="color"
-              value={formControl.watch("colour") || "#F77F00"}
+              value={formControl.watch("colour") || "#007BA7"}
               onChange={(e) => formControl.setValue("colour", e.target.value)}
               style={{
                 width: "50px",
@@ -199,7 +199,7 @@ const CippBrandingSettings = () => {
               validators={{
                 pattern: {
                   value: /^#[0-9A-F]{6}$/i,
-                  message: "Please enter a valid hex color (e.g., #F77F00)",
+                  message: "Please enter a valid hex color (e.g., #007BA7)",
                 },
               }}
             />
@@ -240,7 +240,7 @@ const CippBrandingSettings = () => {
               <Typography
                 variant="h6"
                 sx={{
-                  color: formControl.watch("colour") || "#F77F00",
+                  color: formControl.watch("colour") || "#007BA7",
                   fontWeight: "bold",
                 }}
               >

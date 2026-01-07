@@ -75,7 +75,7 @@ const initialSettings = {
   currentTenant: null,
   showDevtools: false,
   customBranding: {
-    colour: "#F77F00",
+    colour: "#007BA7",
     logo: null,
   },
   persistFilters: false,
