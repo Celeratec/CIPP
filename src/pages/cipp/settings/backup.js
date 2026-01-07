@@ -351,7 +351,29 @@ const Page = () => {
             download or restore specific points in time from the list below. Enable automatic
             backups to have CIPP create daily backups using the scheduler.
           </Typography>
-          {backupList.isSuccess ? (
+          {backupList.isError ? (
+            <Box sx={{ mt: 3, px: 3 }}>
+              <Alert severity="error" icon={<ErrorIcon />}>
+                <AlertTitle>Failed to Load Backups</AlertTitle>
+                <Typography variant="body2">
+                  {backupList.error?.message || "An unknown error occurred while loading backups."}
+                </Typography>
+                {backupList.error?.response?.data && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Details: {JSON.stringify(backupList.error.response.data)}
+                  </Typography>
+                )}
+              </Alert>
+              <Button
+                variant="contained"
+                color="primary"
+                sx={{ mt: 2 }}
+                onClick={() => backupList.refetch()}
+              >
+                Retry
+              </Button>
+            </Box>
+          ) : backupList.isSuccess ? (
             <Box sx={{ mt: 3 }}>
               <CippApiResults apiObject={runBackup} />
               <CippApiResults apiObject={enableBackupSchedule} />
