@@ -35,6 +35,7 @@ import { CippDataTable } from "../../../components/CippTable/CippDataTable";
 import { CippApiResults } from "../../../components/CippComponents/CippApiResults";
 import { CippApiDialog } from "../../../components/CippComponents/CippApiDialog";
 import { BackupValidator, BackupValidationError } from "../../../utils/backupValidation";
+import { getCippError } from "../../../utils/get-cipp-error";
 import { useState } from "react";
 import { useDialog } from "../../../hooks/use-dialog";
 
@@ -356,12 +357,26 @@ const Page = () => {
               <Alert severity="error" icon={<ErrorIcon />}>
                 <AlertTitle>Failed to Load Backups</AlertTitle>
                 <Typography variant="body2">
-                  {backupList.error?.message || "An unknown error occurred while loading backups."}
+                  {getCippError(backupList.error) || backupList.error?.message || "An unknown error occurred while loading backups."}
                 </Typography>
-                {backupList.error?.response?.data && (
+                {backupList.error?.response?.status && (
                   <Typography variant="body2" sx={{ mt: 1 }}>
-                    Details: {JSON.stringify(backupList.error.response.data)}
+                    Status Code: {backupList.error.response.status}
                   </Typography>
+                )}
+                {backupList.error?.response?.data && typeof backupList.error.response.data === 'object' && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="body2" component="pre" sx={{ 
+                      whiteSpace: 'pre-wrap', 
+                      wordBreak: 'break-word',
+                      backgroundColor: 'action.hover',
+                      p: 1,
+                      borderRadius: 1,
+                      fontSize: '0.75rem'
+                    }}>
+                      {JSON.stringify(backupList.error.response.data, null, 2)}
+                    </Typography>
+                  </Box>
                 )}
               </Alert>
               <Button
