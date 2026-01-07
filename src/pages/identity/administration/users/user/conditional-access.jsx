@@ -54,7 +54,7 @@ const Page = () => {
           ),
         },
         {
-          icon: <Launch style={{ color: "#667085" }} />,
+          icon: <Launch style={{ color: "#757575" }} />,
           text: (
             <Button
               color="muted"

@@ -12,12 +12,12 @@ export const createPalette = (config) => {
       disabled: alpha(neutral[400], 0.38),
       disabledBackground: alpha(neutral[400], 0.12),
       focus: alpha(neutral[400], 0.16),
-      hover: alpha(neutral[400], 0.04),
+      hover: alpha(neutral[400], 0.08),
       selected: alpha(neutral[400], 0.12)
     },
     background: {
-      default: contrast === 'high' ? '#0A0F18' : '#0C121D',
-      paper: '#101826'
+      default: contrast === 'high' ? '#0F0F0F' : '#141414',
+      paper: '#1C1C1C'
     },
     divider: neutral[800],
     error,
@@ -27,8 +27,8 @@ export const createPalette = (config) => {
     primary: getPrimary(colorPreset),
     success,
     text: {
-      primary: common.white,
-      secondary: '#97A1BA',
+      primary: '#F5F5F5',
+      secondary: '#A0A0A0',
       disabled: alpha(common.white, 0.38)
     },
     warning

@@ -8,7 +8,7 @@ export const createPalette = (config) => {
 
   return {
     action: {
-      active: neutral[400],
+      active: neutral[500],
       disabled: alpha(neutral[900], 0.38),
       disabledBackground: alpha(neutral[900], 0.12),
       focus: alpha(neutral[900], 0.16),
@@ -16,10 +16,10 @@ export const createPalette = (config) => {
       selected: alpha(neutral[900], 0.12)
     },
     background: {
-      default: contrast === 'high' ? '#F4F5F7' : '#F0F2F5',
-      paper: '#FAFBFC'
+      default: contrast === 'high' ? '#F5F5F5' : '#FAFAFA',
+      paper: '#FFFFFF'
     },
-    divider: alpha(neutral[400], 0.2),
+    divider: alpha(neutral[500], 0.2),
     error,
     info,
     mode: 'light',
@@ -28,7 +28,7 @@ export const createPalette = (config) => {
     success,
     text: {
       primary: neutral[900],
-      secondary: neutral[500],
+      secondary: neutral[600],
       disabled: alpha(neutral[900], 0.38)
     },
     warning
