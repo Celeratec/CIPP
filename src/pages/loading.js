@@ -56,7 +56,7 @@ const Page = () => {
                   isFetching={false}
                   imageUrl={loadingImage}
                   text={loadingText}
-                  title="Logging into CIPP"
+                  title="Logging into Manage365"
                 />
               </Grid>
             </Grid>

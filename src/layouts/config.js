@@ -848,7 +848,7 @@ export const nativeMenuItems = [
     ],
   },
   {
-    title: "CIPP",
+    title: "Manage365",
     type: "header",
     icon: (
       <SvgIcon>

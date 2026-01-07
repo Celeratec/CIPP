@@ -156,7 +156,7 @@ const Page = () => {
         <Stack spacing={4}>
           <Typography variant="h6">Activity Timeline</Typography>
           <Typography variant="body1" color="text.secondary">
-            This timeline shows the history of actions taken on this tenant, by CIPP for the last{" "}
+            This timeline shows the history of actions taken on this tenant, by Manage365 for the last{" "}
             {daysToLoad} days.
           </Typography>
 

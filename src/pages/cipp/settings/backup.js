@@ -309,7 +309,7 @@ const Page = () => {
   return (
     <>
       <CippPageCard
-        title="CIPP Backup"
+        title="Manage365 Backup"
         backButtonTitle="Settings"
         infoBar={
           <CippInfoBar
@@ -348,9 +348,9 @@ const Page = () => {
       >
         <CardContent>
           <Typography variant="body2" sx={{ mt: 3, px: 3 }}>
-            Backups are stored in the storage account associated with your CIPP instance. You can
+            Backups are stored in the storage account associated with your Manage365 instance. You can
             download or restore specific points in time from the list below. Enable automatic
-            backups to have CIPP create daily backups using the scheduler.
+            backups to have Manage365 create daily backups using the scheduler.
           </Typography>
           {backupList.isError ? (
             <Box sx={{ mt: 3, px: 3 }}>
@@ -479,7 +479,7 @@ const Page = () => {
           url: "/api/ExecRestoreBackup",
           customDataformatter: () => selectedBackupData,
           confirmText: validationResult?.isValid
-            ? "Are you sure you want to restore this backup? This will overwrite your current CIPP configuration."
+            ? "Are you sure you want to restore this backup? This will overwrite your current Manage365 configuration."
             : null,
           onSuccess: () => {
             // Don't auto-close the dialog - let user see the results and close manually

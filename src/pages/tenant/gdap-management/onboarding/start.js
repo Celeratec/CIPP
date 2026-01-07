@@ -399,7 +399,7 @@ const Page = () => {
                 {missingDefaults && (
                   <>
                     <Alert severity="warning">
-                      The selected relationship does not contain all the default roles. CIPP may not
+                      The selected relationship does not contain all the default roles. Manage365 may not
                       function correctly if this is the only relationship with the tenant.
                       Onboarding will fail unless you ignore the missing default roles.
                     </Alert>
