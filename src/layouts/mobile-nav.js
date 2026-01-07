@@ -110,11 +110,11 @@ export const MobileNav = (props) => {
             sx={{
               display: "inline-flex",
               alignItems: "center",
-              height: 36,
+              height: 48,
               width: "auto",
             }}
           >
-            <Logo height={36} />
+            <Logo height={48} />
           </Box>
         </Box>
         <Box sx={{ ml: 2, mt: 2 }}>

@@ -164,11 +164,11 @@ export const TopNav = (props) => {
             sx={{
               display: "inline-flex",
               alignItems: "center",
-              height: 36,
+              height: 48,
               width: "auto",
             }}
           >
-            <Logo height={36} />
+            <Logo height={48} />
           </Box>
           {!mdDown && <CippTenantSelector refreshButton={true} tenantButton={true} />}
           {mdDown && (
