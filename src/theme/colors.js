@@ -39,9 +39,9 @@ export const orange = withAlphas({
 });
 
 export const cerulean = withAlphas({
-  light: "#5AB4E5",
-  main: "#007BA7",
-  dark: "#005F82",
+  light: "#8AC8E5",
+  main: "#6BB8D9",
+  dark: "#2D4A5E",
   contrastText: "#FFFFFF",
 });
 
@@ -60,29 +60,29 @@ export const purple = withAlphas({
 });
 
 export const success = withAlphas({
-  light: "#3FC79A",
-  main: "#10B981",
-  dark: "#0B815A",
-  contrastText: "#FFFFFF",
+  light: "#C5E8D0",
+  main: "#7BC88C",
+  dark: "#5A9E68",
+  contrastText: "#1A1A1A",
 });
 
 export const info = withAlphas({
-  light: "#CFF9FE",
-  main: "#06AED4",
-  dark: "#0E7090",
-  contrastText: "#FFFFFF",
+  light: "#B8E0F0",
+  main: "#5BBEDB",
+  dark: "#3A8FAB",
+  contrastText: "#1A1A1A",
 });
 
 export const warning = withAlphas({
-  light: "#FEF0C7",
-  main: "#F79009",
-  dark: "#B54708",
-  contrastText: "#FFFFFF",
+  light: "#FADCE5",
+  main: "#E8A4B8",
+  dark: "#C4778E",
+  contrastText: "#1A1A1A",
 });
 
 export const error = withAlphas({
-  light: "#FEE4E2",
-  main: "#F04438",
-  dark: "#B42318",
-  contrastText: "#FFFFFF",
+  light: "#F5D0D0",
+  main: "#E09090",
+  dark: "#B86868",
+  contrastText: "#1A1A1A",
 });
