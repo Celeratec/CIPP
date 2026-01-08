@@ -64,7 +64,10 @@ const LayoutRoot = styled("div")(({ theme }) => ({
   display: "flex",
   flex: "1 1 auto",
   maxWidth: "100%",
-  paddingTop: TOP_NAV_HEIGHT,
+  minHeight: "100vh",
+  // Negative margin pulls content up behind the translucent header
+  marginTop: TOP_NAV_HEIGHT - 20,
+  paddingTop: 20,
   [theme.breakpoints.up("lg")]: {
     paddingLeft: SIDE_NAV_WIDTH,
   },
