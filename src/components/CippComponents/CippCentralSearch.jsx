@@ -287,13 +287,13 @@ export const CippCentralSearch = ({ handleClose, open }) => {
 
   return (
     <Dialog fullWidth maxWidth="sm" onClose={handleClose} open={open}>
-      <DialogTitle>CIPP Search</DialogTitle>
+      <DialogTitle>Manage365 Search</DialogTitle>
       <DialogContent />
       <DialogContent>
         <Box>
           <TextField
             fullWidth
-            label="Search any menu item or page in CIPP"
+            label="Search any menu item or page in Manage365"
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onFocus={(event) => {
