@@ -36,7 +36,7 @@ const useChartOptions = (labels, chartType) => {
       theme.palette.success.main,
       theme.palette.warning.main,
       theme.palette.error.main,
-      theme.palette.neutral[200],
+      "#F472B6",
     ],
     dataLabels: {
       enabled: false,

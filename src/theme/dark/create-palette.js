@@ -16,8 +16,8 @@ export const createPalette = (config) => {
       selected: alpha(neutral[400], 0.12)
     },
     background: {
-      default: contrast === 'high' ? '#1A1A1A' : '#222222',
-      paper: '#2A2A2A'
+      default: contrast === 'high' ? '#252830' : '#2C3038',
+      paper: '#343840'
     },
     divider: neutral[700],
     error,

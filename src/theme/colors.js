@@ -24,6 +24,8 @@ export const neutral = {
   900: "#212121",
 };
 
+export const chartPink = "#F472B6";
+
 export const blue = withAlphas({
   light: "#003049",
   main: "#003049",
@@ -39,8 +41,8 @@ export const orange = withAlphas({
 });
 
 export const cerulean = withAlphas({
-  light: "#8AC8E5",
-  main: "#6BB8D9",
+  light: "#7FC4E8",
+  main: "#53A5DB",
   dark: "#2D4A5E",
   contrastText: "#FFFFFF",
 });
@@ -74,9 +76,9 @@ export const info = withAlphas({
 });
 
 export const warning = withAlphas({
-  light: "#FADCE5",
-  main: "#E8A4B8",
-  dark: "#C4778E",
+  light: "#D4EDDA",
+  main: "#8FD19E",
+  dark: "#5BA66F",
   contrastText: "#1A1A1A",
 });
 
