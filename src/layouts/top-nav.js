@@ -129,8 +129,18 @@ export const TopNav = (props) => {
     <Box
       component="header"
       sx={{
-        backgroundColor: "neutral.900",
-        color: "common.white",
+        // Frosted glass effect like Apple
+        backgroundColor: (theme) => 
+          theme.palette.mode === 'dark' 
+            ? 'rgba(30, 30, 30, 0.8)' 
+            : 'rgba(255, 255, 255, 0.8)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: (theme) => 
+          `1px solid ${theme.palette.mode === 'dark' 
+            ? 'rgba(255, 255, 255, 0.1)' 
+            : 'rgba(0, 0, 0, 0.1)'}`,
+        color: (theme) => theme.palette.text.primary,
         position: "fixed",
         width: "100%",
         zIndex: (theme) => theme.zIndex.appBar,
@@ -152,7 +162,10 @@ export const TopNav = (props) => {
             <Divider
               orientation="vertical"
               sx={{
-                borderColor: "neutral.500",
+                borderColor: (theme) => 
+                  theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.2)' 
+                    : 'rgba(0, 0, 0, 0.2)',
                 height: 36,
               }}
             />
@@ -172,8 +185,11 @@ export const TopNav = (props) => {
           </Box>
           {!mdDown && <CippTenantSelector refreshButton={true} tenantButton={true} />}
           {mdDown && (
-            <IconButton color="inherit" onClick={onNavOpen}>
-              <SvgIcon color="action" fontSize="small">
+            <IconButton 
+              onClick={onNavOpen}
+              sx={{ color: 'text.primary' }}
+            >
+              <SvgIcon fontSize="small">
                 <Bars3Icon />
               </SvgIcon>
             </IconButton>
@@ -181,19 +197,28 @@ export const TopNav = (props) => {
         </Stack>
         <Stack alignItems="center" direction="row" spacing={1.5}>
           {!mdDown && (
-            <IconButton color="inherit" onClick={handleThemeSwitch}>
-              <SvgIcon color="action" fontSize="small">
+            <IconButton 
+              onClick={handleThemeSwitch}
+              sx={{ color: 'text.secondary' }}
+            >
+              <SvgIcon fontSize="small">
                 {settings?.currentTheme?.value === "dark" ? <SunIcon /> : <MoonIcon />}
               </SvgIcon>
             </IconButton>
           )}
-          <IconButton color="inherit" onClick={() => openSearch()}>
-            <SvgIcon color="action" fontSize="small">
+          <IconButton 
+            onClick={() => openSearch()}
+            sx={{ color: 'text.secondary' }}
+          >
+            <SvgIcon fontSize="small">
               <MagnifyingGlassIcon />
             </SvgIcon>
           </IconButton>
-          <IconButton color="inherit" onClick={handleBookmarkClick}>
-            <SvgIcon color="action" fontSize="small">
+          <IconButton 
+            onClick={handleBookmarkClick}
+            sx={{ color: 'text.secondary' }}
+          >
+            <SvgIcon fontSize="small">
               <BookmarkIcon />
             </SvgIcon>
           </IconButton>

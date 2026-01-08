@@ -71,6 +71,14 @@ export const SideNavItem = (props) => {
               textAlign: "left",
               whiteSpace: "nowrap",
               width: "100%",
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                backgroundColor: (theme) => 
+                  theme.palette.mode === "dark" 
+                    ? "rgba(255, 255, 255, 0.08)" 
+                    : "rgba(0, 0, 0, 0.04)",
+                transform: "translateX(4px)",
+              },
             }}
           >
             <Box
@@ -167,6 +175,20 @@ export const SideNavItem = (props) => {
             whiteSpace: "nowrap",
             width: "calc(100% - 20px)", // Adjust the width to leave space for the bookmark icon
             py: "12px",
+            transition: "all 0.2s ease-in-out",
+            "&:hover": {
+              backgroundColor: (theme) => 
+                theme.palette.mode === "dark" 
+                  ? "rgba(255, 255, 255, 0.08)" 
+                  : "rgba(0, 0, 0, 0.04)",
+              transform: "translateX(4px)",
+            },
+            ...(active && {
+              backgroundColor: (theme) => 
+                theme.palette.mode === "dark" 
+                  ? "rgba(83, 165, 219, 0.12)" 
+                  : "rgba(83, 165, 219, 0.08)",
+            }),
           }}
           {...linkProps}
         >
