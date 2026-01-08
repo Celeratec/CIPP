@@ -16,10 +16,10 @@ export const createPalette = (config) => {
       selected: alpha(neutral[400], 0.12)
     },
     background: {
-      default: contrast === 'high' ? '#0F0F0F' : '#141414',
-      paper: '#1C1C1C'
+      default: contrast === 'high' ? '#1A1A1A' : '#222222',
+      paper: '#2A2A2A'
     },
-    divider: neutral[800],
+    divider: neutral[700],
     error,
     info,
     mode: 'dark',
@@ -27,8 +27,8 @@ export const createPalette = (config) => {
     primary: getPrimary(colorPreset),
     success,
     text: {
-      primary: '#F5F5F5',
-      secondary: '#A0A0A0',
+      primary: '#D8D8D8',
+      secondary: '#9A9A9A',
       disabled: alpha(common.white, 0.38)
     },
     warning

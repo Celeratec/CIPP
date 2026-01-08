@@ -60,9 +60,9 @@ export const purple = withAlphas({
 });
 
 export const success = withAlphas({
-  light: "#C5E8D0",
-  main: "#7BC88C",
-  dark: "#5A9E68",
+  light: "#B8E5E8",
+  main: "#6BBDC4",
+  dark: "#4A9198",
   contrastText: "#1A1A1A",
 });
 
