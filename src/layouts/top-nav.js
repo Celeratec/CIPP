@@ -132,8 +132,8 @@ export const TopNav = (props) => {
         // Frosted glass effect like Apple
         backgroundColor: (theme) => 
           theme.palette.mode === 'dark' 
-            ? 'rgba(30, 30, 30, 0.65)' 
-            : 'rgba(255, 255, 255, 0.7)',
+            ? 'rgba(30, 30, 30, 0.5)' 
+            : 'rgba(255, 255, 255, 0.5)',
         backdropFilter: 'saturate(180%) blur(20px)',
         WebkitBackdropFilter: 'saturate(180%) blur(20px)',
         borderBottom: (theme) => 
