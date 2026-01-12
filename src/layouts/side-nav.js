@@ -10,44 +10,28 @@ const SIDE_NAV_WIDTH = 270;
 const SIDE_NAV_COLLAPSED_WIDTH = 73; // icon size + padding + border right
 const TOP_NAV_HEIGHT = 64;
 
-// Find which top-level menu should be open based on current path
-const findActiveTopLevelMenu = (items, pathname) => {
+// Find all menus that should be open based on current path (returns array of titles)
+const findActiveMenuPath = (items, pathname, parentPath = []) => {
   for (const item of items) {
     const checkPath = !!(item.path && pathname);
     const exactMatch = checkPath ? pathname === item.path : false;
     const partialMatch = checkPath && item.path !== "/" ? pathname.startsWith(item.path) : false;
     
+    // If this item matches, return the path to get here
     if (exactMatch || partialMatch) {
-      return item.title;
+      return [...parentPath, item.title];
     }
     
+    // Check children
     if (item.items && item.items.length > 0) {
-      const childMatch = findActiveInChildren(item.items, pathname);
-      if (childMatch) {
-        return item.title;
+      const childPath = findActiveMenuPath(item.items, pathname, [...parentPath, item.title]);
+      if (childPath.length > parentPath.length + 1) {
+        // Found a match in children
+        return childPath;
       }
     }
   }
-  return null;
-};
-
-const findActiveInChildren = (items, pathname) => {
-  for (const item of items) {
-    const checkPath = !!(item.path && pathname);
-    const exactMatch = checkPath ? pathname === item.path : false;
-    const partialMatch = checkPath && item.path !== "/" ? pathname.startsWith(item.path) : false;
-    
-    if (exactMatch || partialMatch) {
-      return true;
-    }
-    
-    if (item.items && item.items.length > 0) {
-      if (findActiveInChildren(item.items, pathname)) {
-        return true;
-      }
-    }
-  }
-  return false;
+  return parentPath;
 };
 
 const renderItems = ({ collapse = false, depth = 0, items, pathname, openMenus, onMenuToggle }) =>
@@ -62,9 +46,8 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname, openMenus, on
   const hasChildren = item.items && item.items.length > 0;
   const isActive = exactMatch || (partialMatch && !hasChildren);
   
-  // For top-level items (depth 0), use accordion behavior
-  // For nested items, they follow their parent's state
-  const isOpen = depth === 0 ? openMenus.includes(item.title) : true;
+  // Check if this menu should be open (works for all depths)
+  const isOpen = openMenus.includes(item.title);
 
   if (hasChildren) {
     acc.push(
@@ -126,21 +109,23 @@ export const SideNav = (props) => {
   const collapse = !(pinned || hovered);
   const { data: profile } = ApiGetCall({ url: "/api/me", queryKey: "authmecipp" });
 
-  // Initialize open menus based on current path - only the active menu should be open
-  const activeMenu = findActiveTopLevelMenu(items, pathname);
-  const [openMenus, setOpenMenus] = useState(activeMenu ? [activeMenu] : []);
+  // Initialize open menus based on current path - only menus in the active path should be open
+  const activeMenuPath = findActiveMenuPath(items, pathname);
+  const [openMenus, setOpenMenus] = useState(activeMenuPath);
 
-  // Handle menu toggle - accordion behavior for top-level, allow multiple for nested
+  // Handle menu toggle
+  // - Top-level (depth 0): accordion behavior - only one can be open, closes nested too
+  // - Nested (depth > 0): independent toggle
   const handleMenuToggle = useCallback((title, depth) => {
     setOpenMenus((prev) => {
       if (depth === 0) {
-        // Top-level: accordion behavior - close others, toggle this one
+        // Top-level: accordion behavior - close all others (including nested), toggle this one
         if (prev.includes(title)) {
-          return []; // Close if already open
+          return []; // Close everything if clicking open top-level menu
         }
-        return [title]; // Open only this one
+        return [title]; // Open only this top-level menu
       } else {
-        // Nested: toggle independently (though nested menus auto-open with parent)
+        // Nested: toggle independently
         if (prev.includes(title)) {
           return prev.filter((t) => t !== title);
         }
