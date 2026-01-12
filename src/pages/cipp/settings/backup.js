@@ -224,7 +224,7 @@ const Page = () => {
         });
         setSelectedBackupData(null);
         restoreDialog.handleOpen();
-        e.target.value = null;
+            e.target.value = null;
       }
     };
     reader.readAsText(file);
