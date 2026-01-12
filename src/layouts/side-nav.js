@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import PropTypes from "prop-types";
 import { Box, Drawer, Stack } from "@mui/material";
@@ -10,36 +10,50 @@ const SIDE_NAV_WIDTH = 270;
 const SIDE_NAV_COLLAPSED_WIDTH = 73; // icon size + padding + border right
 const TOP_NAV_HEIGHT = 64;
 
-const markOpenItems = (items, pathname) => {
-  return items.map((item) => {
+// Find which top-level menu should be open based on current path
+const findActiveTopLevelMenu = (items, pathname) => {
+  for (const item of items) {
     const checkPath = !!(item.path && pathname);
     const exactMatch = checkPath ? pathname === item.path : false;
-    // Special handling for root path "/" to avoid matching all paths
     const partialMatch = checkPath && item.path !== "/" ? pathname.startsWith(item.path) : false;
-
-    let openImmediately = exactMatch;
-    let newItems = item.items || [];
-
-    if (newItems.length > 0) {
-      newItems = markOpenItems(newItems, pathname);
-      const childOpen = newItems.some((child) => child.openImmediately);
-      openImmediately = openImmediately || childOpen || exactMatch; // Ensure parent opens if child is open
-    } else {
-      openImmediately = openImmediately || partialMatch; // Leaf items open on partial match
+    
+    if (exactMatch || partialMatch) {
+      return item.title;
     }
-
-    return {
-      ...item,
-      items: newItems,
-      openImmediately,
-    };
-  });
+    
+    if (item.items && item.items.length > 0) {
+      const childMatch = findActiveInChildren(item.items, pathname);
+      if (childMatch) {
+        return item.title;
+      }
+    }
+  }
+  return null;
 };
 
-const renderItems = ({ collapse = false, depth = 0, items, pathname }) =>
-  items.reduce((acc, item) => reduceChildRoutes({ acc, collapse, depth, item, pathname }), []);
+const findActiveInChildren = (items, pathname) => {
+  for (const item of items) {
+    const checkPath = !!(item.path && pathname);
+    const exactMatch = checkPath ? pathname === item.path : false;
+    const partialMatch = checkPath && item.path !== "/" ? pathname.startsWith(item.path) : false;
+    
+    if (exactMatch || partialMatch) {
+      return true;
+    }
+    
+    if (item.items && item.items.length > 0) {
+      if (findActiveInChildren(item.items, pathname)) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
 
-const reduceChildRoutes = ({ acc, collapse, depth, item, pathname }) => {
+const renderItems = ({ collapse = false, depth = 0, items, pathname, openMenus, onMenuToggle }) =>
+  items.reduce((acc, item) => reduceChildRoutes({ acc, collapse, depth, item, pathname, openMenus, onMenuToggle }), []);
+
+const reduceChildRoutes = ({ acc, collapse, depth, item, pathname, openMenus, onMenuToggle }) => {
   const checkPath = !!(item.path && pathname);
   const exactMatch = checkPath && pathname === item.path;
   // Special handling for root path "/" to avoid matching all paths
@@ -47,6 +61,10 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname }) => {
 
   const hasChildren = item.items && item.items.length > 0;
   const isActive = exactMatch || (partialMatch && !hasChildren);
+  
+  // For top-level items (depth 0), use accordion behavior
+  // For nested items, they follow their parent's state
+  const isOpen = depth === 0 ? openMenus.includes(item.title) : true;
 
   if (hasChildren) {
     acc.push(
@@ -57,7 +75,8 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname }) => {
         external={item.external}
         icon={item.icon}
         key={item.title}
-        openImmediately={item.openImmediately}
+        open={isOpen}
+        onToggle={() => onMenuToggle(item.title, depth)}
         path={item.path}
         title={item.title}
         type={item.type}
@@ -76,6 +95,8 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname }) => {
             depth: depth + 1,
             items: item.items,
             pathname,
+            openMenus,
+            onMenuToggle,
           })}
         </Stack>
       </SideNavItem>
@@ -105,8 +126,29 @@ export const SideNav = (props) => {
   const collapse = !(pinned || hovered);
   const { data: profile } = ApiGetCall({ url: "/api/me", queryKey: "authmecipp" });
 
-  // Preprocess items to mark which should be open
-  const processedItems = markOpenItems(items, pathname);
+  // Initialize open menus based on current path - only the active menu should be open
+  const activeMenu = findActiveTopLevelMenu(items, pathname);
+  const [openMenus, setOpenMenus] = useState(activeMenu ? [activeMenu] : []);
+
+  // Handle menu toggle - accordion behavior for top-level, allow multiple for nested
+  const handleMenuToggle = useCallback((title, depth) => {
+    setOpenMenus((prev) => {
+      if (depth === 0) {
+        // Top-level: accordion behavior - close others, toggle this one
+        if (prev.includes(title)) {
+          return []; // Close if already open
+        }
+        return [title]; // Open only this one
+      } else {
+        // Nested: toggle independently (though nested menus auto-open with parent)
+        if (prev.includes(title)) {
+          return prev.filter((t) => t !== title);
+        }
+        return [...prev, title];
+      }
+    });
+  }, []);
+
   return (
     <>
       {profile?.clientPrincipal && profile?.clientPrincipal?.userRoles?.length > 2 && (
@@ -161,13 +203,13 @@ export const SideNav = (props) => {
                 {renderItems({
                   collapse,
                   depth: 0,
-                  items: processedItems,
+                  items,
                   pathname,
+                  openMenus,
+                  onMenuToggle: handleMenuToggle,
                 })}
-              </Box>{" "}
-              {/* Add this closing tag */}
-            </Box>{" "}
-            {/* Closing tag for the parent Box */}
+              </Box>
+            </Box>
           </Scrollbar>
         </Drawer>
       )}

@@ -17,19 +17,21 @@ export const SideNavItem = (props) => {
     depth = 0,
     external = false,
     icon,
-    openImmediately = false,
+    open = false,
+    onToggle,
     path,
     title,
   } = props;
 
-  const [open, setOpen] = useState(openImmediately);
   const [hovered, setHovered] = useState(false);
   const { handleUpdate, bookmarks = [] } = useSettings();
   const isBookmarked = bookmarks.some((bookmark) => bookmark.path === path);
 
   const handleToggle = useCallback(() => {
-    setOpen((prevOpen) => !prevOpen);
-  }, []);
+    if (onToggle) {
+      onToggle();
+    }
+  }, [onToggle]);
 
   const handleBookmarkToggle = useCallback(
     (event) => {
@@ -270,7 +272,8 @@ SideNavItem.propTypes = {
   depth: PropTypes.number,
   external: PropTypes.bool,
   icon: PropTypes.any,
-  openImmediately: PropTypes.bool,
+  open: PropTypes.bool,
+  onToggle: PropTypes.func,
   path: PropTypes.string,
   title: PropTypes.string.isRequired,
 };
