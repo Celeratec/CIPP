@@ -11,14 +11,16 @@ import { getCippTranslation } from "../../../utils/get-cipp-translation";
 
 const Page = () => {
   const router = useRouter();
-  const { logentry } = router.query;
+  const { logentry, date } = router.query;
 
+  // date parameter is already the PartitionKey in yyyyMMdd format
   const logRequest = ApiGetCall({
     url: `/api/Listlogs`,
     data: {
       logentryid: logentry,
+      datefilter: date || null,
     },
-    queryKey: `GetLogEntry-${logentry}`,
+    queryKey: `GetLogEntry-${logentry}-${date}`,
     waiting: !!logentry,
   });
 

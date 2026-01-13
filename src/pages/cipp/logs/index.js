@@ -37,7 +37,7 @@ const pageTitle = "Logbook Results";
 const actions = [
   {
     label: "View Log Entry",
-    link: "/cipp/logs/logentry?logentry=[RowKey]",
+    link: "/cipp/logs/logentry?logentry=[RowKey]&date=[PartitionKey]",
     icon: <EyeIcon />,
     color: "primary",
   },
