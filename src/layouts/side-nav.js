@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import PropTypes from "prop-types";
 import { Box, Drawer, Stack } from "@mui/material";
@@ -10,23 +10,25 @@ const SIDE_NAV_WIDTH = 270;
 const SIDE_NAV_COLLAPSED_WIDTH = 73; // icon size + padding + border right
 const TOP_NAV_HEIGHT = 64;
 
-// Find all menus that should be open based on current path (returns array of titles)
+// Find all parent menus that should be open based on current path (returns array of titles)
+// Only returns menus that have children - leaf items like Dashboard don't need to be "open"
 const findActiveMenuPath = (items, pathname, parentPath = []) => {
   for (const item of items) {
     const checkPath = !!(item.path && pathname);
     const exactMatch = checkPath ? pathname === item.path : false;
     const partialMatch = checkPath && item.path !== "/" ? pathname.startsWith(item.path) : false;
+    const hasChildren = item.items && item.items.length > 0;
     
-    // If this item matches, return the path to get here
-    if (exactMatch || partialMatch) {
-      return [...parentPath, item.title];
+    // If this is a leaf item that matches, return only the parent path (not this item)
+    if ((exactMatch || partialMatch) && !hasChildren) {
+      return parentPath;
     }
     
-    // Check children
-    if (item.items && item.items.length > 0) {
+    // Check children - if match found, include this parent in the path
+    if (hasChildren) {
       const childPath = findActiveMenuPath(item.items, pathname, [...parentPath, item.title]);
-      if (childPath.length > parentPath.length + 1) {
-        // Found a match in children
+      if (childPath.length > parentPath.length) {
+        // Found a match in children, return path including this parent
         return childPath;
       }
     }
@@ -109,9 +111,14 @@ export const SideNav = (props) => {
   const collapse = !(pinned || hovered);
   const { data: profile } = ApiGetCall({ url: "/api/me", queryKey: "authmecipp" });
 
-  // Initialize open menus based on current path - only menus in the active path should be open
-  const activeMenuPath = findActiveMenuPath(items, pathname);
-  const [openMenus, setOpenMenus] = useState(activeMenuPath);
+  // Track open menus - initialized empty, updated by effect when path changes
+  const [openMenus, setOpenMenus] = useState([]);
+
+  // Update open menus when pathname changes (e.g., navigating to Dashboard collapses all)
+  useEffect(() => {
+    const activeMenuPath = findActiveMenuPath(items, pathname);
+    setOpenMenus(activeMenuPath);
+  }, [pathname, items]);
 
   // Handle menu toggle
   // - Top-level (depth 0): accordion behavior - only one can be open, closes nested too
