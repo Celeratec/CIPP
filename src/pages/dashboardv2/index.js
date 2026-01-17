@@ -35,6 +35,7 @@ const Page = () => {
   const router = useRouter();
   const { currentTenant } = settings;
   const [portalMenuItems, setPortalMenuItems] = useState([]);
+  const [portalsReady, setPortalsReady] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false });
   const [refreshDialog, setRefreshDialog] = useState({ open: false });
 
@@ -168,29 +169,42 @@ const Page = () => {
     });
   };
 
+  // Initialize portals immediately with current tenant - don't wait for API
   useEffect(() => {
-    if (currentTenantInfo.isSuccess) {
+    if (currentTenant) {
+      const filteredPortals = getFilteredPortals();
+      
+      // Use currentTenant as default for URL variables - works for most portals
+      const menuItems = filteredPortals.map((portal) => ({
+        label: portal.label,
+        target: "_blank",
+        link: portal.url.replace(portal.variable, currentTenant),
+        icon: portal.icon,
+      }));
+      setPortalMenuItems(menuItems);
+      setPortalsReady(true);
+    }
+  }, [currentTenant, settings.portalLinks, settings.UserSpecificSettings]);
+
+  // Update portal URLs with full tenant info when available (for customerId lookups)
+  useEffect(() => {
+    if (currentTenantInfo.isSuccess && currentTenant) {
       const tenantLookup = currentTenantInfo.data?.find(
         (tenant) => tenant.defaultDomainName === currentTenant
       );
 
-      // Get filtered portals based on user preferences
-      const filteredPortals = getFilteredPortals();
-
-      const menuItems = filteredPortals.map((portal) => ({
-        label: portal.label,
-        target: "_blank",
-        link: portal.url.replace(portal.variable, tenantLookup?.[portal.variable]),
-        icon: portal.icon,
-      }));
-      setPortalMenuItems(menuItems);
+      if (tenantLookup) {
+        const filteredPortals = getFilteredPortals();
+        const menuItems = filteredPortals.map((portal) => ({
+          label: portal.label,
+          target: "_blank",
+          link: portal.url.replace(portal.variable, tenantLookup?.[portal.variable] || currentTenant),
+          icon: portal.icon,
+        }));
+        setPortalMenuItems(menuItems);
+      }
     }
-  }, [
-    currentTenantInfo.isSuccess,
-    currentTenant,
-    settings.portalLinks,
-    settings.UserSpecificSettings,
-  ]);
+  }, [currentTenantInfo.isSuccess, currentTenantInfo.data, currentTenant]);
 
   const formatNumber = (num) => {
     if (!num && num !== 0) return "0";
@@ -210,7 +224,7 @@ const Page = () => {
                 <BulkActionsMenu
                   buttonName="Portals"
                   actions={portalMenuItems}
-                  disabled={!currentTenantInfo.isSuccess || portalMenuItems.length === 0}
+                  disabled={!portalsReady || portalMenuItems.length === 0}
                 />
                 <ExecutiveReportButton disabled={organization.isFetching} />
                 <Tooltip title="Coming soon!" arrow>
