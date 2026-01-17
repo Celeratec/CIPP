@@ -10,43 +10,57 @@ const SIDE_NAV_WIDTH = 270;
 const SIDE_NAV_COLLAPSED_WIDTH = 73; // icon size + padding + border right
 const TOP_NAV_HEIGHT = 64;
 
-// Find all parent menus that should be open based on current path (returns array of titles)
-// Only returns menus that have children - leaf items like Dashboard don't need to be "open"
+// Find all parent menus that should be open based on current path
+// Returns an array of menu titles that form the path to the active item
 const findActiveMenuPath = (items, pathname, parentPath = []) => {
+  if (!items || !pathname) return [];
+  
   for (const item of items) {
-    const checkPath = !!(item.path && pathname);
-    const exactMatch = checkPath ? pathname === item.path : false;
-    const partialMatch = checkPath && item.path !== "/" ? pathname.startsWith(item.path) : false;
     const hasChildren = item.items && item.items.length > 0;
     
-    // If this is a leaf item that matches, return only the parent path (not this item)
-    if ((exactMatch || partialMatch) && !hasChildren) {
-      return parentPath;
-    }
-    
-    // Check children - if match found, include this parent in the path
     if (hasChildren) {
-      const childPath = findActiveMenuPath(item.items, pathname, [...parentPath, item.title]);
-      if (childPath.length > parentPath.length) {
-        // Found a match in children, return path including this parent
-        return childPath;
+      // Recursively check children
+      const childResult = findActiveMenuPath(item.items, pathname, [...parentPath, item.title]);
+      // If we found a match in children, return it (includes this parent)
+      if (childResult.length > 0) {
+        return childResult;
+      }
+    } else if (item.path) {
+      // This is a leaf item - check if it matches
+      const exactMatch = pathname === item.path;
+      // For partial match, ensure the path is followed by / or end of string
+      // This prevents /identity matching /identity-other
+      const partialMatch = item.path !== "/" && (
+        pathname.startsWith(item.path + "/") || pathname === item.path
+      );
+      
+      if (exactMatch || partialMatch) {
+        // Found matching leaf - return the parent path (not including this leaf)
+        return parentPath;
       }
     }
   }
-  return parentPath;
+  
+  // No match found in this branch
+  return [];
 };
 
 const renderItems = ({ collapse = false, depth = 0, items, pathname, openMenus, onMenuToggle }) =>
   items.reduce((acc, item) => reduceChildRoutes({ acc, collapse, depth, item, pathname, openMenus, onMenuToggle }), []);
 
 const reduceChildRoutes = ({ acc, collapse, depth, item, pathname, openMenus, onMenuToggle }) => {
-  const checkPath = !!(item.path && pathname);
-  const exactMatch = checkPath && pathname === item.path;
-  // Special handling for root path "/" to avoid matching all paths
-  const partialMatch = checkPath && item.path !== "/" ? pathname.startsWith(item.path) : false;
-
   const hasChildren = item.items && item.items.length > 0;
-  const isActive = exactMatch || (partialMatch && !hasChildren);
+  
+  // Determine if this item is "active" (currently selected page)
+  let isActive = false;
+  if (item.path && pathname && !hasChildren) {
+    const exactMatch = pathname === item.path;
+    // More precise partial match - ensure path boundary
+    const partialMatch = item.path !== "/" && (
+      pathname.startsWith(item.path + "/") || pathname === item.path
+    );
+    isActive = exactMatch || partialMatch;
+  }
   
   // Check if this menu should be open (works for all depths)
   const isOpen = openMenus.includes(item.title);
