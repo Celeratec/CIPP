@@ -1,6 +1,6 @@
-import { Box, Button, SvgIcon } from "@mui/material";
+import { Box, Button, SvgIcon, Tooltip, Typography, Divider } from "@mui/material";
 import { CippPropertyListCard } from "/src/components/CippCards/CippPropertyListCard";
-import { CheckCircle, SystemUpdateAlt, Warning } from "@mui/icons-material";
+import { CheckCircle, SystemUpdateAlt, Warning, Error, Sync } from "@mui/icons-material";
 import { ApiGetCall } from "/src/api/ApiCall";
 import { useEffect } from "react";
 
@@ -34,6 +34,94 @@ const CippVersionProperties = () => {
       </Box>
     );
   };
+
+  // Component for showing backend app version with sync status
+  const BackendAppVersion = ({ app, mainVersion }) => {
+    const isOutOfSync = app?.OutOfSync;
+    const isOutdated = mainVersion && app?.Version && 
+      cippVersion?.data?.RemoteCIPPAPIVersion && 
+      app.Version !== cippVersion?.data?.RemoteCIPPAPIVersion;
+    
+    return (
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+        <Tooltip title={isOutOfSync ? "Out of sync with main API" : "In sync"}>
+          <SvgIcon fontSize="inherit" sx={{ mr: 0.5 }}>
+            {isOutOfSync ? <Sync color="warning" /> : <CheckCircle color="success" />}
+          </SvgIcon>
+        </Tooltip>
+        <Typography variant="body2" component="span">
+          v{app?.Version || "Unknown"}
+        </Typography>
+        {isOutOfSync && (
+          <Typography variant="caption" color="warning.main" sx={{ ml: 1 }}>
+            (out of sync)
+          </Typography>
+        )}
+      </Box>
+    );
+  };
+
+  // Build property items including backend versions
+  const buildPropertyItems = () => {
+    const items = [
+      {
+        label: "Frontend",
+        value: CippVersionComponent(
+          version?.data?.version,
+          cippVersion?.data?.RemoteCIPPVersion,
+          cippVersion?.data?.OutOfDateCIPP
+        ),
+      },
+    ];
+
+    // Add backend versions
+    const backendVersions = cippVersion?.data?.BackendVersions || [];
+    
+    if (backendVersions.length > 0) {
+      // Find the main API version
+      const mainApp = backendVersions.find(app => app.IsMainApp);
+      const mainVersion = mainApp?.Version;
+      
+      // Add each backend app
+      backendVersions.forEach((app, index) => {
+        items.push({
+          label: app.FriendlyName || app.Name,
+          value: <BackendAppVersion app={app} mainVersion={mainVersion} />,
+        });
+      });
+      
+      // Check if any are out of sync
+      const outOfSyncCount = backendVersions.filter(app => app.OutOfSync).length;
+      if (outOfSyncCount > 0) {
+        items.push({
+          label: "Sync Status",
+          value: (
+            <Box sx={{ display: "flex", alignItems: "center", color: "warning.main" }}>
+              <SvgIcon fontSize="inherit" sx={{ mr: 0.5 }}>
+                <Warning />
+              </SvgIcon>
+              <Typography variant="body2">
+                {outOfSyncCount} app{outOfSyncCount > 1 ? "s" : ""} out of sync
+              </Typography>
+            </Box>
+          ),
+        });
+      }
+    } else {
+      // Fallback to single backend version if no detailed info
+      items.push({
+        label: "Backend",
+        value: CippVersionComponent(
+          cippVersion?.data?.LocalCIPPAPIVersion,
+          cippVersion?.data?.RemoteCIPPAPIVersion,
+          cippVersion?.data?.OutOfDateCIPPAPI
+        ),
+      });
+    }
+
+    return items;
+  };
+
   return (
     <CippPropertyListCard
       showDivider={false}
@@ -56,24 +144,7 @@ const CippVersionProperties = () => {
       title="Version"
       isFetching={cippVersion.isFetching}
       cardSx={{ display: "flex", flexDirection: "column", height: "100%", width: "100%" }}
-      propertyItems={[
-        {
-          label: "Frontend",
-          value: CippVersionComponent(
-            version?.data?.version,
-            cippVersion?.data?.RemoteCIPPVersion,
-            cippVersion?.data?.OutOfDateCIPP
-          ),
-        },
-        {
-          label: "Backend",
-          value: CippVersionComponent(
-            cippVersion?.data?.LocalCIPPAPIVersion,
-            cippVersion?.data?.RemoteCIPPAPIVersion,
-            cippVersion?.data?.OutOfDateCIPPAPI
-          ),
-        },
-      ]}
+      propertyItems={buildPropertyItems()}
     />
   );
 };
