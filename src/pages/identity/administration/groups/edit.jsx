@@ -52,18 +52,22 @@ const EditGroup = () => {
     if (groupInfo.isSuccess) {
       const group = groupInfo.data?.groupInfo;
       if (group) {
+        // Safely get arrays with fallbacks
+        const owners = Array.isArray(groupInfo.data?.owners) ? groupInfo.data.owners : [];
+        const members = Array.isArray(groupInfo.data?.members) ? groupInfo.data.members : [];
+        
         // Create combined data for the table
         const combinedData = [
-          ...(groupInfo.data?.owners?.map((o) => ({
+          ...owners.map((o) => ({
             type: "Owner",
             userPrincipalName: o.userPrincipalName,
             displayName: o.displayName,
-          })) || []),
-          ...(groupInfo.data?.members?.map((m) => ({
+          })),
+          ...members.map((m) => ({
             type: m?.["@odata.type"] === "#microsoft.graph.orgContact" ? "Contact" : "Member",
             userPrincipalName: m.userPrincipalName ?? m.mail,
             displayName: m.displayName,
-          })) || []),
+          })),
         ];
         setCombinedData(combinedData);
 
@@ -258,7 +262,8 @@ const EditGroup = () => {
                     userPrincipalName: "userPrincipalName",
                   }}
                   dataFilter={(option) =>
-                    !groupInfo.data?.members?.some((m) => m.id === option.value)
+                    !(Array.isArray(groupInfo.data?.members) ? groupInfo.data.members : [])
+                      .some((m) => m.id === option.value)
                   }
                 />
               </Grid>
@@ -277,7 +282,8 @@ const EditGroup = () => {
                     userPrincipalName: "userPrincipalName",
                   }}
                   dataFilter={(option) =>
-                    !groupInfo.data?.owners?.some((o) => o.id === option.value)
+                    !(Array.isArray(groupInfo.data?.owners) ? groupInfo.data.owners : [])
+                      .some((o) => o.id === option.value)
                   }
                 />
               </Grid>
@@ -296,9 +302,9 @@ const EditGroup = () => {
                   isFetching={groupInfo.isFetching}
                   disabled={groupInfo.isFetching}
                   dataFilter={(option) =>
-                    !groupInfo.data?.members
-                      ?.filter((m) => m?.["@odata.type"] === "#microsoft.graph.orgContact")
-                      ?.some((c) => c.id === option.value)
+                    !(Array.isArray(groupInfo.data?.members) ? groupInfo.data.members : [])
+                      .filter((m) => m?.["@odata.type"] === "#microsoft.graph.orgContact")
+                      .some((c) => c.id === option.value)
                   }
                 />
               </Grid>
@@ -318,9 +324,9 @@ const EditGroup = () => {
                   isFetching={groupInfo.isFetching}
                   disabled={groupInfo.isFetching}
                   options={
-                    groupInfo.data?.members
-                      ?.filter((m) => m?.["@odata.type"] !== "#microsoft.graph.orgContact")
-                      ?.map((m) => ({
+                    (Array.isArray(groupInfo.data?.members) ? groupInfo.data.members : [])
+                      .filter((m) => m?.["@odata.type"] !== "#microsoft.graph.orgContact")
+                      .map((m) => ({
                         label: `${m.displayName} (${m.userPrincipalName})`,
                         value: m.id,
                         addedFields: {
@@ -328,7 +334,7 @@ const EditGroup = () => {
                           displayName: m.displayName,
                           id: m.id,
                         },
-                      })) || []
+                      }))
                   }
                   sortOptions={true}
                 />
@@ -344,15 +350,16 @@ const EditGroup = () => {
                   isFetching={groupInfo.isFetching}
                   disabled={groupInfo.isFetching}
                   options={
-                    groupInfo.data?.owners?.map((o) => ({
-                      label: `${o.displayName} (${o.userPrincipalName})`,
-                      value: o.id,
-                      addedFields: {
-                        userPrincipalName: o.userPrincipalName,
-                        displayName: o.displayName,
-                        id: o.id,
-                      },
-                    })) || []
+                    (Array.isArray(groupInfo.data?.owners) ? groupInfo.data.owners : [])
+                      .map((o) => ({
+                        label: `${o.displayName} (${o.userPrincipalName})`,
+                        value: o.id,
+                        addedFields: {
+                          userPrincipalName: o.userPrincipalName,
+                          displayName: o.displayName,
+                          id: o.id,
+                        },
+                      }))
                   }
                   sortOptions={true}
                 />
@@ -368,13 +375,13 @@ const EditGroup = () => {
                   isFetching={groupInfo.isFetching}
                   disabled={groupInfo.isFetching}
                   options={
-                    groupInfo.data?.members
-                      ?.filter((m) => m?.["@odata.type"] === "#microsoft.graph.orgContact")
-                      ?.map((m) => ({
+                    (Array.isArray(groupInfo.data?.members) ? groupInfo.data.members : [])
+                      .filter((m) => m?.["@odata.type"] === "#microsoft.graph.orgContact")
+                      .map((m) => ({
                         label: `${m.displayName} (${m.mail})`,
                         value: m.mail,
                         addedFields: { id: m.id },
-                      })) || []
+                      }))
                   }
                   sortOptions={true}
                 />
