@@ -7,13 +7,15 @@ import { CippInviteGuestDrawer } from "/src/components/CippComponents/CippInvite
 import { CippBulkUserDrawer } from "/src/components/CippComponents/CippBulkUserDrawer.jsx";
 import { CippAddUserDrawer } from "/src/components/CippComponents/CippAddUserDrawer.jsx";
 import { CippApiLogsDrawer } from "/src/components/CippComponents/CippApiLogsDrawer.jsx";
-import { Box } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 
 const Page = () => {
   const userActions = useCippUserActions();
   const pageTitle = "Users";
   const tenant = useSettings().currentTenant;
   const cardButtonPermissions = ["Identity.User.ReadWrite"];
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const filters = [
     {
@@ -35,31 +37,46 @@ const Page = () => {
 
   const offCanvas = {
     extendedInfoFields: [
-      "createdDateTime", // Created Date (UTC)
-      "id", // Unique ID
       "userPrincipalName", // UPN
+      "displayName", // Display Name
+      "mail", // Mail
+      "accountEnabled", // Account Status
+      "userType", // User Type
       "givenName", // Given Name
       "surname", // Surname
       "jobTitle", // Job Title
-      "assignedLicenses", // Licenses
+      "department", // Department
+      "companyName", // Company
+      "officeLocation", // Office
+      "city", // City
+      "country", // Country
       "businessPhones", // Business Phone
       "mobilePhone", // Mobile Phone
-      "mail", // Mail
-      "city", // City
-      "department", // Department
+      "assignedLicenses", // Licenses
+      "proxyAddresses", // Proxy Addresses
+      "otherMails", // Alternate Email Addresses
+      "createdDateTime", // Created Date (UTC)
+      "onPremisesSyncEnabled", // AD Sync Enabled
       "onPremisesLastSyncDateTime", // OnPrem Last Sync
       "onPremisesDistinguishedName", // OnPrem DN
-      "otherMails", // Alternate Email Addresses
+      "id", // Unique ID
     ],
     actions: userActions,
+    size: "md", // Medium width for more detail space
   };
+
+  // Show fewer columns on mobile, more on desktop
+  // Users can always click a row to see full details in the off-canvas
+  const simpleColumns = isMobile 
+    ? ["displayName", "accountEnabled"] // Minimal on mobile
+    : ["displayName", "userPrincipalName", "mail", "accountEnabled"]; // Essential on desktop
 
   return (
     <CippTablePage
       title={pageTitle}
       apiUrl="/api/ListGraphRequest"
       cardButton={
-        <Box sx={{ display: "flex", gap: 1 }}>
+        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
           <CippAddUserDrawer
             requiredPermissions={cardButtonPermissions}
             PermissionButton={PermissionButton}
@@ -93,15 +110,8 @@ const Page = () => {
       apiDataKey="Results"
       actions={userActions}
       offCanvas={offCanvas}
-      simpleColumns={[
-        "accountEnabled",
-        "userPrincipalName",
-        "displayName",
-        "mail",
-        "businessPhones",
-        "proxyAddresses",
-        "assignedLicenses",
-      ]}
+      offCanvasOnRowClick={true}
+      simpleColumns={simpleColumns}
       filters={filters}
     />
   );
