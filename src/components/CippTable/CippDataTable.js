@@ -8,6 +8,8 @@ import {
   ListItemText,
   MenuItem,
   SvgIcon,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { ResourceUnavailable } from "../resource-unavailable";
 import { ResourceError } from "../resource-error";
@@ -126,6 +128,9 @@ export const CippDataTable = (props) => {
   const waitingBool = api?.url ? true : false;
 
   const settings = useSettings();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
   const getRequestData = ApiGetCallWithPagination({
     url: api.url,
@@ -265,6 +270,10 @@ export const CippDataTable = (props) => {
   };
 
   const table = useMaterialReactTable({
+    // Mobile-responsive layout - use grid on mobile for better stacking
+    layoutMode: isMobile ? 'grid' : 'semantic',
+    // Enable density toggle so users can switch to compact on mobile
+    enableDensityToggle: true,
     muiTableBodyCellProps: {
       onCopy: (e) => {
         const sel = window.getSelection()?.toString() ?? "";
@@ -277,6 +286,13 @@ export const CippDataTable = (props) => {
             navigator.clipboard.writeText(sel).catch(() => {});
           }
         }
+      },
+      sx: {
+        // Better touch targets on mobile
+        ...(isMobile && {
+          padding: '12px 8px',
+          fontSize: '0.875rem',
+        }),
       },
     },
     mrtTheme: (theme) => ({

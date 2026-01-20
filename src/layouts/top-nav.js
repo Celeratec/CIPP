@@ -151,7 +151,7 @@ export const TopNav = (props) => {
         justifyContent="space-between"
         sx={{
           minHeight: TOP_NAV_HEIGHT,
-          px: 3,
+          px: mdDown ? 1.5 : 3,
         }}
       >
         <Stack
@@ -187,15 +187,20 @@ export const TopNav = (props) => {
           {mdDown && (
             <IconButton 
               onClick={onNavOpen}
-              sx={{ color: 'text.primary' }}
+              sx={{ 
+                color: 'text.primary',
+                // Minimum 44px touch target for mobile accessibility
+                minWidth: 44,
+                minHeight: 44,
+              }}
             >
-              <SvgIcon fontSize="small">
+              <SvgIcon fontSize="medium">
                 <Bars3Icon />
               </SvgIcon>
             </IconButton>
           )}
         </Stack>
-        <Stack alignItems="center" direction="row" spacing={1.5}>
+        <Stack alignItems="center" direction="row" spacing={mdDown ? 0.5 : 1.5}>
           {!mdDown && (
             <IconButton 
               onClick={handleThemeSwitch}
@@ -208,20 +213,26 @@ export const TopNav = (props) => {
           )}
           <IconButton 
             onClick={() => openSearch()}
-            sx={{ color: 'text.secondary' }}
+            sx={{ 
+              color: 'text.secondary',
+              // Minimum 44px touch target for mobile
+              ...(mdDown && { minWidth: 44, minHeight: 44 }),
+            }}
           >
-            <SvgIcon fontSize="small">
+            <SvgIcon fontSize={mdDown ? "medium" : "small"}>
               <MagnifyingGlassIcon />
             </SvgIcon>
           </IconButton>
-          <IconButton 
-            onClick={handleBookmarkClick}
-            sx={{ color: 'text.secondary' }}
-          >
-            <SvgIcon fontSize="small">
-              <BookmarkIcon />
-            </SvgIcon>
-          </IconButton>
+          {!mdDown && (
+            <IconButton 
+              onClick={handleBookmarkClick}
+              sx={{ color: 'text.secondary' }}
+            >
+              <SvgIcon fontSize="small">
+                <BookmarkIcon />
+              </SvgIcon>
+            </IconButton>
+          )}
           <Popover
             id={id}
             open={open}
