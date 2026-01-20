@@ -1314,7 +1314,7 @@ const Page = () => {
               "Microsoft.Exchange.Configuration.Tasks.ManagementObjectNotFoundException"
             ) && (
               <>
-                <Grid size={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <CippExchangeInfoCard
                     exchangeData={data}
                     isLoading={userRequest.isLoading}
@@ -1322,7 +1322,7 @@ const Page = () => {
                     handleRefresh={() => userRequest.refetch()}
                   />
                 </Grid>
-                <Grid size={8}>
+                <Grid size={{ xs: 12, md: 8 }}>
                   <Stack spacing={3}>
                     <CippBannerListCard
                       isFetching={graphUserRequest.isLoading}

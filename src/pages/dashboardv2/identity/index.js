@@ -1,4 +1,4 @@
-import { Container } from "@mui/material";
+import { Container, useMediaQuery, useTheme } from "@mui/material";
 import { TabbedLayout } from "/src/layouts/TabbedLayout";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import tabOptions from "../tabOptions";
@@ -12,6 +12,9 @@ const Page = () => {
   const settings = useSettings();
   const { currentTenant } = settings;
   const router = useRouter();
+  const theme = useTheme();
+  const smDown = useMediaQuery(theme.breakpoints.down("sm"));
+  
   // Only use default if router is ready and reportId is still not present
   const selectedReport =
     router.isReady && !router.query.reportId ? "ztna" : router.query.reportId || "ztna";
@@ -70,7 +73,13 @@ const Page = () => {
   ];
 
   return (
-    <Container maxWidth={false} sx={{ pt: 3 }}>
+    <Container 
+      maxWidth={false} 
+      sx={{ 
+        pt: smDown ? 1 : 3,
+        px: smDown ? 1 : 3,
+      }}
+    >
       <CippDataTable
         title="Identity Tests"
         data={identityTests}
@@ -80,6 +89,7 @@ const Page = () => {
         offCanvasOnRowClick={true}
         filters={filters}
         actions={[]}
+        maxHeightOffset={smDown ? "200px" : "380px"}
       />
     </Container>
   );

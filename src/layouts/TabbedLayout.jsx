@@ -1,5 +1,5 @@
 import { usePathname, useRouter } from "next/navigation";
-import { Box, Divider, Stack, Tab, Tabs } from "@mui/material";
+import { Box, Divider, Stack, Tab, Tabs, useMediaQuery, useTheme } from "@mui/material";
 import { useSearchParams } from "next/navigation";
 
 export const TabbedLayout = (props) => {
@@ -7,6 +7,8 @@ export const TabbedLayout = (props) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const theme = useTheme();
+  const smDown = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleTabsChange = (event, value) => {
     // Preserve existing query parameters when changing tabs
@@ -22,19 +24,28 @@ export const TabbedLayout = (props) => {
     <Box
       sx={{
         flexGrow: 1,
-        pb: 4,
+        pb: smDown ? 2 : 4,
         mt: -1,
       }}
     >
-      <Stack spacing={2}>
-        <Box sx={{ ml: 3 }}>
+      <Stack spacing={smDown ? 1 : 2}>
+        <Box sx={{ ml: smDown ? 1 : 3 }}>
           <Tabs
             onChange={handleTabsChange}
             value={currentTab?.path}
             variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
             sx={{
+              minHeight: smDown ? 40 : 48,
+              "& .MuiTab-root": {
+                minHeight: smDown ? 40 : 48,
+                py: smDown ? 1 : 1.5,
+                px: smDown ? 1.5 : 2,
+                fontSize: smDown ? "0.8125rem" : "0.875rem",
+              },
               "& .MuiTab-root:first-of-type": {
-                ml: 1,
+                ml: smDown ? 0 : 1,
               },
             }}
           >

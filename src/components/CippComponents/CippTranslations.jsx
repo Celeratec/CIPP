@@ -2,6 +2,7 @@ export const CippTranslations = {
   userPrincipalName: "User Principal Name",
   displayName: "Display Name",
   mail: "Mail",
+  accountEnabled: "Enabled",
   mobilePhone: "Mobile Phone",
   officePhone: "Office Phone",
   jobTitle: "Job Title",

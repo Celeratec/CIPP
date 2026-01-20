@@ -1,4 +1,4 @@
-import { Box, Card, CardContent, Container, Button, Tooltip } from "@mui/material";
+import { Box, Card, CardContent, Container, Button, Tooltip, useMediaQuery, useTheme } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useForm, useWatch } from "react-hook-form";
@@ -33,6 +33,9 @@ import {
 const Page = () => {
   const settings = useSettings();
   const router = useRouter();
+  const theme = useTheme();
+  const mdDown = useMediaQuery(theme.breakpoints.down("md"));
+  const smDown = useMediaQuery(theme.breakpoints.down("sm"));
   const { currentTenant } = settings;
   const [portalMenuItems, setPortalMenuItems] = useState([]);
   const [portalsReady, setPortalsReady] = useState(false);
@@ -220,7 +223,15 @@ const Page = () => {
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid size={{ xs: 12, md: 5 }}>
             <Card sx={{ height: "100%" }}>
-              <CardContent sx={{ display: "flex", alignItems: "center", gap: 2, p: 2 }}>
+              <CardContent 
+                sx={{ 
+                  display: "flex", 
+                  flexWrap: "wrap",
+                  alignItems: "center", 
+                  gap: smDown ? 1 : 2, 
+                  p: smDown ? 1.5 : 2 
+                }}
+              >
                 <BulkActionsMenu
                   buttonName="Portals"
                   actions={portalMenuItems}
@@ -231,7 +242,7 @@ const Page = () => {
                   <span>
                     <Button
                       variant="contained"
-                      startIcon={<AssessmentIcon />}
+                      startIcon={!smDown && <AssessmentIcon />}
                       disabled
                       sx={{
                         fontWeight: "bold",
@@ -239,9 +250,11 @@ const Page = () => {
                         borderRadius: 2,
                         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
                         transition: "all 0.2s ease-in-out",
+                        minWidth: smDown ? "auto" : undefined,
+                        px: smDown ? 1.5 : 2,
                       }}
                     >
-                      Report Builder
+                      {smDown ? <AssessmentIcon /> : "Report Builder"}
                     </Button>
                   </span>
                 </Tooltip>
@@ -250,8 +263,16 @@ const Page = () => {
           </Grid>
           <Grid size={{ xs: 12, md: 7 }}>
             <Card sx={{ height: "100%" }}>
-              <CardContent sx={{ display: "flex", gap: 1.5, alignItems: "center", p: 2 }}>
-                <Box sx={{ flex: 1 }}>
+              <CardContent 
+                sx={{ 
+                  display: "flex", 
+                  flexDirection: smDown ? "column" : "row",
+                  gap: smDown ? 2 : 1.5, 
+                  alignItems: smDown ? "stretch" : "center", 
+                  p: smDown ? 1.5 : 2 
+                }}
+              >
+                <Box sx={{ flex: 1, minWidth: 0 }}>
                   <CippFormComponent
                     name="reportId"
                     label="Select a report"
@@ -266,59 +287,70 @@ const Page = () => {
                     placeholder="Choose a report"
                   />
                 </Box>
-                <CippAddTestReportDrawer />
-                <Button
-                  variant="contained"
-                  color="primary"
-                  sx={{
-                    minWidth: "auto",
-                    fontWeight: "bold",
-                    textTransform: "none",
-                    borderRadius: 2,
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                    transition: "all 0.2s ease-in-out",
-                    px: 2,
+                <Box 
+                  sx={{ 
+                    display: "flex", 
+                    flexWrap: "wrap",
+                    gap: 1, 
+                    justifyContent: smDown ? "stretch" : "flex-end",
+                    "& > *": smDown ? { flex: "1 1 calc(50% - 4px)", minWidth: "120px" } : {}
                   }}
-                  onClick={() => {
-                    setRefreshDialog({
-                      open: true,
-                      title: "Refresh Test Data",
-                      message: `Are you sure you want to refresh the test data for ${currentTenant}? This might take up to 2 hours to update.`,
-                      api: {
-                        url: "/api/ExecTestRun",
-                        data: { tenantFilter: currentTenant },
-                        method: "POST",
-                      },
-                      handleClose: () => setRefreshDialog({ open: false }),
-                    });
-                  }}
-                  startIcon={<RefreshIcon />}
                 >
-                  Update Report
-                </Button>
-                <Button
-                  variant="contained"
-                  color="error"
-                  sx={{
-                    fontWeight: "bold",
-                    textTransform: "none",
-                    borderRadius: 2,
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                    transition: "all 0.2s ease-in-out",
-                  }}
-                  onClick={() => {
-                    const report = reports.find((r) => r.id === selectedReport);
-                    if (report && report.source !== "file") {
-                      setDeleteDialog({
+                  <CippAddTestReportDrawer buttonText={smDown ? "Create" : "Create custom report"} />
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    sx={{
+                      minWidth: "auto",
+                      fontWeight: "bold",
+                      textTransform: "none",
+                      borderRadius: 2,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                      transition: "all 0.2s ease-in-out",
+                      px: smDown ? 1.5 : 2,
+                    }}
+                    onClick={() => {
+                      setRefreshDialog({
                         open: true,
-                        handleClose: () => setDeleteDialog({ open: false }),
-                        row: { ReportId: selectedReport, name: report.name },
+                        title: "Refresh Test Data",
+                        message: `Are you sure you want to refresh the test data for ${currentTenant}? This might take up to 2 hours to update.`,
+                        api: {
+                          url: "/api/ExecTestRun",
+                          data: { tenantFilter: currentTenant },
+                          method: "POST",
+                        },
+                        handleClose: () => setRefreshDialog({ open: false }),
                       });
-                    }
-                  }}
-                >
-                  Delete
-                </Button>
+                    }}
+                    startIcon={<RefreshIcon />}
+                  >
+                    {smDown ? "Update" : "Update Report"}
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    sx={{
+                      fontWeight: "bold",
+                      textTransform: "none",
+                      borderRadius: 2,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                      transition: "all 0.2s ease-in-out",
+                      px: smDown ? 1.5 : 2,
+                    }}
+                    onClick={() => {
+                      const report = reports.find((r) => r.id === selectedReport);
+                      if (report && report.source !== "file") {
+                        setDeleteDialog({
+                          open: true,
+                          handleClose: () => setDeleteDialog({ open: false }),
+                          row: { ReportId: selectedReport, name: report.name },
+                        });
+                      }
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </Box>
               </CardContent>
             </Card>
           </Grid>

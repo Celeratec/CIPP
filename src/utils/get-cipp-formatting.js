@@ -27,6 +27,8 @@ import {
   ServerIcon,
   UserIcon,
   UsersIcon,
+  CheckCircleIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/outline";
 import { getCippTranslation } from "./get-cipp-translation";
 import DOMPurify from "dompurify";
@@ -100,6 +102,36 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
 
   if (cellName === "baselineOption") {
     return "Download Baseline";
+  }
+
+  // Handle accountEnabled field with colored indicator and Heroicon
+  if (cellName === "accountEnabled") {
+    const isEnabled = data === true || data === "true" || data === "Yes";
+    const isDisabled = data === false || data === "false" || data === "No";
+    
+    if (isText) {
+      return isEnabled ? "Yes" : isDisabled ? "No" : String(data);
+    }
+    
+    return (
+      <Chip
+        icon={
+          <SvgIcon sx={{ fontSize: "1rem !important" }}>
+            {isEnabled ? <CheckCircleIcon /> : <XCircleIcon />}
+          </SvgIcon>
+        }
+        label={isEnabled ? "Yes" : "No"}
+        size="small"
+        color={isEnabled ? "success" : "error"}
+        variant="outlined"
+        sx={{
+          fontWeight: 500,
+          "& .MuiChip-icon": {
+            color: isEnabled ? "success.main" : "error.main",
+          },
+        }}
+      />
+    );
   }
 
   if (cellName === "Severity" || cellName === "logsToInclude") {
