@@ -13,6 +13,8 @@ import {
   Grid,
   Paper,
   IconButton,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { PictureAsPdf, Download, Close, Settings } from "@mui/icons-material";
 import {
@@ -2536,6 +2538,8 @@ export const ExecutiveReportButton = (props) => {
   const { ...other } = props;
   const settings = useSettings();
   const brandingSettings = settings.customBranding;
+  const theme = useTheme();
+  const smDown = useMediaQuery(theme.breakpoints.down("sm"));
 
   // Preview state
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -2823,7 +2827,7 @@ export const ExecutiveReportButton = (props) => {
       <Tooltip title="Generate Executive Report with preview and configuration">
         <Button
           variant="contained"
-          startIcon={<PictureAsPdf />}
+          startIcon={!smDown && <PictureAsPdf />}
           onClick={() => setPreviewOpen(true)}
           sx={{
             fontWeight: "bold",
@@ -2831,10 +2835,12 @@ export const ExecutiveReportButton = (props) => {
             borderRadius: 2,
             boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
             transition: "all 0.2s ease-in-out",
+            minWidth: smDown ? "auto" : undefined,
+            px: smDown ? 1.5 : 2,
           }}
           {...other}
         >
-          Executive Summary
+          {smDown ? <PictureAsPdf /> : "Executive Summary"}
         </Button>
       </Tooltip>
 

@@ -23,6 +23,30 @@ const Page = () => {
   const pageTitle = "Devices";
   const tenantFilter = useSettings().currentTenant;
 
+  // Mobile card view configuration
+  const mobileCardConfig = {
+    title: "deviceName",
+    subtitle: "userPrincipalName",
+    avatar: {
+      field: "deviceName",
+    },
+    badges: [
+      {
+        field: "complianceState",
+        conditions: {
+          compliant: { icon: "check", color: "success" },
+          noncompliant: { icon: "cancel", color: "error" },
+          unknown: { label: "Unknown", color: "default" },
+          inGracePeriod: { label: "Grace", color: "warning" },
+        },
+      },
+    ],
+    extraFields: [
+      { field: "operatingSystem" },
+      { field: "model" },
+    ],
+  };
+
   const actions = [
     {
       label: "View in Intune",
@@ -397,6 +421,8 @@ const Page = () => {
         "deviceEnrollmentType",
         "joinType",
       ]}
+      mobileCardConfig={mobileCardConfig}
+      offCanvasOnRowClick={true}
     />
   );
 };

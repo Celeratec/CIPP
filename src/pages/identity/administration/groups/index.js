@@ -25,6 +25,29 @@ const Page = () => {
   const handleMembersToggle = () => {
     setShowMembers(!showMembers);
   };
+
+  // Mobile card view configuration
+  const mobileCardConfig = {
+    title: "displayName",
+    subtitle: "mail",
+    avatar: {
+      field: "displayName",
+    },
+    badges: [
+      {
+        field: "calculatedGroupType",
+        conditions: {
+          m365: { label: "M365", color: "primary" },
+          security: { label: "Security", color: "secondary" },
+          distribution: { label: "Dist", color: "default" },
+          dynamic: { label: "Dynamic", color: "info" },
+        },
+      },
+    ],
+    extraFields: [
+      { field: "description" },
+    ],
+  };
   const actions = [
     {
       //tested
@@ -326,6 +349,8 @@ const Page = () => {
         "onPremisesSyncEnabled",
         "userPrincipalName",
       ]}
+      mobileCardConfig={mobileCardConfig}
+      offCanvasOnRowClick={true}
     />
   );
 };

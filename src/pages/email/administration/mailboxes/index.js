@@ -7,6 +7,27 @@ import { CippSharedMailboxDrawer } from "/src/components/CippComponents/CippShar
 const Page = () => {
   const pageTitle = "Mailboxes";
 
+  // Mobile card view configuration
+  const mobileCardConfig = {
+    title: "displayName",
+    subtitle: "primarySmtpAddress",
+    avatar: {
+      field: "displayName",
+    },
+    badges: [
+      {
+        field: "recipientTypeDetails",
+        conditions: {
+          UserMailbox: { label: "User", color: "primary" },
+          SharedMailbox: { label: "Shared", color: "secondary" },
+          RoomMailbox: { label: "Room", color: "info" },
+          EquipmentMailbox: { label: "Equip", color: "default" },
+        },
+      },
+    ],
+    extraFields: [],
+  };
+
   // Define off-canvas details
   const offCanvas = {
     extendedInfoFields: ["displayName", "UPN", "AdditionalEmailAddresses", "recipientTypeDetails"],
@@ -60,6 +81,8 @@ const Page = () => {
           <CippHVEUserDrawer />
         </>
       }
+      mobileCardConfig={mobileCardConfig}
+      offCanvasOnRowClick={true}
     />
   );
 };

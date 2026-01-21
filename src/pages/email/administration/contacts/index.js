@@ -9,6 +9,28 @@ import { CippDeployContactTemplateDrawer } from "../../../../components/CippComp
 const Page = () => {
   const pageTitle = "Contacts";
   const cardButtonPermissions = ["Exchange.Contact.ReadWrite"];
+
+  // Mobile card view configuration
+  const mobileCardConfig = {
+    title: "DisplayName",
+    subtitle: "WindowsEmailAddress",
+    avatar: {
+      field: "DisplayName",
+    },
+    badges: [
+      {
+        field: "IsDirSynced",
+        conditions: {
+          true: { label: "Synced", color: "info" },
+          false: { label: "Cloud", color: "default" },
+        },
+      },
+    ],
+    extraFields: [
+      { field: "Company" },
+    ],
+  };
+
   const actions = useMemo(
     () => [
       {
@@ -77,6 +99,8 @@ const Page = () => {
           <CippDeployContactTemplateDrawer requiredPermissions={cardButtonPermissions} />
         </>
       }
+      mobileCardConfig={mobileCardConfig}
+      offCanvasOnRowClick={true}
     />
   );
 };

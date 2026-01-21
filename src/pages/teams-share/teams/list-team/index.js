@@ -8,6 +8,25 @@ import { Edit } from "@mui/icons-material";
 const Page = () => {
   const pageTitle = "Teams";
 
+  // Mobile card view configuration
+  const mobileCardConfig = {
+    title: "displayName",
+    subtitle: "description",
+    avatar: {
+      field: "displayName",
+    },
+    badges: [
+      {
+        field: "visibility",
+        conditions: {
+          Public: { label: "Public", color: "success" },
+          Private: { label: "Private", color: "warning" },
+        },
+      },
+    ],
+    extraFields: [],
+  };
+
   const actions = [
     {
       label: "Edit Group",
@@ -44,6 +63,8 @@ const Page = () => {
           </Button>
         </>
       }
+      mobileCardConfig={mobileCardConfig}
+      offCanvasOnRowClick={true}
     />
   );
 };

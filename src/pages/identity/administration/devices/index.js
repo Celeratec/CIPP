@@ -7,6 +7,28 @@ const Page = () => {
   const pageTitle = "Devices";
   const tenantFilter = useSettings().currentTenant;
 
+  // Mobile card view configuration
+  const mobileCardConfig = {
+    title: "displayName",
+    subtitle: "operatingSystem",
+    avatar: {
+      field: "displayName",
+    },
+    badges: [
+      {
+        field: "accountEnabled",
+        conditions: {
+          true: { icon: "check", color: "success" },
+          false: { icon: "cancel", color: "error" },
+        },
+      },
+    ],
+    extraFields: [
+      { field: "manufacturer" },
+      { field: "model" },
+    ],
+  };
+
   const actions = [
     {
       label: "View in Entra",
@@ -92,6 +114,8 @@ const Page = () => {
         "profileType",
         "approximateLastSignInDateTime",
       ]}
+      mobileCardConfig={mobileCardConfig}
+      offCanvasOnRowClick={true}
     />
   );
 };

@@ -10,6 +10,14 @@ import {
   SvgIcon,
   useMediaQuery,
   useTheme,
+  Avatar,
+  Typography,
+  Chip,
+  Stack,
+  IconButton,
+  TextField,
+  InputAdornment,
+  Skeleton,
 } from "@mui/material";
 import { ResourceUnavailable } from "../resource-unavailable";
 import { ResourceError } from "../resource-error";
@@ -19,7 +27,7 @@ import { ApiGetCallWithPagination } from "../../api/ApiCall";
 import { utilTableMode } from "./util-tablemode";
 import { utilColumnsFromAPI, resolveSimpleColumnVariables } from "./util-columnsFromAPI";
 import { CIPPTableToptoolbar } from "./CIPPTableToptoolbar";
-import { Info, More, MoreHoriz } from "@mui/icons-material";
+import { Info, More, MoreHoriz, Search, CheckCircle, Cancel, Refresh } from "@mui/icons-material";
 import { CippOffCanvas } from "../CippComponents/CippOffCanvas";
 import { useDialog } from "../../hooks/use-dialog";
 import { CippApiDialog } from "../CippComponents/CippApiDialog";
@@ -77,6 +85,296 @@ const compareNullable = (aVal, bVal) => {
   return aVal > bVal ? 1 : -1;
 };
 
+// Get initials from a name string
+const getInitials = (name) => {
+  if (!name || typeof name !== "string") return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  }
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+};
+
+// Generate a consistent color from a string
+const stringToColor = (string) => {
+  if (!string) return "#757575";
+  let hash = 0;
+  for (let i = 0; i < string.length; i++) {
+    hash = string.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colors = [
+    "#1976d2", "#388e3c", "#d32f2f", "#7b1fa2", "#c2185b",
+    "#0288d1", "#00796b", "#f57c00", "#5d4037", "#455a64",
+  ];
+  return colors[Math.abs(hash) % colors.length];
+};
+
+// Mobile Card View Component
+const MobileCardView = ({
+  data,
+  config,
+  onCardClick,
+  isLoading,
+  searchTerm,
+  onSearchChange,
+  onRefresh,
+  title,
+}) => {
+  const theme = useTheme();
+
+  // Filter data based on search term
+  const filteredData = useMemo(() => {
+    if (!searchTerm || !data) return data;
+    const term = searchTerm.toLowerCase();
+    return data.filter((item) => {
+      const titleValue = getNestedValue(item, config.title);
+      const subtitleValue = getNestedValue(item, config.subtitle);
+      return (
+        (titleValue && String(titleValue).toLowerCase().includes(term)) ||
+        (subtitleValue && String(subtitleValue).toLowerCase().includes(term))
+      );
+    });
+  }, [data, searchTerm, config.title, config.subtitle]);
+
+  if (isLoading) {
+    return (
+      <Box sx={{ p: 2 }}>
+        <Stack spacing={2}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Card key={i} sx={{ p: 2 }}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Skeleton variant="circular" width={48} height={48} />
+                <Box sx={{ flex: 1 }}>
+                  <Skeleton variant="text" width="60%" height={24} />
+                  <Skeleton variant="text" width="80%" height={20} />
+                </Box>
+              </Stack>
+            </Card>
+          ))}
+        </Stack>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ width: "100%" }}>
+      {/* Search and Refresh Bar */}
+      <Box sx={{ p: 2, pb: 1, display: "flex", gap: 1, alignItems: "center" }}>
+        <TextField
+          size="small"
+          placeholder={`Search ${title || "items"}...`}
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          sx={{ flex: 1 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+        {onRefresh && (
+          <IconButton onClick={onRefresh} size="small">
+            <Refresh />
+          </IconButton>
+        )}
+      </Box>
+
+      {/* Results count */}
+      <Typography variant="caption" sx={{ px: 2, color: "text.secondary" }}>
+        {filteredData?.length || 0} {filteredData?.length === 1 ? "result" : "results"}
+      </Typography>
+
+      {/* Card Grid */}
+      <Box sx={{ p: 2, pt: 1 }}>
+        <Stack spacing={1.5}>
+          {filteredData?.map((item, index) => {
+            const titleValue = getNestedValue(item, config.title) || "Unknown";
+            const subtitleValue = getNestedValue(item, config.subtitle);
+            const avatarField = config.avatar?.field
+              ? getNestedValue(item, config.avatar.field)
+              : titleValue;
+
+            return (
+              <Card
+                key={item.id || item.RowKey || index}
+                onClick={() => onCardClick(item, index)}
+                sx={{
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow: theme.shadows[4],
+                  },
+                  "&:active": {
+                    transform: "translateY(0)",
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                  <Stack direction="row" spacing={2} alignItems="flex-start">
+                    {/* Avatar */}
+                    <Avatar
+                      sx={{
+                        bgcolor: stringToColor(avatarField),
+                        width: 48,
+                        height: 48,
+                        fontSize: "1.1rem",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {getInitials(avatarField)}
+                    </Avatar>
+
+                    {/* Content */}
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      {/* Title row with badges */}
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        spacing={1}
+                      >
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
+                            fontWeight: 600,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            flex: 1,
+                          }}
+                        >
+                          {titleValue}
+                        </Typography>
+
+                        {/* Status Badges */}
+                        <Stack direction="row" spacing={0.5} flexShrink={0}>
+                          {config.badges?.map((badge, badgeIndex) => {
+                            const fieldValue = getNestedValue(item, badge.field);
+                            let badgeConfig = null;
+
+                            if (badge.conditions) {
+                              // Handle boolean conditions
+                              const key =
+                                fieldValue === true
+                                  ? "true"
+                                  : fieldValue === false
+                                  ? "false"
+                                  : String(fieldValue);
+                              badgeConfig = badge.conditions[key] || badge.conditions[fieldValue];
+                            }
+
+                            if (!badgeConfig) return null;
+
+                            // Use icons for compact display
+                            if (badgeConfig.icon === "check") {
+                              return (
+                                <CheckCircle
+                                  key={badgeIndex}
+                                  sx={{
+                                    fontSize: 20,
+                                    color:
+                                      badgeConfig.color === "success"
+                                        ? "success.main"
+                                        : badgeConfig.color === "error"
+                                        ? "error.main"
+                                        : "text.secondary",
+                                  }}
+                                />
+                              );
+                            } else if (badgeConfig.icon === "cancel") {
+                              return (
+                                <Cancel
+                                  key={badgeIndex}
+                                  sx={{
+                                    fontSize: 20,
+                                    color:
+                                      badgeConfig.color === "error"
+                                        ? "error.main"
+                                        : badgeConfig.color === "warning"
+                                        ? "warning.main"
+                                        : "text.secondary",
+                                  }}
+                                />
+                              );
+                            }
+
+                            return (
+                              <Chip
+                                key={badgeIndex}
+                                label={badgeConfig.label}
+                                size="small"
+                                color={badgeConfig.color || "default"}
+                                sx={{ height: 22, fontSize: "0.7rem" }}
+                              />
+                            );
+                          })}
+                        </Stack>
+                      </Stack>
+
+                      {/* Subtitle */}
+                      {subtitleValue && (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {subtitleValue}
+                        </Typography>
+                      )}
+
+                      {/* Extra Fields */}
+                      {config.extraFields && config.extraFields.length > 0 && (
+                        <Stack direction="row" spacing={2} sx={{ mt: 0.5 }} flexWrap="wrap">
+                          {config.extraFields.map((field, fieldIndex) => {
+                            const value = getNestedValue(item, field.field || field);
+                            if (!value) return null;
+                            return (
+                              <Typography
+                                key={fieldIndex}
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 0.5,
+                                }}
+                              >
+                                {field.icon && (
+                                  <SvgIcon sx={{ fontSize: 14 }}>{field.icon}</SvgIcon>
+                                )}
+                                {field.label ? `${field.label}: ${value}` : value}
+                              </Typography>
+                            );
+                          })}
+                        </Stack>
+                      )}
+                    </Box>
+                  </Stack>
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          {filteredData?.length === 0 && (
+            <Box sx={{ textAlign: "center", py: 4, color: "text.secondary" }}>
+              <Typography variant="body2">
+                {searchTerm ? "No results found" : "No data available"}
+              </Typography>
+            </Box>
+          )}
+        </Stack>
+      </Box>
+    </Box>
+  );
+};
+
 export const CippDataTable = (props) => {
   const {
     queryKey,
@@ -110,6 +408,7 @@ export const CippDataTable = (props) => {
     defaultSorting = [],
     isInDialog = false,
     showBulkExportAction = true,
+    mobileCardConfig = null, // Configuration for mobile card view
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
   const [configuredSimpleColumns, setConfiguredSimpleColumns] = useState(simpleColumns);
@@ -125,7 +424,11 @@ export const CippDataTable = (props) => {
   const [graphFilterData, setGraphFilterData] = useState({});
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
+  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
   const waitingBool = api?.url ? true : false;
+
+  // Determine if we should show mobile card view
+  const showMobileCardView = isMobile && mobileCardConfig;
 
   const settings = useSettings();
   const theme = useTheme();
@@ -752,9 +1055,49 @@ export const CippDataTable = (props) => {
     }
   }, [simpleColumns]);
 
+  // Handle card click for mobile view
+  const handleMobileCardClick = (item, index) => {
+    setOffCanvasData(item);
+    setOffCanvasRowIndex(index);
+    setOffcanvasVisible(true);
+  };
+
   return (
     <>
-      {noCard ? (
+      {/* Mobile Card View */}
+      {showMobileCardView ? (
+        <Card style={{ width: "100%" }} {...props.cardProps}>
+          {cardButton || !hideTitle ? (
+            <>
+              <CardHeader
+                action={cardButton}
+                title={hideTitle ? "" : title}
+                {...props.cardHeaderProps}
+              />
+              <Divider />
+            </>
+          ) : null}
+          {getRequestData.isError && !getRequestData.isFetchNextPageError ? (
+            <CardContent>
+              <ResourceError
+                onReload={() => getRequestData.refetch()}
+                message={`Error Loading data: ${getCippError(getRequestData.error)}`}
+              />
+            </CardContent>
+          ) : (
+            <MobileCardView
+              data={usedData}
+              config={mobileCardConfig}
+              onCardClick={handleMobileCardClick}
+              isLoading={getRequestData.isFetching || isFetching}
+              searchTerm={mobileSearchTerm}
+              onSearchChange={setMobileSearchTerm}
+              onRefresh={refreshFunction || (api?.url ? () => getRequestData.refetch() : null)}
+              title={title}
+            />
+          )}
+        </Card>
+      ) : noCard ? (
         <Scrollbar>
           {!Array.isArray(usedData) && usedData ? (
             <ResourceUnavailable message={incorrectDataMessage} />

@@ -17,6 +17,30 @@ const Page = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  // Mobile card view configuration
+  const mobileCardConfig = {
+    title: "displayName",
+    subtitle: "userPrincipalName",
+    avatar: {
+      field: "displayName",
+    },
+    badges: [
+      {
+        field: "accountEnabled",
+        conditions: {
+          true: { icon: "check", color: "success" },
+          false: { icon: "cancel", color: "error" },
+          Yes: { icon: "check", color: "success" },
+          No: { icon: "cancel", color: "error" },
+        },
+      },
+    ],
+    extraFields: [
+      { field: "jobTitle" },
+      { field: "department" },
+    ],
+  };
+
   const filters = [
     {
       filterName: "Account Enabled",
@@ -113,6 +137,7 @@ const Page = () => {
       offCanvasOnRowClick={true}
       simpleColumns={simpleColumns}
       filters={filters}
+      mobileCardConfig={mobileCardConfig}
     />
   );
 };

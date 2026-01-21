@@ -33,6 +33,25 @@ const Page = () => {
   const syncDialog = useDialog();
   const tenant = useSettings().currentTenant;
 
+  // Mobile card view configuration
+  const mobileCardConfig = {
+    title: "displayName",
+    subtitle: "publishingState",
+    avatar: {
+      field: "displayName",
+    },
+    badges: [
+      {
+        field: "isAssigned",
+        conditions: {
+          true: { label: "Assigned", color: "success" },
+          false: { label: "Unassigned", color: "default" },
+        },
+      },
+    ],
+    extraFields: [],
+  };
+
   const actions = [
     {
       label: "Assign to All Users",
@@ -258,6 +277,8 @@ const Page = () => {
             </Button>
           </Box>
         }
+        mobileCardConfig={mobileCardConfig}
+        offCanvasOnRowClick={true}
       />
       <CippApiDialog
         title="Sync VPP Tokens"
