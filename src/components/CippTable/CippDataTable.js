@@ -427,13 +427,13 @@ export const CippDataTable = (props) => {
   const [mobileSearchTerm, setMobileSearchTerm] = useState("");
   const waitingBool = api?.url ? true : false;
 
-  // Determine if we should show mobile card view
-  const showMobileCardView = isMobile && mobileCardConfig;
-
   const settings = useSettings();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+
+  // Determine if we should show mobile card view (must be after isMobile is defined)
+  const showMobileCardView = isMobile && mobileCardConfig;
 
   const getRequestData = ApiGetCallWithPagination({
     url: api.url,
