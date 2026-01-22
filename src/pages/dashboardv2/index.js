@@ -5,7 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { Grid } from "@mui/system";
 import { useSettings } from "/src/hooks/use-settings";
 import { ApiGetCall } from "/src/api/ApiCall.jsx";
-import { useDashboardPrefetch } from "/src/hooks/use-prefetch";
+// import { useDashboardPrefetch } from "/src/hooks/use-prefetch";
 import Portals from "/src/data/portals";
 import { BulkActionsMenu } from "/src/components/bulk-actions-menu.js";
 import { ExecutiveReportButton } from "/src/components/ExecutiveReportButton.js";
@@ -44,7 +44,8 @@ const Page = () => {
   const [refreshDialog, setRefreshDialog] = useState({ open: false });
 
   // Prefetch commonly accessed data after dashboard loads
-  useDashboardPrefetch(currentTenant);
+  // Temporarily disabled for debugging
+  // useDashboardPrefetch(currentTenant);
 
   // Get reportId from query params or default to "ztna"
   // Only use default if router is ready and reportId is still not present

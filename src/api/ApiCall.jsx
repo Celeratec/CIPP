@@ -14,33 +14,6 @@ export const STALE_TIMES = {
   INFINITE: Infinity,    // Never stale - for truly static data (user photos)
 };
 
-// Helper to determine appropriate staleTime based on URL pattern
-const getStaleTimeForUrl = (url) => {
-  if (!url) return STALE_TIMES.DEFAULT;
-  
-  // Static/rarely changing data - 30 minutes to 1 hour
-  if (url.includes('/api/ListTenants') || 
-      url.includes('/api/ListOrg') ||
-      url.includes('/api/me')) {
-    return STALE_TIMES.STABLE;
-  }
-  
-  // Templates and configs - 1 hour
-  if (url.includes('Template') || 
-      url.includes('Config') ||
-      url.includes('/api/GetVersion')) {
-    return STALE_TIMES.STATIC;
-  }
-  
-  // Fast-changing data - 1 minute
-  if (url.includes('/api/ListLogs') ||
-      url.includes('/api/ListQueue')) {
-    return STALE_TIMES.FAST;
-  }
-  
-  return STALE_TIMES.DEFAULT;
-};
-
 export function ApiGetCall(props) {
   const {
     url,
@@ -52,7 +25,7 @@ export function ApiGetCall(props) {
     bulkRequest = false,
     toast = false,
     onResult,
-    staleTime, // Now optional - will auto-determine if not provided
+    staleTime = STALE_TIMES.DEFAULT, // Default to 10 minutes
     refetchOnWindowFocus = false,
     refetchOnMount = true,
     refetchOnReconnect = true,
@@ -62,8 +35,6 @@ export function ApiGetCall(props) {
     convertToDataUrl = false,
   } = props;
   
-  // Use provided staleTime or auto-determine based on URL
-  const effectiveStaleTime = staleTime ?? getStaleTimeForUrl(url);
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
   const MAX_RETRIES = retry;
@@ -191,7 +162,7 @@ export function ApiGetCall(props) {
         return responseData;
       }
     },
-    staleTime: effectiveStaleTime,
+    staleTime: staleTime,
     refetchOnWindowFocus: refetchOnWindowFocus,
     refetchOnMount: refetchOnMount,
     refetchOnReconnect: refetchOnReconnect,
