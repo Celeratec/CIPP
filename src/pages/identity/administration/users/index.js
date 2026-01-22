@@ -83,6 +83,7 @@ const Page = () => {
       "onPremisesSyncEnabled", // AD Sync Enabled
       "onPremisesLastSyncDateTime", // OnPrem Last Sync
       "onPremisesDistinguishedName", // OnPrem DN
+      "licenseAssignmentStates", // License Assignment States (new from upstream)
       "id", // Unique ID
     ],
     actions: userActions,
@@ -126,7 +127,7 @@ const Page = () => {
         Endpoint: "users",
         manualPagination: true,
         $select:
-          "id,accountEnabled,businessPhones,city,createdDateTime,companyName,country,department,displayName,faxNumber,givenName,isResourceAccount,jobTitle,mail,mailNickname,mobilePhone,officeLocation,otherMails,postalCode,preferredDataLocation,preferredLanguage,proxyAddresses,showInAddressList,state,streetAddress,surname,usageLocation,userPrincipalName,userType,assignedLicenses,onPremisesSyncEnabled,OnPremisesImmutableId,onPremisesLastSyncDateTime,onPremisesDistinguishedName",
+          "id,accountEnabled,businessPhones,city,createdDateTime,companyName,country,department,displayName,faxNumber,givenName,isResourceAccount,jobTitle,mail,mailNickname,mobilePhone,officeLocation,otherMails,postalCode,preferredDataLocation,preferredLanguage,proxyAddresses,showInAddressList,state,streetAddress,surname,usageLocation,userPrincipalName,userType,assignedLicenses,licenseAssignmentStates,onPremisesSyncEnabled,OnPremisesImmutableId,onPremisesLastSyncDateTime,onPremisesDistinguishedName",
         $count: true,
         $orderby: "displayName",
         $top: 999,

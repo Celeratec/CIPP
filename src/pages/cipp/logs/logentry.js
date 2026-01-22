@@ -46,12 +46,12 @@ const Page = () => {
                 logData.Severity === "CRITICAL"
                   ? "error"
                   : logData.Severity === "Error"
-                  ? "error"
-                  : logData.Severity === "Warn"
-                  ? "warning"
-                  : logData.Severity === "Info"
-                  ? "info"
-                  : "default"
+                    ? "error"
+                    : logData.Severity === "Warn"
+                      ? "warning"
+                      : logData.Severity === "Info"
+                        ? "info"
+                        : "default"
               }
               variant="filled"
             />
