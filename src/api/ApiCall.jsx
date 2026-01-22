@@ -5,6 +5,42 @@ import { showToast } from "../store/toasts";
 import { getCippError } from "../utils/get-cipp-error";
 import { buildVersionedHeaders } from "../utils/cippVersion";
 
+// Stale time constants for different data types (in milliseconds)
+export const STALE_TIMES = {
+  FAST: 60000,           // 1 minute - for rapidly changing data
+  DEFAULT: 600000,       // 10 minutes - default for most data
+  STABLE: 1800000,       // 30 minutes - for data that rarely changes (tenants, org info)
+  STATIC: 3600000,       // 1 hour - for nearly static data (templates, configs)
+  INFINITE: Infinity,    // Never stale - for truly static data (user photos)
+};
+
+// Helper to determine appropriate staleTime based on URL pattern
+const getStaleTimeForUrl = (url) => {
+  if (!url) return STALE_TIMES.DEFAULT;
+  
+  // Static/rarely changing data - 30 minutes to 1 hour
+  if (url.includes('/api/ListTenants') || 
+      url.includes('/api/ListOrg') ||
+      url.includes('/api/me')) {
+    return STALE_TIMES.STABLE;
+  }
+  
+  // Templates and configs - 1 hour
+  if (url.includes('Template') || 
+      url.includes('Config') ||
+      url.includes('/api/GetVersion')) {
+    return STALE_TIMES.STATIC;
+  }
+  
+  // Fast-changing data - 1 minute
+  if (url.includes('/api/ListLogs') ||
+      url.includes('/api/ListQueue')) {
+    return STALE_TIMES.FAST;
+  }
+  
+  return STALE_TIMES.DEFAULT;
+};
+
 export function ApiGetCall(props) {
   const {
     url,
@@ -16,7 +52,7 @@ export function ApiGetCall(props) {
     bulkRequest = false,
     toast = false,
     onResult,
-    staleTime = 300000,
+    staleTime, // Now optional - will auto-determine if not provided
     refetchOnWindowFocus = false,
     refetchOnMount = true,
     refetchOnReconnect = true,
@@ -25,6 +61,9 @@ export function ApiGetCall(props) {
     responseType = "json",
     convertToDataUrl = false,
   } = props;
+  
+  // Use provided staleTime or auto-determine based on URL
+  const effectiveStaleTime = staleTime ?? getStaleTimeForUrl(url);
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
   const MAX_RETRIES = retry;
@@ -152,7 +191,7 @@ export function ApiGetCall(props) {
         return responseData;
       }
     },
-    staleTime: staleTime,
+    staleTime: effectiveStaleTime,
     refetchOnWindowFocus: refetchOnWindowFocus,
     refetchOnMount: refetchOnMount,
     refetchOnReconnect: refetchOnReconnect,
@@ -304,7 +343,7 @@ export function ApiGetCallWithPagination({
       }
       return lastPage?.Metadata?.nextLink ? { nextLink: lastPage.Metadata.nextLink } : undefined;
     },
-    staleTime: 300000,
+    staleTime: STALE_TIMES.DEFAULT,
     refetchOnWindowFocus: false,
     retry: retryFn,
   });
