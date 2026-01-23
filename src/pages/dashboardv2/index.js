@@ -81,7 +81,6 @@ const Page = () => {
 
   // Update URL when form value changes (e.g., user selects different report from dropdown)
   useEffect(() => {
-    console.log("reportIdValue changed:", reportIdValue);
     if (reportIdValue?.reportId?.value && reportIdValue.reportId.value !== selectedReport) {
       router.push(
         {

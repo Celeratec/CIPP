@@ -118,7 +118,7 @@ export const AssessmentCard = ({ data, isLoading }) => {
               <Skeleton variant="circular" width="100%" height="100%" />
             ) : (
               <Box sx={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                   <RadialBarChart
                     innerRadius="20%"
                     outerRadius="100%"

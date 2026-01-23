@@ -57,7 +57,7 @@ export const SecureScoreCard = ({ data, isLoading }) => {
         ) : (
           <>
             <Box sx={{ height: 250, minHeight: 250, minWidth: 0 }}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <LineChart
                   data={[...data]
                     .sort((a, b) => new Date(a.createdDateTime) - new Date(b.createdDateTime))

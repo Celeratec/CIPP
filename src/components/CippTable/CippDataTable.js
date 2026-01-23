@@ -124,6 +124,7 @@ const CardView = ({
   onCardClick,
   isLoading,
   searchTerm,
+  searchInput,
   onSearchChange,
   onRefresh,
   title,
@@ -185,6 +186,241 @@ const CardView = ({
     
     return result;
   }, [data, searchTerm, config]);
+
+  const renderedCards = useMemo(() => {
+    return filteredData?.map((item, index) => {
+      const titleValue = getNestedValue(item, config.title) || "Unknown";
+      const subtitleValue = config.subtitle ? getNestedValue(item, config.subtitle) : null;
+      const avatarField = config.avatar?.field
+        ? getNestedValue(item, config.avatar.field)
+        : titleValue;
+
+      // Get fields to display
+      const desktopFields = !isMobile && config.desktopFields ? config.desktopFields : [];
+      const extraFields = config.extraFields || [];
+      
+      // Check license status for visual indicator
+      const isLicensed = item.assignedLicenses && item.assignedLicenses.length > 0;
+
+      return (
+        <Grid 
+          item 
+          xs={12} 
+          sm={isMobile ? 12 : 6} 
+          md={4} 
+          lg={3}
+          key={item.id || item.RowKey || index}
+        >
+          <Card
+            onClick={() => onCardClick(item, index)}
+            sx={{
+              height: CARD_HEIGHT,
+              width: "100%",
+              cursor: "pointer",
+              transition: "all 0.15s ease-in-out",
+              display: "flex",
+              flexDirection: "column",
+              border: `1px solid ${theme.palette.divider}`,
+              borderLeft: `4px solid ${isLicensed ? theme.palette.primary.main : theme.palette.grey[400]}`,
+              "&:hover": {
+                transform: "translateY(-2px)",
+                boxShadow: theme.shadows[8],
+              },
+              "&:active": {
+                transform: "translateY(0)",
+              },
+            }}
+          >
+            <CardContent 
+              sx={{ 
+                p: 2, 
+                pb: "12px !important",
+                display: "flex", 
+                flexDirection: "column",
+                overflow: "hidden",
+              }}
+            >
+              {/* Header: Avatar + Name + Badges */}
+              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
+                {config.avatar?.photoField && tenant && item.id ? (
+                  <CippUserAvatar
+                    userId={item.id}
+                    tenantFilter={tenant}
+                    displayName={avatarField}
+                    size={48}
+                    enablePhoto={true}
+                    sx={{ flexShrink: 0 }}
+                  />
+                ) : (
+                  <Avatar
+                    sx={{
+                      bgcolor: stringToColor(avatarField),
+                      width: 48,
+                      height: 48,
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {getInitials(avatarField)}
+                  </Avatar>
+                )}
+
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        fontWeight: 600,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        flex: 1,
+                      }}
+                    >
+                      {titleValue}
+                    </Typography>
+                    {/* Compact badges */}
+                    {config.badges?.map((badge, badgeIndex) => 
+                      renderBadge(badge, item, badgeIndex, true)
+                    )}
+                  </Stack>
+
+                  {subtitleValue && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      title={subtitleValue}
+                      sx={{
+                        display: "block",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        maxWidth: "100%",
+                      }}
+                    >
+                      {subtitleValue}
+                    </Typography>
+                  )}
+                </Box>
+              </Stack>
+
+              {/* Info Section */}
+              <Box sx={{ overflow: "hidden" }}>
+                {/* Extra fields (job title, department) */}
+                {extraFields.length > 0 && (
+                  <Stack spacing={0.25} sx={{ mb: 1 }}>
+                    {extraFields.slice(0, 2).map((field, fieldIndex) => {
+                      const rawValue = getNestedValue(item, field.field || field);
+                      const value = formatFieldValue(rawValue);
+                      if (!value) return null;
+                      return (
+                        <Stack 
+                          key={fieldIndex} 
+                          direction="row" 
+                          spacing={0.5} 
+                          alignItems="center"
+                        >
+                          {field.icon && (
+                            <SvgIcon sx={{ fontSize: 14, color: "text.secondary" }}>
+                              {field.icon}
+                            </SvgIcon>
+                          )}
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            title={value}
+                            sx={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              maxWidth: "100%",
+                            }}
+                          >
+                            {value}
+                          </Typography>
+                        </Stack>
+                      );
+                    })}
+                  </Stack>
+                )}
+
+                {/* Desktop-only additional info in compact grid */}
+                {!isMobile && desktopFields.length > 0 && (
+                  <Box 
+                    sx={{ 
+                      mt: 0.5,
+                      pt: 1, 
+                      borderTop: `1px dashed ${theme.palette.divider}`,
+                    }}
+                  >
+                    <Grid container spacing={0.5}>
+                      {desktopFields.slice(0, 4).map((field, fieldIndex) => {
+                        const rawValue = getNestedValue(item, field.field || field);
+                        const value = formatFieldValue(rawValue);
+                        if (!value) return null;
+                        
+                        return (
+                          <Grid item xs={6} key={fieldIndex}>
+                            <Stack direction="row" spacing={0.5} alignItems="center">
+                              {field.icon && (
+                                <SvgIcon sx={{ fontSize: 12, color: "text.disabled" }}>
+                                  {field.icon}
+                                </SvgIcon>
+                              )}
+                              <Typography 
+                                variant="caption" 
+                                color="text.secondary"
+                                title={value}
+                                sx={{ 
+                                  fontSize: "0.7rem",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {value}
+                              </Typography>
+                            </Stack>
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
+                  </Box>
+                )}
+              </Box>
+
+              {/* Quick Actions - Always at bottom */}
+              {cardActions && cardActions.length > 0 && (
+                <Box
+                  sx={{
+                    pt: 1,
+                    borderTop: `1px solid ${theme.palette.divider}`,
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <CippQuickActions
+                    actions={cardActions}
+                    data={item}
+                    maxActions={isMobile ? 4 : 6}
+                    showOnHover={false}
+                  />
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      );
+    });
+  }, [
+    filteredData,
+    config,
+    isMobile,
+    tenant,
+    theme,
+    cardActions,
+    onCardClick,
+  ]);
 
   // Filter actions for mobile - use mobileQuickActions if defined, otherwise first 4
   const cardActions = useMemo(() => {
@@ -304,7 +540,7 @@ const CardView = ({
         <TextField
           size="small"
           placeholder={`Search ${title || "items"}...`}
-          value={searchTerm}
+          value={searchInput ?? searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           sx={{ flex: 1, minWidth: 200, maxWidth: isMobile ? "100%" : 350 }}
           InputProps={{
@@ -330,230 +566,7 @@ const CardView = ({
       {/* Card Grid - Uniform sizing */}
       <Box sx={{ p: 2, pt: 1 }}>
         <Grid container spacing={2}>
-          {filteredData?.map((item, index) => {
-            const titleValue = getNestedValue(item, config.title) || "Unknown";
-            const subtitleValue = config.subtitle ? getNestedValue(item, config.subtitle) : null;
-            const avatarField = config.avatar?.field
-              ? getNestedValue(item, config.avatar.field)
-              : titleValue;
-
-            // Get fields to display
-            const desktopFields = !isMobile && config.desktopFields ? config.desktopFields : [];
-            const extraFields = config.extraFields || [];
-            
-            // Check license status for visual indicator
-            const isLicensed = item.assignedLicenses && item.assignedLicenses.length > 0;
-
-            return (
-              <Grid 
-                item 
-                xs={12} 
-                sm={isMobile ? 12 : 6} 
-                md={4} 
-                lg={3}
-                key={item.id || item.RowKey || index}
-              >
-                <Card
-                  onClick={() => onCardClick(item, index)}
-                  sx={{
-                    height: CARD_HEIGHT,
-                    width: "100%",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease-in-out",
-                    display: "flex",
-                    flexDirection: "column",
-                    border: `1px solid ${theme.palette.divider}`,
-                    borderLeft: `4px solid ${isLicensed ? theme.palette.primary.main : theme.palette.grey[400]}`,
-                    "&:hover": {
-                      transform: "translateY(-2px)",
-                      boxShadow: theme.shadows[8],
-                    },
-                    "&:active": {
-                      transform: "translateY(0)",
-                    },
-                  }}
-                >
-                  <CardContent 
-                    sx={{ 
-                      p: 2, 
-                      pb: "12px !important",
-                      display: "flex", 
-                      flexDirection: "column",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {/* Header: Avatar + Name + Badges */}
-                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
-                      {config.avatar?.photoField && tenant && item.id ? (
-                        <CippUserAvatar
-                          userId={item.id}
-                          tenantFilter={tenant}
-                          displayName={avatarField}
-                          size={48}
-                          enablePhoto={true}
-                          sx={{ flexShrink: 0 }}
-                        />
-                      ) : (
-                        <Avatar
-                          sx={{
-                            bgcolor: stringToColor(avatarField),
-                            width: 48,
-                            height: 48,
-                            fontSize: "1rem",
-                            fontWeight: 600,
-                            flexShrink: 0,
-                          }}
-                        >
-                          {getInitials(avatarField)}
-                        </Avatar>
-                      )}
-
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Stack direction="row" alignItems="center" spacing={0.5}>
-                          <Typography
-                            variant="subtitle2"
-                            sx={{
-                              fontWeight: 600,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              flex: 1,
-                            }}
-                          >
-                            {titleValue}
-                          </Typography>
-                          {/* Compact badges */}
-                          {config.badges?.map((badge, badgeIndex) => 
-                            renderBadge(badge, item, badgeIndex, true)
-                          )}
-                        </Stack>
-
-                        {subtitleValue && (
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            title={subtitleValue}
-                            sx={{
-                              display: "block",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              maxWidth: "100%",
-                            }}
-                          >
-                            {subtitleValue}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Stack>
-
-                    {/* Info Section */}
-                    <Box sx={{ overflow: "hidden" }}>
-                      {/* Extra fields (job title, department) */}
-                      {extraFields.length > 0 && (
-                        <Stack spacing={0.25} sx={{ mb: 1 }}>
-                          {extraFields.slice(0, 2).map((field, fieldIndex) => {
-                            const rawValue = getNestedValue(item, field.field || field);
-                            const value = formatFieldValue(rawValue);
-                            if (!value) return null;
-                            return (
-                              <Stack 
-                                key={fieldIndex} 
-                                direction="row" 
-                                spacing={0.5} 
-                                alignItems="center"
-                              >
-                                {field.icon && (
-                                  <SvgIcon sx={{ fontSize: 14, color: "text.secondary" }}>
-                                    {field.icon}
-                                  </SvgIcon>
-                                )}
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                  title={value}
-                                  sx={{
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                    maxWidth: "100%",
-                                  }}
-                                >
-                                  {value}
-                                </Typography>
-                              </Stack>
-                            );
-                          })}
-                        </Stack>
-                      )}
-
-                      {/* Desktop-only additional info in compact grid */}
-                      {!isMobile && desktopFields.length > 0 && (
-                        <Box 
-                          sx={{ 
-                            mt: 0.5,
-                            pt: 1, 
-                            borderTop: `1px dashed ${theme.palette.divider}`,
-                          }}
-                        >
-                          <Grid container spacing={0.5}>
-                            {desktopFields.slice(0, 4).map((field, fieldIndex) => {
-                              const rawValue = getNestedValue(item, field.field || field);
-                              const value = formatFieldValue(rawValue);
-                              if (!value) return null;
-                              
-                              return (
-                                <Grid item xs={6} key={fieldIndex}>
-                                  <Stack direction="row" spacing={0.5} alignItems="center">
-                                    {field.icon && (
-                                      <SvgIcon sx={{ fontSize: 12, color: "text.disabled" }}>
-                                        {field.icon}
-                                      </SvgIcon>
-                                    )}
-                                    <Typography 
-                                      variant="caption" 
-                                      color="text.secondary"
-                                      title={value}
-                                      sx={{ 
-                                        fontSize: "0.7rem",
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                      }}
-                                    >
-                                      {value}
-                                    </Typography>
-                                  </Stack>
-                                </Grid>
-                              );
-                            })}
-                          </Grid>
-                        </Box>
-                      )}
-                    </Box>
-
-                    {/* Quick Actions - Always at bottom */}
-                    {cardActions && cardActions.length > 0 && (
-                      <Box
-                        sx={{
-                          pt: 1,
-                          borderTop: `1px solid ${theme.palette.divider}`,
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <CippQuickActions
-                          actions={cardActions}
-                          data={item}
-                          maxActions={isMobile ? 4 : 6}
-                          showOnHover={false}
-                        />
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
-            );
-          })}
+          {renderedCards}
         </Grid>
 
         {filteredData?.length === 0 && (
@@ -623,7 +636,7 @@ export const CippDataTable = (props) => {
   const [graphFilterData, setGraphFilterData] = useState({});
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
-  const [cardSearchTerm, setCardSearchTerm] = useState("");
+  const [cardSearchInput, setCardSearchInput] = useState("");
   const [debouncedCardSearchTerm, setDebouncedCardSearchTerm] = useState("");
   const waitingBool = api?.url ? true : false;
 
@@ -663,10 +676,10 @@ export const CippDataTable = (props) => {
   // Debounce card search to avoid filtering on every keystroke
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedCardSearchTerm(cardSearchTerm);
+      setDebouncedCardSearchTerm(cardSearchInput);
     }, 200);
     return () => clearTimeout(timer);
-  }, [cardSearchTerm]);
+  }, [cardSearchInput]);
 
   // Determine if we should show card view
   // On mobile: always show cards if config exists
@@ -1381,7 +1394,8 @@ export const CippDataTable = (props) => {
               onCardClick={handleCardClick}
               isLoading={getRequestData.isFetching || isFetching}
               searchTerm={debouncedCardSearchTerm}
-              onSearchChange={setCardSearchTerm}
+              searchInput={cardSearchInput}
+              onSearchChange={setCardSearchInput}
               onRefresh={refreshFunction || (api?.url ? () => getRequestData.refetch() : null)}
               title={title}
               isMobile={isMobile}
