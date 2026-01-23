@@ -8,8 +8,11 @@ import { CippBulkUserDrawer } from "/src/components/CippComponents/CippBulkUserD
 import { CippAddUserDrawer } from "/src/components/CippComponents/CippAddUserDrawer.jsx";
 import { CippApiLogsDrawer } from "/src/components/CippComponents/CippApiLogsDrawer.jsx";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { useRouter } from "next/router";
+import { Email, Phone, Business, LocationOn, Badge, Work } from "@mui/icons-material";
 
 const Page = () => {
+  const router = useRouter();
   const userActions = useCippUserActions();
   const pageTitle = "Users";
   const tenant = useSettings().currentTenant;
@@ -17,13 +20,43 @@ const Page = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Card view configuration (works for both mobile and desktop)
+  // Custom sort: Licensed users first (alphabetically by surname), then unlicensed (alphabetically by surname)
+  const userSortFn = (a, b) => {
+    const aLicensed = a.assignedLicenses && a.assignedLicenses.length > 0;
+    const bLicensed = b.assignedLicenses && b.assignedLicenses.length > 0;
+    
+    // Licensed users come first
+    if (aLicensed && !bLicensed) return -1;
+    if (!aLicensed && bLicensed) return 1;
+    
+    // Within same license status, sort by surname then givenName
+    const aSurname = (a.surname || a.displayName || "").toLowerCase();
+    const bSurname = (b.surname || b.displayName || "").toLowerCase();
+    
+    if (aSurname !== bSurname) {
+      return aSurname.localeCompare(bSurname);
+    }
+    
+    // If surnames are the same, sort by given name
+    const aGiven = (a.givenName || "").toLowerCase();
+    const bGiven = (b.givenName || "").toLowerCase();
+    return aGiven.localeCompare(bGiven);
+  };
+
+  // Navigate to user detail page on card click
+  const handleCardClick = (user) => {
+    router.push(`/identity/administration/users/user?userId=${user.id}`);
+  };
+
+  // Card view configuration with comprehensive user info
   const cardConfig = {
     title: "displayName",
     subtitle: "userPrincipalName",
     avatar: {
       field: "displayName",
     },
+    cardHeight: 280, // Standardized card height
+    sortFn: userSortFn, // Custom sorting
     badges: [
       {
         field: "accountEnabled",
@@ -35,18 +68,29 @@ const Page = () => {
           No: { icon: "cancel", color: "error" },
         },
       },
+      {
+        field: "assignedLicenses",
+        tooltip: "License Status",
+        conditions: {
+          licensed: { label: "Licensed", color: "primary" },
+          unlicensed: { label: "Unlicensed", color: "default" },
+        },
+        transform: (value) => (value && value.length > 0 ? "licensed" : "unlicensed"),
+      },
     ],
     // Fields shown on both mobile and desktop
     extraFields: [
-      { field: "jobTitle" },
-      { field: "department" },
+      { field: "jobTitle", icon: <Work /> },
+      { field: "department", icon: <Business /> },
     ],
     // Additional fields shown only on desktop cards
     desktopFields: [
-      { field: "mail", label: "Email" },
-      { field: "mobilePhone", label: "Mobile" },
-      { field: "officeLocation", label: "Office" },
+      { field: "mail", label: "Email", icon: <Email /> },
+      { field: "mobilePhone", label: "Mobile", icon: <Phone /> },
+      { field: "officeLocation", label: "Office", icon: <LocationOn /> },
+      { field: "companyName", label: "Company", icon: <Badge /> },
       { field: "city", label: "City" },
+      { field: "userType", label: "Type" },
     ],
   };
 
@@ -66,44 +110,17 @@ const Page = () => {
       value: [{ id: "userType", value: "Guest" }],
       type: "column",
     },
+    {
+      filterName: "Members Only",
+      value: [{ id: "userType", value: "Member" }],
+      type: "column",
+    },
   ];
 
-  const offCanvas = {
-    extendedInfoFields: [
-      "userPrincipalName", // UPN
-      "displayName", // Display Name
-      "mail", // Mail
-      "accountEnabled", // Account Status
-      "userType", // User Type
-      "givenName", // Given Name
-      "surname", // Surname
-      "jobTitle", // Job Title
-      "department", // Department
-      "companyName", // Company
-      "officeLocation", // Office
-      "city", // City
-      "country", // Country
-      "businessPhones", // Business Phone
-      "mobilePhone", // Mobile Phone
-      "assignedLicenses", // Licenses
-      "proxyAddresses", // Proxy Addresses
-      "otherMails", // Alternate Email Addresses
-      "createdDateTime", // Created Date (UTC)
-      "onPremisesSyncEnabled", // AD Sync Enabled
-      "onPremisesLastSyncDateTime", // OnPrem Last Sync
-      "onPremisesDistinguishedName", // OnPrem DN
-      "licenseAssignmentStates", // License Assignment States (new from upstream)
-      "id", // Unique ID
-    ],
-    actions: userActions,
-    size: "md", // Medium width for more detail space
-  };
-
-  // Show fewer columns on mobile, more on desktop
-  // Users can always click a row to see full details in the off-canvas
+  // Show fewer columns on mobile, more on desktop (for table view)
   const simpleColumns = isMobile 
-    ? ["displayName", "accountEnabled"] // Minimal on mobile
-    : ["displayName", "userPrincipalName", "mail", "accountEnabled"]; // Essential on desktop
+    ? ["displayName", "accountEnabled"]
+    : ["displayName", "userPrincipalName", "mail", "accountEnabled"];
 
   return (
     <CippTablePage
@@ -143,8 +160,8 @@ const Page = () => {
       }}
       apiDataKey="Results"
       actions={userActions}
-      offCanvas={offCanvas}
-      offCanvasOnRowClick={true}
+      offCanvasOnRowClick={false}
+      onCardClick={handleCardClick}
       simpleColumns={simpleColumns}
       filters={filters}
       cardConfig={cardConfig}

@@ -131,35 +131,52 @@ const CardView = ({
 }) => {
   const theme = useTheme();
 
-  // Filter data based on search term
+  // Filter and sort data based on search term and custom sorting
   const filteredData = useMemo(() => {
-    if (!searchTerm || !data) return data;
-    const term = searchTerm.toLowerCase();
-    return data.filter((item) => {
-      const titleValue = getNestedValue(item, config.title);
-      const subtitleValue = getNestedValue(item, config.subtitle);
-      // Also search extra fields
-      const extraMatches = config.extraFields?.some((field) => {
-        const value = getNestedValue(item, field.field || field);
-        return value && String(value).toLowerCase().includes(term);
+    let result = data;
+    
+    // Apply search filter
+    if (searchTerm && result) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter((item) => {
+        const titleValue = getNestedValue(item, config.title);
+        const subtitleValue = getNestedValue(item, config.subtitle);
+        // Also search extra fields
+        const extraMatches = config.extraFields?.some((field) => {
+          const value = getNestedValue(item, field.field || field);
+          return value && String(value).toLowerCase().includes(term);
+        });
+        // Search desktop extra fields too
+        const desktopMatches = config.desktopFields?.some((field) => {
+          const value = getNestedValue(item, field.field || field);
+          return value && String(value).toLowerCase().includes(term);
+        });
+        return (
+          (titleValue && String(titleValue).toLowerCase().includes(term)) ||
+          (subtitleValue && String(subtitleValue).toLowerCase().includes(term)) ||
+          extraMatches ||
+          desktopMatches
+        );
       });
-      // Search desktop extra fields too
-      const desktopMatches = config.desktopFields?.some((field) => {
-        const value = getNestedValue(item, field.field || field);
-        return value && String(value).toLowerCase().includes(term);
-      });
-      return (
-        (titleValue && String(titleValue).toLowerCase().includes(term)) ||
-        (subtitleValue && String(subtitleValue).toLowerCase().includes(term)) ||
-        extraMatches ||
-        desktopMatches
-      );
-    });
+    }
+    
+    // Apply custom sorting if provided
+    if (config.sortFn && result) {
+      result = [...result].sort(config.sortFn);
+    }
+    
+    return result;
   }, [data, searchTerm, config]);
 
   // Render badge based on config
   const renderBadge = (badge, item, badgeIndex, isCompact = false) => {
-    const fieldValue = getNestedValue(item, badge.field);
+    let fieldValue = getNestedValue(item, badge.field);
+    
+    // Apply transform function if provided
+    if (badge.transform && typeof badge.transform === "function") {
+      fieldValue = badge.transform(fieldValue, item);
+    }
+    
     let badgeConfig = null;
 
     if (badge.conditions) {
@@ -211,13 +228,16 @@ const CardView = ({
     );
   };
 
+  // Calculate card height based on config
+  const cardMinHeight = config.cardHeight || (isMobile ? 'auto' : 220);
+
   if (isLoading) {
     return (
       <Box sx={{ p: 2 }}>
         <Grid container spacing={2}>
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Grid item xs={12} sm={6} lg={isMobile ? 12 : 4} xl={isMobile ? 12 : 3} key={i}>
-              <Card sx={{ p: 2, height: isMobile ? 'auto' : 180 }}>
+              <Card sx={{ p: 2, minHeight: cardMinHeight, height: "100%" }}>
                 <Stack direction="row" spacing={2} alignItems="flex-start">
                   <Skeleton variant="circular" width={isMobile ? 48 : 56} height={isMobile ? 48 : 56} />
                   <Box sx={{ flex: 1 }}>
@@ -227,6 +247,7 @@ const CardView = ({
                       <>
                         <Skeleton variant="text" width="50%" height={16} sx={{ mt: 1 }} />
                         <Skeleton variant="text" width="70%" height={16} />
+                        <Skeleton variant="text" width="40%" height={16} sx={{ mt: 1 }} />
                       </>
                     )}
                   </Box>
@@ -300,6 +321,7 @@ const CardView = ({
                   sx={{
                     cursor: "pointer",
                     transition: "all 0.2s ease",
+                    minHeight: cardMinHeight,
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
@@ -536,6 +558,7 @@ export const CippDataTable = (props) => {
     cardConfig = null, // Configuration for card view (renamed from mobileCardConfig)
     mobileCardConfig = null, // Deprecated: use cardConfig instead
     defaultViewMode = "cards", // Default view mode: 'cards' or 'table'
+    onCardClick: customOnCardClick = null, // Custom handler for card clicks (bypasses off-canvas)
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
   const [configuredSimpleColumns, setConfiguredSimpleColumns] = useState(simpleColumns);
@@ -1220,6 +1243,11 @@ export const CippDataTable = (props) => {
 
   // Handle card click for card view
   const handleCardClick = (item, index) => {
+    // If custom handler provided, use it instead of opening off-canvas
+    if (customOnCardClick) {
+      customOnCardClick(item, index);
+      return;
+    }
     setOffCanvasData(item);
     setOffCanvasRowIndex(index);
     setOffcanvasVisible(true);
