@@ -155,7 +155,7 @@ const CardView = ({
       const term = searchTerm.toLowerCase();
       result = result.filter((item) => {
         const titleValue = getNestedValue(item, config.title);
-        const subtitleValue = getNestedValue(item, config.subtitle);
+        const subtitleValue = config.subtitle ? getNestedValue(item, config.subtitle) : null;
         
         // Search all string/number values in the item for comprehensive search
         const searchAllFields = () => {
@@ -332,7 +332,7 @@ const CardView = ({
         <Grid container spacing={2}>
           {filteredData?.map((item, index) => {
             const titleValue = getNestedValue(item, config.title) || "Unknown";
-            const subtitleValue = getNestedValue(item, config.subtitle);
+            const subtitleValue = config.subtitle ? getNestedValue(item, config.subtitle) : null;
             const avatarField = config.avatar?.field
               ? getNestedValue(item, config.avatar.field)
               : titleValue;
