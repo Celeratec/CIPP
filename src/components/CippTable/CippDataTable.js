@@ -128,6 +128,7 @@ const CardView = ({
   title,
   isMobile = false,
   actions = [],
+  tenant = null,
 }) => {
   const theme = useTheme();
 
@@ -262,36 +263,31 @@ const CardView = ({
 
   return (
     <Box sx={{ width: "100%" }}>
-      {/* Results count - only show on mobile (desktop has toolbar) */}
-      {isMobile && (
-        <>
-          {/* Search and Refresh Bar */}
-          <Box sx={{ p: 2, pb: 1, display: "flex", gap: 1, alignItems: "center" }}>
-            <TextField
-              size="small"
-              placeholder={`Search ${title || "items"}...`}
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              sx={{ flex: 1 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search fontSize="small" />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            {onRefresh && (
-              <IconButton onClick={onRefresh} size="small">
-                <Refresh />
-              </IconButton>
-            )}
-          </Box>
-          <Typography variant="caption" sx={{ px: 2, color: "text.secondary" }}>
-            {filteredData?.length || 0} {filteredData?.length === 1 ? "result" : "results"}
-          </Typography>
-        </>
-      )}
+      {/* Search and Refresh Bar - shown on both mobile and desktop */}
+      <Box sx={{ p: 2, pb: 1, display: "flex", gap: 1, alignItems: "center" }}>
+        <TextField
+          size="small"
+          placeholder={`Search ${title || "items"}...`}
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          sx={{ flex: 1, maxWidth: isMobile ? "100%" : 400 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+        {onRefresh && (
+          <IconButton onClick={onRefresh} size="small" title="Refresh">
+            <Refresh />
+          </IconButton>
+        )}
+        <Typography variant="body2" sx={{ color: "text.secondary", ml: "auto" }}>
+          {filteredData?.length || 0} {filteredData?.length === 1 ? "result" : "results"}
+        </Typography>
+      </Box>
 
       {/* Card Grid */}
       <Box sx={{ p: 2, pt: isMobile ? 1 : 2 }}>
@@ -336,9 +332,9 @@ const CardView = ({
                     border: `1px solid ${theme.palette.divider}`,
                   }}
                 >
-                  <CardContent sx={{ p: isMobile ? 2 : 2.5, "&:last-child": { pb: isMobile ? 2 : 2.5 }, flex: 1 }}>
-                    <Stack direction="row" spacing={2} alignItems="flex-start">
-                      {/* Avatar */}
+                  <CardContent sx={{ p: isMobile ? 2 : 2.5, "&:last-child": { pb: isMobile ? 2 : 2.5 }, flex: 1, display: "flex", flexDirection: "column" }}>
+                    <Stack direction="row" spacing={2} alignItems="flex-start" sx={{ flex: 1 }}>
+                      {/* Avatar with optional profile photo */}
                       <Avatar
                         sx={{
                           bgcolor: stringToColor(avatarField),
@@ -347,7 +343,13 @@ const CardView = ({
                           fontSize: isMobile ? "1.1rem" : "1.25rem",
                           fontWeight: 600,
                           flexShrink: 0,
+                          border: `2px solid ${theme.palette.divider}`,
                         }}
+                        src={
+                          config.avatar?.photoField && tenant && item.id
+                            ? `/api/ListUserPhoto?TenantFilter=${tenant}&UserId=${item.id}`
+                            : undefined
+                        }
                       >
                         {getInitials(avatarField)}
                       </Avatar>
@@ -481,22 +483,24 @@ const CardView = ({
                       </Box>
                     </Stack>
 
-                    {/* Quick Actions */}
+                    {/* Quick Actions - Always visible */}
                     {actions && actions.length > 0 && (
                       <Box
                         sx={{
-                          mt: 1.5,
+                          mt: "auto",
                           pt: 1.5,
                           borderTop: `1px solid ${theme.palette.divider}`,
                           display: "flex",
-                          justifyContent: "flex-end",
+                          justifyContent: "center",
+                          flexWrap: "wrap",
+                          gap: 0.5,
                         }}
                       >
                         <CippQuickActions
                           actions={actions}
                           data={item}
-                          maxActions={isMobile ? 3 : 4}
-                          showOnHover={!isMobile}
+                          maxActions={isMobile ? 4 : 7}
+                          showOnHover={false}
                         />
                       </Box>
                     )}
@@ -1328,6 +1332,7 @@ export const CippDataTable = (props) => {
               title={title}
               isMobile={isMobile}
               actions={actions}
+              tenant={settings?.currentTenant}
             />
           )}
         </Card>

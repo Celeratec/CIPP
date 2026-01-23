@@ -455,6 +455,7 @@ export const CippQuickActions = ({
   size = "small",
   showOnHover = false,
   onActionClick,
+  variant = "icon", // "icon" | "button"
 }) => {
   const theme = useTheme();
   const smDown = useMediaQuery(theme.breakpoints.down("sm"));
@@ -513,49 +514,52 @@ export const CippQuickActions = ({
     <Box
       sx={{
         display: "flex",
-        gap: 0.5,
-        opacity: showOnHover ? 0 : 1,
-        transition: "opacity 0.2s ease",
-        ".MuiCard-root:hover &": {
-          opacity: 1,
-        },
+        gap: 0.75,
+        flexWrap: "wrap",
+        justifyContent: "center",
       }}
       onClick={(e) => e.stopPropagation()}
     >
       {quickActions.map((action, index) => {
         const category = getActionCategory(action);
         const isDanger = category === "danger";
+        const isSecurity = category === "security";
+        const isView = category === "view";
+        const isEdit = category === "edit";
+
+        // Determine button color based on category
+        const getButtonColor = () => {
+          if (isDanger) return "error";
+          if (isSecurity) return "warning";
+          if (isView) return "info";
+          if (isEdit) return "success";
+          if (action.color) return action.color;
+          return "primary";
+        };
 
         return (
-          <Tooltip key={`quick-${index}`} title={action.label}>
+          <Tooltip key={`quick-${index}`} title={action.label} arrow>
             <IconButton
               size={size}
               onClick={(e) => handleActionClick(action, e)}
               sx={{
-                bgcolor: theme.palette.mode === "dark"
-                  ? alpha(theme.palette.background.paper, 0.8)
-                  : alpha(theme.palette.background.paper, 0.9),
-                backdropFilter: "blur(4px)",
-                border: `1px solid ${theme.palette.divider}`,
-                color: isDanger
-                  ? "error.main"
-                  : action.color === "success"
-                  ? "success.main"
-                  : action.color === "warning"
-                  ? "warning.main"
-                  : "text.secondary",
+                bgcolor: alpha(theme.palette[getButtonColor()]?.main || theme.palette.primary.main, 0.08),
+                border: `1px solid ${alpha(theme.palette[getButtonColor()]?.main || theme.palette.primary.main, 0.3)}`,
+                color: `${getButtonColor()}.main`,
+                borderRadius: 1,
+                transition: "all 0.2s ease",
                 "&:hover": {
-                  bgcolor: isDanger
-                    ? alpha(theme.palette.error.main, 0.1)
-                    : alpha(theme.palette.primary.main, 0.1),
-                  borderColor: isDanger ? "error.main" : "primary.main",
+                  bgcolor: alpha(theme.palette[getButtonColor()]?.main || theme.palette.primary.main, 0.15),
+                  borderColor: `${getButtonColor()}.main`,
+                  transform: "scale(1.05)",
                 },
-                // Larger touch target on mobile
-                minWidth: smDown ? 40 : 32,
-                minHeight: smDown ? 40 : 32,
+                // Touch-friendly sizing
+                minWidth: smDown ? 36 : 32,
+                minHeight: smDown ? 36 : 32,
+                p: 0.75,
               }}
             >
-              <SvgIcon fontSize={smDown ? "small" : "inherit"} sx={{ fontSize: smDown ? 20 : 18 }}>
+              <SvgIcon sx={{ fontSize: smDown ? 18 : 16 }}>
                 {action.icon}
               </SvgIcon>
             </IconButton>
