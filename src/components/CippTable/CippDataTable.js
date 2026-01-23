@@ -149,6 +149,69 @@ const CardView = ({
 
   const CARD_HEIGHT = "auto";
 
+  // Render badge based on config
+  const renderBadge = (badge, item, badgeIndex, isCompact = false) => {
+    let fieldValue = getNestedValue(item, badge.field);
+    
+    // Apply transform function if provided
+    if (badge.transform && typeof badge.transform === "function") {
+      fieldValue = badge.transform(fieldValue, item);
+    }
+    
+    let badgeConfig = null;
+
+    if (badge.conditions) {
+      const key =
+        fieldValue === true
+          ? "true"
+          : fieldValue === false
+          ? "false"
+          : String(fieldValue);
+      badgeConfig = badge.conditions[key] || badge.conditions[fieldValue];
+    }
+
+    if (!badgeConfig) return null;
+
+    if (badgeConfig.icon === "check") {
+      return (
+        <Tooltip key={badgeIndex} title={badge.tooltip || getCippTranslation(badge.field)}>
+          <CheckCircle
+            sx={{
+              fontSize: isCompact ? 20 : 22,
+              color: badgeConfig.color === "success" ? "success.main" : 
+                     badgeConfig.color === "error" ? "error.main" : "text.secondary",
+            }}
+          />
+        </Tooltip>
+      );
+    } else if (badgeConfig.icon === "cancel") {
+      return (
+        <Tooltip key={badgeIndex} title={badge.tooltip || getCippTranslation(badge.field)}>
+          <Cancel
+            sx={{
+              fontSize: isCompact ? 20 : 22,
+              color: badgeConfig.color === "error" ? "error.main" : 
+                     badgeConfig.color === "warning" ? "warning.main" : "text.secondary",
+            }}
+          />
+        </Tooltip>
+      );
+    }
+
+    return (
+      <Chip
+        key={badgeIndex}
+        label={badgeConfig.label}
+        icon={
+          badgeConfig.icon && isValidElement(badgeConfig.icon) ? badgeConfig.icon : undefined
+        }
+        size="small"
+        color={badgeConfig.color || "default"}
+        sx={{ height: isCompact ? 22 : 24, fontSize: isCompact ? "0.7rem" : "0.75rem" }}
+      />
+    );
+  };
+
   // Filter and sort data based on search term and custom sorting
   const filteredData = useMemo(() => {
     let result = data;
@@ -438,69 +501,6 @@ const CardView = ({
     cardActions,
     onCardClick,
   ]);
-
-  // Render badge based on config
-  const renderBadge = (badge, item, badgeIndex, isCompact = false) => {
-    let fieldValue = getNestedValue(item, badge.field);
-    
-    // Apply transform function if provided
-    if (badge.transform && typeof badge.transform === "function") {
-      fieldValue = badge.transform(fieldValue, item);
-    }
-    
-    let badgeConfig = null;
-
-    if (badge.conditions) {
-      const key =
-        fieldValue === true
-          ? "true"
-          : fieldValue === false
-          ? "false"
-          : String(fieldValue);
-      badgeConfig = badge.conditions[key] || badge.conditions[fieldValue];
-    }
-
-    if (!badgeConfig) return null;
-
-    if (badgeConfig.icon === "check") {
-      return (
-        <Tooltip key={badgeIndex} title={badge.tooltip || getCippTranslation(badge.field)}>
-          <CheckCircle
-            sx={{
-              fontSize: isCompact ? 20 : 22,
-              color: badgeConfig.color === "success" ? "success.main" : 
-                     badgeConfig.color === "error" ? "error.main" : "text.secondary",
-            }}
-          />
-        </Tooltip>
-      );
-    } else if (badgeConfig.icon === "cancel") {
-      return (
-        <Tooltip key={badgeIndex} title={badge.tooltip || getCippTranslation(badge.field)}>
-          <Cancel
-            sx={{
-              fontSize: isCompact ? 20 : 22,
-              color: badgeConfig.color === "error" ? "error.main" : 
-                     badgeConfig.color === "warning" ? "warning.main" : "text.secondary",
-            }}
-          />
-        </Tooltip>
-      );
-    }
-
-    return (
-      <Chip
-        key={badgeIndex}
-        label={badgeConfig.label}
-        icon={
-          badgeConfig.icon && isValidElement(badgeConfig.icon) ? badgeConfig.icon : undefined
-        }
-        size="small"
-        color={badgeConfig.color || "default"}
-        sx={{ height: isCompact ? 22 : 24, fontSize: isCompact ? "0.7rem" : "0.75rem" }}
-      />
-    );
-  };
 
   // Fixed card height for uniform appearance
   if (isLoading) {
