@@ -26,8 +26,8 @@ const Page = () => {
     setShowMembers(!showMembers);
   };
 
-  // Mobile card view configuration
-  const mobileCardConfig = {
+  // Card view configuration (works for both mobile and desktop)
+  const cardConfig = {
     title: "displayName",
     subtitle: "mail",
     avatar: {
@@ -36,6 +36,7 @@ const Page = () => {
     badges: [
       {
         field: "calculatedGroupType",
+        tooltip: "Group Type",
         conditions: {
           m365: { label: "M365", color: "primary" },
           security: { label: "Security", color: "secondary" },
@@ -46,6 +47,13 @@ const Page = () => {
     ],
     extraFields: [
       { field: "description" },
+    ],
+    // Additional fields shown only on desktop cards
+    desktopFields: [
+      { field: "mailNickname", label: "Mail Nickname" },
+      { field: "visibility", label: "Visibility" },
+      { field: "membershipRule", label: "Membership Rule" },
+      { field: "onPremisesSyncEnabled", label: "On-Prem Sync" },
     ],
   };
   const actions = [
@@ -354,7 +362,7 @@ const Page = () => {
         "membershipRule",
         "onPremisesSyncEnabled",
       ]}
-      mobileCardConfig={mobileCardConfig}
+      cardConfig={cardConfig}
       offCanvasOnRowClick={true}
     />
   );

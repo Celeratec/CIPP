@@ -33,8 +33,8 @@ const Page = () => {
   const syncDialog = useDialog();
   const tenant = useSettings().currentTenant;
 
-  // Mobile card view configuration
-  const mobileCardConfig = {
+  // Card view configuration (works for both mobile and desktop)
+  const cardConfig = {
     title: "displayName",
     subtitle: "publishingState",
     avatar: {
@@ -43,6 +43,7 @@ const Page = () => {
     badges: [
       {
         field: "isAssigned",
+        tooltip: "Assignment Status",
         conditions: {
           true: { label: "Assigned", color: "success" },
           false: { label: "Unassigned", color: "default" },
@@ -50,6 +51,12 @@ const Page = () => {
       },
     ],
     extraFields: [],
+    // Additional fields shown only on desktop cards
+    desktopFields: [
+      { field: "AppAssignment", label: "Assigned To" },
+      { field: "lastModifiedDateTime", label: "Last Modified" },
+      { field: "createdDateTime", label: "Created" },
+    ],
   };
 
   const actions = [
@@ -277,7 +284,7 @@ const Page = () => {
             </Button>
           </Box>
         }
-        mobileCardConfig={mobileCardConfig}
+        cardConfig={cardConfig}
         offCanvasOnRowClick={true}
       />
       <CippApiDialog

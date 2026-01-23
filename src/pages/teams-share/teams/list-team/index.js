@@ -8,8 +8,8 @@ import { Edit } from "@mui/icons-material";
 const Page = () => {
   const pageTitle = "Teams";
 
-  // Mobile card view configuration
-  const mobileCardConfig = {
+  // Card view configuration (works for both mobile and desktop)
+  const cardConfig = {
     title: "displayName",
     subtitle: "description",
     avatar: {
@@ -18,6 +18,7 @@ const Page = () => {
     badges: [
       {
         field: "visibility",
+        tooltip: "Team Visibility",
         conditions: {
           Public: { label: "Public", color: "success" },
           Private: { label: "Private", color: "warning" },
@@ -25,6 +26,11 @@ const Page = () => {
       },
     ],
     extraFields: [],
+    // Additional fields shown only on desktop cards
+    desktopFields: [
+      { field: "mailNickname", label: "Mail Nickname" },
+      { field: "id", label: "Team ID" },
+    ],
   };
 
   const actions = [
@@ -63,7 +69,7 @@ const Page = () => {
           </Button>
         </>
       }
-      mobileCardConfig={mobileCardConfig}
+      cardConfig={cardConfig}
       offCanvasOnRowClick={true}
     />
   );

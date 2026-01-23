@@ -10,8 +10,8 @@ const Page = () => {
   const pageTitle = "Contacts";
   const cardButtonPermissions = ["Exchange.Contact.ReadWrite"];
 
-  // Mobile card view configuration
-  const mobileCardConfig = {
+  // Card view configuration (works for both mobile and desktop)
+  const cardConfig = {
     title: "DisplayName",
     subtitle: "WindowsEmailAddress",
     avatar: {
@@ -20,6 +20,7 @@ const Page = () => {
     badges: [
       {
         field: "IsDirSynced",
+        tooltip: "Sync Status",
         conditions: {
           true: { label: "Synced", color: "info" },
           false: { label: "Cloud", color: "default" },
@@ -28,6 +29,11 @@ const Page = () => {
     ],
     extraFields: [
       { field: "Company" },
+    ],
+    // Additional fields shown only on desktop cards
+    desktopFields: [
+      { field: "Department", label: "Department" },
+      { field: "Title", label: "Title" },
     ],
   };
 
@@ -99,7 +105,7 @@ const Page = () => {
           <CippDeployContactTemplateDrawer requiredPermissions={cardButtonPermissions} />
         </>
       }
-      mobileCardConfig={mobileCardConfig}
+      cardConfig={cardConfig}
       offCanvasOnRowClick={true}
     />
   );

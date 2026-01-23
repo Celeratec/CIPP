@@ -17,8 +17,8 @@ const Page = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Mobile card view configuration
-  const mobileCardConfig = {
+  // Card view configuration (works for both mobile and desktop)
+  const cardConfig = {
     title: "displayName",
     subtitle: "userPrincipalName",
     avatar: {
@@ -27,6 +27,7 @@ const Page = () => {
     badges: [
       {
         field: "accountEnabled",
+        tooltip: "Account Status",
         conditions: {
           true: { icon: "check", color: "success" },
           false: { icon: "cancel", color: "error" },
@@ -35,9 +36,17 @@ const Page = () => {
         },
       },
     ],
+    // Fields shown on both mobile and desktop
     extraFields: [
       { field: "jobTitle" },
       { field: "department" },
+    ],
+    // Additional fields shown only on desktop cards
+    desktopFields: [
+      { field: "mail", label: "Email" },
+      { field: "mobilePhone", label: "Mobile" },
+      { field: "officeLocation", label: "Office" },
+      { field: "city", label: "City" },
     ],
   };
 
@@ -138,7 +147,7 @@ const Page = () => {
       offCanvasOnRowClick={true}
       simpleColumns={simpleColumns}
       filters={filters}
-      mobileCardConfig={mobileCardConfig}
+      cardConfig={cardConfig}
     />
   );
 };

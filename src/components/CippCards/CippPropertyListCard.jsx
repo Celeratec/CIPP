@@ -7,6 +7,10 @@ import {
   SvgIcon,
   Stack,
   CardActions,
+  Box,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { ActionList } from "../../components/action-list";
 import { ActionListItem } from "../../components/action-list-item";
@@ -14,6 +18,7 @@ import { PropertyList } from "../../components/property-list";
 import { PropertyListItem } from "../../components/property-list-item";
 import { useDialog } from "../../hooks/use-dialog";
 import { CippApiDialog } from "../CippComponents/CippApiDialog";
+import { CippActionMenu } from "../CippComponents/CippActionMenu";
 import { useState } from "react";
 
 export const CippPropertyListCard = (props) => {
@@ -30,8 +35,11 @@ export const CippPropertyListCard = (props) => {
     showDivider = true,
     cardButton,
     cardSx = { width: "100%", height: "100%" },
+    useImprovedActions = true, // New prop to enable improved action menu
     ...other
   } = props;
+  const theme = useTheme();
+  const smDown = useMediaQuery(theme.breakpoints.down("sm"));
   const createDialog = useDialog();
   const [actionData, setActionData] = useState({ data: {}, action: {}, ready: false });
 
@@ -155,38 +163,60 @@ export const CippPropertyListCard = (props) => {
             </Stack>
           )}
         </CardContent>
-        <ActionList>
-          {actionItems?.length > 0 &&
-            actionItems.map((item, index) => (
-              <ActionListItem
-                key={`${item.label}-${index}-ActionList-OffCanvas`}
-                icon={<SvgIcon fontSize="small">{item.icon}</SvgIcon>}
-                label={item.label}
-                onClick={() => {
-                  setActionData({
-                    data: data,
-                    action: item,
-                    ready: true,
-                  });
-                  if (item?.noConfirm) {
-                    item.customFunction(item, data, {});
-                  } else {
-                    createDialog.handleOpen();
-                  }
-                }}
-                disabled={handleActionDisabled(data, item)}
+        {/* Actions Section */}
+        {actionItems?.length > 0 && (
+          useImprovedActions ? (
+            <Box sx={{ p: smDown ? 1.5 : 2 }}>
+              <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                sx={{ mb: 1.5, fontWeight: 600 }}
+              >
+                Actions
+              </Typography>
+              <CippActionMenu
+                actions={actionItems}
+                data={data}
+                showSearch={actionItems.length > 6}
+                showCategories={actionItems.length > 4}
               />
-            ))}
-        </ActionList>
+            </Box>
+          ) : (
+            <>
+              <ActionList>
+                {actionItems.map((item, index) => (
+                  <ActionListItem
+                    key={`${item.label}-${index}-ActionList-OffCanvas`}
+                    icon={<SvgIcon fontSize="small">{item.icon}</SvgIcon>}
+                    label={item.label}
+                    onClick={() => {
+                      setActionData({
+                        data: data,
+                        action: item,
+                        ready: true,
+                      });
+                      if (item?.noConfirm) {
+                        item.customFunction(item, data, {});
+                      } else {
+                        createDialog.handleOpen();
+                      }
+                    }}
+                    disabled={handleActionDisabled(data, item)}
+                  />
+                ))}
+              </ActionList>
 
-        {actionData.ready && (
-          <CippApiDialog
-            createDialog={createDialog}
-            title="Confirmation"
-            fields={actionData.action?.fields}
-            api={actionData.action}
-            row={actionData.data}
-          />
+              {actionData.ready && (
+                <CippApiDialog
+                  createDialog={createDialog}
+                  title="Confirmation"
+                  fields={actionData.action?.fields}
+                  api={actionData.action}
+                  row={actionData.data}
+                />
+              )}
+            </>
+          )
         )}
         {cardButton && (
           <>

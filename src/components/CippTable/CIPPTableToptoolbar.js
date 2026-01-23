@@ -18,6 +18,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -33,6 +35,8 @@ import {
   Check as CheckIcon,
   MoreVert as MoreVertIcon,
   Fullscreen as FullscreenIcon,
+  ViewModule as ViewModuleIcon,
+  TableRows as TableRowsIcon,
 } from "@mui/icons-material";
 import { ExclamationCircleIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { styled, alpha } from "@mui/material/styles";
@@ -160,6 +164,10 @@ export const CIPPTableToptoolbar = ({
   queueMetadata,
   isInDialog = false,
   showBulkExportAction = true,
+  viewMode = 'table',
+  onViewModeChange,
+  cardConfigAvailable = false,
+  isCardView = false,
 }) => {
   const popover = usePopover();
   const [filtersAnchor, setFiltersAnchor] = useState(null);
@@ -200,8 +208,9 @@ export const CIPPTableToptoolbar = ({
     );
   };
 
-  const selectedRows = table.getSelectedRowModel().rows;
-  const hasSelection = table.getIsSomeRowsSelected() || table.getIsAllRowsSelected();
+  // Handle null table (card view mode)
+  const selectedRows = table?.getSelectedRowModel?.()?.rows || [];
+  const hasSelection = table ? (table.getIsSomeRowsSelected() || table.getIsAllRowsSelected()) : false;
   // Built-in export actions should only appear when the page opts in and rows are selected.
   const builtInBulkExportAvailable =
     showBulkExportAction && exportEnabled && selectedRows.length > 0;
@@ -238,8 +247,10 @@ export const CIPPTableToptoolbar = ({
 
   useEffect(() => {
     //if usedData changes, deselect all rows
-    table.toggleAllRowsSelected(false);
-  }, [usedData]);
+    if (table?.toggleAllRowsSelected) {
+      table.toggleAllRowsSelected(false);
+    }
+  }, [usedData, table]);
 
   // Sync currentEffectiveQueryKey with queryKey prop changes (e.g., tenant changes)
   useEffect(() => {
@@ -429,11 +440,14 @@ export const CIPPTableToptoolbar = ({
   const handleSearchChange = (event) => {
     const value = event.target.value;
     setSearchValue(value);
-    table.setGlobalFilter(value);
+    if (table?.setGlobalFilter) {
+      table.setGlobalFilter(value);
+    }
   };
 
   // Handle column filters toggle
   const handleColumnFiltersToggle = () => {
+    if (!table) return;
     const currentState = table.getState().showColumnFilters;
     table.setShowColumnFilters(!currentState);
   };
@@ -519,23 +533,29 @@ export const CIPPTableToptoolbar = ({
 
   const setTableFilter = (filter, filterType, filterName) => {
     if (filterType === "global" || filterType === undefined) {
-      table.setGlobalFilter(filter);
+      if (table?.setGlobalFilter) {
+        table.setGlobalFilter(filter);
+      }
       setActiveFilterName(filterName);
       if (settings.persistFilters && settings.setLastUsedFilter) {
         settings.setLastUsedFilter(pageName, { type: "global", value: filter, name: filterName });
       }
     }
     if (filterType === "column") {
-      table.setShowColumnFilters(true);
-      table.setColumnFilters(filter);
+      if (table) {
+        table.setShowColumnFilters(true);
+        table.setColumnFilters(filter);
+      }
       setActiveFilterName(filterName);
       if (settings.persistFilters && settings.setLastUsedFilter) {
         settings.setLastUsedFilter(pageName, { type: "column", value: filter, name: filterName });
       }
     }
     if (filterType === "reset") {
-      table.resetGlobalFilter();
-      table.resetColumnFilters();
+      if (table) {
+        table.resetGlobalFilter();
+        table.resetColumnFilters();
+      }
       if (api?.data) {
         setGraphFilterData({});
         resetToDefaultVisibility();
@@ -564,8 +584,10 @@ export const CIPPTableToptoolbar = ({
         }
         return acc;
       }, {});
-      table.resetGlobalFilter();
-      table.resetColumnFilters();
+      if (table) {
+        table.resetGlobalFilter();
+        table.resetColumnFilters();
+      }
       //get api.data, merge with graphFilter, set api.data
       const newQueryKey = `${queryKey ? queryKey : title}-${filterName}`;
       setGraphFilterData({
@@ -714,6 +736,43 @@ export const CIPPTableToptoolbar = ({
             />
           </ModernSearchContainer>
 
+          {/* View Toggle - only show if card config is available */}
+          {cardConfigAvailable && onViewModeChange && !mdDown && (
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={(e, newMode) => {
+                if (newMode) onViewModeChange(newMode);
+              }}
+              size="small"
+              sx={{
+                height: 40,
+                '& .MuiToggleButton-root': {
+                  px: 1.5,
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? '#404040' : '#E0E0E0'}`,
+                  '&.Mui-selected': {
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    '&:hover': {
+                      bgcolor: 'primary.dark',
+                    },
+                  },
+                },
+              }}
+            >
+              <ToggleButton value="cards" aria-label="card view">
+                <Tooltip title="Card View">
+                  <ViewModuleIcon fontSize="small" />
+                </Tooltip>
+              </ToggleButton>
+              <ToggleButton value="table" aria-label="table view">
+                <Tooltip title="Table View">
+                  <TableRowsIcon fontSize="small" />
+                </Tooltip>
+              </ToggleButton>
+            </ToggleButtonGroup>
+          )}
+
           {/* Desktop Buttons - always render for measurement, hide when in compact mode */}
           {!mdDown && (
             <Box
@@ -754,18 +813,20 @@ export const CIPPTableToptoolbar = ({
                   },
                 }}
               >
-                <MenuItem
-                  onClick={() => {
-                    handleColumnFiltersToggle();
-                    setFiltersAnchor(null);
-                  }}
-                >
-                  <ListItemText>
-                    {table.getState().showColumnFilters
-                      ? "Hide Column Filters"
-                      : "Show Column Filters"}
-                  </ListItemText>
-                </MenuItem>
+                {table && (
+                  <MenuItem
+                    onClick={() => {
+                      handleColumnFiltersToggle();
+                      setFiltersAnchor(null);
+                    }}
+                  >
+                    <ListItemText>
+                      {table.getState().showColumnFilters
+                        ? "Hide Column Filters"
+                        : "Show Column Filters"}
+                    </ListItemText>
+                  </MenuItem>
+                )}
                 <Divider />
                 <MenuItem onClick={() => setTableFilter("", "reset", "")}>
                   <ListItemText primary="Reset all filters" />
@@ -834,7 +895,7 @@ export const CIPPTableToptoolbar = ({
                   <ListItemText primary="Delete preferred columns" />
                 </MenuItem>
                 <Divider />
-                {table
+                {table && table
                   .getAllColumns()
                   .filter((column) => !column.id.startsWith("mrt-"))
                   .map((column) => (
@@ -924,19 +985,40 @@ export const CIPPTableToptoolbar = ({
                 <ListItemText>Export</ListItemText>
               </MenuItem>
             )}
-            <MenuItem
-              onClick={() => {
-                table.setIsFullScreen(!table.getState().isFullScreen);
-                setActionMenuAnchor(null);
-              }}
-            >
-              <ListItemIcon>
-                <FullscreenIcon />
-              </ListItemIcon>
-              <ListItemText>
-                {table.getState().isFullScreen ? "Exit Fullscreen" : "Fullscreen"}
-              </ListItemText>
-            </MenuItem>
+            {table && (
+              <MenuItem
+                onClick={() => {
+                  table.setIsFullScreen(!table.getState().isFullScreen);
+                  setActionMenuAnchor(null);
+                }}
+              >
+                <ListItemIcon>
+                  <FullscreenIcon />
+                </ListItemIcon>
+                <ListItemText>
+                  {table.getState().isFullScreen ? "Exit Fullscreen" : "Fullscreen"}
+                </ListItemText>
+              </MenuItem>
+            )}
+            {/* View Toggle for Mobile */}
+            {cardConfigAvailable && onViewModeChange && (
+              <>
+                <Divider />
+                <MenuItem
+                  onClick={() => {
+                    onViewModeChange(viewMode === 'cards' ? 'table' : 'cards');
+                    setActionMenuAnchor(null);
+                  }}
+                >
+                  <ListItemIcon>
+                    {viewMode === 'cards' ? <TableRowsIcon /> : <ViewModuleIcon />}
+                  </ListItemIcon>
+                  <ListItemText>
+                    {viewMode === 'cards' ? 'Switch to Table View' : 'Switch to Card View'}
+                  </ListItemText>
+                </MenuItem>
+              </>
+            )}
           </Menu>
 
           {/* Filters Menu */}
@@ -952,16 +1034,18 @@ export const CIPPTableToptoolbar = ({
               },
             }}
           >
-            <MenuItem
-              onClick={() => {
-                handleColumnFiltersToggle();
-                setFiltersAnchor(null);
-              }}
-            >
-              <ListItemText>
-                {table.getState().showColumnFilters ? "Hide Column Filters" : "Show Column Filters"}
-              </ListItemText>
-            </MenuItem>
+            {table && (
+              <MenuItem
+                onClick={() => {
+                  handleColumnFiltersToggle();
+                  setFiltersAnchor(null);
+                }}
+              >
+                <ListItemText>
+                  {table.getState().showColumnFilters ? "Hide Column Filters" : "Show Column Filters"}
+                </ListItemText>
+              </MenuItem>
+            )}
             <Divider />
             <MenuItem onClick={() => setTableFilter("", "reset", "")}>
               <ListItemText primary="Reset all filters" />
@@ -1023,7 +1107,7 @@ export const CIPPTableToptoolbar = ({
               <ListItemText primary="Delete preferred columns" />
             </MenuItem>
             <Divider />
-            {table
+            {table && table
               .getAllColumns()
               .filter((column) => !column.id.startsWith("mrt-"))
               .map((column) => (
@@ -1143,7 +1227,7 @@ export const CIPPTableToptoolbar = ({
           }}
         >
           {/* Selected rows indicator */}
-          {(table.getIsAllRowsSelected() || table.getIsSomeRowsSelected()) && (
+          {table && (table.getIsAllRowsSelected() || table.getIsSomeRowsSelected()) && (
             <Typography
               variant="body2"
               sx={{
@@ -1198,22 +1282,24 @@ export const CIPPTableToptoolbar = ({
         </Box>
 
         {/* Hidden export buttons for triggering */}
-        <Box sx={{ display: "none" }}>
-          <PDFExportButton
-            rows={table.getFilteredRowModel().rows}
-            columns={usedColumns}
-            reportName={title}
-            columnVisibility={columnVisibility}
-            data-pdf-export
-          />
-          <CSVExportButton
-            reportName={title}
-            columnVisibility={columnVisibility}
-            rows={table.getFilteredRowModel().rows}
-            columns={usedColumns}
-            data-csv-export
-          />
-        </Box>
+        {table && (
+          <Box sx={{ display: "none" }}>
+            <PDFExportButton
+              rows={table.getFilteredRowModel().rows}
+              columns={usedColumns}
+              reportName={title}
+              columnVisibility={columnVisibility}
+              data-pdf-export
+            />
+            <CSVExportButton
+              reportName={title}
+              columnVisibility={columnVisibility}
+              rows={table.getFilteredRowModel().rows}
+              columns={usedColumns}
+              data-csv-export
+            />
+          </Box>
+        )}
       </Box>
 
       {/* Bulk Actions Menu - now inline with toolbar */}
@@ -1244,7 +1330,7 @@ export const CIPPTableToptoolbar = ({
                   return;
                 }
 
-                const selectedRows = table.getSelectedRowModel().rows;
+                const selectedRows = table?.getSelectedRowModel?.()?.rows || [];
                 const selectedData = selectedRows.map((row) => row.original);
 
                 if (typeof action.customBulkHandler === "function") {
@@ -1252,7 +1338,7 @@ export const CIPPTableToptoolbar = ({
                     rows: selectedRows,
                     data: selectedData,
                     closeMenu: popover.handleClose,
-                    clearSelection: () => table.toggleAllRowsSelected(false),
+                    clearSelection: () => table?.toggleAllRowsSelected?.(false),
                   });
                   popover.handleClose();
                   return;

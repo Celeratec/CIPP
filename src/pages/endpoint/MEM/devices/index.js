@@ -23,8 +23,8 @@ const Page = () => {
   const pageTitle = "Devices";
   const tenantFilter = useSettings().currentTenant;
 
-  // Mobile card view configuration
-  const mobileCardConfig = {
+  // Card view configuration (works for both mobile and desktop)
+  const cardConfig = {
     title: "deviceName",
     subtitle: "userPrincipalName",
     avatar: {
@@ -33,6 +33,7 @@ const Page = () => {
     badges: [
       {
         field: "complianceState",
+        tooltip: "Compliance State",
         conditions: {
           compliant: { icon: "check", color: "success" },
           noncompliant: { icon: "cancel", color: "error" },
@@ -44,6 +45,13 @@ const Page = () => {
     extraFields: [
       { field: "operatingSystem" },
       { field: "model" },
+    ],
+    // Additional fields shown only on desktop cards
+    desktopFields: [
+      { field: "manufacturer", label: "Manufacturer" },
+      { field: "osVersion", label: "OS Version" },
+      { field: "enrolledDateTime", label: "Enrolled" },
+      { field: "managedDeviceOwnerType", label: "Owner Type" },
     ],
   };
 
@@ -421,7 +429,7 @@ const Page = () => {
         "deviceEnrollmentType",
         "joinType",
       ]}
-      mobileCardConfig={mobileCardConfig}
+      cardConfig={cardConfig}
       offCanvasOnRowClick={true}
     />
   );
