@@ -56,7 +56,7 @@ export const SecureScoreCard = ({ data, isLoading }) => {
           </>
         ) : (
           <>
-            <Box sx={{ height: 250 }}>
+            <Box sx={{ height: 250, minHeight: 250, minWidth: 0 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={[...data]

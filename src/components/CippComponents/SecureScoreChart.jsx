@@ -87,7 +87,7 @@ export const SecureScoreChart = ({ data, isLoading }) => {
 
   return (
     <>
-      <Box sx={{ height: 250 }}>
+      <Box sx={{ height: 250, minHeight: 250, minWidth: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ left: 12, right: 12, top: 10, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />

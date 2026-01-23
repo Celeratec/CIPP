@@ -104,22 +104,33 @@ export const AssessmentCard = ({ data, isLoading }) => {
               </Typography>
             </Box>
           </Box>
-          <Box sx={{ width: "40%", maxWidth: 120, aspectRatio: 1 }}>
+          <Box
+            sx={{
+              width: "40%",
+              maxWidth: 120,
+              aspectRatio: 1,
+              minWidth: 80,
+              minHeight: 80,
+              display: "flex",
+            }}
+          >
             {isLoading ? (
               <Skeleton variant="circular" width="100%" height="100%" />
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <RadialBarChart
-                  innerRadius="20%"
-                  outerRadius="100%"
-                  data={chartData}
-                  startAngle={90}
-                  endAngle={450}
-                >
-                  <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-                  <RadialBar dataKey="value" background cornerRadius={5} />
-                </RadialBarChart>
-              </ResponsiveContainer>
+              <Box sx={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadialBarChart
+                    innerRadius="20%"
+                    outerRadius="100%"
+                    data={chartData}
+                    startAngle={90}
+                    endAngle={450}
+                  >
+                    <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+                    <RadialBar dataKey="value" background cornerRadius={5} />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+              </Box>
             )}
           </Box>
         </Box>

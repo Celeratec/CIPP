@@ -26,7 +26,7 @@ import {
 import { ResourceUnavailable } from "../resource-unavailable";
 import { ResourceError } from "../resource-error";
 import { Scrollbar } from "../scrollbar";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, isValidElement } from "react";
 import { ApiGetCallWithPagination } from "../../api/ApiCall";
 import { utilTableMode } from "./util-tablemode";
 import { utilColumnsFromAPI, resolveSimpleColumnVariables } from "./util-columnsFromAPI";
@@ -241,6 +241,9 @@ const CardView = ({
       <Chip
         key={badgeIndex}
         label={badgeConfig.label}
+        icon={
+          badgeConfig.icon && isValidElement(badgeConfig.icon) ? badgeConfig.icon : undefined
+        }
         size="small"
         color={badgeConfig.color || "default"}
         sx={{ height: isCompact ? 22 : 24, fontSize: isCompact ? "0.7rem" : "0.75rem" }}
@@ -341,6 +344,7 @@ const CardView = ({
                   onClick={() => onCardClick(item, index)}
                   sx={{
                     height: CARD_HEIGHT,
+                    width: "100%",
                     cursor: "pointer",
                     transition: "all 0.15s ease-in-out",
                     display: "flex",
@@ -391,7 +395,7 @@ const CardView = ({
                         </Avatar>
                       )}
 
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Stack direction="row" alignItems="center" spacing={0.5}>
                           <Typography
                             variant="subtitle2"
@@ -494,6 +498,7 @@ const CardView = ({
                                     <Typography 
                                       variant="caption" 
                                       color="text.secondary"
+                                      title={value}
                                       sx={{ 
                                         fontSize: "0.7rem",
                                         overflow: "hidden",

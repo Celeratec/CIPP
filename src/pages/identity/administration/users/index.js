@@ -21,6 +21,9 @@ import {
   LockPerson,
   PhonelinkSetup,
   Password,
+  WorkspacePremium,
+  PersonOff,
+  RemoveCircleOutline,
 } from "@mui/icons-material";
 import { EyeIcon } from "@heroicons/react/24/outline";
 
@@ -204,10 +207,9 @@ const Page = () => {
   // Card view configuration with comprehensive user info
   const cardConfig = {
     title: "displayName",
-    subtitle: "userPrincipalName",
     avatar: {
       field: "displayName",
-      photoField: true,
+      photoField: false,
     },
     sortFn: userSortFn,
     badges: [
@@ -219,6 +221,22 @@ const Page = () => {
           false: { icon: "cancel", color: "error" },
           Yes: { icon: "check", color: "success" },
           No: { icon: "cancel", color: "error" },
+        },
+      },
+      {
+        field: "assignedLicenses",
+        tooltip: "License Status",
+        conditions: {
+          licensed: { label: "Licensed", color: "primary", icon: <WorkspacePremium fontSize="small" /> },
+          unlicensed: { label: "Unlicensed", color: "default", icon: <RemoveCircleOutline fontSize="small" /> },
+        },
+        transform: (value) => (value && value.length > 0 ? "licensed" : "unlicensed"),
+      },
+      {
+        field: "userType",
+        tooltip: "User Type",
+        conditions: {
+          Guest: { label: "Guest", color: "warning", icon: <PersonOff fontSize="small" /> },
         },
       },
     ],
