@@ -173,6 +173,33 @@ const CardView = ({
 
     if (!badgeConfig) return null;
 
+    if (badge.iconOnly && badgeConfig.icon && isValidElement(badgeConfig.icon)) {
+      const tooltipText = badge.tooltip || badgeConfig.label || getCippTranslation(badge.field);
+      const color =
+        badgeConfig.color === "success"
+          ? "success.main"
+          : badgeConfig.color === "error"
+          ? "error.main"
+          : badgeConfig.color === "warning"
+          ? "warning.main"
+          : badgeConfig.color === "info"
+          ? "info.main"
+          : badgeConfig.color === "primary"
+          ? "primary.main"
+          : badgeConfig.color === "secondary"
+          ? "secondary.main"
+          : "text.secondary";
+      return (
+        <Tooltip key={badgeIndex} title={tooltipText}>
+          <Box sx={{ display: "inline-flex", alignItems: "center" }}>
+            <SvgIcon sx={{ fontSize: isCompact ? 18 : 20, color }}>
+              {badgeConfig.icon}
+            </SvgIcon>
+          </Box>
+        </Tooltip>
+      );
+    }
+
     if (badgeConfig.icon === "check") {
       return (
         <Tooltip key={badgeIndex} title={badge.tooltip || getCippTranslation(badge.field)}>
@@ -356,7 +383,7 @@ const CardView = ({
                 )}
 
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Stack direction="row" alignItems="center" spacing={0.5} sx={{ width: "100%" }}>
                     <Typography
                       variant="subtitle2"
                       sx={{
@@ -370,8 +397,12 @@ const CardView = ({
                       {titleValue}
                     </Typography>
                     {/* Compact badges */}
-                    {config.badges?.map((badge, badgeIndex) => 
-                      renderBadge(badge, item, badgeIndex, true)
+                    {config.badges?.length > 0 && (
+                      <Box sx={{ display: "flex", gap: 0.5, ml: "auto", flexShrink: 0 }}>
+                        {config.badges.map((badge, badgeIndex) =>
+                          renderBadge(badge, item, badgeIndex, true)
+                        )}
+                      </Box>
                     )}
                   </Stack>
 

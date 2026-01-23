@@ -287,15 +287,17 @@ const Page = () => {
       {
         field: "assignedLicenses",
         tooltip: "License Status",
+        iconOnly: true,
         conditions: {
           licensed: { label: "Licensed", color: "primary", icon: <WorkspacePremium fontSize="small" /> },
-          unlicensed: { label: "Unlicensed", color: "default", icon: <RemoveCircleOutline fontSize="small" /> },
+          unlicensed: { label: "Unlicensed", color: "error", icon: <WorkspacePremium fontSize="small" /> },
         },
         transform: (value) => (value && value.length > 0 ? "licensed" : "unlicensed"),
       },
       {
         field: "userType",
-        tooltip: "User Type",
+        tooltip: "Guest User",
+        iconOnly: true,
         conditions: {
           Guest: { label: "Guest", color: "warning", icon: <PersonOff fontSize="small" /> },
         },
