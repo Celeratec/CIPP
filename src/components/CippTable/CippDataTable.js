@@ -189,6 +189,21 @@ const CardView = ({
     return result;
   }, [data, searchTerm, config]);
 
+  // Filter actions for mobile - use mobileQuickActions if defined, otherwise first 4
+  const cardActions = useMemo(() => {
+    if (!actions || actions.length === 0) return [];
+    
+    if (isMobile && config.mobileQuickActions) {
+      // Filter to only mobile-specific actions
+      return actions.filter(a => 
+        config.mobileQuickActions.includes(a.label) && 
+        (!a.condition || a.condition)
+      );
+    }
+    
+    return actions;
+  }, [actions, isMobile, config.mobileQuickActions]);
+
   const renderedCards = useMemo(() => {
     return filteredData?.map((item, index) => {
       const titleValue = getNestedValue(item, config.title) || "Unknown";
@@ -423,21 +438,6 @@ const CardView = ({
     cardActions,
     onCardClick,
   ]);
-
-  // Filter actions for mobile - use mobileQuickActions if defined, otherwise first 4
-  const cardActions = useMemo(() => {
-    if (!actions || actions.length === 0) return [];
-    
-    if (isMobile && config.mobileQuickActions) {
-      // Filter to only mobile-specific actions
-      return actions.filter(a => 
-        config.mobileQuickActions.includes(a.label) && 
-        (!a.condition || a.condition)
-      );
-    }
-    
-    return actions;
-  }, [actions, isMobile, config.mobileQuickActions]);
 
   // Render badge based on config
   const renderBadge = (badge, item, badgeIndex, isCompact = false) => {
