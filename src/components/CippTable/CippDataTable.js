@@ -133,6 +133,19 @@ const CardView = ({
 }) => {
   const theme = useTheme();
 
+  const formatFieldValue = (value) => {
+    if (value === null || value === undefined) return "";
+    if (Array.isArray(value)) {
+      return value.length ? value.join(", ") : "";
+    }
+    if (typeof value === "object") {
+      if (value.displayName) return String(value.displayName);
+      if (value.name) return String(value.name);
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
+
   // Filter and sort data based on search term and custom sorting
   const filteredData = useMemo(() => {
     let result = data;
@@ -440,7 +453,8 @@ const CardView = ({
                       {extraFields.length > 0 && (
                         <Stack spacing={0.25} sx={{ mb: 1 }}>
                           {extraFields.slice(0, 2).map((field, fieldIndex) => {
-                            const value = getNestedValue(item, field.field || field);
+                            const rawValue = getNestedValue(item, field.field || field);
+                            const value = formatFieldValue(rawValue);
                             if (!value) return null;
                             return (
                               <Stack 
@@ -484,7 +498,8 @@ const CardView = ({
                         >
                           <Grid container spacing={0.5}>
                             {desktopFields.slice(0, 4).map((field, fieldIndex) => {
-                              const value = getNestedValue(item, field.field || field);
+                              const rawValue = getNestedValue(item, field.field || field);
+                              const value = formatFieldValue(rawValue);
                               if (!value) return null;
                               
                               return (
