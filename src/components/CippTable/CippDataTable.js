@@ -609,6 +609,7 @@ export const CippDataTable = (props) => {
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
   const [cardSearchTerm, setCardSearchTerm] = useState("");
+  const [debouncedCardSearchTerm, setDebouncedCardSearchTerm] = useState("");
   const waitingBool = api?.url ? true : false;
 
   const settings = useSettings();
@@ -643,6 +644,14 @@ export const CippDataTable = (props) => {
       }
     }
   }, [viewModeStorageKey]);
+
+  // Debounce card search to avoid filtering on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedCardSearchTerm(cardSearchTerm);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [cardSearchTerm]);
 
   // Determine if we should show card view
   // On mobile: always show cards if config exists
@@ -1356,7 +1365,7 @@ export const CippDataTable = (props) => {
               config={effectiveCardConfig}
               onCardClick={handleCardClick}
               isLoading={getRequestData.isFetching || isFetching}
-              searchTerm={cardSearchTerm}
+              searchTerm={debouncedCardSearchTerm}
               onSearchChange={setCardSearchTerm}
               onRefresh={refreshFunction || (api?.url ? () => getRequestData.refetch() : null)}
               title={title}
