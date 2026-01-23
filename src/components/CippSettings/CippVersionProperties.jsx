@@ -1,10 +1,38 @@
-import { Box, Button, SvgIcon, Tooltip, Typography, Divider } from "@mui/material";
-import { CippPropertyListCard } from "/src/components/CippCards/CippPropertyListCard";
-import { CheckCircle, SystemUpdateAlt, Warning, Error, Sync } from "@mui/icons-material";
+import { useState } from "react";
+import {
+  Box,
+  Button,
+  SvgIcon,
+  Tooltip,
+  Typography,
+  Card,
+  CardHeader,
+  CardContent,
+  CardActions,
+  Chip,
+  Stack,
+  Divider,
+  alpha,
+  useTheme,
+  CircularProgress,
+} from "@mui/material";
+import {
+  CheckCircle,
+  Warning,
+  Sync,
+  Refresh,
+  Delete,
+  Computer,
+  Cloud,
+  Storage,
+} from "@mui/icons-material";
 import { ApiGetCall } from "/src/api/ApiCall";
 import { useEffect } from "react";
 
 const CippVersionProperties = () => {
+  const theme = useTheme();
+  const [cleaningUp, setCleaningUp] = useState(false);
+
   const version = ApiGetCall({
     url: "/version.json",
     queryKey: "LocalVersion",
@@ -23,129 +51,254 @@ const CippVersionProperties = () => {
     }
   }, [version, cippVersion]);
 
-  const CippVersionComponent = (version, availableVersion, outOfDate) => {
-    return (
-      <Box>
-        <SvgIcon fontSize="inherit" style={{ marginRight: 3 }}>
-          {outOfDate === true ? <Warning color="warning" /> : <CheckCircle color="success" />}
-        </SvgIcon>
-        <span style={{ marginRight: 10 }}>v{version}</span>{" "}
-        {outOfDate === true ? `(v${availableVersion} is available)` : ""}
-      </Box>
-    );
-  };
-
-  // Component for showing backend app version with sync status
-  const BackendAppVersion = ({ app, mainVersion }) => {
-    const isOutOfSync = app?.OutOfSync;
-    const isOutdated = mainVersion && app?.Version && 
-      cippVersion?.data?.RemoteCIPPAPIVersion && 
-      app.Version !== cippVersion?.data?.RemoteCIPPAPIVersion;
-    
-    return (
-      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-        <Tooltip title={isOutOfSync ? "Out of sync with main API" : "In sync"}>
-          <SvgIcon fontSize="inherit" sx={{ mr: 0.5 }}>
-            {isOutOfSync ? <Sync color="warning" /> : <CheckCircle color="success" />}
-          </SvgIcon>
-        </Tooltip>
-        <Typography variant="body2" component="span">
-          v{app?.Version || "Unknown"}
-        </Typography>
-        {isOutOfSync && (
-          <Typography variant="caption" color="warning.main" sx={{ ml: 1 }}>
-            (out of sync)
-          </Typography>
-        )}
-      </Box>
-    );
-  };
-
-  // Build property items including backend versions
-  const buildPropertyItems = () => {
-    const items = [
-      {
-        label: "Frontend",
-        value: CippVersionComponent(
-          version?.data?.version,
-          cippVersion?.data?.RemoteCIPPVersion,
-          cippVersion?.data?.OutOfDateCIPP
-        ),
-      },
-    ];
-
-    // Add backend versions
-    const backendVersions = cippVersion?.data?.BackendVersions || [];
-    
-    if (backendVersions.length > 0) {
-      // Find the main API version
-      const mainApp = backendVersions.find(app => app.IsMainApp);
-      const mainVersion = mainApp?.Version;
-      
-      // Add each backend app
-      backendVersions.forEach((app, index) => {
-        items.push({
-          label: app.FriendlyName || app.Name,
-          value: <BackendAppVersion app={app} mainVersion={mainVersion} />,
-        });
-      });
-      
-      // Check if any are out of sync
-      const outOfSyncCount = backendVersions.filter(app => app.OutOfSync).length;
-      if (outOfSyncCount > 0) {
-        items.push({
-          label: "Sync Status",
-          value: (
-            <Box sx={{ display: "flex", alignItems: "center", color: "warning.main" }}>
-              <SvgIcon fontSize="inherit" sx={{ mr: 0.5 }}>
-                <Warning />
-              </SvgIcon>
-              <Typography variant="body2">
-                {outOfSyncCount} app{outOfSyncCount > 1 ? "s" : ""} out of sync
-              </Typography>
-            </Box>
-          ),
-        });
-      }
-    } else {
-      // Fallback to single backend version if no detailed info
-      items.push({
-        label: "Backend",
-        value: CippVersionComponent(
-          cippVersion?.data?.LocalCIPPAPIVersion,
-          cippVersion?.data?.RemoteCIPPAPIVersion,
-          cippVersion?.data?.OutOfDateCIPPAPI
-        ),
-      });
+  // Cleanup stale versions and refresh
+  const handleCleanupAndRefresh = async () => {
+    setCleaningUp(true);
+    try {
+      // Call API with cleanup flag
+      await fetch(`/api/GetVersion?LocalVersion=${version?.data?.version}&CleanupStale=true`);
+      // Refetch to get updated data
+      await cippVersion.refetch();
+    } catch (error) {
+      console.error("Failed to cleanup stale versions:", error);
+    } finally {
+      setCleaningUp(false);
     }
-
-    return items;
   };
+
+  // Version badge component
+  const VersionBadge = ({ version, latestVersion, isOutOfDate, label, icon }) => {
+    const isUpToDate = !isOutOfDate;
+    
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          p: 1.5,
+          borderRadius: 1,
+          bgcolor: isUpToDate
+            ? alpha(theme.palette.success.main, 0.08)
+            : alpha(theme.palette.warning.main, 0.08),
+          border: `1px solid ${
+            isUpToDate
+              ? alpha(theme.palette.success.main, 0.2)
+              : alpha(theme.palette.warning.main, 0.2)
+          }`,
+        }}
+      >
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <SvgIcon
+            sx={{
+              color: isUpToDate ? "success.main" : "warning.main",
+              fontSize: 20,
+            }}
+          >
+            {icon}
+          </SvgIcon>
+          <Box>
+            <Typography variant="body2" fontWeight={600}>
+              {label}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {version ? `v${version}` : "Unknown"}
+            </Typography>
+          </Box>
+        </Stack>
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          {isOutOfDate && (
+            <Chip
+              label={`v${latestVersion} available`}
+              size="small"
+              color="warning"
+              variant="outlined"
+              sx={{ height: 24, fontSize: "0.7rem" }}
+            />
+          )}
+          <SvgIcon
+            sx={{
+              color: isUpToDate ? "success.main" : "warning.main",
+              fontSize: 18,
+            }}
+          >
+            {isUpToDate ? <CheckCircle /> : <Warning />}
+          </SvgIcon>
+        </Stack>
+      </Box>
+    );
+  };
+
+  // Backend app version row
+  const BackendVersionRow = ({ app, isLast }) => {
+    const isOutOfSync = app?.OutOfSync;
+    
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          py: 1,
+          px: 1.5,
+          borderBottom: isLast ? "none" : `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        <Stack direction="row" spacing={1} alignItems="center">
+          <SvgIcon sx={{ color: "text.secondary", fontSize: 16 }}>
+            <Storage />
+          </SvgIcon>
+          <Typography variant="body2">
+            {app.FriendlyName || app.Name}
+          </Typography>
+        </Stack>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography
+            variant="body2"
+            sx={{
+              fontFamily: "monospace",
+              bgcolor: alpha(theme.palette.primary.main, 0.08),
+              px: 1,
+              py: 0.25,
+              borderRadius: 0.5,
+              fontSize: "0.75rem",
+            }}
+          >
+            v{app?.Version || "?"}
+          </Typography>
+          {isOutOfSync ? (
+            <Tooltip title="Out of sync with main API">
+              <SvgIcon sx={{ color: "warning.main", fontSize: 16 }}>
+                <Sync />
+              </SvgIcon>
+            </Tooltip>
+          ) : (
+            <Tooltip title="In sync">
+              <SvgIcon sx={{ color: "success.main", fontSize: 16 }}>
+                <CheckCircle />
+              </SvgIcon>
+            </Tooltip>
+          )}
+        </Stack>
+      </Box>
+    );
+  };
+
+  const backendVersions = cippVersion?.data?.BackendVersions || [];
 
   return (
-    <CippPropertyListCard
-      showDivider={false}
-      cardButton={
+    <Card sx={{ display: "flex", flexDirection: "column", height: "100%", width: "100%" }}>
+      <CardHeader
+        title="Version"
+        titleTypographyProps={{ variant: "h6" }}
+        action={
+          cippVersion.isFetching ? (
+            <CircularProgress size={20} />
+          ) : null
+        }
+      />
+      <Divider />
+      <CardContent sx={{ flex: 1, p: 2 }}>
+        <Stack spacing={2}>
+          {/* Frontend Version */}
+          <VersionBadge
+            label="Frontend"
+            version={version?.data?.version}
+            latestVersion={cippVersion?.data?.RemoteCIPPVersion}
+            isOutOfDate={cippVersion?.data?.OutOfDateCIPP}
+            icon={<Computer />}
+          />
+
+          {/* Backend Version */}
+          <VersionBadge
+            label="Backend API"
+            version={cippVersion?.data?.LocalCIPPAPIVersion}
+            latestVersion={cippVersion?.data?.RemoteCIPPAPIVersion}
+            isOutOfDate={cippVersion?.data?.OutOfDateCIPPAPI}
+            icon={<Cloud />}
+          />
+
+          {/* Backend Function Apps */}
+          {backendVersions.length > 0 && (
+            <Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", mb: 1, fontWeight: 600, textTransform: "uppercase" }}
+              >
+                Function Apps ({backendVersions.length})
+              </Typography>
+              <Box
+                sx={{
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 1,
+                  overflow: "hidden",
+                }}
+              >
+                {backendVersions.map((app, index) => (
+                  <BackendVersionRow
+                    key={app.Name || index}
+                    app={app}
+                    isLast={index === backendVersions.length - 1}
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
+
+          {/* Sync Status Warning */}
+          {backendVersions.filter((app) => app.OutOfSync).length > 0 && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                p: 1.5,
+                borderRadius: 1,
+                bgcolor: alpha(theme.palette.warning.main, 0.08),
+                border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`,
+              }}
+            >
+              <SvgIcon sx={{ color: "warning.main", fontSize: 18 }}>
+                <Warning />
+              </SvgIcon>
+              <Typography variant="body2" color="warning.main">
+                {backendVersions.filter((app) => app.OutOfSync).length} function app
+                {backendVersions.filter((app) => app.OutOfSync).length > 1 ? "s" : ""} out of sync
+              </Typography>
+            </Box>
+          )}
+        </Stack>
+      </CardContent>
+      <Divider />
+      <CardActions sx={{ p: 1.5, gap: 1, flexWrap: "wrap" }}>
         <Button
           variant="contained"
           color="primary"
           size="small"
+          startIcon={<Refresh />}
           onClick={() => {
             version.refetch();
             cippVersion.refetch();
           }}
+          disabled={cippVersion.isFetching}
         >
-          <SvgIcon fontSize="small" style={{ marginRight: 4 }}>
-            <SystemUpdateAlt />
-          </SvgIcon>
-          Check For Updates
+          Check Updates
         </Button>
-      }
-      title="Version"
-      isFetching={cippVersion.isFetching}
-      cardSx={{ display: "flex", flexDirection: "column", height: "100%", width: "100%" }}
-      propertyItems={buildPropertyItems()}
-    />
+        <Tooltip title="Remove outdated version entries (v6.x and older) from the database">
+          <Button
+            variant="outlined"
+            color="secondary"
+            size="small"
+            startIcon={cleaningUp ? <CircularProgress size={16} /> : <Delete />}
+            onClick={handleCleanupAndRefresh}
+            disabled={cleaningUp || cippVersion.isFetching}
+          >
+            Cleanup Old Versions
+          </Button>
+        </Tooltip>
+      </CardActions>
+    </Card>
   );
 };
 
