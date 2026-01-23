@@ -10,8 +10,9 @@ import {
   IconButton,
   Tooltip,
   CircularProgress,
+  Chip,
 } from "@mui/material";
-import { AccountCircle, PhotoCamera, Delete } from "@mui/icons-material";
+import { AccountCircle, PhotoCamera, Delete, PersonAddAlt1 } from "@mui/icons-material";
 import { PropertyList } from "/src/components/property-list";
 import { PropertyListItem } from "/src/components/property-list-item";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
@@ -223,6 +224,21 @@ export const CippUserInfoCard = (props) => {
                         {getCippFormatting(user?.accountEnabled, "accountEnabled")}
                       </Typography>
                     </Grid>
+
+                    {user?.userType === "Guest" && (
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <Typography variant="inherit" color="text.primary" gutterBottom>
+                          User Type:
+                        </Typography>
+                        <Chip
+                          icon={<PersonAddAlt1 />}
+                          label="Guest"
+                          size="small"
+                          color="info"
+                          variant="outlined"
+                        />
+                      </Grid>
+                    )}
 
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography variant="inherit" color="text.primary" gutterBottom>
