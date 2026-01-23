@@ -260,6 +260,7 @@ export function ApiGetCallWithPagination({
   data,
   toast = false,
   waiting = true,
+  refetchOnMount = false,
 }) {
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
@@ -316,6 +317,7 @@ export function ApiGetCallWithPagination({
     },
     staleTime: STALE_TIMES.DEFAULT,
     refetchOnWindowFocus: false,
+    refetchOnMount: refetchOnMount,
     retry: retryFn,
   });
 
