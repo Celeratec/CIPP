@@ -147,6 +147,8 @@ const CardView = ({
     return String(value);
   };
 
+  const CARD_HEIGHT = "auto";
+
   // Filter and sort data based on search term and custom sorting
   const filteredData = useMemo(() => {
     let result = data;
@@ -501,8 +503,6 @@ const CardView = ({
   };
 
   // Fixed card height for uniform appearance
-  const CARD_HEIGHT = "auto";
-
   if (isLoading) {
     return (
       <Box sx={{ p: 2 }}>
