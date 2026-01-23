@@ -1,9 +1,13 @@
+import { useRef } from "react";
 import { ApiGetCall } from "../api/ApiCall.jsx";
 import UnauthenticatedPage from "../pages/unauthenticated.js";
 import LoadingPage from "../pages/loading.js";
 import ApiOfflinePage from "../pages/api-offline.js";
 
 export const PrivateRoute = ({ children, routeType }) => {
+  // Track if we've ever been authenticated to prevent flashing Access Denied during refetch
+  const wasAuthenticated = useRef(false);
+
   const session = ApiGetCall({
     url: "/.auth/me",
     queryKey: "authmeswa",
@@ -14,15 +18,17 @@ export const PrivateRoute = ({ children, routeType }) => {
   const apiRoles = ApiGetCall({
     url: "/api/me",
     queryKey: "authmecipp",
-    retry: 2, // Reduced retry count to show offline message sooner
+    retry: 2,
+    staleTime: 60000, // 1 minute - cache API roles to prevent unnecessary refetches
     waiting: !session.isSuccess || session.data?.clientPrincipal === null,
   });
 
   // Check if the session is still loading before determining authentication status
+  // Also show loading during refetch if we have no previous data
   if (
     session.isLoading ||
     apiRoles.isLoading ||
-    (apiRoles.isFetching && (apiRoles.data === null || apiRoles.data === undefined))
+    (apiRoles.isFetching && !apiRoles.data)
   ) {
     return <LoadingPage />;
   }
@@ -38,45 +44,69 @@ export const PrivateRoute = ({ children, routeType }) => {
     return <ApiOfflinePage />;
   }
 
-  // if not logged into swa
-  if (null === session?.data?.clientPrincipal || session?.data === undefined) {
-    return <UnauthenticatedPage />;
+  // If not logged into SWA
+  if (session?.data?.clientPrincipal === null || session?.data === undefined) {
+    // Only show unauthenticated if we weren't previously authenticated
+    // This prevents flash when the session is being validated
+    if (!wasAuthenticated.current) {
+      return <UnauthenticatedPage />;
+    }
+    // If we were authenticated before, show loading while state settles
+    return <LoadingPage />;
   }
 
-  let roles = null;
-
+  // Handle user detail mismatch - trigger refetch but don't block rendering
   if (
     session?.isSuccess &&
     apiRoles?.isSuccess &&
-    undefined !== apiRoles?.data?.clientPrincipal &&
+    apiRoles?.data?.clientPrincipal !== undefined &&
     session?.data?.clientPrincipal?.userDetails &&
     apiRoles?.data?.clientPrincipal?.userDetails &&
     session?.data?.clientPrincipal?.userDetails !== apiRoles?.data?.clientPrincipal?.userDetails
   ) {
-    // refetch the profile if the user details are different
+    // Refetch in background, don't block
     apiRoles.refetch();
   }
 
-  if (null !== apiRoles?.data?.clientPrincipal && undefined !== apiRoles?.data) {
+  // Extract roles - handle refetch state gracefully
+  let roles = null;
+
+  if (apiRoles?.data?.clientPrincipal !== null && apiRoles?.data !== undefined) {
     roles = apiRoles?.data?.clientPrincipal?.userRoles ?? [];
-  } else if (null === apiRoles?.data?.clientPrincipal || undefined === apiRoles?.data) {
-    return <UnauthenticatedPage />;
-  }
-  if (null === roles) {
-    return <UnauthenticatedPage />;
   } else {
-    const blockedRoles = ["anonymous", "authenticated"];
-    const userRoles = roles?.filter((role) => !blockedRoles.includes(role)) ?? [];
-    const isAuthenticated = userRoles.length > 0 && !apiRoles?.error;
-    const isAdmin = roles?.includes("admin") || roles?.includes("superadmin");
-    if (routeType === "admin" && !isAdmin) {
-      return <UnauthenticatedPage />;
+    // During refetch, if we were previously authenticated, show loading instead of unauthenticated
+    if (wasAuthenticated.current || apiRoles.isFetching) {
+      return <LoadingPage />;
     }
-
-    if (!isAuthenticated) {
-      return <UnauthenticatedPage />;
-    }
-
-    return children;
+    return <UnauthenticatedPage />;
   }
+
+  if (roles === null) {
+    if (wasAuthenticated.current) {
+      return <LoadingPage />;
+    }
+    return <UnauthenticatedPage />;
+  }
+
+  const blockedRoles = ["anonymous", "authenticated"];
+  const userRoles = roles?.filter((role) => !blockedRoles.includes(role)) ?? [];
+  const isAuthenticated = userRoles.length > 0 && !apiRoles?.error;
+  const isAdmin = roles?.includes("admin") || roles?.includes("superadmin");
+
+  if (routeType === "admin" && !isAdmin) {
+    return <UnauthenticatedPage />;
+  }
+
+  if (!isAuthenticated) {
+    // If we were previously authenticated, this might be a transient state
+    if (wasAuthenticated.current) {
+      return <LoadingPage />;
+    }
+    return <UnauthenticatedPage />;
+  }
+
+  // Mark as successfully authenticated
+  wasAuthenticated.current = true;
+  
+  return children;
 };

@@ -207,9 +207,8 @@ const Page = () => {
     subtitle: "userPrincipalName",
     avatar: {
       field: "displayName",
-      photoField: true, // Enable profile photo display
+      photoField: true, // Photos lazy-loaded with caching
     },
-    cardHeight: 320, // Increased for quick actions
     sortFn: userSortFn,
     badges: [
       {
@@ -221,15 +220,6 @@ const Page = () => {
           Yes: { icon: "check", color: "success" },
           No: { icon: "cancel", color: "error" },
         },
-      },
-      {
-        field: "assignedLicenses",
-        tooltip: "License Status",
-        conditions: {
-          licensed: { label: "Licensed", color: "primary" },
-          unlicensed: { label: "Unlicensed", color: "default" },
-        },
-        transform: (value) => (value && value.length > 0 ? "licensed" : "unlicensed"),
       },
     ],
     // Fields shown on both mobile and desktop
@@ -243,6 +233,13 @@ const Page = () => {
       { field: "mobilePhone", label: "Mobile", icon: <Phone /> },
       { field: "officeLocation", label: "Office", icon: <LocationOn /> },
       { field: "companyName", label: "Company", icon: <Badge /> },
+    ],
+    // Mobile-specific quick actions - only these 4 on mobile
+    mobileQuickActions: [
+      "View User",
+      "Reset Password",
+      "Re-require MFA Registration",
+      "Set Per-User MFA",
     ],
   };
 
