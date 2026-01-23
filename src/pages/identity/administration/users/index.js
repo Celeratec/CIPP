@@ -207,7 +207,7 @@ const Page = () => {
     subtitle: "userPrincipalName",
     avatar: {
       field: "displayName",
-      photoField: true, // Photos lazy-loaded with caching
+      photoField: true,
     },
     sortFn: userSortFn,
     badges: [

@@ -249,14 +249,14 @@ const CardView = ({
   };
 
   // Fixed card height for uniform appearance
-  const CARD_HEIGHT = isMobile ? 180 : 280;
+  const CARD_HEIGHT = "auto";
 
   if (isLoading) {
     return (
       <Box sx={{ p: 2 }}>
         <Grid container spacing={2}>
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={i}>
+              <Grid item xs={12} sm={isMobile ? 12 : 6} md={4} lg={3} key={i}>
               <Card sx={{ height: CARD_HEIGHT }}>
                 <CardContent sx={{ height: "100%", p: 2 }}>
                   <Stack direction="row" spacing={2} alignItems="center">
@@ -332,7 +332,7 @@ const CardView = ({
               <Grid 
                 item 
                 xs={12} 
-                sm={6} 
+                sm={isMobile ? 12 : 6} 
                 md={4} 
                 lg={3}
                 key={item.id || item.RowKey || index}
@@ -360,7 +360,6 @@ const CardView = ({
                     sx={{ 
                       p: 2, 
                       pb: "12px !important",
-                      flex: 1, 
                       display: "flex", 
                       flexDirection: "column",
                       overflow: "hidden",
@@ -416,11 +415,13 @@ const CardView = ({
                           <Typography
                             variant="caption"
                             color="text.secondary"
+                            title={subtitleValue}
                             sx={{
                               display: "block",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
+                              maxWidth: "100%",
                             }}
                           >
                             {subtitleValue}
@@ -430,7 +431,7 @@ const CardView = ({
                     </Stack>
 
                     {/* Info Section */}
-                    <Box sx={{ flex: 1, overflow: "hidden" }}>
+                    <Box sx={{ overflow: "hidden" }}>
                       {/* Extra fields (job title, department) */}
                       {extraFields.length > 0 && (
                         <Stack spacing={0.25} sx={{ mb: 1 }}>
@@ -452,10 +453,12 @@ const CardView = ({
                                 <Typography
                                   variant="caption"
                                   color="text.secondary"
+                                  title={value}
                                   sx={{
                                     overflow: "hidden",
                                     textOverflow: "ellipsis",
                                     whiteSpace: "nowrap",
+                                    maxWidth: "100%",
                                   }}
                                 >
                                   {value}
@@ -513,7 +516,6 @@ const CardView = ({
                     {cardActions && cardActions.length > 0 && (
                       <Box
                         sx={{
-                          mt: "auto",
                           pt: 1,
                           borderTop: `1px solid ${theme.palette.divider}`,
                         }}
