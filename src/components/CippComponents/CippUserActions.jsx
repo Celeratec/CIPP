@@ -153,7 +153,6 @@ export const useCippUserActions = () => {
       target: "_self",
       condition: () => canWriteUser,
       category: "edit",
-      quickAction: true, // Show on card
     },
     {
       label: "Edit Properties",
@@ -323,6 +322,7 @@ export const useCippUserActions = () => {
       confirmText: "Are you sure you want to manage licenses for the selected users?",
       condition: () => canWriteUser,
       category: "edit",
+      quickAction: true,
     },
 
     // ====== SECURITY ACTIONS ======
@@ -378,6 +378,7 @@ export const useCippUserActions = () => {
       multiPost: false,
       condition: () => canWriteUser,
       category: "security",
+      quickAction: true,
     },
     {
       label: "Re-require MFA registration",
@@ -389,6 +390,7 @@ export const useCippUserActions = () => {
       multiPost: false,
       condition: () => canWriteUser,
       category: "security",
+      quickAction: true,
     },
     {
       label: "Send MFA Push",
@@ -425,6 +427,7 @@ export const useCippUserActions = () => {
       multiPost: false,
       condition: () => canWriteUser,
       category: "security",
+      quickAction: true,
     },
     {
       label: "Set Password Expiration",
@@ -460,6 +463,7 @@ export const useCippUserActions = () => {
       multiPost: false,
       condition: () => canWriteUser,
       category: "security",
+      quickAction: true,
     },
     {
       label: "Set Sign In State",
@@ -580,6 +584,7 @@ export const useCippUserActions = () => {
       allowResubmit: true,
       condition: () => canWriteGroup,
       category: "manage",
+      quickAction: true,
     },
     {
       label: "Disable Email Forwarding",
