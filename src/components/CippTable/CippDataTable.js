@@ -283,13 +283,21 @@ const CardView = ({
       // Check license status for visual indicator
       const isLicensed = item.assignedLicenses && item.assignedLicenses.length > 0;
 
+      const gridProps = {
+        xs: 12,
+        sm: isMobile ? 12 : 6,
+        md: 4,
+        lg: 3,
+        ...(config.cardGridProps || {}),
+      };
+
       return (
-        <Grid 
-          item 
-          xs={12} 
-          sm={isMobile ? 12 : 6} 
-          md={4} 
-          lg={3}
+        <Grid
+          item
+          xs={gridProps.xs}
+          sm={gridProps.sm}
+          md={gridProps.md}
+          lg={gridProps.lg}
           key={item.id || item.RowKey || index}
         >
           <Card
@@ -483,7 +491,9 @@ const CardView = ({
                   <CippQuickActions
                     actions={cardActions}
                     data={item}
-                    maxActions={isMobile ? 4 : 6}
+                    maxActions={
+                      config.maxQuickActions ?? (isMobile ? 4 : 6)
+                    }
                     showOnHover={false}
                   />
                 </Box>

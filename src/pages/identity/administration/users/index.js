@@ -15,7 +15,7 @@ import {
   LocationOn,
   Badge,
   Work,
-  Edit,
+  GroupAdd,
   CloudDone,
   LockReset,
   LockPerson,
@@ -48,10 +48,61 @@ const Page = () => {
       quickAction: true,
     },
     {
-      label: "Edit User",
-      link: "/identity/administration/users/user/edit?userId=[id]",
-      icon: <Edit />,
-      color: "success",
+      label: "Add to Group",
+      type: "POST",
+      icon: <GroupAdd />,
+      url: "/api/EditGroup",
+      customDataformatter: (row, action, formData) => {
+        let addMember = [];
+        if (Array.isArray(row)) {
+          row
+            .map((r) => ({
+              label: r.displayName,
+              value: r.id,
+              addedFields: {
+                id: r.id,
+                userPrincipalName: r.userPrincipalName,
+                displayName: r.displayName,
+              },
+            }))
+            .forEach((r) => addMember.push(r));
+        } else {
+          addMember.push({
+            label: row.displayName,
+            value: row.id,
+            addedFields: {
+              id: row.id,
+              userPrincipalName: row.userPrincipalName,
+              displayName: row.displayName,
+            },
+          });
+        }
+        const selectedGroups = Array.isArray(formData.groupId)
+          ? formData.groupId
+          : [formData.groupId];
+        return selectedGroups.map((group) => ({
+          addMember: addMember,
+          tenantFilter: tenant,
+          groupId: group,
+        }));
+      },
+      fields: [
+        {
+          type: "autoComplete",
+          name: "groupId",
+          label: "Select groups to add the user to",
+          multiple: true,
+          creatable: false,
+          validators: { required: "Please select at least one group" },
+          api: {
+            url: "/api/ListGroups",
+            labelField: "displayName",
+            valueField: "id",
+            queryKey: `groups-${tenant}`,
+          },
+        },
+      ],
+      confirmText: "Add [displayName] to selected group(s)?",
       category: "edit",
       quickAction: true,
     },
@@ -174,6 +225,16 @@ const Page = () => {
       category: "security",
       quickAction: true,
     },
+    {
+      label: "Revoke all user sessions",
+      type: "POST",
+      icon: <PersonOff />,
+      url: "/api/ExecRevokeSessions",
+      data: { ID: "id", Username: "userPrincipalName" },
+      confirmText: "Are you sure you want to revoke all sessions for [userPrincipalName]?",
+      category: "security",
+      quickAction: true,
+    },
   ];
 
   // Custom sort: Licensed users first (alphabetically by surname), then unlicensed (alphabetically by surname)
@@ -259,6 +320,11 @@ const Page = () => {
       "Re-require MFA Registration",
       "Set Per-User MFA",
     ],
+    maxQuickActions: 8,
+    cardGridProps: {
+      md: 6,
+      lg: 4,
+    },
   };
 
   const filters = [
