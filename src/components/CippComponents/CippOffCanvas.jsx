@@ -171,6 +171,7 @@ export const CippOffCanvas = (props) => {
                     copyItems={true}
                     actionItems={actions}
                     data={extendedData}
+                    actionsCollapsedByDefault={true}
                   />
                 </Grid>
               )}

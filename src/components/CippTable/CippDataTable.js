@@ -131,6 +131,7 @@ const CardView = ({
   isMobile = false,
   actions = [],
   tenant = null,
+  showSearch = true,
 }) => {
   const theme = useTheme();
 
@@ -536,32 +537,34 @@ const CardView = ({
   return (
     <Box sx={{ width: "100%" }}>
       {/* Search and Refresh Bar */}
-      <Box sx={{ px: 2, py: 1.5, display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
-        <TextField
-          size="small"
-          placeholder={`Search ${title || "items"}...`}
-          value={searchInput ?? searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          sx={{ flex: 1, minWidth: 200, maxWidth: isMobile ? "100%" : 350 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search fontSize="small" />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, ml: "auto" }}>
-          {onRefresh && (
-            <IconButton onClick={onRefresh} size="small" title="Refresh">
-              <Refresh />
-            </IconButton>
-          )}
-          <Typography variant="body2" color="text.secondary">
-            {filteredData?.length || 0} {filteredData?.length === 1 ? "result" : "results"}
-          </Typography>
+      {showSearch && (
+        <Box sx={{ px: 2, py: 1.5, display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+          <TextField
+            size="small"
+            placeholder={`Search ${title || "items"}...`}
+            value={searchInput ?? searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            sx={{ flex: 1, minWidth: 200, maxWidth: isMobile ? "100%" : 350 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, ml: "auto" }}>
+            {onRefresh && (
+              <IconButton onClick={onRefresh} size="small" title="Refresh">
+                <Refresh />
+              </IconButton>
+            )}
+            <Typography variant="body2" color="text.secondary">
+              {filteredData?.length || 0} {filteredData?.length === 1 ? "result" : "results"}
+            </Typography>
+          </Box>
         </Box>
-      </Box>
+      )}
 
       {/* Card Grid - Uniform sizing */}
       <Box sx={{ p: 2, pt: 1 }}>
@@ -680,6 +683,7 @@ export const CippDataTable = (props) => {
     }, 200);
     return () => clearTimeout(timer);
   }, [cardSearchInput]);
+
 
   // Determine if we should show card view
   // On mobile: always show cards if config exists
@@ -1112,6 +1116,8 @@ export const CippDataTable = (props) => {
               viewMode={viewMode}
               onViewModeChange={handleViewModeChange}
               cardConfigAvailable={!!effectiveCardConfig}
+              searchValue={cardSearchInput}
+              onSearchChange={setCardSearchInput}
             />
           )}
         </>
@@ -1286,6 +1292,13 @@ export const CippDataTable = (props) => {
     }
   }, [filters, memoizedColumns, table]);
 
+  // Keep table global filter in sync with the shared search value
+  useEffect(() => {
+    if (table?.setGlobalFilter) {
+      table.setGlobalFilter(cardSearchInput);
+    }
+  }, [cardSearchInput, table]);
+
   useEffect(() => {
     if (onChange && table.getSelectedRowModel().rows) {
       onChange(table.getSelectedRowModel().rows.map((row) => row.original));
@@ -1355,6 +1368,8 @@ export const CippDataTable = (props) => {
         onViewModeChange={handleViewModeChange}
         cardConfigAvailable={!!effectiveCardConfig}
         isCardView={true}
+        searchValue={cardSearchInput}
+        onSearchChange={setCardSearchInput}
       />
     );
   };
@@ -1401,6 +1416,7 @@ export const CippDataTable = (props) => {
               isMobile={isMobile}
               actions={actions}
               tenant={settings?.currentTenant}
+              showSearch={isMobile || simple}
             />
           )}
         </Card>

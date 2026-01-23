@@ -9,9 +9,13 @@ import {
   CardActions,
   Box,
   Typography,
+  Collapse,
+  IconButton,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { ActionList } from "../../components/action-list";
 import { ActionListItem } from "../../components/action-list-item";
 import { PropertyList } from "../../components/property-list";
@@ -36,12 +40,14 @@ export const CippPropertyListCard = (props) => {
     cardButton,
     cardSx = { width: "100%", height: "100%" },
     useImprovedActions = true, // New prop to enable improved action menu
+    actionsCollapsedByDefault = false,
     ...other
   } = props;
   const theme = useTheme();
   const smDown = useMediaQuery(theme.breakpoints.down("sm"));
   const createDialog = useDialog();
   const [actionData, setActionData] = useState({ data: {}, action: {}, ready: false });
+  const [actionsOpen, setActionsOpen] = useState(!actionsCollapsedByDefault);
 
   const half = Math.ceil(propertyItems.length / 2);
   const firstHalf = propertyItems.slice(0, half);
@@ -167,19 +173,32 @@ export const CippPropertyListCard = (props) => {
         {actionItems?.length > 0 && (
           useImprovedActions ? (
             <Box sx={{ p: smDown ? 1.5 : 2 }}>
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                sx={{ mb: 1.5, fontWeight: 600 }}
-              >
-                Actions
-              </Typography>
-              <CippActionMenu
-                actions={actionItems}
-                data={data}
-                showSearch={actionItems.length > 6}
-                showCategories={actionItems.length > 4}
-              />
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  sx={{ fontWeight: 600 }}
+                >
+                  Actions
+                </Typography>
+                <IconButton
+                  size="small"
+                  onClick={() => setActionsOpen((open) => !open)}
+                  aria-label={actionsOpen ? "Collapse actions" : "Expand actions"}
+                >
+                  {actionsOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                </IconButton>
+              </Box>
+              <Collapse in={actionsOpen} timeout="auto" unmountOnExit>
+                <Box sx={{ mt: 1.5 }}>
+                  <CippActionMenu
+                    actions={actionItems}
+                    data={data}
+                    showSearch={actionItems.length > 6}
+                    showCategories={actionItems.length > 4}
+                  />
+                </Box>
+              </Collapse>
             </Box>
           ) : (
             <>

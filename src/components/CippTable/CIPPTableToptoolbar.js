@@ -168,6 +168,8 @@ export const CIPPTableToptoolbar = ({
   onViewModeChange,
   cardConfigAvailable = false,
   isCardView = false,
+  searchValue: controlledSearchValue,
+  onSearchChange,
 }) => {
   const popover = usePopover();
   const [filtersAnchor, setFiltersAnchor] = useState(null);
@@ -175,6 +177,8 @@ export const CIPPTableToptoolbar = ({
   const [exportAnchor, setExportAnchor] = useState(null);
   const [actionMenuAnchor, setActionMenuAnchor] = useState(null);
   const [searchValue, setSearchValue] = useState("");
+  const effectiveSearchValue =
+    controlledSearchValue !== undefined ? controlledSearchValue : searchValue;
 
   const mdDown = useMediaQuery((theme) => theme.breakpoints.down("md"));
   const settings = useSettings();
@@ -439,7 +443,12 @@ export const CIPPTableToptoolbar = ({
   // Handle search input changes
   const handleSearchChange = (event) => {
     const value = event.target.value;
-    setSearchValue(value);
+    if (controlledSearchValue === undefined) {
+      setSearchValue(value);
+    }
+    if (onSearchChange) {
+      onSearchChange(value);
+    }
     if (table?.setGlobalFilter) {
       table.setGlobalFilter(value);
     }
@@ -730,8 +739,8 @@ export const CIPPTableToptoolbar = ({
           <ModernSearchContainer elevation={0}>
             <SearchIcon sx={{ color: "text.secondary", fontSize: 20 }} />
             <ModernSearchInput
-              placeholder="Search input"
-              value={searchValue}
+              placeholder="Search items..."
+              value={effectiveSearchValue}
               onChange={handleSearchChange}
             />
           </ModernSearchContainer>
