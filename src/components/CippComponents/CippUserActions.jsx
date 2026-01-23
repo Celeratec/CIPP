@@ -10,6 +10,8 @@ import {
   LockClock,
   LockPerson,
   LockReset,
+  LocationOn,
+  SupervisorAccount,
   MeetingRoom,
   Password,
   PersonOff,
@@ -169,6 +171,88 @@ export const useCippUserActions = () => {
             window.location.href = "/identity/administration/users/patch-wizard";
           });
       },
+      condition: () => canWriteUser,
+      category: "edit",
+    },
+    {
+      label: "Update Address & Company",
+      type: "POST",
+      icon: <LocationOn />,
+      url: "/api/PatchUser",
+      multiPost: true,
+      fields: [
+        { type: "textField", name: "streetAddress", label: "Street Address" },
+        { type: "textField", name: "city", label: "City" },
+        { type: "textField", name: "state", label: "State" },
+        { type: "textField", name: "postalCode", label: "Postal Code" },
+        { type: "textField", name: "country", label: "Country" },
+        { type: "textField", name: "companyName", label: "Company Name" },
+      ],
+      customDataformatter: (users, action, formData) => {
+        const userList = Array.isArray(users) ? users : [users];
+        const patchFields = [
+          "streetAddress",
+          "city",
+          "state",
+          "postalCode",
+          "country",
+          "companyName",
+        ];
+        const cleanForm = patchFields.reduce((acc, key) => {
+          const value = formData?.[key];
+          if (value !== undefined && value !== null && String(value).trim() !== "") {
+            acc[key] = value;
+          }
+          return acc;
+        }, {});
+
+        if (Object.keys(cleanForm).length === 0) {
+          return [];
+        }
+
+        return userList.map((user) => ({
+          id: user.id,
+          tenantFilter: user.Tenant || tenant,
+          ...cleanForm,
+        }));
+      },
+      confirmText: "Update address/company details for selected users?",
+      condition: () => canWriteUser,
+      category: "edit",
+    },
+    {
+      label: "Set Manager",
+      type: "POST",
+      icon: <SupervisorAccount />,
+      url: "/api/ExecSetManager",
+      data: {
+        userPrincipalName: "userPrincipalName",
+      },
+      fields: [
+        {
+          type: "autoComplete",
+          name: "managerId",
+          label: "Select Manager",
+          multiple: false,
+          creatable: false,
+          api: {
+            url: "/api/ListGraphRequest",
+            data: {
+              Endpoint: "users",
+              $select: "id,displayName,userPrincipalName",
+              $top: 999,
+              $count: true,
+            },
+            queryKey: "ListUsersAutoComplete",
+            dataKey: "Results",
+            labelField: (user) => `${user.displayName} (${user.userPrincipalName})`,
+            valueField: "id",
+            showRefresh: true,
+          },
+        },
+      ],
+      confirmText: "Set manager for selected users?",
+      multiPost: true,
       condition: () => canWriteUser,
       category: "edit",
     },

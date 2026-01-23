@@ -367,16 +367,19 @@ const Page = () => {
     ],
     // Fields shown on both mobile and desktop
     extraFields: [
+      { field: "companyName", icon: <Badge /> },
       { field: "jobTitle", icon: <Work /> },
       { field: "department", icon: <Business /> },
     ],
     // Additional fields shown only on desktop cards
     desktopFields: [
-      { field: "mail", label: "Email", icon: <Email /> },
-      { field: "mobilePhone", label: "Mobile", icon: <Phone /> },
+      { field: "mail", label: "Email", icon: <Email />, linkType: "email" },
+      { field: "mobilePhone", label: "Mobile", icon: <Phone />, linkType: "tel" },
       { field: "officeLocation", label: "Office", icon: <LocationOn /> },
-      { field: "companyName", label: "Company", icon: <Badge /> },
     ],
+    extraFieldsMax: 3,
+    desktopFieldsLayout: "column",
+    desktopFieldsMax: 4,
     // Mobile-specific quick actions - only these 4 on mobile
     mobileQuickActions: [
       "View User",

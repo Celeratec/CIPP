@@ -148,6 +148,22 @@ const CardView = ({
     return String(value);
   };
 
+  const getPrimaryFieldValue = (value) => String(value).split(/[;,]/)[0]?.trim();
+
+  const getFieldHref = (field, value) => {
+    if (!value) return null;
+    if (typeof field?.href === "function") {
+      return field.href(value);
+    }
+    if (field?.linkType === "email") {
+      return `mailto:${getPrimaryFieldValue(value)}`;
+    }
+    if (field?.linkType === "tel") {
+      return `tel:${getPrimaryFieldValue(value).replace(/[^+\d]/g, "")}`;
+    }
+    return null;
+  };
+
   const CARD_HEIGHT = "auto";
 
   // Render badge based on config
@@ -430,7 +446,7 @@ const CardView = ({
                 {/* Extra fields (job title, department) */}
                 {extraFields.length > 0 && (
                   <Stack spacing={0.25} sx={{ mb: 1 }}>
-                    {extraFields.slice(0, 2).map((field, fieldIndex) => {
+                    {extraFields.slice(0, config.extraFieldsMax ?? 2).map((field, fieldIndex) => {
                       const rawValue = getNestedValue(item, field.field || field);
                       const value = formatFieldValue(rawValue);
                       if (!value) return null;
@@ -474,38 +490,83 @@ const CardView = ({
                       borderTop: `1px dashed ${theme.palette.divider}`,
                     }}
                   >
-                    <Grid container spacing={0.5}>
-                      {desktopFields.slice(0, 4).map((field, fieldIndex) => {
-                        const rawValue = getNestedValue(item, field.field || field);
-                        const value = formatFieldValue(rawValue);
-                        if (!value) return null;
-                        
-                        return (
-                          <Grid item xs={6} key={fieldIndex}>
-                            <Stack direction="row" spacing={0.5} alignItems="center">
+                    {config.desktopFieldsLayout === "column" ? (
+                      <Stack spacing={0.5}>
+                        {desktopFields.slice(0, config.desktopFieldsMax ?? 4).map((field, fieldIndex) => {
+                          const rawValue = getNestedValue(item, field.field || field);
+                          const value = formatFieldValue(rawValue);
+                          if (!value) return null;
+                          const href = getFieldHref(field, value);
+
+                          return (
+                            <Stack key={fieldIndex} direction="row" spacing={0.5} alignItems="center">
                               {field.icon && (
                                 <SvgIcon sx={{ fontSize: 12, color: "text.disabled" }}>
                                   {field.icon}
                                 </SvgIcon>
                               )}
-                              <Typography 
-                                variant="caption" 
+                              <Typography
+                                variant="caption"
                                 color="text.secondary"
                                 title={value}
-                                sx={{ 
+                                component={href ? "a" : "span"}
+                                href={href || undefined}
+                                onClick={href ? (e) => e.stopPropagation() : undefined}
+                                sx={{
                                   fontSize: "0.7rem",
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
                                   whiteSpace: "nowrap",
+                                  color: href ? "primary.main" : "text.secondary",
+                                  textDecoration: href ? "underline" : "none",
                                 }}
                               >
                                 {value}
                               </Typography>
                             </Stack>
-                          </Grid>
-                        );
-                      })}
-                    </Grid>
+                          );
+                        })}
+                      </Stack>
+                    ) : (
+                      <Grid container spacing={0.5}>
+                        {desktopFields.slice(0, config.desktopFieldsMax ?? 4).map((field, fieldIndex) => {
+                          const rawValue = getNestedValue(item, field.field || field);
+                          const value = formatFieldValue(rawValue);
+                          if (!value) return null;
+                          const href = getFieldHref(field, value);
+                          
+                          return (
+                            <Grid item xs={6} key={fieldIndex}>
+                              <Stack direction="row" spacing={0.5} alignItems="center">
+                                {field.icon && (
+                                  <SvgIcon sx={{ fontSize: 12, color: "text.disabled" }}>
+                                    {field.icon}
+                                  </SvgIcon>
+                                )}
+                                <Typography 
+                                  variant="caption" 
+                                  color="text.secondary"
+                                  title={value}
+                                  component={href ? "a" : "span"}
+                                  href={href || undefined}
+                                  onClick={href ? (e) => e.stopPropagation() : undefined}
+                                  sx={{ 
+                                    fontSize: "0.7rem",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                    color: href ? "primary.main" : "text.secondary",
+                                    textDecoration: href ? "underline" : "none",
+                                  }}
+                                >
+                                  {value}
+                                </Typography>
+                              </Stack>
+                            </Grid>
+                          );
+                        })}
+                      </Grid>
+                    )}
                   </Box>
                 )}
               </Box>
