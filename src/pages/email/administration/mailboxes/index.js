@@ -3,6 +3,7 @@ import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx"
 import CippExchangeActions from "../../../../components/CippComponents/CippExchangeActions";
 import { CippHVEUserDrawer } from "/src/components/CippComponents/CippHVEUserDrawer.jsx";
 import { CippSharedMailboxDrawer } from "/src/components/CippComponents/CippSharedMailboxDrawer.jsx";
+import { Group } from "@mui/icons-material";
 
 const Page = () => {
   const pageTitle = "Mailboxes";
@@ -20,7 +21,7 @@ const Page = () => {
         tooltip: "Mailbox Type",
         conditions: {
           UserMailbox: { label: "User", color: "primary" },
-          SharedMailbox: { label: "Shared", color: "secondary" },
+          SharedMailbox: { label: "Shared", color: "secondary", icon: <Group fontSize="small" /> },
           RoomMailbox: { label: "Room", color: "info" },
           EquipmentMailbox: { label: "Equip", color: "default" },
         },
