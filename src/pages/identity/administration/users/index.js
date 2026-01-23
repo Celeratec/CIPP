@@ -1,6 +1,7 @@
 import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { useSettings } from "/src/hooks/use-settings.js";
+import { ApiGetCall } from "/src/api/ApiCall";
 import { PermissionButton } from "../../../../utils/permissions";
 import { CippInviteGuestDrawer } from "/src/components/CippComponents/CippInviteGuestDrawer.jsx";
 import { CippBulkUserDrawer } from "/src/components/CippComponents/CippBulkUserDrawer.jsx";
@@ -8,6 +9,7 @@ import { CippAddUserDrawer } from "/src/components/CippComponents/CippAddUserDra
 import { CippApiLogsDrawer } from "/src/components/CippComponents/CippApiLogsDrawer.jsx";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import { useRouter } from "next/router";
+import { useCallback, useMemo } from "react";
 import {
   Email,
   Phone,
@@ -22,6 +24,7 @@ import {
   PhonelinkSetup,
   Password,
   WorkspacePremium,
+  Group,
   PersonOff,
   RemoveCircleOutline,
 } from "@mui/icons-material";
@@ -34,6 +37,45 @@ const Page = () => {
   const cardButtonPermissions = ["Identity.User.ReadWrite"];
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const mailboxRequest = ApiGetCall({
+    url: "/api/ListMailboxes",
+    queryKey: `ListMailboxes-${tenant}`,
+    waiting: !!tenant && tenant !== "AllTenants",
+  });
+
+  const sharedMailboxSet = useMemo(() => {
+    const raw =
+      mailboxRequest.data?.Results ||
+      mailboxRequest.data?.results ||
+      mailboxRequest.data?.value ||
+      mailboxRequest.data ||
+      [];
+    const list = Array.isArray(raw) ? raw : [];
+    const shared = list.filter((item) => item?.recipientTypeDetails === "SharedMailbox");
+    return new Set(
+      shared
+        .map((item) =>
+          (
+            item?.UPN ||
+            item?.primarySmtpAddress ||
+            item?.userPrincipalName ||
+            item?.mail ||
+            ""
+          ).toLowerCase()
+        )
+        .filter(Boolean)
+    );
+  }, [mailboxRequest.data]);
+
+  const isSharedMailbox = useCallback(
+    (item) => {
+      if (!sharedMailboxSet.size) return false;
+      const key = (item?.userPrincipalName || item?.mail || "").toLowerCase();
+      return !!key && sharedMailboxSet.has(key);
+    },
+    [sharedMailboxSet]
+  );
 
   // Quick actions for cards - most useful actions organized logically
   // Order: View/Edit first, then common tasks, then security actions
@@ -301,6 +343,26 @@ const Page = () => {
         conditions: {
           Guest: { label: "Guest", color: "warning", icon: <PersonOff fontSize="small" /> },
         },
+      },
+      {
+        field: "mail",
+        tooltip: "Mail Enabled",
+        iconOnly: true,
+        conditions: {
+          enabled: { label: "Mail enabled", color: "success", icon: <Email fontSize="small" /> },
+          disabled: { label: "Not mail enabled", color: "error", icon: <Email fontSize="small" /> },
+        },
+        transform: (value, item) =>
+          value || (item?.proxyAddresses && item.proxyAddresses.length > 0) ? "enabled" : "disabled",
+      },
+      {
+        field: "userPrincipalName",
+        tooltip: "Shared Mailbox",
+        iconOnly: true,
+        conditions: {
+          SharedMailbox: { label: "Shared", color: "secondary", icon: <Group fontSize="small" /> },
+        },
+        transform: (_value, item) => (isSharedMailbox(item) ? "SharedMailbox" : null),
       },
     ],
     // Fields shown on both mobile and desktop
