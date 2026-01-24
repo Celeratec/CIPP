@@ -25,6 +25,7 @@ import Page from "../pages/onboardingv2";
 import { useDialog } from "../hooks/use-dialog";
 import { nativeMenuItems } from "/src/layouts/config";
 import { CippBreadcrumbNav } from "../components/CippComponents/CippBreadcrumbNav";
+import { CippTenantSelector } from "../components/CippComponents/CippTenantSelector";
 
 const SIDE_NAV_WIDTH = 270;
 const SIDE_NAV_PINNED_WIDTH = 50;
@@ -254,6 +255,11 @@ export const Layout = (props) => {
   const [setupCompleted, setSetupCompleted] = useState(true);
   const createDialog = useDialog();
   const dispatch = useDispatch();
+  const mobileTenantSelector = mdDown ? (
+    <Box sx={{ mx: 3, mt: 2 }}>
+      <CippTenantSelector width="100%" refreshButton={true} tenantButton={true} />
+    </Box>
+  ) : null;
   useEffect(() => {
     if (alertsAPI.isSuccess && !alertsAPI.isFetching) {
       if (alertsAPI.data.length > 0) {
@@ -321,6 +327,7 @@ export const Layout = (props) => {
           {(currentTenant === "AllTenants" || !currentTenant) && !allTenantsSupport ? (
             <Box sx={{ flexGrow: 1, py: 3 }}>
               <Container maxWidth={false}>
+                {mobileTenantSelector}
                 <CippBreadcrumbNav mode="hierarchical" />
                 <Grid container spacing={3}>
                   <Grid size={6}>
@@ -337,6 +344,7 @@ export const Layout = (props) => {
             </Box>
           ) : (
             <Stack>
+              {mobileTenantSelector}
               <Box sx={{ mx: 3, mt: 3 }}>
                 <CippBreadcrumbNav mode="hierarchical" />
               </Box>

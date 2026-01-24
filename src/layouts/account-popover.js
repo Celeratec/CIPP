@@ -22,6 +22,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { usePopover } from "../hooks/use-popover";
+import { useSettings } from "../hooks/use-settings";
 import { paths } from "../paths";
 import { ApiGetCall } from "../api/ApiCall";
 import { CogIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
@@ -41,19 +42,24 @@ export const AccountPopover = (props) => {
   const popover = usePopover();
   const queryClient = useQueryClient();
   const { openReleaseNotes } = useReleaseNotes();
+  const settings = useSettings();
   const orgData = ApiGetCall({
     url: "/api/me",
     queryKey: "authmecipp",
   });
 
   const userDetails = orgData.data?.clientPrincipal?.userDetails;
+  const tenantFilter =
+    settings.currentTenant === "AllTenants"
+      ? userDetails?.split("@")?.[1]
+      : settings.currentTenant;
 
   // Cache user photo with user-specific key
   const userPhoto = ApiGetCall({
     url: "/api/ListUserPhoto",
-    data: { UserID: userDetails },
-    queryKey: `userPhoto-${userDetails}`,
-    waiting: !!userDetails,
+    data: { UserID: userDetails, TenantFilter: tenantFilter },
+    queryKey: `userPhoto-${tenantFilter}-${userDetails}`,
+    waiting: !!userDetails && !!tenantFilter,
     staleTime: Infinity,
     responseType: "blob",
     convertToDataUrl: true,

@@ -174,13 +174,7 @@ const Page = () => {
     extraFieldsMax: 3,
     desktopFieldsLayout: "column",
     desktopFieldsMax: 4,
-    // Mobile-specific quick actions - only these 4 on mobile
-    mobileQuickActions: [
-      "View User",
-      "Reset Password",
-      "Re-require MFA Registration",
-      "Set Per-User MFA",
-    ],
+    // Use full quick actions list on mobile as well
     maxQuickActions: 8,
     cardGridProps: {
       md: 6,
