@@ -368,7 +368,8 @@ const Page = () => {
         $top: 500,
       }}
       apiDataKey="Results"
-      actions={[]}
+      actions={actions}
+      showRowActionsMenu={false}
       offCanvas={offCanvas}
       columns={columns}
       columnVisibility={{ riskPriority: false }}

@@ -726,6 +726,7 @@ export const CippDataTable = (props) => {
     defaultViewMode = "cards", // Default view mode: 'cards' or 'table'
     onCardClick: customOnCardClick = null, // Custom handler for card clicks (bypasses off-canvas)
     viewModeStorageKey: viewModeStorageKeyOverride = null,
+    showRowActionsMenu = true,
     rowSx = null, // Optional row styling callback (row) => sx object
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
@@ -1113,7 +1114,7 @@ export const CippDataTable = (props) => {
       ) : undefined,
     onColumnVisibilityChange: setColumnVisibility,
     ...modeInfo,
-    renderRowActionMenuItems: actions
+    renderRowActionMenuItems: actions && showRowActionsMenu
       ? ({ closeMenu, row }) => [
           actions.map((action, index) => (
             <MenuItem
