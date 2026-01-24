@@ -1,22 +1,23 @@
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
-import { CippQuickActions } from "/src/components/CippComponents/CippActionMenu";
 import { getCippFormatting } from "/src/utils/get-cipp-formatting";
-import { Chip, Divider, Stack, Typography, useMediaQuery } from "@mui/material";
+import { Avatar, Box, Chip, Divider, Paper, Stack, Typography, useMediaQuery } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import {
   AccessTime,
+  CheckCircle,
   Clear,
-  Key,
+  Error as ErrorIcon,
+  Info as InfoIcon,
   Password,
   PhonelinkSetup,
   PersonOff,
   Search,
-  WarningAmber,
-  ReportProblem,
+  Warning,
 } from "@mui/icons-material";
 import { ShieldCheckIcon } from "@heroicons/react/24/outline";
 import { ApiGetCall } from "/src/api/ApiCall";
+import { getInitials, stringToColor } from "/src/utils/get-initials";
 
 const Page = () => {
   const pageTitle = "Risky Users";
@@ -25,6 +26,111 @@ const Page = () => {
   const auth = ApiGetCall({ url: "/api/me", queryKey: "authmecipp" });
   const currentUser = auth.data?.clientPrincipal?.userDetails || "anonymous";
 
+  // ============ HELPER FUNCTIONS ============
+  const formatLabel = (value) => {
+    if (!value) return "Unknown";
+    return String(value)
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/^./, (match) => match.toUpperCase());
+  };
+
+  const riskStateColor = (state) => {
+    switch (String(state || "").toLowerCase()) {
+      case "atrisk":
+      case "confirmedcompromised":
+        return "error";
+      case "remediated":
+        return "success";
+      case "dismissed":
+        return "default";
+      default:
+        return "warning";
+    }
+  };
+
+  const riskLevelColor = (level) => {
+    switch (String(level || "").toLowerCase()) {
+      case "high":
+        return "error";
+      case "medium":
+        return "warning";
+      case "low":
+        return "info";
+      case "none":
+        return "default";
+      default:
+        return "secondary";
+    }
+  };
+
+  // Risk state chip config
+  const getRiskStateChip = (state) => {
+    const s = String(state || "").toLowerCase();
+    switch (s) {
+      case "atrisk":
+        return { label: "At Risk", color: "error", icon: <ErrorIcon fontSize="small" /> };
+      case "confirmedcompromised":
+        return { label: "Compromised", color: "error", icon: <ErrorIcon fontSize="small" /> };
+      case "remediated":
+        return { label: "Remediated", color: "success", icon: <CheckCircle fontSize="small" /> };
+      case "dismissed":
+        return { label: "Dismissed", color: "default", icon: <Clear fontSize="small" /> };
+      default:
+        return { label: formatLabel(state), color: "warning", icon: <Warning fontSize="small" /> };
+    }
+  };
+
+  // Risk level chip config
+  const getRiskLevelChip = (level) => {
+    const l = String(level || "").toLowerCase();
+    switch (l) {
+      case "high":
+        return { label: "High", color: "error", variant: "filled" };
+      case "medium":
+        return { label: "Medium", color: "warning", variant: "filled" };
+      case "low":
+        return { label: "Low", color: "info", variant: "outlined" };
+      case "none":
+        return { label: "None", color: "default", variant: "outlined" };
+      default:
+        return { label: formatLabel(level), color: "secondary", variant: "outlined" };
+    }
+  };
+
+  // Get severity level for combined state + level
+  const getSeverity = (item) => {
+    const state = String(item?.riskState || "").toLowerCase();
+    const level = String(item?.riskLevel || "").toLowerCase();
+    
+    if (state === "confirmedcompromised") return "critical";
+    if (state === "atrisk" && level === "high") return "critical";
+    if (state === "atrisk") return "high";
+    if (state === "remediated") return "remediated";
+    if (state === "dismissed") return "dismissed";
+    if (level === "high") return "high";
+    if (level === "medium") return "medium";
+    return "low";
+  };
+
+  // Map severity to colors
+  const severityColors = {
+    critical: { bg: alpha(theme.palette.error.main, 0.12), border: theme.palette.error.dark },
+    high: { bg: alpha(theme.palette.error.main, 0.08), border: theme.palette.error.main },
+    medium: { bg: alpha(theme.palette.warning.main, 0.08), border: theme.palette.warning.main },
+    low: { bg: alpha(theme.palette.info.main, 0.06), border: theme.palette.info.main },
+    remediated: { bg: alpha(theme.palette.success.main, 0.08), border: theme.palette.success.main },
+    dismissed: { bg: alpha(theme.palette.grey[500], 0.08), border: theme.palette.grey[400] },
+  };
+
+  const riskPriority = (row) => {
+    const state = String(row?.riskState || "").toLowerCase();
+    if (state === "atrisk" || state === "confirmedcompromised") return 0;
+    if (state === "remediated") return 1;
+    if (state === "dismissed") return 2;
+    return 3;
+  };
+
+  // ============ ACTIONS ============
   const actions = [
     {
       label: "Dismiss Risk",
@@ -38,7 +144,7 @@ const Page = () => {
       quickAction: true,
     },
     {
-      label: "Research Compromised Account",
+      label: "Research Compromise",
       type: "GET",
       icon: <Search />,
       link: "/identity/administration/users/user/bec?userId=[id]",
@@ -101,101 +207,165 @@ const Page = () => {
     },
   ];
 
+  // ============ OFF-CANVAS CONFIG ============
+  // Get severity info for styling
+  const getSeverityInfo = (item) => {
+    const state = String(item?.riskState || "").toLowerCase();
+    const level = String(item?.riskLevel || "").toLowerCase();
+    
+    if (state === "confirmedcompromised") 
+      return { severity: "critical", label: "Critical", color: theme.palette.error.dark };
+    if (state === "atrisk" && level === "high") 
+      return { severity: "critical", label: "Critical", color: theme.palette.error.dark };
+    if (state === "atrisk") 
+      return { severity: "high", label: "High Risk", color: theme.palette.error.main };
+    if (state === "remediated") 
+      return { severity: "remediated", label: "Remediated", color: theme.palette.success.main };
+    if (state === "dismissed") 
+      return { severity: "dismissed", label: "Dismissed", color: theme.palette.grey[500] };
+    if (level === "high") 
+      return { severity: "high", label: "High Risk", color: theme.palette.error.main };
+    if (level === "medium") 
+      return { severity: "medium", label: "Medium Risk", color: theme.palette.warning.main };
+    return { severity: "low", label: "Low Risk", color: theme.palette.info.main };
+  };
+
   const offCanvas = {
-    extendedInfoFields: [
-      "id",
-      "userDisplayName",
-      "userPrincipalName",
-      "riskLastUpdatedDateTime",
-      "riskLevel",
-      "riskState",
-      "riskDetail",
-    ],
+    extendedInfoFields: [],
     actions: actions,
-    title: "Risky User Details",
-    children: (row) => (
-      <Stack spacing={2.5}>
-        <Stack spacing={0.5}>
-          <Typography variant="h6">{row.userDisplayName || "Unknown User"}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {row.userPrincipalName}
-          </Typography>
+    size: "md",
+    children: (row) => {
+      const severityInfo = getSeverityInfo(row);
+      const stateChip = getRiskStateChip(row.riskState);
+      const levelChip = getRiskLevelChip(row.riskLevel);
+      
+      return (
+        <Stack spacing={3}>
+          {/* Hero Section with severity indicator */}
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2.5,
+              borderRadius: 2,
+              background: `linear-gradient(135deg, ${alpha(severityInfo.color, 0.15)} 0%, ${alpha(severityInfo.color, 0.05)} 100%)`,
+              borderLeft: `4px solid ${severityInfo.color}`,
+            }}
+          >
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar
+                sx={{
+                  bgcolor: stringToColor(row.userDisplayName || "U"),
+                  width: 56,
+                  height: 56,
+                  fontSize: "1.25rem",
+                  fontWeight: 600,
+                }}
+              >
+                {getInitials(row.userDisplayName || "Unknown")}
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25 }}>
+                  {row.userDisplayName || "Unknown User"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" noWrap>
+                  {row.userPrincipalName}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+
+          {/* Risk Status Section */}
+          <Box>
+            <Typography 
+              variant="overline" 
+              color="text.secondary" 
+              sx={{ fontWeight: 600, letterSpacing: 1, mb: 1.5, display: "block" }}
+            >
+              Risk Assessment
+            </Typography>
+            <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+              <Chip
+                icon={stateChip.icon}
+                label={stateChip.label}
+                color={stateChip.color}
+                variant="filled"
+                sx={{ fontWeight: 600, px: 0.5 }}
+              />
+              <Chip
+                label={`Level: ${levelChip.label}`}
+                color={levelChip.color}
+                variant={levelChip.variant}
+                sx={{ px: 0.5 }}
+              />
+            </Stack>
+          </Box>
+
+          <Divider />
+
+          {/* Details Section */}
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+              <InfoIcon fontSize="small" color="action" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Risk Details
+              </Typography>
+            </Stack>
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                p: 2, 
+                borderRadius: 1.5,
+                backgroundColor: alpha(theme.palette.background.default, 0.5),
+              }}
+            >
+              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                {row.riskDetail || "No additional details available for this risk assessment."}
+              </Typography>
+            </Paper>
+          </Box>
+
+          {/* Metadata Section */}
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <AccessTime fontSize="small" color="action" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Timeline
+              </Typography>
+            </Stack>
+            <Stack spacing={1}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">
+                  Last Updated
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {getCippFormatting(row.riskLastUpdatedDateTime, "riskLastUpdatedDateTime")}
+                </Typography>
+              </Stack>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">
+                  User ID
+                </Typography>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    fontFamily: "monospace", 
+                    bgcolor: alpha(theme.palette.text.primary, 0.05),
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 0.5,
+                  }}
+                >
+                  {row.id}
+                </Typography>
+              </Stack>
+            </Stack>
+          </Box>
         </Stack>
-        <Stack direction="row" spacing={1} flexWrap="wrap">
-          <Chip
-            size="small"
-            label={`State: ${formatLabel(row.riskState)}`}
-            color={riskStateColor(row.riskState)}
-            variant="filled"
-          />
-          <Chip
-            size="small"
-            label={`Level: ${formatLabel(row.riskLevel)}`}
-            color={riskLevelColor(row.riskLevel)}
-            variant="outlined"
-          />
-        </Stack>
-        <Divider />
-        <Stack spacing={0.75}>
-          <Typography variant="subtitle2">Risk Detail</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {row.riskDetail || "—"}
-          </Typography>
-        </Stack>
-        <Stack spacing={0.75}>
-          <Typography variant="subtitle2">Last Updated</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {getCippFormatting(row.riskLastUpdatedDateTime, "riskLastUpdatedDateTime")}
-          </Typography>
-        </Stack>
-      </Stack>
-    ),
+      );
+    },
   };
 
-  const formatLabel = (value) => {
-    if (!value) return "Unknown";
-    return String(value)
-      .replace(/([a-z])([A-Z])/g, "$1 $2")
-      .replace(/^./, (match) => match.toUpperCase());
-  };
-
-  const riskStateColor = (state) => {
-    switch (String(state || "").toLowerCase()) {
-      case "atrisk":
-      case "confirmedcompromised":
-        return "error";
-      case "remediated":
-        return "success";
-      case "dismissed":
-        return "default";
-      default:
-        return "warning";
-    }
-  };
-
-  const riskLevelColor = (level) => {
-    switch (String(level || "").toLowerCase()) {
-      case "high":
-        return "error";
-      case "medium":
-        return "warning";
-      case "low":
-        return "info";
-      case "none":
-        return "default";
-      default:
-        return "secondary";
-    }
-  };
-
-  const riskPriority = (row) => {
-    const state = String(row?.riskState || "").toLowerCase();
-    if (state === "atrisk" || state === "confirmedcompromised") return 0;
-    if (state === "remediated") return 1;
-    if (state === "dismissed") return 2;
-    return 3;
-  };
-
+  // ============ COLUMNS ============
   const columns = [
     {
       id: "riskPriority",
@@ -271,23 +441,9 @@ const Page = () => {
         getCippFormatting(row.original.riskLastUpdatedDateTime, "riskLastUpdatedDateTime"),
       size: 160,
     },
-    {
-      id: "rowActions",
-      header: "Actions",
-      enableSorting: false,
-      Cell: ({ row }) => (
-        <CippQuickActions
-          actions={actions}
-          data={row.original}
-          maxActions={4}
-          size="small"
-          variant="button"
-        />
-      ),
-      size: 220,
-    },
   ];
 
+  // ============ CARD CONFIG ============
   const cardConfig = {
     title: "userDisplayName",
     subtitle: "userPrincipalName",
@@ -295,41 +451,67 @@ const Page = () => {
       field: "userDisplayName",
       photoField: false,
     },
-    badges: [
-      {
-        field: "riskState",
-        tooltip: "Risk State",
-        iconOnly: true,
-        conditions: {
-          atRisk: { color: "error", icon: <WarningAmber fontSize="small" /> },
-          confirmedCompromised: { color: "error", icon: <WarningAmber fontSize="small" /> },
-          remediated: { color: "success", icon: <WarningAmber fontSize="small" /> },
-          dismissed: { color: "secondary", icon: <WarningAmber fontSize="small" /> },
-        },
-      },
-      {
-        field: "riskLevel",
-        tooltip: "Risk Level",
-        iconOnly: true,
-        conditions: {
-          high: { color: "error", icon: <ReportProblem fontSize="small" /> },
-          medium: { color: "warning", icon: <ReportProblem fontSize="small" /> },
-          low: { color: "info", icon: <ReportProblem fontSize="small" /> },
-          none: { color: "secondary", icon: <ReportProblem fontSize="small" /> },
-        },
-      },
-    ],
+    // Dynamic card styling based on risk severity
+    cardSx: (item) => {
+      const severity = getSeverity(item);
+      const colors = severityColors[severity] || severityColors.low;
+      return {
+        backgroundColor: colors.bg,
+        borderLeft: `5px solid ${colors.border}`,
+      };
+    },
+    // Custom content renderer for risk badges section
+    customContent: (item) => (
+      <Box sx={{ mb: 1.5 }}>
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          {(() => {
+            const stateChip = getRiskStateChip(item.riskState);
+            return (
+              <Chip
+                size="small"
+                icon={stateChip.icon}
+                label={stateChip.label}
+                color={stateChip.color}
+                variant="filled"
+                sx={{ fontWeight: 600 }}
+              />
+            );
+          })()}
+          {(() => {
+            const levelChip = getRiskLevelChip(item.riskLevel);
+            return (
+              <Chip
+                size="small"
+                label={`Level: ${levelChip.label}`}
+                color={levelChip.color}
+                variant={levelChip.variant}
+              />
+            );
+          })()}
+        </Stack>
+      </Box>
+    ),
+    // No icon-only badges since we have custom content
+    badges: [],
+    // Extra fields for key info
     extraFields: [
-      { field: "riskState", icon: <WarningAmber />, label: "Risk State" },
-      { field: "riskLevel", icon: <ReportProblem />, label: "Risk Level" },
+      { 
+        field: "riskDetail", 
+        label: "Details",
+        formatter: (value) => value || "No details available",
+      },
     ],
-    extraFieldsMax: 2,
+    extraFieldsMax: 1,
     desktopFields: [
-      { field: "riskDetail", icon: <Key />, label: "Details" },
-      { field: "riskLastUpdatedDateTime", icon: <AccessTime />, label: "Updated" },
+      {
+        field: "riskLastUpdatedDateTime",
+        icon: <AccessTime />,
+        label: "Updated",
+        formatter: (value) => getCippFormatting(value, "riskLastUpdatedDateTime"),
+      },
     ],
     desktopFieldsLayout: "column",
-    desktopFieldsMax: 2,
+    desktopFieldsMax: 1,
     maxQuickActions: 6,
     quickActionsVariant: "button",
     cardGridProps: {
@@ -369,10 +551,18 @@ const Page = () => {
       }}
       apiDataKey="Results"
       actions={actions}
-      showRowActionsMenu={false}
       offCanvas={offCanvas}
+      offCanvasOnRowClick={true}
       columns={columns}
-      columnVisibility={{ riskPriority: false }}
+      columnVisibility={{
+        riskPriority: false,
+        riskState: false,
+        riskLevel: false,
+        userPrincipalName: false,
+        userDisplayName: false,
+        Tenant: false,
+        id: false,
+      }}
       defaultSorting={[
         { id: "riskPriority", desc: false },
         { id: "riskLastUpdatedDateTime", desc: true },

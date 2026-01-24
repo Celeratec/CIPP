@@ -334,6 +334,9 @@ const CardView = ({
         ...(config.cardGridProps || {}),
       };
 
+      // Get dynamic card styles if cardSx function is provided
+      const dynamicCardSx = typeof config.cardSx === "function" ? config.cardSx(item) : {};
+
       return (
         <Grid
           item
@@ -353,7 +356,10 @@ const CardView = ({
               display: "flex",
               flexDirection: "column",
               border: `1px solid ${theme.palette.divider}`,
-              borderLeft: `4px solid ${isLicensed ? theme.palette.primary.main : theme.palette.grey[400]}`,
+              // Default border, can be overridden by cardSx
+              borderLeft: config.cardSx 
+                ? undefined 
+                : `4px solid ${isLicensed ? theme.palette.primary.main : theme.palette.grey[400]}`,
               "&:hover": {
                 transform: "translateY(-2px)",
                 boxShadow: theme.shadows[8],
@@ -361,6 +367,8 @@ const CardView = ({
               "&:active": {
                 transform: "translateY(0)",
               },
+              // Apply dynamic styles from cardSx
+              ...dynamicCardSx,
             }}
           >
             <CardContent 
@@ -441,6 +449,9 @@ const CardView = ({
                 </Box>
               </Stack>
 
+              {/* Custom Content Section (e.g., risk badges) */}
+              {typeof config.customContent === "function" && config.customContent(item)}
+
               {/* Info Section */}
               <Box sx={{ overflow: "hidden" }}>
                 {/* Extra fields (job title, department) */}
@@ -448,7 +459,11 @@ const CardView = ({
                   <Stack spacing={0.25} sx={{ mb: 1 }}>
                     {extraFields.slice(0, config.extraFieldsMax ?? 2).map((field, fieldIndex) => {
                       const rawValue = getNestedValue(item, field.field || field);
-                      const value = formatFieldValue(rawValue);
+                      const formattedValue =
+                        typeof field.formatter === "function"
+                          ? field.formatter(rawValue, item)
+                          : rawValue;
+                      const value = formatFieldValue(formattedValue);
                       if (!value) return null;
                       return (
                         <Stack 
@@ -494,7 +509,11 @@ const CardView = ({
                       <Stack spacing={0.5}>
                         {desktopFields.slice(0, config.desktopFieldsMax ?? 4).map((field, fieldIndex) => {
                           const rawValue = getNestedValue(item, field.field || field);
-                          const value = formatFieldValue(rawValue);
+                          const formattedValue =
+                            typeof field.formatter === "function"
+                              ? field.formatter(rawValue, item)
+                              : rawValue;
+                          const value = formatFieldValue(formattedValue);
                           if (!value) return null;
                           const href = getFieldHref(field, value);
 
