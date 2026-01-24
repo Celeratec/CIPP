@@ -2,13 +2,14 @@ import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
 import { CippQuickActions } from "/src/components/CippComponents/CippActionMenu";
 import { getCippFormatting } from "/src/utils/get-cipp-formatting";
-import { Chip, Stack, Typography } from "@mui/material";
+import { Chip, Stack, Typography, useMediaQuery } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { Clear, Search } from "@mui/icons-material";
+import { Clear, Search, WarningAmber, ReportProblem } from "@mui/icons-material";
 
 const Page = () => {
   const pageTitle = "Risky Users";
   const theme = useTheme();
+  const mdDown = useMediaQuery(theme.breakpoints.down("md"));
 
   const actions = [
     {
@@ -136,6 +137,7 @@ const Page = () => {
       size: 180,
     },
     {
+      id: "riskDetail",
       accessorKey: "riskDetail",
       header: "Details",
       Cell: ({ row }) => (
@@ -156,6 +158,7 @@ const Page = () => {
       size: 260,
     },
     {
+      id: "riskLastUpdatedDateTime",
       accessorKey: "riskLastUpdatedDateTime",
       header: "Last Updated",
       Cell: ({ row }) =>
@@ -178,6 +181,49 @@ const Page = () => {
       size: 220,
     },
   ];
+
+  const cardConfig = {
+    title: "userDisplayName",
+    subtitle: "userPrincipalName",
+    avatar: {
+      field: "userDisplayName",
+      photoField: false,
+    },
+    badges: [
+      {
+        field: "riskState",
+        tooltip: "Risk State",
+        iconOnly: true,
+        conditions: {
+          atRisk: { color: "error", icon: <WarningAmber fontSize="small" /> },
+          confirmedCompromised: { color: "error", icon: <WarningAmber fontSize="small" /> },
+          remediated: { color: "success", icon: <WarningAmber fontSize="small" /> },
+          dismissed: { color: "secondary", icon: <WarningAmber fontSize="small" /> },
+        },
+      },
+      {
+        field: "riskLevel",
+        tooltip: "Risk Level",
+        iconOnly: true,
+        conditions: {
+          high: { color: "error", icon: <ReportProblem fontSize="small" /> },
+          medium: { color: "warning", icon: <ReportProblem fontSize="small" /> },
+          low: { color: "info", icon: <ReportProblem fontSize="small" /> },
+          none: { color: "secondary", icon: <ReportProblem fontSize="small" /> },
+        },
+      },
+    ],
+    extraFields: [
+      { field: "riskDetail", label: "Details" },
+      { field: "riskLastUpdatedDateTime", label: "Updated" },
+    ],
+    extraFieldsMax: 2,
+    maxQuickActions: 2,
+    cardGridProps: {
+      md: 6,
+      lg: 4,
+    },
+  };
 
   const filterList = [
     {
@@ -217,6 +263,8 @@ const Page = () => {
         { id: "riskPriority", desc: false },
         { id: "riskLastUpdatedDateTime", desc: true },
       ]}
+      cardConfig={cardConfig}
+      defaultViewMode={mdDown ? "cards" : "table"}
       rowSx={(row) => {
         const color = riskStateColor(row?.riskState);
         if (color === "default") {
