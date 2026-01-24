@@ -174,7 +174,16 @@ const Page = () => {
     extraFieldsMax: 3,
     desktopFieldsLayout: "column",
     desktopFieldsMax: 4,
-    // Use full quick actions list on mobile as well
+    // Mobile quick actions: 7 buttons, omit "View User" (card click opens it)
+    mobileQuickActions: [
+      "Reset Password",
+      "Create Temporary Access Password",
+      "Re-require MFA registration",
+      "Set Per-User MFA",
+      "Revoke all user sessions",
+      "Manage Licenses",
+      "Add to Group",
+    ],
     maxQuickActions: 8,
     cardGridProps: {
       md: 6,
