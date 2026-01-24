@@ -1140,6 +1140,8 @@ export const CippDataTable = (props) => {
       ) : undefined,
     onColumnVisibilityChange: setColumnVisibility,
     ...modeInfo,
+    // Override enableRowActions when showRowActionsMenu is false
+    enableRowActions: showRowActionsMenu && actions ? true : false,
     renderRowActionMenuItems: actions && showRowActionsMenu
       ? ({ closeMenu, row }) => [
           actions.map((action, index) => (
