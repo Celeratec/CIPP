@@ -94,6 +94,12 @@ const ModernSearchInput = styled(InputBase)(({ theme }) => ({
       opacity: 0.7,
     },
   },
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "16px",
+    "& .MuiInputBase-input": {
+      fontSize: "16px",
+    },
+  },
 }));
 
 const ModernButton = styled(Button)(({ theme }) => ({
