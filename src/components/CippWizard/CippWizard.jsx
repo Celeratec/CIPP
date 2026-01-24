@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import { Card, CardContent, Container, Stack } from "@mui/material";
+import { Card, CardContent, Container, Stack, useMediaQuery } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { Grid } from "@mui/system";
 import { WizardSteps } from "./wizard-steps";
 import { useForm, useWatch } from "react-hook-form";
@@ -12,6 +13,8 @@ export const CippWizard = (props) => {
     contentMaxWidth = "md",
   } = props;
   
+  const theme = useTheme();
+  const smDown = useMediaQuery(theme.breakpoints.down("sm"));
   const formControl = useForm({ mode: "onChange", defaultValues: props.initialState });
   const formWatcher = useWatch({
     control: formControl.control,
@@ -68,8 +71,8 @@ export const CippWizard = (props) => {
   return (
     <Card>
       {orientation === "vertical" ? (
-        <CardContent>
-          <Grid container spacing={3}>
+        <CardContent sx={{ p: smDown ? 2 : 3 }}>
+          <Grid container spacing={smDown ? 2 : 3}>
             <Grid size={{ md: 4, xs: 12 }}>
               <WizardSteps
                 postUrl={postUrl}
@@ -84,8 +87,8 @@ export const CippWizard = (props) => {
           </Grid>
         </CardContent>
       ) : (
-        <CardContent>
-          <Stack spacing={6}>
+        <CardContent sx={{ p: smDown ? 2 : 3 }}>
+          <Stack spacing={smDown ? 3 : 6}>
             <WizardSteps
               postUrl={postUrl}
               activeStep={activeStep}
@@ -93,7 +96,9 @@ export const CippWizard = (props) => {
               steps={stepsWithVisibility}
             />
             <div>
-              <Container maxWidth={currentStepMaxWidth}>{content}</Container>
+              <Container maxWidth={currentStepMaxWidth} sx={{ px: smDown ? 0 : 2 }}>
+                {content}
+              </Container>
             </div>
           </Stack>
         </CardContent>
