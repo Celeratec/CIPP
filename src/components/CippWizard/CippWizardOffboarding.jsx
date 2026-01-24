@@ -10,7 +10,7 @@ import { useSettings } from "../../hooks/use-settings";
 export const CippWizardOffboarding = (props) => {
   const { postUrl, formControl, onPreviousStep, onNextStep, currentStep } = props;
   const currentTenant = formControl.watch("tenantFilter");
-  const selectedUsers = useWatch({ control: formControl.control, name: "user" });
+  const selectedUsers = useWatch({ control: formControl.control, name: "user" }) || [];
   const [showAlert, setShowAlert] = useState(false);
   const userSettingsDefaults = useSettings().userSettingsDefaults;
   const disableForwarding = useWatch({ control: formControl.control, name: "disableForwarding" });
