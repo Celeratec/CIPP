@@ -583,10 +583,9 @@ const CardView = ({
                   <CippQuickActions
                     actions={cardActions}
                     data={item}
-                    maxActions={
-                      config.maxQuickActions ?? (isMobile ? 4 : 6)
-                    }
+                    maxActions={config.maxQuickActions ?? (isMobile ? 4 : 6)}
                     showOnHover={false}
+                    variant={config.quickActionsVariant ?? "icon"}
                   />
                 </Box>
               )}
@@ -726,6 +725,7 @@ export const CippDataTable = (props) => {
     mobileCardConfig = null, // Deprecated: use cardConfig instead
     defaultViewMode = "cards", // Default view mode: 'cards' or 'table'
     onCardClick: customOnCardClick = null, // Custom handler for card clicks (bypasses off-canvas)
+    viewModeStorageKey: viewModeStorageKeyOverride = null,
     rowSx = null, // Optional row styling callback (row) => sx object
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
@@ -756,7 +756,8 @@ export const CippDataTable = (props) => {
   const effectiveCardConfig = cardConfig || mobileCardConfig;
 
   // Generate storage key for view mode preference
-  const viewModeStorageKey = `cipp-view-mode-${router.pathname}`;
+  const viewModeStorageKey =
+    viewModeStorageKeyOverride || `cipp-view-mode-${router.pathname}`;
 
   // Initialize view mode from localStorage or default
   const [viewMode, setViewMode] = useState(() => {

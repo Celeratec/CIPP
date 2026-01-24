@@ -2,14 +2,28 @@ import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
 import { CippQuickActions } from "/src/components/CippComponents/CippActionMenu";
 import { getCippFormatting } from "/src/utils/get-cipp-formatting";
-import { Chip, Stack, Typography, useMediaQuery } from "@mui/material";
+import { Chip, Divider, Stack, Typography, useMediaQuery } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { Clear, Search, WarningAmber, ReportProblem } from "@mui/icons-material";
+import {
+  AccessTime,
+  Clear,
+  Key,
+  Password,
+  PhonelinkSetup,
+  PersonOff,
+  Search,
+  WarningAmber,
+  ReportProblem,
+} from "@mui/icons-material";
+import { ShieldCheckIcon } from "@heroicons/react/24/outline";
+import { ApiGetCall } from "/src/api/ApiCall";
 
 const Page = () => {
   const pageTitle = "Risky Users";
   const theme = useTheme();
   const mdDown = useMediaQuery(theme.breakpoints.down("md"));
+  const auth = ApiGetCall({ url: "/api/me", queryKey: "authmecipp" });
+  const currentUser = auth.data?.clientPrincipal?.userDetails || "anonymous";
 
   const actions = [
     {
@@ -21,6 +35,7 @@ const Page = () => {
       confirmText: "Are you sure you want to dismiss the risk for this user?",
       multiPost: false,
       category: "security",
+      quickAction: true,
     },
     {
       label: "Research Compromised Account",
@@ -30,6 +45,59 @@ const Page = () => {
       confirmText: "Are you sure you want to research this compromised account?",
       multiPost: false,
       category: "security",
+      quickAction: true,
+    },
+    {
+      label: "Remediate User",
+      type: "POST",
+      icon: <ShieldCheckIcon />,
+      url: "/api/execBecRemediate",
+      data: { userId: "id", username: "userPrincipalName" },
+      confirmText:
+        "This will remediate this user, blocking their signin, resetting their password, disconnecting their sessions, and disabling all their inbox rules. Are you sure you want to continue?",
+      multiPost: false,
+      category: "security",
+      quickAction: true,
+    },
+    {
+      label: "Reset Password",
+      type: "POST",
+      icon: <Password />,
+      url: "/api/ExecResetPass",
+      data: { ID: "userPrincipalName", displayName: "userDisplayName" },
+      fields: [
+        {
+          type: "switch",
+          name: "MustChange",
+          label: "Must Change Password at Next Logon",
+        },
+      ],
+      confirmText: "Are you sure you want to reset the password for [userPrincipalName]?",
+      multiPost: false,
+      category: "security",
+      quickAction: true,
+    },
+    {
+      label: "Re-require MFA registration",
+      type: "POST",
+      icon: <PhonelinkSetup />,
+      url: "/api/ExecResetMFA",
+      data: { ID: "userPrincipalName" },
+      confirmText: "Are you sure you want to reset MFA for [userPrincipalName]?",
+      multiPost: false,
+      category: "security",
+      quickAction: true,
+    },
+    {
+      label: "Revoke all user sessions",
+      type: "POST",
+      icon: <PersonOff />,
+      url: "/api/ExecRevokeSessions",
+      data: { ID: "id", Username: "userPrincipalName" },
+      confirmText: "Are you sure you want to revoke all sessions for [userPrincipalName]?",
+      multiPost: false,
+      category: "security",
+      quickAction: true,
     },
   ];
 
@@ -44,6 +112,44 @@ const Page = () => {
       "riskDetail",
     ],
     actions: actions,
+    title: "Risky User Details",
+    children: (row) => (
+      <Stack spacing={2.5}>
+        <Stack spacing={0.5}>
+          <Typography variant="h6">{row.userDisplayName || "Unknown User"}</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {row.userPrincipalName}
+          </Typography>
+        </Stack>
+        <Stack direction="row" spacing={1} flexWrap="wrap">
+          <Chip
+            size="small"
+            label={`State: ${formatLabel(row.riskState)}`}
+            color={riskStateColor(row.riskState)}
+            variant="filled"
+          />
+          <Chip
+            size="small"
+            label={`Level: ${formatLabel(row.riskLevel)}`}
+            color={riskLevelColor(row.riskLevel)}
+            variant="outlined"
+          />
+        </Stack>
+        <Divider />
+        <Stack spacing={0.75}>
+          <Typography variant="subtitle2">Risk Detail</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {row.riskDetail || "—"}
+          </Typography>
+        </Stack>
+        <Stack spacing={0.75}>
+          <Typography variant="subtitle2">Last Updated</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {getCippFormatting(row.riskLastUpdatedDateTime, "riskLastUpdatedDateTime")}
+          </Typography>
+        </Stack>
+      </Stack>
+    ),
   };
 
   const formatLabel = (value) => {
@@ -173,7 +279,7 @@ const Page = () => {
         <CippQuickActions
           actions={actions}
           data={row.original}
-          maxActions={2}
+          maxActions={4}
           size="small"
           variant="button"
         />
@@ -214,11 +320,18 @@ const Page = () => {
       },
     ],
     extraFields: [
-      { field: "riskDetail", label: "Details" },
-      { field: "riskLastUpdatedDateTime", label: "Updated" },
+      { field: "riskState", icon: <WarningAmber />, label: "Risk State" },
+      { field: "riskLevel", icon: <ReportProblem />, label: "Risk Level" },
     ],
     extraFieldsMax: 2,
-    maxQuickActions: 2,
+    desktopFields: [
+      { field: "riskDetail", icon: <Key />, label: "Details" },
+      { field: "riskLastUpdatedDateTime", icon: <AccessTime />, label: "Updated" },
+    ],
+    desktopFieldsLayout: "column",
+    desktopFieldsMax: 2,
+    maxQuickActions: 6,
+    quickActionsVariant: "button",
     cardGridProps: {
       md: 6,
       lg: 4,
@@ -264,7 +377,8 @@ const Page = () => {
         { id: "riskLastUpdatedDateTime", desc: true },
       ]}
       cardConfig={cardConfig}
-      defaultViewMode={mdDown ? "cards" : "table"}
+      defaultViewMode="cards"
+      viewModeStorageKey={`cipp-view-mode-${currentUser}-risky-users`}
       rowSx={(row) => {
         const color = riskStateColor(row?.riskState);
         if (color === "default") {
