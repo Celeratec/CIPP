@@ -131,7 +131,6 @@ export const useCippUserActions = () => {
       icon: <EyeIcon />,
       color: "success",
       category: "view",
-      quickAction: true, // Show on card
     },
     {
       label: "Research Compromised Account",
@@ -153,6 +152,7 @@ export const useCippUserActions = () => {
       target: "_self",
       condition: () => canWriteUser,
       category: "edit",
+      quickAction: true,
     },
     {
       label: "Edit Properties",
