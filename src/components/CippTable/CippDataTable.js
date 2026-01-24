@@ -484,8 +484,15 @@ const CardView = ({
                             sx={{
                               overflow: "hidden",
                               textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
                               maxWidth: "100%",
+                              ...(field.maxLines ? {
+                                display: "-webkit-box",
+                                WebkitLineClamp: field.maxLines,
+                                WebkitBoxOrient: "vertical",
+                                whiteSpace: "normal",
+                              } : {
+                                whiteSpace: "nowrap",
+                              }),
                             }}
                           >
                             {value}

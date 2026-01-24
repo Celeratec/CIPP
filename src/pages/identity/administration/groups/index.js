@@ -12,6 +12,12 @@ import {
   Lock,
   GroupSharp,
   CloudSync,
+  People,
+  Security,
+  Email,
+  DynamicFeed,
+  Public,
+  PublicOff,
 } from "@mui/icons-material";
 import { Stack } from "@mui/system";
 import { useState } from "react";
@@ -38,15 +44,29 @@ const Page = () => {
         field: "calculatedGroupType",
         tooltip: "Group Type",
         conditions: {
-          m365: { label: "M365", color: "primary" },
-          security: { label: "Security", color: "secondary" },
-          distribution: { label: "Dist", color: "default" },
-          dynamic: { label: "Dynamic", color: "info" },
+          m365: { label: "M365", color: "primary", icon: <GroupSharp fontSize="small" /> },
+          M365: { label: "M365", color: "primary", icon: <GroupSharp fontSize="small" /> },
+          security: { label: "Security", color: "secondary", icon: <Security fontSize="small" /> },
+          Security: { label: "Security", color: "secondary", icon: <Security fontSize="small" /> },
+          distribution: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
+          Distribution: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
+          dynamic: { label: "Dynamic", color: "info", icon: <DynamicFeed fontSize="small" /> },
+          Dynamic: { label: "Dynamic", color: "info", icon: <DynamicFeed fontSize="small" /> },
+        },
+      },
+      {
+        field: "visibility",
+        tooltip: "Visibility",
+        conditions: {
+          Public: { icon: <Public fontSize="small" />, color: "success" },
+          public: { icon: <Public fontSize="small" />, color: "success" },
+          Private: { icon: <PublicOff fontSize="small" />, color: "warning" },
+          private: { icon: <PublicOff fontSize="small" />, color: "warning" },
         },
       },
     ],
     extraFields: [
-      { field: "description" },
+      { field: "description", maxLines: 2 },
     ],
     // Additional fields shown only on desktop cards
     desktopFields: [
@@ -55,15 +75,32 @@ const Page = () => {
       { field: "membershipRule", label: "Membership Rule" },
       { field: "onPremisesSyncEnabled", label: "On-Prem Sync" },
     ],
+    // Quick actions on cards
+    maxQuickActions: 4,
+    // Grid sizing for consistent card widths
+    cardGridProps: {
+      xs: 12,
+      sm: 6,
+      md: 4,
+      lg: 3,
+    },
   };
   const actions = [
     {
-      //tested
+      label: "View Members",
+      link: "/identity/administration/groups/edit?groupId=[id]&groupType=[groupType]",
+      multiPost: false,
+      icon: <People />,
+      color: "info",
+      quickAction: true,
+    },
+    {
       label: "Edit Group",
       link: "/identity/administration/groups/edit?groupId=[id]&groupType=[groupType]",
       multiPost: false,
       icon: <Edit />,
       color: "success",
+      quickAction: true,
     },
     {
       label: "Set Global Address List Visibility",
@@ -171,6 +208,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to create a Team from this group? Note: The group must be at least 15 minutes old for this to work.",
       multiPost: false,
+      quickAction: true,
       defaultvalues: {
         TeamSettings: {
           memberSettings: {
