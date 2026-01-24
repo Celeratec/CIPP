@@ -1,8 +1,16 @@
 import ChevronDownIcon from "@heroicons/react/24/outline/ChevronDownIcon";
 import PropTypes from "prop-types";
-import { Button, ListItemText, Menu, MenuItem, SvgIcon } from "@mui/material";
+import {
+  Button,
+  Divider,
+  ListItemText,
+  ListSubheader,
+  Menu,
+  MenuItem,
+  SvgIcon,
+} from "@mui/material";
+import { useMemo, useState } from "react";
 import { usePopover } from "../hooks/use-popover";
-import { useState } from "react";
 import { useDialog } from "../hooks/use-dialog";
 import { CippApiDialog } from "./CippComponents/CippApiDialog";
 
@@ -11,6 +19,45 @@ export const ActionsMenu = (props) => {
   const popover = usePopover();
   const [actionData, setActionData] = useState({ data: {}, action: {}, ready: false });
   const createDialog = useDialog();
+
+  const groupedActions = useMemo(() => {
+    const filtered = actions?.filter((action) => !action.link || action.showInActionsMenu) || [];
+    const grouped = filtered.reduce((acc, action) => {
+      const category =
+        typeof action.category === "string" && action.category.trim().length > 0
+          ? action.category.trim()
+          : "Other";
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(action);
+      return acc;
+    }, {});
+    return Object.entries(grouped);
+  }, [actions]);
+
+  const getCategoryLabel = (category) =>
+    category
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/^./, (match) => match.toUpperCase());
+
+  const getActionColor = (action, category) => {
+    if (action.color) return action.color;
+    switch (category.toLowerCase()) {
+      case "view":
+        return "success";
+      case "edit":
+        return "info";
+      case "security":
+        return "warning";
+      case "manage":
+        return "secondary";
+      case "danger":
+        return "error";
+      default:
+        return "text.secondary";
+    }
+  };
   const handleActionDisabled = (row, action) => {
     //add nullsaftey for row. It can sometimes be undefined(still loading) or null(no data)
     if (!row) {
@@ -37,7 +84,7 @@ export const ActionsMenu = (props) => {
           whiteSpace: "nowrap",
         }}
       >
-        Actions
+        {label}
       </Button>
       <Menu
         anchorEl={popover.anchorRef.current}
@@ -56,33 +103,56 @@ export const ActionsMenu = (props) => {
           vertical: "top",
         }}
       >
-        {actions
-          ?.filter((action) => !action.link || action.showInActionsMenu)
-          .map((action, index) => (
-            <MenuItem
-              disabled={handleActionDisabled(data, action)}
-              key={index}
-              onClick={() => {
-                setActionData({
-                  data: data,
-                  action: action,
-                  ready: true,
-                });
-
-                if (action?.noConfirm && action.customFunction) {
-                  action.customFunction(data, action, {});
-                } else {
-                  createDialog.handleOpen();
-                  popover.handleClose();
-                }
+        {groupedActions.map(([category, categoryActions], groupIndex) => (
+          <div key={category}>
+            <ListSubheader
+              disableSticky
+              sx={{
+                textTransform: "uppercase",
+                fontSize: "0.7rem",
+                letterSpacing: "0.06em",
+                fontWeight: 600,
+                lineHeight: 1.8,
               }}
             >
-              <SvgIcon fontSize="small" sx={{ minWidth: "30px" }}>
-                {action.icon}
-              </SvgIcon>
-              <ListItemText>{action.label}</ListItemText>
-            </MenuItem>
-          ))}
+              {getCategoryLabel(category)}
+            </ListSubheader>
+            {categoryActions.map((action, index) => {
+              const actionColor = getActionColor(action, category);
+              const iconSx =
+                actionColor === "text.secondary"
+                  ? { minWidth: "30px", color: actionColor }
+                  : { minWidth: "30px", color: (theme) => theme.palette[actionColor].main };
+
+              return (
+                <MenuItem
+                  disabled={handleActionDisabled(data, action)}
+                  key={`${category}-${index}`}
+                  onClick={() => {
+                    setActionData({
+                      data: data,
+                      action: action,
+                      ready: true,
+                    });
+
+                    if (action?.noConfirm && action.customFunction) {
+                      action.customFunction(data, action, {});
+                    } else {
+                      createDialog.handleOpen();
+                      popover.handleClose();
+                    }
+                  }}
+                >
+                  <SvgIcon fontSize="small" sx={iconSx}>
+                    {action.icon}
+                  </SvgIcon>
+                  <ListItemText>{action.label}</ListItemText>
+                </MenuItem>
+              );
+            })}
+            {groupIndex < groupedActions.length - 1 && <Divider sx={{ my: 0.5 }} />}
+          </div>
+        ))}
       </Menu>
       {actionData.ready && (
         <CippApiDialog

@@ -186,6 +186,7 @@ export const useCippUserActions = () => {
         { type: "textField", name: "postalCode", label: "Postal Code" },
         { type: "textField", name: "country", label: "Country" },
         { type: "textField", name: "companyName", label: "Company Name" },
+        { type: "textField", name: "department", label: "Department" },
       ],
       customDataformatter: (users, action, formData) => {
         const userList = Array.isArray(users) ? users : [users];
@@ -196,6 +197,7 @@ export const useCippUserActions = () => {
           "postalCode",
           "country",
           "companyName",
+          "department",
         ];
         const cleanForm = patchFields.reduce((acc, key) => {
           const value = formData?.[key];

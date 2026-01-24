@@ -1,6 +1,7 @@
 import PropTypes from "prop-types";
 import ChevronDownIcon from "@heroicons/react/24/outline/ChevronDownIcon";
-import { Button, Link, ListItemText, Menu, MenuItem, SvgIcon } from "@mui/material";
+import { Button, Divider, Link, ListItemText, ListSubheader, Menu, MenuItem, SvgIcon } from "@mui/material";
+import { useMemo } from "react";
 import { usePopover } from "../hooks/use-popover";
 import { FilePresent, Laptop, Mail, Share, Shield, ShieldMoon, PrecisionManufacturing, BarChart } from "@mui/icons-material";
 import { GlobeAltIcon, UsersIcon, ServerIcon } from "@heroicons/react/24/outline";
@@ -37,6 +38,43 @@ function getIconByName(iconName) {
 export const BulkActionsMenu = (props) => {
   const { buttonName, sx, row, actions = [], ...other } = props;
   const popover = usePopover();
+  const groupedActions = useMemo(() => {
+    const grouped = actions.reduce((acc, action) => {
+      const category =
+        typeof action.category === "string" && action.category.trim().length > 0
+          ? action.category.trim()
+          : "Other";
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(action);
+      return acc;
+    }, {});
+    return Object.entries(grouped);
+  }, [actions]);
+
+  const getCategoryLabel = (category) =>
+    category
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/^./, (match) => match.toUpperCase());
+
+  const getActionColor = (action, category) => {
+    if (action.color) return action.color;
+    switch (category.toLowerCase()) {
+      case "view":
+        return "success";
+      case "edit":
+        return "info";
+      case "security":
+        return "warning";
+      case "manage":
+        return "secondary";
+      case "danger":
+        return "error";
+      default:
+        return "text.secondary";
+    }
+  };
 
   return (
     <>
@@ -75,30 +113,52 @@ export const BulkActionsMenu = (props) => {
           vertical: "top",
         }}
       >
-        {actions.map((action, index) => {
-          if (action.link) {
-            return (
-              <MenuItem
-                key={index}
-                onClick={popover.handleClose}
-                component={Link}
-                href={action.link}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <SvgIcon sx={{ mr: 1 }}>{getIconByName(action.icon)}</SvgIcon>
-                <ListItemText primary={action.label} />
-              </MenuItem>
-            );
-          } else {
-            return (
-              <MenuItem key={index} onClick={action.onClick}>
-                <SvgIcon sx={{ mr: 1 }}>{getIconByName(action.icon)}</SvgIcon>
-                <ListItemText primary={action.label} />
-              </MenuItem>
-            );
-          }
-        })}
+        {groupedActions.map(([category, categoryActions], groupIndex) => (
+          <div key={category}>
+            <ListSubheader
+              disableSticky
+              sx={{
+                textTransform: "uppercase",
+                fontSize: "0.7rem",
+                letterSpacing: "0.06em",
+                fontWeight: 600,
+                lineHeight: 1.8,
+              }}
+            >
+              {getCategoryLabel(category)}
+            </ListSubheader>
+            {categoryActions.map((action, index) => {
+              const actionColor = getActionColor(action, category);
+              const iconSx =
+                actionColor === "text.secondary"
+                  ? { mr: 1, color: actionColor }
+                  : { mr: 1, color: (theme) => theme.palette[actionColor].main };
+
+              if (action.link) {
+                return (
+                  <MenuItem
+                    key={`${category}-${index}`}
+                    onClick={popover.handleClose}
+                    component={Link}
+                    href={action.link}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <SvgIcon sx={iconSx}>{getIconByName(action.icon)}</SvgIcon>
+                    <ListItemText primary={action.label} />
+                  </MenuItem>
+                );
+              }
+              return (
+                <MenuItem key={`${category}-${index}`} onClick={action.onClick}>
+                  <SvgIcon sx={iconSx}>{getIconByName(action.icon)}</SvgIcon>
+                  <ListItemText primary={action.label} />
+                </MenuItem>
+              );
+            })}
+            {groupIndex < groupedActions.length - 1 && <Divider sx={{ my: 0.5 }} />}
+          </div>
+        ))}
       </Menu>
     </>
   );
