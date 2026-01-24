@@ -726,6 +726,7 @@ export const CippDataTable = (props) => {
     mobileCardConfig = null, // Deprecated: use cardConfig instead
     defaultViewMode = "cards", // Default view mode: 'cards' or 'table'
     onCardClick: customOnCardClick = null, // Custom handler for card clicks (bypasses off-canvas)
+    rowSx = null, // Optional row styling callback (row) => sx object
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
   const [configuredSimpleColumns, setConfiguredSimpleColumns] = useState(simpleColumns);
@@ -982,23 +983,32 @@ export const CippDataTable = (props) => {
     }),
     muiTableBodyRowProps:
       offCanvasOnRowClick && offCanvas
-        ? ({ row }) => ({
-            onClick: () => {
-              setOffCanvasData(row.original);
-              // Find the index of this row in the filtered rows
-              const filteredRowsArray = table.getFilteredRowModel().rows;
-              const indexInFiltered = filteredRowsArray.findIndex(
-                (r) => r.original === row.original
-              );
-              setOffCanvasRowIndex(indexInFiltered >= 0 ? indexInFiltered : 0);
-              setOffcanvasVisible(true);
-            },
-            sx: {
-              cursor: "pointer",
-              "&:hover": {
-                backgroundColor: "action.hover",
+        ? ({ row }) => {
+            const customSx =
+              typeof rowSx === "function" ? rowSx(row.original) : rowSx ? rowSx : {};
+            return {
+              onClick: () => {
+                setOffCanvasData(row.original);
+                // Find the index of this row in the filtered rows
+                const filteredRowsArray = table.getFilteredRowModel().rows;
+                const indexInFiltered = filteredRowsArray.findIndex(
+                  (r) => r.original === row.original
+                );
+                setOffCanvasRowIndex(indexInFiltered >= 0 ? indexInFiltered : 0);
+                setOffcanvasVisible(true);
               },
-            },
+              sx: {
+                cursor: "pointer",
+                "&:hover": {
+                  backgroundColor: "action.hover",
+                },
+                ...customSx,
+              },
+            };
+          }
+        : rowSx
+        ? ({ row }) => ({
+            sx: typeof rowSx === "function" ? rowSx(row.original) : rowSx,
           })
         : undefined,
     // Add global styles to target the specific filter components

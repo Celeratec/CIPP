@@ -310,6 +310,7 @@ const Page = () => {
       onCardClick={handleCardClick}
       simpleColumns={simpleColumns}
       filters={filters}
+      tenantInTitle={!isMobile}
       cardConfig={cardConfig}
     />
   );

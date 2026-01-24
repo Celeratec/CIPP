@@ -537,6 +537,29 @@ export const CippQuickActions = ({
           return "primary";
         };
 
+        if (variant === "button") {
+          return (
+            <Tooltip key={`quick-${index}`} title={action.label} arrow>
+              <Button
+                size={size}
+                variant="outlined"
+                color={getButtonColor()}
+                startIcon={<SvgIcon fontSize="small">{action.icon}</SvgIcon>}
+                onClick={(e) => handleActionClick(action, e)}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: 1,
+                  fontWeight: 500,
+                  whiteSpace: "nowrap",
+                  minHeight: smDown ? 32 : 28,
+                }}
+              >
+                {action.label}
+              </Button>
+            </Tooltip>
+          );
+        }
+
         return (
           <Tooltip key={`quick-${index}`} title={action.label} arrow>
             <IconButton
