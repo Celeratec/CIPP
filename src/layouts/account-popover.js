@@ -50,15 +50,15 @@ export const AccountPopover = (props) => {
 
   const userDetails = orgData.data?.clientPrincipal?.userDetails;
   const tenantFilter =
-    settings.currentTenant === "AllTenants"
-      ? userDetails?.split("@")?.[1]
-      : settings.currentTenant;
+    settings.currentTenant && settings.currentTenant !== "AllTenants"
+      ? settings.currentTenant
+      : userDetails?.split("@")?.[1];
 
   // Cache user photo with user-specific key
   const userPhoto = ApiGetCall({
     url: "/api/ListUserPhoto",
     data: { UserID: userDetails, TenantFilter: tenantFilter },
-    queryKey: `userPhoto-${tenantFilter}-${userDetails}`,
+    queryKey: `userPhoto-${tenantFilter || "unknown"}-${userDetails || "unknown"}`,
     waiting: !!userDetails && !!tenantFilter,
     staleTime: Infinity,
     responseType: "blob",
