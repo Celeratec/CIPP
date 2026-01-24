@@ -13,6 +13,7 @@ export const CippInviteGuestDrawer = ({
   buttonText = "Invite Guest",
   requiredPermissions = [],
   PermissionButton = Button,
+  buttonProps = {},
 }) => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const userSettingsDefaults = useSettings();
@@ -73,6 +74,7 @@ export const CippInviteGuestDrawer = ({
         requiredPermissions={requiredPermissions}
         onClick={() => setDrawerVisible(true)}
         startIcon={<Send />}
+        {...buttonProps}
       >
         {buttonText}
       </PermissionButton>

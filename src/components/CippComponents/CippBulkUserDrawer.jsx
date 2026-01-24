@@ -17,6 +17,7 @@ export const CippBulkUserDrawer = ({
   buttonText = "Bulk Add Users",
   requiredPermissions = [],
   PermissionButton = Button,
+  buttonProps = {},
 }) => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [addRowDialogOpen, setAddRowDialogOpen] = useState(false);
@@ -122,6 +123,7 @@ export const CippBulkUserDrawer = ({
         requiredPermissions={requiredPermissions}
         onClick={() => setDrawerVisible(true)}
         startIcon={<GroupAdd />}
+        {...buttonProps}
       >
         {buttonText}
       </PermissionButton>

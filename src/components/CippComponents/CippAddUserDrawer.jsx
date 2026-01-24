@@ -13,6 +13,7 @@ export const CippAddUserDrawer = ({
   buttonText = "Add User",
   requiredPermissions = [],
   PermissionButton = Button,
+  buttonProps = {},
 }) => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const userSettingsDefaults = useSettings();
@@ -96,6 +97,7 @@ export const CippAddUserDrawer = ({
         requiredPermissions={requiredPermissions}
         onClick={() => setDrawerVisible(true)}
         startIcon={<PersonAdd />}
+        {...buttonProps}
       >
         {buttonText}
       </PermissionButton>

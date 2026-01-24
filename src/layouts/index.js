@@ -256,7 +256,7 @@ export const Layout = (props) => {
   const createDialog = useDialog();
   const dispatch = useDispatch();
   const mobileTenantSelector = mdDown ? (
-    <Box sx={{ mx: 3, mt: 2 }}>
+    <Box sx={{ mx: 3, mt: 3, mb: 1 }}>
       <CippTenantSelector width="100%" refreshButton={true} tenantButton={true} />
     </Box>
   ) : null;
@@ -345,7 +345,7 @@ export const Layout = (props) => {
           ) : (
             <Stack>
               {mobileTenantSelector}
-              <Box sx={{ mx: 3, mt: 3 }}>
+              <Box sx={{ mx: 3, mt: mdDown ? 2 : 3 }}>
                 <CippBreadcrumbNav mode="hierarchical" />
               </Box>
               <Divider sx={{ mb: 2 }} />

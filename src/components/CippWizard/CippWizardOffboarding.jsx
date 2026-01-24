@@ -73,254 +73,264 @@ export const CippWizardOffboarding = (props) => {
   };
 
   return (
-    <Stack spacing={4}>
-      <Grid container spacing={4}>
-        <Grid size={6}>
+    <Stack spacing={{ xs: 2.5, md: 4 }}>
+      <Grid container spacing={{ xs: 2.5, md: 4 }}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           <Card variant="outlined">
             <CardHeader title="Offboarding Settings" />
             <Divider />
             <CardContent>
-              <Typography variant="body2" sx={{ mb: 2, color: 
-                getDefaultsSource() === "tenant" ? "primary.main" : "warning.main", 
-                fontStyle: "italic" 
-              }}>
-                {getDefaultsSource() === "tenant" ? "Using Tenant Defaults" : "Using User Defaults"}
-              </Typography>
-              <CippFormComponent
-                name="ConvertToShared"
-                label="Convert to Shared Mailbox"
-                type="switch"
-                formControl={formControl}
-              />
-              <CippFormComponent
-                name="HideFromGAL"
-                label="Hide from Global Address List"
-                type="switch"
-                formControl={formControl}
-              />
-              <CippFormComponent
-                name="removeCalendarInvites"
-                label="Cancel all calendar invites"
-                type="switch"
-                formControl={formControl}
-              />
-              <CippFormComponent
-                name="removePermissions"
-                label="Remove user's mailbox permissions"
-                type="switch"
-                formControl={formControl}
-              />
-              <CippFormComponent
-                name="RemoveRules"
-                label="Remove all Rules"
-                type="switch"
-                formControl={formControl}
-              />
-              <CippFormComponent
-                name="RemoveMobile"
-                label="Remove all Mobile Devices"
-                type="switch"
-                formControl={formControl}
-              />
-              <CippFormComponent
-                name="RemoveGroups"
-                label="Remove from all groups"
-                type="switch"
-                formControl={formControl}
-              />
-              <CippFormComponent
-                name="RemoveLicenses"
-                label="Remove Licenses"
-                type="switch"
-                formControl={formControl}
-              />
-              <CippFormComponent
-                name="RevokeSessions"
-                label="Revoke all sessions"
-                type="switch"
-                formControl={formControl}
-              />
-              <CippFormComponent
-                name="DisableSignIn"
-                label="Disable Sign in"
-                type="switch"
-                formControl={formControl}
-              />
-              <CippFormComponent
-                name="ClearImmutableId"
-                label="Clear Immutable ID"
-                type="switch"
-                formControl={formControl}
-              />
-              <CippFormComponent
-                name="ResetPass"
-                label="Reset Password"
-                type="switch"
-                formControl={formControl}
-              />
-              <CippFormComponent
-                name="RemoveMFADevices"
-                label="Remove all MFA Devices"
-                type="switch"
-                formControl={formControl}
-              />
-              <CippFormComponent
-                name="RemoveTeamsPhoneDID"
-                label="Remove Teams Phone DID"
-                type="switch"
-                formControl={formControl}
-              />
-              <CippFormComponent
-                name="DeleteUser"
-                label="Delete user"
-                type="switch"
-                formControl={formControl}
-              />
+              <Stack spacing={1.5}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: getDefaultsSource() === "tenant" ? "primary.main" : "warning.main",
+                    fontStyle: "italic",
+                  }}
+                >
+                  {getDefaultsSource() === "tenant" ? "Using Tenant Defaults" : "Using User Defaults"}
+                </Typography>
+                <Stack spacing={1}>
+                  <CippFormComponent
+                    name="ConvertToShared"
+                    label="Convert to Shared Mailbox"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="HideFromGAL"
+                    label="Hide from Global Address List"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="removeCalendarInvites"
+                    label="Cancel all calendar invites"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="removePermissions"
+                    label="Remove user's mailbox permissions"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="RemoveRules"
+                    label="Remove all Rules"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="RemoveMobile"
+                    label="Remove all Mobile Devices"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="RemoveGroups"
+                    label="Remove from all groups"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="RemoveLicenses"
+                    label="Remove Licenses"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="RevokeSessions"
+                    label="Revoke all sessions"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="DisableSignIn"
+                    label="Disable Sign in"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="ClearImmutableId"
+                    label="Clear Immutable ID"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="ResetPass"
+                    label="Reset Password"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="RemoveMFADevices"
+                    label="Remove all MFA Devices"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="RemoveTeamsPhoneDID"
+                    label="Remove Teams Phone DID"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="DeleteUser"
+                    label="Delete user"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                </Stack>
+              </Stack>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid size={6}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           <Card variant="outlined">
             <CardHeader title="Permissions and forwarding" />
             <Divider />
             <CardContent>
-              <Typography variant="subtitle2" gutterBottom>
-                Mailbox Access
-              </Typography>
-              <CippFormComponent
-                sx={{ m: 1 }}
-                name="AccessNoAutomap"
-                label="Grant Full Access (no automap)"
-                type="autoComplete"
-                placeholder="Leave blank if not needed"
-                formControl={formControl}
-                multi
-                api={{
-                  tenantFilter: currentTenant ? currentTenant.value : undefined,
-                  url: "/api/ListGraphRequest",
-                  dataKey: "Results",
-                  labelField: (option) => `${option.displayName} (${option.userPrincipalName})`,
-                  valueField: "id",
-                  queryKey: "Offboarding-Users",
-                  data: {
-                    Endpoint: "users",
-                    manualPagination: true,
-                    $select: "id,userPrincipalName,displayName",
-                    $count: true,
-                    $orderby: "displayName",
-                    $top: 999,
-                  },
-                }}
-              />
-              <CippFormComponent
-                sx={{ m: 1 }}
-                name="AccessAutomap"
-                label="Grant Full Access (automap)"
-                type="autoComplete"
-                placeholder="Leave blank if not needed"
-                formControl={formControl}
-                multi
-                api={{
-                  labelField: (option) => `${option.displayName} (${option.userPrincipalName})`,
-                  valueField: "id",
-                  url: "/api/ListGraphRequest",
-                  dataKey: "Results",
-                  tenantFilter: currentTenant ? currentTenant.value : undefined,
-                  queryKey: "Offboarding-Users",
-                  data: {
-                    Endpoint: "users",
-                    manualPagination: true,
-                    $select: "id,userPrincipalName,displayName",
-                    $count: true,
-                    $orderby: "displayName",
-                    $top: 999,
-                  },
-                }}
-              />
-              <CippFormComponent
-                sx={{ m: 1 }}
-                name="OnedriveAccess"
-                label="Grant Onedrive Full Access"
-                type="autoComplete"
-                placeholder="Leave blank if not needed"
-                formControl={formControl}
-                multi
-                api={{
-                  tenantFilter: currentTenant ? currentTenant.value : undefined,
-                  labelField: (option) => `${option.displayName} (${option.userPrincipalName})`,
-                  valueField: "id",
-                  url: "/api/ListGraphRequest",
-                  dataKey: "Results",
-                  queryKey: "Offboarding-Users",
-                  data: {
-                    Endpoint: "users",
-                    manualPagination: true,
-                    $select: "id,userPrincipalName,displayName",
-                    $count: true,
-                    $orderby: "displayName",
-                    $top: 999,
-                  },
-                }}
-              />
+              <Stack spacing={2.5}>
+                <Stack spacing={1.5}>
+                  <Typography variant="subtitle2">Mailbox Access</Typography>
+                  <CippFormComponent
+                    name="AccessNoAutomap"
+                    label="Grant Full Access (no automap)"
+                    type="autoComplete"
+                    placeholder="Leave blank if not needed"
+                    formControl={formControl}
+                    multi
+                    api={{
+                      tenantFilter: currentTenant ? currentTenant.value : undefined,
+                      url: "/api/ListGraphRequest",
+                      dataKey: "Results",
+                      labelField: (option) => `${option.displayName} (${option.userPrincipalName})`,
+                      valueField: "userPrincipalName",
+                      queryKey: "Offboarding-Users",
+                      data: {
+                        Endpoint: "users",
+                        manualPagination: true,
+                        $select: "id,userPrincipalName,displayName",
+                        $count: true,
+                        $orderby: "displayName",
+                        $top: 999,
+                      },
+                    }}
+                  />
+                  <CippFormComponent
+                    name="AccessAutomap"
+                    label="Grant Full Access (automap)"
+                    type="autoComplete"
+                    placeholder="Leave blank if not needed"
+                    formControl={formControl}
+                    multi
+                    api={{
+                      labelField: (option) => `${option.displayName} (${option.userPrincipalName})`,
+                      valueField: "userPrincipalName",
+                      url: "/api/ListGraphRequest",
+                      dataKey: "Results",
+                      tenantFilter: currentTenant ? currentTenant.value : undefined,
+                      queryKey: "Offboarding-Users",
+                      data: {
+                        Endpoint: "users",
+                        manualPagination: true,
+                        $select: "id,userPrincipalName,displayName",
+                        $count: true,
+                        $orderby: "displayName",
+                        $top: 999,
+                      },
+                    }}
+                  />
+                  <CippFormComponent
+                    name="OnedriveAccess"
+                    label="Grant Onedrive Full Access"
+                    type="autoComplete"
+                    placeholder="Leave blank if not needed"
+                    formControl={formControl}
+                    multi
+                    api={{
+                      tenantFilter: currentTenant ? currentTenant.value : undefined,
+                      labelField: (option) => `${option.displayName} (${option.userPrincipalName})`,
+                      valueField: "userPrincipalName",
+                      url: "/api/ListGraphRequest",
+                      dataKey: "Results",
+                      queryKey: "Offboarding-Users",
+                      data: {
+                        Endpoint: "users",
+                        manualPagination: true,
+                        $select: "id,userPrincipalName,displayName",
+                        $count: true,
+                        $orderby: "displayName",
+                        $top: 999,
+                      },
+                    }}
+                  />
+                </Stack>
 
-              <Typography variant="subtitle2" sx={{ mt: 3 }} gutterBottom>
-                Email Forwarding
-              </Typography>
-              <CippFormComponent
-                name="disableForwarding"
-                label="Disable Email Forwarding"
-                type="switch"
-                formControl={formControl}
-              />
+                <Stack spacing={1.5}>
+                  <Typography variant="subtitle2">Email Forwarding</Typography>
+                  <CippFormComponent
+                    name="disableForwarding"
+                    label="Disable Email Forwarding"
+                    type="switch"
+                    formControl={formControl}
+                  />
 
-              <CippFormCondition
-                formControl={formControl}
-                field={"disableForwarding"}
-                compareType="isNot"
-                compareValue={true}
-              >
-                <CippFormComponent
-                  sx={{ m: 1 }}
-                  name="forward"
-                  label="Forward Email To"
-                  type="autoComplete"
-                  placeholder="Leave blank if not needed"
-                  formControl={formControl}
-                  multiple={false}
-                  api={{
-                    tenantFilter: currentTenant ? currentTenant.value : undefined,
-                    labelField: (option) => `${option.displayName} (${option.userPrincipalName})`,
-                    valueField: "id",
-                    url: "/api/ListGraphRequest",
-                    dataKey: "Results",
-                    queryKey: "Offboarding-Users",
-                    data: {
-                      Endpoint: "users",
-                      manualPagination: true,
-                      $select: "id,userPrincipalName,displayName",
-                      $count: true,
-                      $orderby: "displayName",
-                      $top: 999,
-                    },
-                  }}
-                />
+                  <CippFormCondition
+                    formControl={formControl}
+                    field={"disableForwarding"}
+                    compareType="isNot"
+                    compareValue={true}
+                  >
+                    <Stack spacing={1.5}>
+                      <CippFormComponent
+                        name="forward"
+                        label="Forward Email To"
+                        type="autoComplete"
+                        placeholder="Leave blank if not needed"
+                        formControl={formControl}
+                        multiple={false}
+                        api={{
+                          tenantFilter: currentTenant ? currentTenant.value : undefined,
+                          labelField: (option) => `${option.displayName} (${option.userPrincipalName})`,
+                          valueField: "userPrincipalName",
+                          url: "/api/ListGraphRequest",
+                          dataKey: "Results",
+                          queryKey: "Offboarding-Users",
+                          data: {
+                            Endpoint: "users",
+                            manualPagination: true,
+                            $select: "id,userPrincipalName,displayName",
+                            $count: true,
+                            $orderby: "displayName",
+                            $top: 999,
+                          },
+                        }}
+                      />
+                      <CippFormComponent
+                        name="KeepCopy"
+                        label="Keep a copy of forwarded mail"
+                        type="switch"
+                        formControl={formControl}
+                      />
+                    </Stack>
+                  </CippFormCondition>
+                </Stack>
 
-                <CippFormComponent
-                  name="KeepCopy"
-                  label="Keep a copy of forwarded mail"
-                  type="switch"
-                  formControl={formControl}
-                />
-              </CippFormCondition>
-              <CippFormComponent
-                name="OOO"
-                label="Out of Office Message"
-                type="richText"
-                placeholder="Leave blank to not set"
-                fullWidth
-                formControl={formControl}
-              />
+                <Stack spacing={1.5}>
+                  <Typography variant="subtitle2">Out of Office</Typography>
+                  <CippFormComponent
+                    name="OOO"
+                    label="Out of Office Message"
+                    type="richText"
+                    placeholder="Leave blank to not set"
+                    fullWidth
+                    formControl={formControl}
+                  />
+                </Stack>
+              </Stack>
             </CardContent>
           </Card>
         </Grid>
@@ -336,7 +346,7 @@ export const CippWizardOffboarding = (props) => {
         <CardHeader title="Scheduling & Notifications" />
         <Divider />
         <CardContent>
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, md: 3 }}>
             <Grid size={{ xs: 12 }}>
               <CippFormComponent
                 name="Scheduled.enabled"
@@ -364,24 +374,26 @@ export const CippWizardOffboarding = (props) => {
 
               <Grid size={{ sm: 6, xs: 12 }}>
                 <Typography variant="subtitle2">Send results to:</Typography>
-                <CippFormComponent
-                  name="postExecution.webhook"
-                  label="Webhook"
-                  type="switch"
-                  formControl={formControl}
-                />
-                <CippFormComponent
-                  name="postExecution.email"
-                  label="E-mail"
-                  type="switch"
-                  formControl={formControl}
-                />
-                <CippFormComponent
-                  name="postExecution.psa"
-                  label="PSA"
-                  type="switch"
-                  formControl={formControl}
-                />
+                <Stack spacing={1}>
+                  <CippFormComponent
+                    name="postExecution.webhook"
+                    label="Webhook"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="postExecution.email"
+                    label="E-mail"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    name="postExecution.psa"
+                    label="PSA"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                </Stack>
               </Grid>
 
               <Grid size={{ sm: 12, xs: 12 }}>

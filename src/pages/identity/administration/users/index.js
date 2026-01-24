@@ -8,7 +8,7 @@ import { CippBulkUserDrawer } from "/src/components/CippComponents/CippBulkUserD
 import { CippAddUserDrawer } from "/src/components/CippComponents/CippAddUserDrawer.jsx";
 import { CippApiLogsDrawer } from "/src/components/CippComponents/CippApiLogsDrawer.jsx";
 import { useCippUserActions } from "/src/components/CippComponents/CippUserActions";
-import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { Box, Tooltip, useMediaQuery, useTheme } from "@mui/material";
 import { useRouter } from "next/router";
 import { useCallback, useMemo } from "react";
 import {
@@ -225,25 +225,74 @@ const Page = () => {
       apiUrl="/api/ListGraphRequest"
       cardButton={
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-          <CippAddUserDrawer
-            requiredPermissions={cardButtonPermissions}
-            PermissionButton={PermissionButton}
-          />
-          <CippBulkUserDrawer
-            requiredPermissions={cardButtonPermissions}
-            PermissionButton={PermissionButton}
-          />
-          <CippInviteGuestDrawer
-            requiredPermissions={cardButtonPermissions}
-            PermissionButton={PermissionButton}
-          />
-          <CippApiLogsDrawer
-            apiFilter="(?<!Scheduler_)User"
-            buttonText="View Logs"
-            title="User Logs"
-            PermissionButton={PermissionButton}
-            tenantFilter={tenant}
-          />
+          {isMobile ? (
+            <Tooltip title="Add User" enterTouchDelay={0} leaveTouchDelay={3000}>
+              <span>
+                <CippAddUserDrawer
+                  requiredPermissions={cardButtonPermissions}
+                  PermissionButton={PermissionButton}
+                  buttonText=""
+                  buttonProps={{ size: "small", sx: { minWidth: 40, px: 1 }, "aria-label": "Add User" }}
+                />
+              </span>
+            </Tooltip>
+          ) : (
+            <CippAddUserDrawer
+              requiredPermissions={cardButtonPermissions}
+              PermissionButton={PermissionButton}
+            />
+          )}
+          {!isMobile && (
+            <CippBulkUserDrawer
+              requiredPermissions={cardButtonPermissions}
+              PermissionButton={PermissionButton}
+            />
+          )}
+          {isMobile ? (
+            <Tooltip title="Invite Guest" enterTouchDelay={0} leaveTouchDelay={3000}>
+              <span>
+                <CippInviteGuestDrawer
+                  requiredPermissions={cardButtonPermissions}
+                  PermissionButton={PermissionButton}
+                  buttonText=""
+                  buttonProps={{
+                    size: "small",
+                    sx: { minWidth: 40, px: 1 },
+                    "aria-label": "Invite Guest",
+                  }}
+                />
+              </span>
+            </Tooltip>
+          ) : (
+            <CippInviteGuestDrawer
+              requiredPermissions={cardButtonPermissions}
+              PermissionButton={PermissionButton}
+            />
+          )}
+          {isMobile ? (
+            <Tooltip title="View Logs" enterTouchDelay={0} leaveTouchDelay={3000}>
+              <span>
+                <CippApiLogsDrawer
+                  apiFilter="(?<!Scheduler_)User"
+                  buttonText=""
+                  title="User Logs"
+                  PermissionButton={PermissionButton}
+                  tenantFilter={tenant}
+                  size="small"
+                  sx={{ minWidth: 40, px: 1 }}
+                  aria-label="View Logs"
+                />
+              </span>
+            </Tooltip>
+          ) : (
+            <CippApiLogsDrawer
+              apiFilter="(?<!Scheduler_)User"
+              buttonText="View Logs"
+              title="User Logs"
+              PermissionButton={PermissionButton}
+              tenantFilter={tenant}
+            />
+          )}
         </Box>
       }
       apiData={{
