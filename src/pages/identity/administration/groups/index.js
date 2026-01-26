@@ -1,4 +1,5 @@
-import { Button } from "@mui/material";
+import { Button, Tooltip, IconButton, useMediaQuery, useTheme } from "@mui/material";
+import { Box } from "@mui/system";
 import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import Link from "next/link";
@@ -19,7 +20,6 @@ import {
   Public,
   PublicOff,
 } from "@mui/icons-material";
-import { Stack } from "@mui/system";
 import { useState } from "react";
 import { useSettings } from "../../../../hooks/use-settings";
 
@@ -27,6 +27,8 @@ const Page = () => {
   const pageTitle = "Groups";
   const [showMembers, setShowMembers] = useState(false);
   const { currentTenant } = useSettings();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleMembersToggle = () => {
     setShowMembers(!showMembers);
@@ -70,11 +72,12 @@ const Page = () => {
       {
         field: "visibility",
         tooltip: "Visibility",
+        iconOnly: true,
         conditions: {
-          Public: { icon: <Public fontSize="small" />, color: "success" },
-          public: { icon: <Public fontSize="small" />, color: "success" },
-          Private: { icon: <PublicOff fontSize="small" />, color: "warning" },
-          private: { icon: <PublicOff fontSize="small" />, color: "warning" },
+          Public: { icon: <Public fontSize="small" sx={{ display: "block" }} />, color: "success" },
+          public: { icon: <Public fontSize="small" sx={{ display: "block" }} />, color: "success" },
+          Private: { icon: <PublicOff fontSize="small" sx={{ display: "block" }} />, color: "warning" },
+          private: { icon: <PublicOff fontSize="small" sx={{ display: "block" }} />, color: "warning" },
         },
       },
     ],
@@ -90,6 +93,16 @@ const Page = () => {
     ],
     // Quick actions on cards
     maxQuickActions: 8,
+    // Mobile quick actions: 7 buttons (no delete on mobile)
+    mobileQuickActions: [
+      "View Members",
+      "Edit Group",
+      "Set Global Address List Visibility",
+      "Only allow messages from people inside the organisation",
+      "Allow messages from people inside and outside the organisation",
+      "Create template based on group",
+      "Create Team from Group",
+    ],
     // Grid sizing for consistent card widths
     cardGridProps: {
       xs: 12,
@@ -395,15 +408,44 @@ const Page = () => {
   return (
     <CippTablePage
       title={pageTitle}
+      tenantInTitle={!isMobile}
       cardButton={
-        <Stack direction="row" spacing={1}>
-          <Button onClick={handleMembersToggle}>
-            {showMembers ? "Hide Members" : "Show Members"}
-          </Button>
-          <Button component={Link} href="groups/add" startIcon={<GroupAdd />}>
-            Add Group
-          </Button>
-        </Stack>
+        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          {isMobile ? (
+            <Tooltip title={showMembers ? "Hide Members" : "Show Members"} enterTouchDelay={0} leaveTouchDelay={3000}>
+              <IconButton
+                size="small"
+                onClick={handleMembersToggle}
+                color={showMembers ? "primary" : "default"}
+                sx={{ minWidth: 40 }}
+                aria-label={showMembers ? "Hide Members" : "Show Members"}
+              >
+                <People />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Button onClick={handleMembersToggle} startIcon={<People />}>
+              {showMembers ? "Hide Members" : "Show Members"}
+            </Button>
+          )}
+          {isMobile ? (
+            <Tooltip title="Add Group" enterTouchDelay={0} leaveTouchDelay={3000}>
+              <IconButton
+                component={Link}
+                href="groups/add"
+                size="small"
+                sx={{ minWidth: 40 }}
+                aria-label="Add Group"
+              >
+                <GroupAdd />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Button component={Link} href="groups/add" startIcon={<GroupAdd />}>
+              Add Group
+            </Button>
+          )}
+        </Box>
       }
       apiUrl="/api/ListGroups"
       apiData={{ expandMembers: showMembers }}

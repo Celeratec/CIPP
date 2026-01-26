@@ -174,13 +174,12 @@ const Page = () => {
     extraFieldsMax: 3,
     desktopFieldsLayout: "column",
     desktopFieldsMax: 4,
-    // Mobile quick actions: 8 buttons
+    // Mobile quick actions: 7 buttons
     mobileQuickActions: [
       "Reset Password",
       "Create Temporary Access Password",
       "Re-require MFA registration",
       "Set Per-User MFA",
-      "Revoke all user sessions",
       "Manage Licenses",
       "Add to Group",
       "Edit User",
