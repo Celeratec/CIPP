@@ -1,10 +1,219 @@
-import { Alert, Box, Divider, InputAdornment, Typography, Link } from "@mui/material";
+import { 
+  Alert, 
+  Box, 
+  Divider, 
+  InputAdornment, 
+  Typography, 
+  Link,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Chip,
+  Stack,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
+import { ExpandMore, ContentCopy, Lightbulb } from "@mui/icons-material";
 import { Grid } from "@mui/system";
 import CippFormComponent from "/src/components/CippComponents/CippFormComponent";
 import { CippFormCondition } from "/src/components/CippComponents/CippFormCondition";
 import { CippFormDomainSelector } from "../CippComponents/CippFormDomainSelector";
 import { CippFormUserSelector } from "../CippComponents/CippFormUserSelector";
 import { useWatch } from "react-hook-form";
+import { useState } from "react";
+
+// Common dynamic membership rule examples
+const dynamicRuleExamples = [
+  {
+    category: "Department-Based",
+    examples: [
+      {
+        name: "Single Department",
+        rule: '(user.department -eq "Sales")',
+        description: "All users in the Sales department",
+      },
+      {
+        name: "Multiple Departments",
+        rule: '(user.department -eq "Sales") -or (user.department -eq "Marketing")',
+        description: "Users in Sales OR Marketing departments",
+      },
+      {
+        name: "Department Contains",
+        rule: '(user.department -contains "Engineering")',
+        description: "Users whose department contains 'Engineering'",
+      },
+    ],
+  },
+  {
+    category: "Job Title & Role",
+    examples: [
+      {
+        name: "Specific Job Title",
+        rule: '(user.jobTitle -eq "Manager")',
+        description: "All users with 'Manager' job title",
+      },
+      {
+        name: "Job Title Contains",
+        rule: '(user.jobTitle -contains "Director")',
+        description: "Users whose title contains 'Director'",
+      },
+      {
+        name: "Multiple Titles",
+        rule: '(user.jobTitle -eq "CEO") -or (user.jobTitle -eq "CFO") -or (user.jobTitle -eq "CTO")',
+        description: "C-level executives only",
+      },
+    ],
+  },
+  {
+    category: "Location-Based",
+    examples: [
+      {
+        name: "Specific Country",
+        rule: '(user.country -eq "United States")',
+        description: "All users located in the United States",
+      },
+      {
+        name: "Specific Office",
+        rule: '(user.officeLocation -eq "New York")',
+        description: "Users in the New York office",
+      },
+      {
+        name: "Usage Location",
+        rule: '(user.usageLocation -eq "US")',
+        description: "Users with US usage location (for licensing)",
+      },
+    ],
+  },
+  {
+    category: "Account Status",
+    examples: [
+      {
+        name: "Enabled Accounts Only",
+        rule: "(user.accountEnabled -eq true)",
+        description: "Only enabled user accounts",
+      },
+      {
+        name: "Guest Users",
+        rule: '(user.userType -eq "Guest")',
+        description: "All guest/external users",
+      },
+      {
+        name: "Member Users",
+        rule: '(user.userType -eq "Member")',
+        description: "All member (internal) users",
+      },
+    ],
+  },
+  {
+    category: "Combined Rules",
+    examples: [
+      {
+        name: "Department + Enabled",
+        rule: '(user.department -eq "IT") -and (user.accountEnabled -eq true)',
+        description: "Enabled IT department users only",
+      },
+      {
+        name: "Manager in Location",
+        rule: '(user.jobTitle -contains "Manager") -and (user.country -eq "United States")',
+        description: "Managers located in the US",
+      },
+      {
+        name: "Exclude Specific Users",
+        rule: '(user.department -eq "Sales") -and (user.jobTitle -ne "Intern")',
+        description: "Sales department excluding interns",
+      },
+    ],
+  },
+  {
+    category: "Extension Attributes",
+    examples: [
+      {
+        name: "Extension Attribute",
+        rule: '(user.extensionAttribute1 -eq "FullTime")',
+        description: "Users with specific extension attribute value",
+      },
+      {
+        name: "Extension Not Null",
+        rule: "(user.extensionAttribute1 -ne null)",
+        description: "Users where extension attribute has any value",
+      },
+    ],
+  },
+];
+
+// Dynamic Distribution Group filter examples (Exchange recipient filters)
+const dynamicDistributionExamples = [
+  {
+    category: "Recipient Type",
+    examples: [
+      {
+        name: "All Mailboxes",
+        rule: "RecipientType -eq 'UserMailbox'",
+        description: "All user mailboxes in the organization",
+      },
+      {
+        name: "All Mail Users",
+        rule: "RecipientTypeDetails -eq 'MailUser'",
+        description: "All mail-enabled users",
+      },
+    ],
+  },
+  {
+    category: "Department & Company",
+    examples: [
+      {
+        name: "Single Department",
+        rule: "Department -eq 'Sales'",
+        description: "All recipients in the Sales department",
+      },
+      {
+        name: "Specific Company",
+        rule: "Company -eq 'Contoso'",
+        description: "All recipients from Contoso company",
+      },
+      {
+        name: "Department + Company",
+        rule: "(Department -eq 'Engineering') -and (Company -eq 'Contoso')",
+        description: "Engineering at Contoso only",
+      },
+    ],
+  },
+  {
+    category: "Location",
+    examples: [
+      {
+        name: "State or Province",
+        rule: "StateOrProvince -eq 'California'",
+        description: "Recipients in California",
+      },
+      {
+        name: "Country",
+        rule: "CountryOrRegion -eq 'United States'",
+        description: "Recipients in the United States",
+      },
+      {
+        name: "Office Location",
+        rule: "Office -eq 'Building A'",
+        description: "Recipients in Building A",
+      },
+    ],
+  },
+  {
+    category: "Custom Attributes",
+    examples: [
+      {
+        name: "Custom Attribute",
+        rule: "CustomAttribute1 -eq 'ProjectTeam'",
+        description: "Recipients with specific custom attribute",
+      },
+      {
+        name: "Multiple Conditions",
+        rule: "(CustomAttribute1 -eq 'VIP') -and (RecipientType -eq 'UserMailbox')",
+        description: "VIP mailboxes only",
+      },
+    ],
+  },
+];
 
 // Group type definitions with descriptions
 const groupTypeOptions = [
@@ -49,6 +258,208 @@ const groupTypeOptions = [
 const getGroupTypeDescription = (groupType) => {
   const option = groupTypeOptions.find((opt) => opt.value === groupType);
   return option?.description || "";
+};
+
+// Collapsible component showing dynamic rule examples
+const DynamicRuleExamplesAccordion = ({ formControl, selectedGroupType }) => {
+  const [copiedRule, setCopiedRule] = useState(null);
+
+  const handleCopyRule = (rule) => {
+    navigator.clipboard.writeText(rule);
+    setCopiedRule(rule);
+    setTimeout(() => setCopiedRule(null), 2000);
+  };
+
+  const handleUseRule = (rule) => {
+    formControl.setValue("membershipRules", rule, { shouldValidate: true });
+  };
+
+  // Choose examples based on group type
+  const examples = selectedGroupType === "dynamicdistribution" 
+    ? dynamicDistributionExamples 
+    : dynamicRuleExamples;
+
+  const syntaxGuide = selectedGroupType === "dynamicdistribution" ? (
+    <>
+      <Typography variant="subtitle2" gutterBottom sx={{ mt: 1 }}>
+        Exchange Recipient Filter Syntax
+      </Typography>
+      <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+        <li><code>-eq</code> = equals</li>
+        <li><code>-ne</code> = not equals</li>
+        <li><code>-like</code> = wildcard match (use * for wildcards)</li>
+        <li><code>-and</code> / <code>-or</code> = combine conditions</li>
+      </Box>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+        Common attributes: <code>Department</code>, <code>Company</code>, <code>StateOrProvince</code>, 
+        <code>CountryOrRegion</code>, <code>Office</code>, <code>Title</code>, <code>CustomAttribute1-15</code>
+      </Typography>
+    </>
+  ) : (
+    <>
+      <Typography variant="subtitle2" gutterBottom sx={{ mt: 1 }}>
+        OData Filter Syntax
+      </Typography>
+      <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+        <li><code>-eq</code> = equals</li>
+        <li><code>-ne</code> = not equals</li>
+        <li><code>-contains</code> = string contains</li>
+        <li><code>-match</code> = regex match</li>
+        <li><code>-and</code> / <code>-or</code> = combine conditions</li>
+      </Box>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+        Common attributes: <code>user.department</code>, <code>user.jobTitle</code>, <code>user.country</code>, 
+        <code>user.accountEnabled</code>, <code>user.userType</code>, <code>user.extensionAttribute1-15</code>
+      </Typography>
+    </>
+  );
+
+  return (
+    <Accordion 
+      sx={{ 
+        mt: 2,
+        backgroundColor: "background.default",
+        "&:before": { display: "none" },
+        borderRadius: 1,
+        border: 1,
+        borderColor: "divider",
+      }}
+    >
+      <AccordionSummary 
+        expandIcon={<ExpandMore />}
+        sx={{ 
+          minHeight: 48,
+          "&.Mui-expanded": { minHeight: 48 },
+        }}
+      >
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Lightbulb color="info" fontSize="small" />
+          <Typography variant="subtitle2">
+            Rule Examples & Syntax Guide
+          </Typography>
+        </Stack>
+      </AccordionSummary>
+      <AccordionDetails sx={{ pt: 0 }}>
+        {/* Syntax Guide */}
+        <Box sx={{ mb: 2, p: 1.5, backgroundColor: "action.hover", borderRadius: 1 }}>
+          {syntaxGuide}
+        </Box>
+
+        {/* Examples by Category */}
+        {examples.map((category) => (
+          <Accordion
+            key={category.category}
+            sx={{
+              boxShadow: "none",
+              "&:before": { display: "none" },
+              backgroundColor: "transparent",
+            }}
+            disableGutters
+          >
+            <AccordionSummary 
+              expandIcon={<ExpandMore />}
+              sx={{ 
+                minHeight: 40,
+                px: 1,
+                "&.Mui-expanded": { minHeight: 40 },
+              }}
+            >
+              <Typography variant="subtitle2" color="primary">
+                {category.category}
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ px: 1, pt: 0 }}>
+              <Stack spacing={1.5}>
+                {category.examples.map((example) => (
+                  <Box
+                    key={example.name}
+                    sx={{
+                      p: 1.5,
+                      border: 1,
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      backgroundColor: "background.paper",
+                    }}
+                  >
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="subtitle2" gutterBottom>
+                          {example.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                          {example.description}
+                        </Typography>
+                        <Box
+                          component="code"
+                          sx={{
+                            display: "block",
+                            p: 1,
+                            backgroundColor: "grey.900",
+                            color: "grey.100",
+                            borderRadius: 0.5,
+                            fontSize: "0.75rem",
+                            fontFamily: "monospace",
+                            overflowX: "auto",
+                            whiteSpace: "pre-wrap",
+                            wordBreak: "break-all",
+                          }}
+                        >
+                          {example.rule}
+                        </Box>
+                      </Box>
+                      <Stack direction="row" spacing={0.5} sx={{ ml: 1, flexShrink: 0 }}>
+                        <Tooltip title={copiedRule === example.rule ? "Copied!" : "Copy rule"}>
+                          <IconButton 
+                            size="small" 
+                            onClick={() => handleCopyRule(example.rule)}
+                            color={copiedRule === example.rule ? "success" : "default"}
+                          >
+                            <ContentCopy fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Chip
+                          label="Use"
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                          onClick={() => handleUseRule(example.rule)}
+                          sx={{ cursor: "pointer" }}
+                        />
+                      </Stack>
+                    </Stack>
+                  </Box>
+                ))}
+              </Stack>
+            </AccordionDetails>
+          </Accordion>
+        ))}
+
+        {/* Additional Resources */}
+        <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: "divider" }}>
+          <Typography variant="caption" color="text.secondary">
+            Need more help?{" "}
+            {selectedGroupType === "dynamicdistribution" ? (
+              <Link
+                href="https://learn.microsoft.com/en-us/exchange/recipients/dynamic-distribution-groups/dynamic-distribution-groups"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Exchange Dynamic Distribution Groups Documentation
+              </Link>
+            ) : (
+              <Link
+                href="https://learn.microsoft.com/en-us/entra/identity/users/groups-dynamic-membership"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Microsoft Entra Dynamic Group Rules Documentation
+              </Link>
+            )}
+          </Typography>
+        </Box>
+      </AccordionDetails>
+    </Accordion>
+  );
 };
 
 const CippAddGroupForm = (props) => {
@@ -205,6 +616,14 @@ const CippAddGroupForm = (props) => {
                 fullWidth
                 required={true}
                 helperText="Enter a dynamic membership rule using OData filter syntax"
+              />
+            </Grid>
+
+            {/* Collapsible Examples Section */}
+            <Grid size={{ xs: 12 }}>
+              <DynamicRuleExamplesAccordion 
+                formControl={formControl} 
+                selectedGroupType={selectedGroupType} 
               />
             </Grid>
           </CippFormCondition>
