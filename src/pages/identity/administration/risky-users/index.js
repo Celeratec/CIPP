@@ -130,6 +130,15 @@ const Page = () => {
     return 3;
   };
 
+  const riskLevelPriority = (row) => {
+    const level = String(row?.riskLevel || "").toLowerCase();
+    if (level === "high") return 0;
+    if (level === "medium") return 1;
+    if (level === "low") return 2;
+    if (level === "none") return 3;
+    return 4;
+  };
+
   // ============ ACTIONS ============
   const actions = [
     {
@@ -142,6 +151,7 @@ const Page = () => {
       multiPost: false,
       category: "security",
       quickAction: true,
+      color: "info",
     },
     {
       label: "Research Compromise",
@@ -152,6 +162,7 @@ const Page = () => {
       multiPost: false,
       category: "security",
       quickAction: true,
+      color: "info",
     },
     {
       label: "Remediate User",
@@ -164,6 +175,7 @@ const Page = () => {
       multiPost: false,
       category: "security",
       quickAction: true,
+      color: "warning",
     },
     {
       label: "Reset Password",
@@ -182,6 +194,7 @@ const Page = () => {
       multiPost: false,
       category: "security",
       quickAction: true,
+      color: "warning",
     },
     {
       label: "Re-require MFA registration",
@@ -193,6 +206,7 @@ const Page = () => {
       multiPost: false,
       category: "security",
       quickAction: true,
+      color: "warning",
     },
     {
       label: "Revoke all user sessions",
@@ -204,6 +218,7 @@ const Page = () => {
       multiPost: false,
       category: "security",
       quickAction: true,
+      color: "error",
     },
   ];
 
@@ -384,12 +399,19 @@ const Page = () => {
       field: "userDisplayName",
       photoField: false,
     },
-    // Sort "At Risk" users to the top
+    // Sort "At Risk" users to the top, then by level, then by date
     sortFn: (a, b) => {
-      const priorityA = riskPriority(a);
-      const priorityB = riskPriority(b);
-      if (priorityA !== priorityB) return priorityA - priorityB;
-      // Within same priority, sort by last updated (most recent first)
+      // First, sort by risk state priority
+      const statePriorityA = riskPriority(a);
+      const statePriorityB = riskPriority(b);
+      if (statePriorityA !== statePriorityB) return statePriorityA - statePriorityB;
+      
+      // Within same state, sort by risk level (High > Medium > Low > None)
+      const levelPriorityA = riskLevelPriority(a);
+      const levelPriorityB = riskLevelPriority(b);
+      if (levelPriorityA !== levelPriorityB) return levelPriorityA - levelPriorityB;
+      
+      // Within same state and level, sort by last updated (most recent first)
       const dateA = new Date(a.riskLastUpdatedDateTime || 0);
       const dateB = new Date(b.riskLastUpdatedDateTime || 0);
       return dateB - dateA;
@@ -444,7 +466,21 @@ const Page = () => {
         field: "riskLastUpdatedDateTime",
         icon: <AccessTime />,
         label: "Updated",
-        formatter: (value) => getCippFormatting(value, "riskLastUpdatedDateTime"),
+        formatter: (value) => {
+          if (!value) return "N/A";
+          try {
+            const date = new Date(value);
+            return date.toLocaleDateString(undefined, { 
+              month: "short", 
+              day: "numeric", 
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          } catch {
+            return value;
+          }
+        },
       },
     ],
     desktopFieldsLayout: "column",
@@ -490,7 +526,7 @@ const Page = () => {
       apiDataKey="Results"
       actions={actions}
       offCanvas={offCanvas}
-      offCanvasOnRowClick={true}
+      offCanvasOnRowClick={false}
       showRowActionsMenu={false}
       simpleColumns={simpleColumns}
       columnVisibility={{
