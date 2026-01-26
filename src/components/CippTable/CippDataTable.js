@@ -640,7 +640,7 @@ const CardView = ({
                     data={item}
                     maxActions={config.maxQuickActions ?? (isMobile ? 4 : 6)}
                     showOnHover={false}
-                    variant={config.quickActionsVariant ?? "icon"}
+                    variant={isMobile && config.mobileQuickActionsVariant ? config.mobileQuickActionsVariant : (config.quickActionsVariant ?? "icon")}
                     onOffCanvasClick={offCanvas ? (itemData) => {
                       setOffCanvasData(itemData);
                       // Find index for navigation

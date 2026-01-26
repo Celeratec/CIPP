@@ -384,6 +384,16 @@ const Page = () => {
       field: "userDisplayName",
       photoField: false,
     },
+    // Sort "At Risk" users to the top
+    sortFn: (a, b) => {
+      const priorityA = riskPriority(a);
+      const priorityB = riskPriority(b);
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      // Within same priority, sort by last updated (most recent first)
+      const dateA = new Date(a.riskLastUpdatedDateTime || 0);
+      const dateB = new Date(b.riskLastUpdatedDateTime || 0);
+      return dateB - dateA;
+    },
     // Dynamic card styling based on risk severity
     cardSx: (item) => {
       const severity = getSeverity(item);
@@ -441,6 +451,7 @@ const Page = () => {
     desktopFieldsMax: 1,
     maxQuickActions: 6,
     quickActionsVariant: "button",
+    mobileQuickActionsVariant: "icon",
     cardGridProps: {
       md: 6,
       lg: 4,
