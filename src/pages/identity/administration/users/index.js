@@ -174,7 +174,7 @@ const Page = () => {
     extraFieldsMax: 3,
     desktopFieldsLayout: "column",
     desktopFieldsMax: 4,
-    // Mobile quick actions: 7 buttons, omit "View User" (card click opens it)
+    // Mobile quick actions: 8 buttons
     mobileQuickActions: [
       "Reset Password",
       "Create Temporary Access Password",
@@ -183,6 +183,7 @@ const Page = () => {
       "Revoke all user sessions",
       "Manage Licenses",
       "Add to Group",
+      "Edit User",
     ],
     maxQuickActions: 8,
     cardGridProps: {
@@ -218,6 +219,47 @@ const Page = () => {
   const simpleColumns = isMobile 
     ? ["displayName", "accountEnabled"]
     : ["displayName", "userPrincipalName", "mail", "accountEnabled"];
+
+  // Off-canvas panel configuration for user details flyout
+  const offCanvas = {
+    title: "User Details",
+    size: "md",
+    extendedInfoFields: [
+      // Identity
+      "displayName",
+      "givenName",
+      "surname",
+      "userPrincipalName",
+      "mail",
+      "id",
+      // Status
+      "accountEnabled",
+      "userType",
+      // Organization
+      "jobTitle",
+      "department",
+      "companyName",
+      "officeLocation",
+      // Contact
+      "mobilePhone",
+      "businessPhones",
+      // Location
+      "streetAddress",
+      "city",
+      "state",
+      "postalCode",
+      "country",
+      "usageLocation",
+      // Licensing
+      "assignedLicenses",
+      // Sync
+      "onPremisesSyncEnabled",
+      "onPremisesLastSyncDateTime",
+      // Metadata
+      "createdDateTime",
+    ],
+    actions: userActions,
+  };
 
   return (
     <CippTablePage
@@ -306,6 +348,7 @@ const Page = () => {
       }}
       apiDataKey="Results"
       actions={userActions}
+      offCanvas={offCanvas}
       offCanvasOnRowClick={false}
       onCardClick={handleCardClick}
       simpleColumns={simpleColumns}

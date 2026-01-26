@@ -455,6 +455,7 @@ export const CippQuickActions = ({
   size = "small",
   showOnHover = false,
   onActionClick,
+  onOffCanvasClick, // Callback to open offCanvas panel
   variant = "icon", // "icon" | "button"
 }) => {
   const theme = useTheme();
@@ -481,6 +482,13 @@ export const CippQuickActions = ({
     // Handle tenant switching
     if (settings.currentTenant === "AllTenants" && data?.Tenant) {
       settings.handleUpdate({ currentTenant: data.Tenant });
+    }
+
+    // Handle offCanvas action - opens the details flyout panel
+    if (action.offCanvasAction && onOffCanvasClick) {
+      onOffCanvasClick(data);
+      if (onActionClick) onActionClick(action);
+      return;
     }
 
     if (action.noConfirm && action.customFunction) {

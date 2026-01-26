@@ -380,7 +380,7 @@ const CardView = ({
                 overflow: "hidden",
               }}
             >
-              {/* Header: Avatar + Name + Badges */}
+              {/* Header: Avatar + Name + Badges + Info Icon */}
               <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
                 {config.avatar?.photoField && tenant && item.id ? (
                   <CippUserAvatar
@@ -427,6 +427,31 @@ const CardView = ({
                           renderBadge(badge, item, badgeIndex, true)
                         )}
                       </Box>
+                    )}
+                    {/* Info icon to open offCanvas panel */}
+                    {offCanvas && (
+                      <Tooltip title="Quick Info" arrow>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOffCanvasData(item);
+                            const idx = filteredData?.findIndex(r => r === item) ?? 0;
+                            setOffCanvasRowIndex(idx);
+                            setOffcanvasVisible(true);
+                          }}
+                          sx={{
+                            ml: 0.5,
+                            p: 0.5,
+                            color: "info.main",
+                            "&:hover": {
+                              bgcolor: "info.lighter",
+                            },
+                          }}
+                        >
+                          <Info sx={{ fontSize: 18 }} />
+                        </IconButton>
+                      </Tooltip>
                     )}
                   </Stack>
 
@@ -612,6 +637,13 @@ const CardView = ({
                     maxActions={config.maxQuickActions ?? (isMobile ? 4 : 6)}
                     showOnHover={false}
                     variant={config.quickActionsVariant ?? "icon"}
+                    onOffCanvasClick={offCanvas ? (itemData) => {
+                      setOffCanvasData(itemData);
+                      // Find index for navigation
+                      const idx = filteredData?.findIndex(r => r === itemData) ?? 0;
+                      setOffCanvasRowIndex(idx);
+                      setOffcanvasVisible(true);
+                    } : undefined}
                   />
                 </Box>
               )}
@@ -628,6 +660,7 @@ const CardView = ({
     theme,
     cardActions,
     onCardClick,
+    offCanvas,
   ]);
 
   // Fixed card height for uniform appearance

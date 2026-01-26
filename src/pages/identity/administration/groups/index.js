@@ -44,14 +44,27 @@ const Page = () => {
         field: "calculatedGroupType",
         tooltip: "Group Type",
         conditions: {
+          // Microsoft 365 groups
           m365: { label: "M365", color: "primary", icon: <GroupSharp fontSize="small" /> },
           M365: { label: "M365", color: "primary", icon: <GroupSharp fontSize="small" /> },
-          security: { label: "Security", color: "secondary", icon: <Security fontSize="small" /> },
-          Security: { label: "Security", color: "secondary", icon: <Security fontSize="small" /> },
+          // Regular Security groups (no mail)
+          generic: { label: "Security", color: "secondary", icon: <Security fontSize="small" /> },
+          Generic: { label: "Security", color: "secondary", icon: <Security fontSize="small" /> },
+          // Mail-Enabled Security groups
+          security: { label: "Mail Security", color: "secondary", icon: <Security fontSize="small" /> },
+          Security: { label: "Mail Security", color: "secondary", icon: <Security fontSize="small" /> },
+          // Distribution Lists
+          distributionList: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
+          DistributionList: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
           distribution: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
           Distribution: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
-          dynamic: { label: "Dynamic", color: "info", icon: <DynamicFeed fontSize="small" /> },
-          Dynamic: { label: "Dynamic", color: "info", icon: <DynamicFeed fontSize="small" /> },
+        },
+      },
+      {
+        field: "dynamicGroupBool",
+        tooltip: "Dynamic Membership",
+        conditions: {
+          true: { label: "Dynamic", color: "info", icon: <DynamicFeed fontSize="small" /> },
         },
       },
       {
@@ -76,7 +89,7 @@ const Page = () => {
       { field: "onPremisesSyncEnabled", label: "On-Prem Sync" },
     ],
     // Quick actions on cards
-    maxQuickActions: 4,
+    maxQuickActions: 8,
     // Grid sizing for consistent card widths
     cardGridProps: {
       xs: 12,
@@ -126,6 +139,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to hide this group from the global address list? Remember this will not work if the group is AD Synched.",
       multiPost: false,
+      quickAction: true,
     },
     {
       label: "Only allow messages from people inside the organisation",
@@ -140,6 +154,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to only allow messages from people inside the organisation? Remember this will not work if the group is AD Synched.",
       multiPost: false,
+      quickAction: true,
     },
     {
       label: "Allow messages from people inside and outside the organisation",
@@ -154,6 +169,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to allow messages from people inside and outside the organisation? Remember this will not work if the group is AD Synched.",
       multiPost: false,
+      quickAction: true,
     },
     {
       label: "Set Source of Authority",
@@ -196,6 +212,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to create a template based on this group?",
       multiPost: false,
+      quickAction: true,
     },
     {
       label: "Create Team from Group",
@@ -344,23 +361,34 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to delete this group.",
       multiPost: false,
+      quickAction: true,
+      color: "error",
     },
   ];
   const offCanvas = {
+    title: "Group Details",
+    size: "md",
     extendedInfoFields: [
+      // Basic Info
       "displayName",
-      "userPrincipalName",
-      "id",
-      "mail",
       "description",
+      "groupType",
+      "mail",
+      "mailNickname",
+      "id",
+      // Settings
       "mailEnabled",
       "securityEnabled",
       "visibility",
-      "assignedLicenses",
-      "licenseProcessingState.state",
-      "onPremisesSamAccountName",
+      "teamsEnabled",
+      // Dynamic Membership
       "membershipRule",
+      // Sync & Licensing
       "onPremisesSyncEnabled",
+      "onPremisesSamAccountName",
+      "assignedLicenses",
+      // Metadata
+      "createdDateTime",
     ],
     actions: actions,
   };
