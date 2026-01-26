@@ -8,7 +8,19 @@ import { CippBulkUserDrawer } from "/src/components/CippComponents/CippBulkUserD
 import { CippAddUserDrawer } from "/src/components/CippComponents/CippAddUserDrawer.jsx";
 import { CippApiLogsDrawer } from "/src/components/CippComponents/CippApiLogsDrawer.jsx";
 import { useCippUserActions } from "/src/components/CippComponents/CippUserActions";
-import { Box, Tooltip, useMediaQuery, useTheme } from "@mui/material";
+import { 
+  Box, 
+  Tooltip, 
+  useMediaQuery, 
+  useTheme,
+  Paper,
+  Avatar,
+  Typography,
+  Chip,
+  Divider,
+} from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { Stack } from "@mui/system";
 import { useRouter } from "next/router";
 import { useCallback, useMemo } from "react";
 import {
@@ -22,7 +34,16 @@ import {
   Group,
   PersonAddAlt1,
   RemoveCircleOutline,
+  Person,
+  CheckCircle,
+  Cancel,
+  Sync,
+  CalendarToday,
+  Info as InfoIcon,
+  VerifiedUser,
 } from "@mui/icons-material";
+import { getCippFormatting } from "/src/utils/get-cipp-formatting";
+import CippUserAvatar from "/src/components/CippComponents/CippUserAvatar";
 
 const Page = () => {
   const router = useRouter();
@@ -223,41 +244,292 @@ const Page = () => {
   const offCanvas = {
     title: "User Details",
     size: "md",
-    extendedInfoFields: [
-      // Identity
-      "displayName",
-      "givenName",
-      "surname",
-      "userPrincipalName",
-      "mail",
-      "id",
-      // Status
-      "accountEnabled",
-      "userType",
-      // Organization
-      "jobTitle",
-      "department",
-      "companyName",
-      "officeLocation",
-      // Contact
-      "mobilePhone",
-      "businessPhones",
-      // Location
-      "streetAddress",
-      "city",
-      "state",
-      "postalCode",
-      "country",
-      "usageLocation",
-      // Licensing
-      "assignedLicenses",
-      // Sync
-      "onPremisesSyncEnabled",
-      "onPremisesLastSyncDateTime",
-      // Metadata
-      "createdDateTime",
-    ],
     actions: userActions,
+    children: (row) => {
+      const isEnabled = row.accountEnabled;
+      const isGuest = row.userType === "Guest";
+      const hasLicenses = row.assignedLicenses && row.assignedLicenses.length > 0;
+      const statusColor = isEnabled ? theme.palette.success.main : theme.palette.error.main;
+      
+      return (
+        <Stack spacing={3}>
+          {/* Hero Section */}
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2.5,
+              borderRadius: 2,
+              background: `linear-gradient(135deg, ${alpha(statusColor, 0.15)} 0%, ${alpha(statusColor, 0.05)} 100%)`,
+              borderLeft: `4px solid ${statusColor}`,
+            }}
+          >
+            <Stack direction="row" spacing={2} alignItems="center">
+              <CippUserAvatar
+                userId={row.id}
+                tenantFilter={tenant}
+                displayName={row.displayName}
+                size={56}
+                enablePhoto={true}
+              />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25 }}>
+                  {row.displayName || "Unknown User"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" noWrap>
+                  {row.userPrincipalName}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+
+          {/* Status Badges */}
+          <Box>
+            <Typography 
+              variant="overline" 
+              color="text.secondary" 
+              sx={{ fontWeight: 600, letterSpacing: 1, mb: 1.5, display: "block" }}
+            >
+              Account Status
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                icon={isEnabled ? <CheckCircle fontSize="small" /> : <Cancel fontSize="small" />}
+                label={isEnabled ? "Enabled" : "Disabled"}
+                color={isEnabled ? "success" : "error"}
+                variant="filled"
+                sx={{ fontWeight: 600 }}
+              />
+              <Chip
+                icon={isGuest ? <PersonAddAlt1 fontSize="small" /> : <Person fontSize="small" />}
+                label={isGuest ? "Guest" : "Member"}
+                color={isGuest ? "warning" : "primary"}
+                variant="outlined"
+                size="small"
+              />
+              {hasLicenses && (
+                <Chip
+                  icon={<VerifiedUser fontSize="small" />}
+                  label="Licensed"
+                  color="info"
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+              {row.onPremisesSyncEnabled && (
+                <Chip
+                  icon={<Sync fontSize="small" />}
+                  label="Synced"
+                  color="secondary"
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+            </Stack>
+          </Box>
+
+          <Divider />
+
+          {/* Contact Information */}
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <Email fontSize="small" color="action" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Contact Information
+              </Typography>
+            </Stack>
+            <Stack spacing={1}>
+              {row.mail && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Email</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+                    {row.mail}
+                  </Typography>
+                </Stack>
+              )}
+              {row.mobilePhone && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Mobile</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {row.mobilePhone}
+                  </Typography>
+                </Stack>
+              )}
+              {row.businessPhones && row.businessPhones.length > 0 && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Business Phone</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {Array.isArray(row.businessPhones) ? row.businessPhones[0] : row.businessPhones}
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
+          </Box>
+
+          {/* Organization */}
+          {(row.jobTitle || row.department || row.companyName || row.officeLocation) && (
+            <>
+              <Divider />
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                  <Business fontSize="small" color="action" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Organization
+                  </Typography>
+                </Stack>
+                <Stack spacing={1}>
+                  {row.jobTitle && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Job Title</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {row.jobTitle}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.department && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Department</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {row.department}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.companyName && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Company</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {row.companyName}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.officeLocation && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Office</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {row.officeLocation}
+                      </Typography>
+                    </Stack>
+                  )}
+                </Stack>
+              </Box>
+            </>
+          )}
+
+          {/* Location */}
+          {(row.city || row.state || row.country) && (
+            <>
+              <Divider />
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                  <LocationOn fontSize="small" color="action" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Location
+                  </Typography>
+                </Stack>
+                <Stack spacing={1}>
+                  {(row.streetAddress || row.city || row.state || row.postalCode) && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                      <Typography variant="body2" color="text.secondary">Address</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, textAlign: "right", maxWidth: "60%" }}>
+                        {[row.streetAddress, row.city, row.state, row.postalCode].filter(Boolean).join(", ")}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.country && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Country</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {row.country}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.usageLocation && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Usage Location</Typography>
+                      <Chip label={row.usageLocation} size="small" variant="outlined" />
+                    </Stack>
+                  )}
+                </Stack>
+              </Box>
+            </>
+          )}
+
+          {/* Licensing */}
+          {hasLicenses && (
+            <>
+              <Divider />
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                  <WorkspacePremium fontSize="small" color="action" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Licenses ({row.assignedLicenses.length})
+                  </Typography>
+                </Stack>
+                <Paper 
+                  variant="outlined" 
+                  sx={{ 
+                    p: 1.5, 
+                    borderRadius: 1.5,
+                    backgroundColor: alpha(theme.palette.background.default, 0.5),
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    {getCippFormatting(row.assignedLicenses, "assignedLicenses")}
+                  </Typography>
+                </Paper>
+              </Box>
+            </>
+          )}
+
+          <Divider />
+
+          {/* Metadata */}
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <CalendarToday fontSize="small" color="action" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Account Details
+              </Typography>
+            </Stack>
+            <Stack spacing={1}>
+              {row.createdDateTime && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Created</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {getCippFormatting(row.createdDateTime, "createdDateTime")}
+                  </Typography>
+                </Stack>
+              )}
+              {row.onPremisesLastSyncDateTime && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Last Synced</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {getCippFormatting(row.onPremisesLastSyncDateTime, "onPremisesLastSyncDateTime")}
+                  </Typography>
+                </Stack>
+              )}
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">User ID</Typography>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    fontFamily: "monospace",
+                    bgcolor: alpha(theme.palette.text.primary, 0.05),
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 0.5,
+                    maxWidth: 200,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {row.id}
+                </Typography>
+              </Stack>
+            </Stack>
+          </Box>
+        </Stack>
+      );
+    },
   };
 
   return (

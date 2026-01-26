@@ -2,11 +2,31 @@ import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
 import { CippApiDialog } from "/src/components/CippComponents/CippApiDialog.jsx";
 import { GlobeAltIcon, TrashIcon, UserIcon, UserGroupIcon } from "@heroicons/react/24/outline";
-import { LaptopMac, Sync } from "@mui/icons-material";
+import { 
+  LaptopMac, 
+  Sync,
+  Apps,
+  CheckCircle,
+  Cancel,
+  CalendarToday,
+  Assignment,
+} from "@mui/icons-material";
 import { CippApplicationDeployDrawer } from "/src/components/CippComponents/CippApplicationDeployDrawer";
-import { Button, Box } from "@mui/material";
+import { 
+  Button,
+  Paper,
+  Avatar,
+  Typography,
+  Chip,
+  Divider,
+  useTheme,
+} from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { Box, Stack } from "@mui/system";
 import { useSettings } from "/src/hooks/use-settings.js";
 import { useDialog } from "/src/hooks/use-dialog.js";
+import { getCippFormatting } from "/src/utils/get-cipp-formatting";
+import { getInitials, stringToColor } from "/src/utils/get-initials";
 
 const assignmentIntentOptions = [
   { label: "Required", value: "Required" },
@@ -32,6 +52,7 @@ const Page = () => {
   const pageTitle = "Applications";
   const syncDialog = useDialog();
   const tenant = useSettings().currentTenant;
+  const theme = useTheme();
 
   // Card view configuration (works for both mobile and desktop)
   const cardConfig = {
@@ -243,20 +264,210 @@ const Page = () => {
   ];
 
   const offCanvas = {
-    extendedInfoFields: [
-      "installExperience.runAsAccount",
-      "installExperience.deviceRestartBehavior",
-      "isAssigned",
-      "createdDateTime",
-      "lastModifiedDateTime",
-      "isFeatured",
-      "publishingState",
-      "dependentAppCount",
-      "rules.0.ruleType",
-      "rules.0.fileOrFolderName",
-      "rules.0.path",
-    ],
     actions: actions,
+    children: (row) => {
+      const isAssigned = row.isAssigned === true;
+      const statusColor = isAssigned ? theme.palette.success.main : theme.palette.grey[500];
+      
+      return (
+        <Stack spacing={3}>
+          {/* Hero Section */}
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2.5,
+              borderRadius: 2,
+              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+              borderLeft: `4px solid ${theme.palette.primary.main}`,
+            }}
+          >
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar
+                sx={{
+                  bgcolor: stringToColor(row.displayName || "A"),
+                  width: 56,
+                  height: 56,
+                }}
+              >
+                <Apps />
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25 }}>
+                  {row.displayName || "Unknown Application"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {row.publishingState || "Unknown state"}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+
+          {/* Status */}
+          <Box>
+            <Typography 
+              variant="overline" 
+              color="text.secondary" 
+              sx={{ fontWeight: 600, letterSpacing: 1, mb: 1.5, display: "block" }}
+            >
+              Assignment Status
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                icon={isAssigned ? <CheckCircle fontSize="small" /> : <Cancel fontSize="small" />}
+                label={isAssigned ? "Assigned" : "Unassigned"}
+                color={isAssigned ? "success" : "default"}
+                variant="filled"
+                sx={{ fontWeight: 600 }}
+              />
+              {row.isFeatured && (
+                <Chip
+                  label="Featured"
+                  color="info"
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+            </Stack>
+          </Box>
+
+          {/* Assignments */}
+          {(row.AppAssignment || row.AppExclude) && (
+            <>
+              <Divider />
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                  <Assignment fontSize="small" color="action" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Assignments
+                  </Typography>
+                </Stack>
+                <Stack spacing={1}>
+                  {row.AppAssignment && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                      <Typography variant="body2" color="text.secondary">Assigned To</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, textAlign: "right", maxWidth: "60%" }}>
+                        {row.AppAssignment}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.AppExclude && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                      <Typography variant="body2" color="text.secondary">Excluded</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, textAlign: "right", maxWidth: "60%" }}>
+                        {row.AppExclude}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.dependentAppCount > 0 && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Dependencies</Typography>
+                      <Chip label={row.dependentAppCount} size="small" variant="outlined" />
+                    </Stack>
+                  )}
+                </Stack>
+              </Box>
+            </>
+          )}
+
+          {/* Install Experience */}
+          {row.installExperience && (
+            <>
+              <Divider />
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                  <LaptopMac fontSize="small" color="action" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Install Experience
+                  </Typography>
+                </Stack>
+                <Stack spacing={1}>
+                  {row.installExperience.runAsAccount && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Run As</Typography>
+                      <Chip label={row.installExperience.runAsAccount} size="small" variant="outlined" />
+                    </Stack>
+                  )}
+                  {row.installExperience.deviceRestartBehavior && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Restart Behavior</Typography>
+                      <Chip label={row.installExperience.deviceRestartBehavior} size="small" variant="outlined" />
+                    </Stack>
+                  )}
+                </Stack>
+              </Box>
+            </>
+          )}
+
+          {/* Detection Rules */}
+          {row.rules?.[0] && (
+            <>
+              <Divider />
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                  Detection Rule
+                </Typography>
+                <Stack spacing={1}>
+                  {row.rules[0].ruleType && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Type</Typography>
+                      <Chip label={row.rules[0].ruleType} size="small" variant="outlined" />
+                    </Stack>
+                  )}
+                  {row.rules[0].path && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                      <Typography variant="body2" color="text.secondary">Path</Typography>
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          fontFamily: "monospace",
+                          bgcolor: alpha(theme.palette.text.primary, 0.05),
+                          px: 1,
+                          py: 0.25,
+                          borderRadius: 0.5,
+                          maxWidth: "60%",
+                          wordBreak: "break-all",
+                        }}
+                      >
+                        {row.rules[0].path}
+                      </Typography>
+                    </Stack>
+                  )}
+                </Stack>
+              </Box>
+            </>
+          )}
+
+          {/* Timeline */}
+          <Divider />
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <CalendarToday fontSize="small" color="action" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Timeline
+              </Typography>
+            </Stack>
+            <Stack spacing={1}>
+              {row.createdDateTime && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Created</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {getCippFormatting(row.createdDateTime, "createdDateTime")}
+                  </Typography>
+                </Stack>
+              )}
+              {row.lastModifiedDateTime && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Last Modified</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {getCippFormatting(row.lastModifiedDateTime, "lastModifiedDateTime")}
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
+          </Box>
+        </Stack>
+      );
+    },
   };
 
   const simpleColumns = [

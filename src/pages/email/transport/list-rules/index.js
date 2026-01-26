@@ -1,17 +1,41 @@
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
-import { Book, DoDisturb, Done, Edit } from "@mui/icons-material";
+import {
+  Paper,
+  Avatar,
+  Typography,
+  Chip,
+  Divider,
+  useTheme,
+} from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { Box, Stack } from "@mui/system";
+import { 
+  Book, 
+  DoDisturb, 
+  Done, 
+  Edit,
+  Rule,
+  CheckCircle,
+  Cancel,
+  Person,
+  CalendarToday,
+  Comment,
+} from "@mui/icons-material";
 import { TrashIcon } from "@heroicons/react/24/outline";
 import { CippAddTransportRuleDrawer } from "../../../../components/CippComponents/CippAddTransportRuleDrawer";
 import { CippTransportRuleDrawer } from "../../../../components/CippComponents/CippTransportRuleDrawer";
 import { useSettings } from "/src/hooks/use-settings";
 import { useRef } from "react";
+import { getCippFormatting } from "/src/utils/get-cipp-formatting";
+import { getInitials, stringToColor } from "/src/utils/get-initials";
 
 const Page = () => {
   const pageTitle = "Transport Rules";
   const cardButtonPermissions = ["Exchange.TransportRule.ReadWrite"];
   const tableRef = useRef();
   const currentTenant = useSettings().currentTenant;
+  const theme = useTheme();
 
   const handleRuleSuccess = () => {
     // Refresh the table after successful create/edit
@@ -84,16 +108,202 @@ const Page = () => {
   ];
 
   const offCanvas = {
-    extendedInfoFields: [
-      "Guid",
-      "CreatedBy",
-      "LastModifiedBy",
-      "WhenChanged",
-      "Name",
-      "Comments",
-      "Description",
-    ],
     actions: actions,
+    children: (row) => {
+      const isEnabled = row.State === "Enabled";
+      const statusColor = isEnabled ? theme.palette.success.main : theme.palette.error.main;
+      
+      return (
+        <Stack spacing={3}>
+          {/* Hero Section */}
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2.5,
+              borderRadius: 2,
+              background: `linear-gradient(135deg, ${alpha(statusColor, 0.15)} 0%, ${alpha(statusColor, 0.05)} 100%)`,
+              borderLeft: `4px solid ${statusColor}`,
+            }}
+          >
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar
+                sx={{
+                  bgcolor: stringToColor(row.Name || "R"),
+                  width: 56,
+                  height: 56,
+                }}
+              >
+                <Rule />
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25 }}>
+                  {row.Name || "Unknown Rule"}
+                </Typography>
+                {row.Tenant && (
+                  <Typography variant="body2" color="text.secondary">
+                    {row.Tenant}
+                  </Typography>
+                )}
+              </Box>
+            </Stack>
+          </Paper>
+
+          {/* Status */}
+          <Box>
+            <Typography 
+              variant="overline" 
+              color="text.secondary" 
+              sx={{ fontWeight: 600, letterSpacing: 1, mb: 1.5, display: "block" }}
+            >
+              Rule Status
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                icon={isEnabled ? <CheckCircle fontSize="small" /> : <Cancel fontSize="small" />}
+                label={row.State || "Unknown"}
+                color={isEnabled ? "success" : "error"}
+                variant="filled"
+                sx={{ fontWeight: 600 }}
+              />
+              {row.Mode && (
+                <Chip
+                  label={row.Mode}
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+              {row.RuleErrorAction && (
+                <Chip
+                  label={`Error: ${row.RuleErrorAction}`}
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+            </Stack>
+          </Box>
+
+          <Divider />
+
+          {/* Rule Details */}
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <Rule fontSize="small" color="action" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Rule Details
+              </Typography>
+            </Stack>
+            <Stack spacing={1}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Rule ID</Typography>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    fontFamily: "monospace",
+                    bgcolor: alpha(theme.palette.text.primary, 0.05),
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 0.5,
+                    maxWidth: 180,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {row.Guid}
+                </Typography>
+              </Stack>
+              {row.WhenChanged && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Last Modified</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {getCippFormatting(row.WhenChanged, "WhenChanged")}
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
+          </Box>
+
+          {/* Created/Modified By */}
+          {(row.CreatedBy || row.LastModifiedBy) && (
+            <>
+              <Divider />
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                  <Person fontSize="small" color="action" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Audit Information
+                  </Typography>
+                </Stack>
+                <Stack spacing={1}>
+                  {row.CreatedBy && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Created By</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+                        {row.CreatedBy}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.LastModifiedBy && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Last Modified By</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+                        {row.LastModifiedBy}
+                      </Typography>
+                    </Stack>
+                  )}
+                </Stack>
+              </Box>
+            </>
+          )}
+
+          {/* Description/Comments */}
+          {(row.Description || row.Comments) && (
+            <>
+              <Divider />
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                  <Comment fontSize="small" color="action" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Description
+                  </Typography>
+                </Stack>
+                {row.Description && (
+                  <Paper 
+                    variant="outlined" 
+                    sx={{ 
+                      p: 1.5, 
+                      borderRadius: 1.5,
+                      backgroundColor: alpha(theme.palette.background.default, 0.5),
+                      mb: row.Comments ? 2 : 0,
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      {row.Description}
+                    </Typography>
+                  </Paper>
+                )}
+                {row.Comments && (
+                  <Paper 
+                    variant="outlined" 
+                    sx={{ 
+                      p: 1.5, 
+                      borderRadius: 1.5,
+                      backgroundColor: alpha(theme.palette.background.default, 0.5),
+                    }}
+                  >
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                      Comments:
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      {row.Comments}
+                    </Typography>
+                  </Paper>
+                )}
+              </Box>
+            </>
+          )}
+        </Stack>
+      );
+    },
   };
 
   const simpleColumns = [

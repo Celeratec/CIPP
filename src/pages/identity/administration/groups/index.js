@@ -1,5 +1,17 @@
-import { Button, Tooltip, IconButton, useMediaQuery, useTheme } from "@mui/material";
-import { Box } from "@mui/system";
+import { 
+  Button, 
+  Tooltip, 
+  IconButton, 
+  useMediaQuery, 
+  useTheme,
+  Paper,
+  Avatar,
+  Typography,
+  Chip,
+  Divider,
+} from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { Box, Stack } from "@mui/system";
 import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import Link from "next/link";
@@ -19,9 +31,16 @@ import {
   DynamicFeed,
   Public,
   PublicOff,
+  Info as InfoIcon,
+  Settings,
+  CalendarToday,
+  Sync,
+  Badge,
 } from "@mui/icons-material";
 import { useState } from "react";
 import { useSettings } from "../../../../hooks/use-settings";
+import { getCippFormatting } from "/src/utils/get-cipp-formatting";
+import { getInitials, stringToColor } from "/src/utils/get-initials";
 
 const Page = () => {
   const pageTitle = "Groups";
@@ -378,32 +397,275 @@ const Page = () => {
       color: "error",
     },
   ];
+  // Helper function to get group type info for styling
+  const getGroupTypeInfo = (row) => {
+    const groupType = String(row?.calculatedGroupType || row?.groupType || "").toLowerCase();
+    if (groupType.includes("m365") || groupType.includes("unified") || groupType.includes("microsoft")) {
+      return { label: "Microsoft 365", color: theme.palette.primary.main, icon: <GroupSharp fontSize="small" /> };
+    }
+    if (groupType.includes("distribution")) {
+      return { label: "Distribution List", color: theme.palette.info.main, icon: <Email fontSize="small" /> };
+    }
+    if (groupType.includes("security") && row?.mailEnabled) {
+      return { label: "Mail-Enabled Security", color: theme.palette.secondary.main, icon: <Security fontSize="small" /> };
+    }
+    if (groupType.includes("security") || groupType.includes("generic")) {
+      return { label: "Security Group", color: theme.palette.secondary.main, icon: <Security fontSize="small" /> };
+    }
+    return { label: "Group", color: theme.palette.grey[600], icon: <People fontSize="small" /> };
+  };
+
   const offCanvas = {
     title: "Group Details",
     size: "md",
-    extendedInfoFields: [
-      // Basic Info
-      "displayName",
-      "description",
-      "groupType",
-      "mail",
-      "mailNickname",
-      "id",
-      // Settings
-      "mailEnabled",
-      "securityEnabled",
-      "visibility",
-      "teamsEnabled",
-      // Dynamic Membership
-      "membershipRule",
-      // Sync & Licensing
-      "onPremisesSyncEnabled",
-      "onPremisesSamAccountName",
-      "assignedLicenses",
-      // Metadata
-      "createdDateTime",
-    ],
     actions: actions,
+    children: (row) => {
+      const groupTypeInfo = getGroupTypeInfo(row);
+      const isDynamic = row?.membershipRule || row?.groupTypes?.includes("DynamicMembership");
+      
+      return (
+        <Stack spacing={3}>
+          {/* Hero Section */}
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2.5,
+              borderRadius: 2,
+              background: `linear-gradient(135deg, ${alpha(groupTypeInfo.color, 0.15)} 0%, ${alpha(groupTypeInfo.color, 0.05)} 100%)`,
+              borderLeft: `4px solid ${groupTypeInfo.color}`,
+            }}
+          >
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar
+                sx={{
+                  bgcolor: stringToColor(row.displayName || "G"),
+                  width: 56,
+                  height: 56,
+                  fontSize: "1.25rem",
+                  fontWeight: 600,
+                }}
+              >
+                {getInitials(row.displayName || "Group")}
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25 }}>
+                  {row.displayName || "Unknown Group"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" noWrap>
+                  {row.mail || row.mailNickname || "No email"}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+
+          {/* Group Type & Status */}
+          <Box>
+            <Typography 
+              variant="overline" 
+              color="text.secondary" 
+              sx={{ fontWeight: 600, letterSpacing: 1, mb: 1.5, display: "block" }}
+            >
+              Group Type & Status
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                icon={groupTypeInfo.icon}
+                label={groupTypeInfo.label}
+                sx={{ 
+                  fontWeight: 600, 
+                  bgcolor: alpha(groupTypeInfo.color, 0.1),
+                  color: groupTypeInfo.color,
+                  borderColor: groupTypeInfo.color,
+                }}
+                variant="outlined"
+              />
+              {isDynamic && (
+                <Chip
+                  icon={<DynamicFeed fontSize="small" />}
+                  label="Dynamic"
+                  color="info"
+                  variant="filled"
+                  size="small"
+                />
+              )}
+              {row.visibility && (
+                <Chip
+                  icon={row.visibility === "Public" ? <Public fontSize="small" /> : <PublicOff fontSize="small" />}
+                  label={row.visibility}
+                  color={row.visibility === "Public" ? "success" : "warning"}
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+              {row.teamsEnabled && (
+                <Chip
+                  label="Teams Enabled"
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+            </Stack>
+          </Box>
+
+          <Divider />
+
+          {/* Description */}
+          {row.description && (
+            <Box>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                <InfoIcon fontSize="small" color="action" />
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Description
+                </Typography>
+              </Stack>
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  p: 2, 
+                  borderRadius: 1.5,
+                  backgroundColor: alpha(theme.palette.background.default, 0.5),
+                }}
+              >
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                  {row.description}
+                </Typography>
+              </Paper>
+            </Box>
+          )}
+
+          {/* Dynamic Membership Rule */}
+          {row.membershipRule && (
+            <Box>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                <DynamicFeed fontSize="small" color="action" />
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Membership Rule
+                </Typography>
+              </Stack>
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  p: 2, 
+                  borderRadius: 1.5,
+                  backgroundColor: alpha(theme.palette.info.main, 0.05),
+                }}
+              >
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    fontFamily: "monospace", 
+                    fontSize: "0.8rem",
+                    wordBreak: "break-all",
+                  }}
+                >
+                  {row.membershipRule}
+                </Typography>
+              </Paper>
+            </Box>
+          )}
+
+          {/* Settings */}
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <Settings fontSize="small" color="action" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Settings
+              </Typography>
+            </Stack>
+            <Stack spacing={1}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Mail Enabled</Typography>
+                <Chip 
+                  label={row.mailEnabled ? "Yes" : "No"} 
+                  size="small" 
+                  color={row.mailEnabled ? "success" : "default"}
+                  variant="outlined"
+                />
+              </Stack>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Security Enabled</Typography>
+                <Chip 
+                  label={row.securityEnabled ? "Yes" : "No"} 
+                  size="small" 
+                  color={row.securityEnabled ? "success" : "default"}
+                  variant="outlined"
+                />
+              </Stack>
+              {row.onPremisesSyncEnabled !== undefined && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">On-Premises Sync</Typography>
+                  <Chip 
+                    label={row.onPremisesSyncEnabled ? "Synced" : "Cloud Only"} 
+                    size="small" 
+                    color={row.onPremisesSyncEnabled ? "info" : "default"}
+                    variant="outlined"
+                    icon={row.onPremisesSyncEnabled ? <Sync fontSize="small" /> : undefined}
+                  />
+                </Stack>
+              )}
+            </Stack>
+          </Box>
+
+          <Divider />
+
+          {/* Metadata */}
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <CalendarToday fontSize="small" color="action" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Details
+              </Typography>
+            </Stack>
+            <Stack spacing={1}>
+              {row.createdDateTime && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Created</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {getCippFormatting(row.createdDateTime, "createdDateTime")}
+                  </Typography>
+                </Stack>
+              )}
+              {row.onPremisesSamAccountName && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">SAM Account Name</Typography>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      fontFamily: "monospace",
+                      bgcolor: alpha(theme.palette.text.primary, 0.05),
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: 0.5,
+                    }}
+                  >
+                    {row.onPremisesSamAccountName}
+                  </Typography>
+                </Stack>
+              )}
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Group ID</Typography>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    fontFamily: "monospace",
+                    bgcolor: alpha(theme.palette.text.primary, 0.05),
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 0.5,
+                    maxWidth: 200,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {row.id}
+                </Typography>
+              </Stack>
+            </Stack>
+          </Box>
+        </Stack>
+      );
+    },
   };
   return (
     <CippTablePage

@@ -8,13 +8,21 @@ import {
   Visibility,
   Edit,
   VerifiedUser,
+  Policy,
+  CheckCircle,
+  Cancel,
+  Report,
 } from "@mui/icons-material";
-import { Box } from "@mui/material";
+import { Box, Paper, Avatar, Typography, Chip, Divider, useTheme } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { Stack } from "@mui/system";
 import CippJsonView from "../../../../components/CippFormPages/CippJSONView";
 import { CippCADeployDrawer } from "../../../../components/CippComponents/CippCADeployDrawer";
 import { CippApiLogsDrawer } from "../../../../components/CippComponents/CippApiLogsDrawer";
 import { PermissionButton } from "../../../../utils/permissions";
 import { useSettings } from "/src/hooks/use-settings.js";
+import { getCippFormatting } from "/src/utils/get-cipp-formatting";
+import { getInitials, stringToColor } from "/src/utils/get-initials";
 
 // Page Component
 const Page = () => {
@@ -22,6 +30,7 @@ const Page = () => {
   const apiUrl = "/api/ListConditionalAccessPolicies";
   const cardButtonPermissions = ["Tenant.ConditionalAccess.ReadWrite"];
   const tenant = useSettings().currentTenant;
+  const theme = useTheme();
 
   // Actions configuration
   const actions = [
@@ -129,13 +138,105 @@ const Page = () => {
     },
   ];
 
+  // Helper for policy state
+  const getPolicyStateInfo = (state) => {
+    switch (state) {
+      case "enabled":
+        return { label: "Enabled", color: theme.palette.success.main, icon: <CheckCircle fontSize="small" /> };
+      case "disabled":
+        return { label: "Disabled", color: theme.palette.error.main, icon: <Cancel fontSize="small" /> };
+      case "enabledForReportingButNotEnforced":
+        return { label: "Report Only", color: theme.palette.warning.main, icon: <Report fontSize="small" /> };
+      default:
+        return { label: state || "Unknown", color: theme.palette.grey[500], icon: <Policy fontSize="small" /> };
+    }
+  };
+
   // Off-canvas configuration
   const offCanvas = {
-    children: (row) => (
-      <Box sx={{ pt: 4 }}>
-        <CippJsonView object={JSON.parse(row?.rawjson ? row.rawjson : null)} defaultOpen={true} />
-      </Box>
-    ),
+    children: (row) => {
+      const stateInfo = getPolicyStateInfo(row.state);
+      
+      return (
+        <Stack spacing={3}>
+          {/* Hero Section */}
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2.5,
+              borderRadius: 2,
+              background: `linear-gradient(135deg, ${alpha(stateInfo.color, 0.15)} 0%, ${alpha(stateInfo.color, 0.05)} 100%)`,
+              borderLeft: `4px solid ${stateInfo.color}`,
+            }}
+          >
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar
+                sx={{
+                  bgcolor: stringToColor(row.displayName || "P"),
+                  width: 56,
+                  height: 56,
+                }}
+              >
+                <Policy />
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25 }}>
+                  {row.displayName || "Unknown Policy"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {row.Tenant}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+
+          {/* Status */}
+          <Box>
+            <Typography 
+              variant="overline" 
+              color="text.secondary" 
+              sx={{ fontWeight: 600, letterSpacing: 1, mb: 1.5, display: "block" }}
+            >
+              Policy Status
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                icon={stateInfo.icon}
+                label={stateInfo.label}
+                sx={{ 
+                  fontWeight: 600, 
+                  bgcolor: alpha(stateInfo.color, 0.1),
+                  color: stateInfo.color,
+                  borderColor: stateInfo.color,
+                }}
+                variant="outlined"
+              />
+            </Stack>
+          </Box>
+
+          {row.modifiedDateTime && (
+            <Box>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Last Modified</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {getCippFormatting(row.modifiedDateTime, "modifiedDateTime")}
+                </Typography>
+              </Stack>
+            </Box>
+          )}
+
+          <Divider />
+
+          {/* Policy JSON */}
+          <Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Policy Configuration
+            </Typography>
+            <CippJsonView object={JSON.parse(row?.rawjson ? row.rawjson : null)} defaultOpen={true} />
+          </Box>
+        </Stack>
+      );
+    },
     size: "xl",
   };
 

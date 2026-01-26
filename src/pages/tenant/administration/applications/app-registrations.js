@@ -5,13 +5,36 @@ import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx"
 import { CippFormComponent } from "/src/components/CippComponents/CippFormComponent.jsx";
 import { CertificateCredentialRemovalForm } from "/src/components/CippComponents/CertificateCredentialRemovalForm.jsx";
 import CippPermissionPreview from "/src/components/CippComponents/CippPermissionPreview.jsx";
-import { Launch, Delete, Key, Security, ContentCopy } from "@mui/icons-material";
+import {
+  Paper,
+  Avatar,
+  Typography,
+  Chip,
+  Divider,
+  useTheme,
+} from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { Box, Stack } from "@mui/system";
+import { 
+  Launch, 
+  Delete, 
+  Key, 
+  Security, 
+  ContentCopy,
+  Apps,
+  Language,
+  VpnKey,
+  CalendarToday,
+} from "@mui/icons-material";
 import { usePermissions } from "/src/hooks/use-permissions.js";
 import tabOptions from "./tabOptions";
+import { getCippFormatting } from "/src/utils/get-cipp-formatting";
+import { getInitials, stringToColor } from "/src/utils/get-initials";
 
 const Page = () => {
   const pageTitle = "App Registrations";
   const apiUrl = "/api/ListGraphRequest";
+  const theme = useTheme();
 
   const { checkPermissions } = usePermissions();
   const canWriteApplication = checkPermissions(["Tenant.Application.ReadWrite"]);
@@ -178,26 +201,175 @@ const Page = () => {
   ];
 
   const offCanvas = {
-    extendedInfoFields: [
-      "displayName",
-      "id",
-      "appId",
-      "createdDateTime",
-      "signInAudience",
-      "disabledByMicrosoftStatus",
-      "replyUrls",
-      "passwordCredentials",
-      "keyCredentials",
-    ],
     actions: actions,
     children: (row) => {
+      const hasPasswords = row.passwordCredentials?.length > 0;
+      const hasCerts = row.keyCredentials?.length > 0;
+      const audienceLabel = row.signInAudience === "AzureADMultipleOrgs" ? "Multi-Tenant" 
+        : row.signInAudience === "AzureADMyOrg" ? "Single-Tenant" 
+        : row.signInAudience === "AzureADandPersonalMicrosoftAccount" ? "All Accounts"
+        : row.signInAudience || "Unknown";
+      
       return (
-        <CippPermissionPreview
-          applicationManifest={row}
-          title="Application Manifest"
-          maxHeight="800px"
-          showAppIds={true}
-        />
+        <Stack spacing={3}>
+          {/* Hero Section */}
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2.5,
+              borderRadius: 2,
+              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+              borderLeft: `4px solid ${theme.palette.primary.main}`,
+            }}
+          >
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar
+                sx={{
+                  bgcolor: stringToColor(row.displayName || "A"),
+                  width: 56,
+                  height: 56,
+                  fontSize: "1.25rem",
+                  fontWeight: 600,
+                }}
+              >
+                {getInitials(row.displayName || "App")}
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25 }}>
+                  {row.displayName || "Unknown Application"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" noWrap>
+                  {row.publisherDomain}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+
+          {/* Status */}
+          <Box>
+            <Typography 
+              variant="overline" 
+              color="text.secondary" 
+              sx={{ fontWeight: 600, letterSpacing: 1, mb: 1.5, display: "block" }}
+            >
+              Application Settings
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                icon={<Language fontSize="small" />}
+                label={audienceLabel}
+                color={row.signInAudience === "AzureADMultipleOrgs" ? "info" : "default"}
+                variant="outlined"
+                sx={{ fontWeight: 600 }}
+              />
+              {row.disabledByMicrosoftStatus && (
+                <Chip
+                  label="Disabled by Microsoft"
+                  color="error"
+                  variant="filled"
+                  size="small"
+                />
+              )}
+            </Stack>
+          </Box>
+
+          <Divider />
+
+          {/* Application IDs */}
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <Apps fontSize="small" color="action" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Application IDs
+              </Typography>
+            </Stack>
+            <Stack spacing={1}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Application (Client) ID</Typography>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    fontFamily: "monospace",
+                    bgcolor: alpha(theme.palette.text.primary, 0.05),
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 0.5,
+                  }}
+                >
+                  {row.appId}
+                </Typography>
+              </Stack>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Object ID</Typography>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    fontFamily: "monospace",
+                    bgcolor: alpha(theme.palette.text.primary, 0.05),
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 0.5,
+                  }}
+                >
+                  {row.id}
+                </Typography>
+              </Stack>
+              {row.createdDateTime && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Created</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {getCippFormatting(row.createdDateTime, "createdDateTime")}
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
+          </Box>
+
+          {/* Credentials */}
+          {(hasPasswords || hasCerts) && (
+            <>
+              <Divider />
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                  <VpnKey fontSize="small" color="action" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Credentials
+                  </Typography>
+                </Stack>
+                <Stack spacing={1}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="body2" color="text.secondary">Client Secrets</Typography>
+                    <Chip 
+                      label={row.passwordCredentials?.length || 0} 
+                      size="small" 
+                      color={hasPasswords ? "warning" : "default"}
+                      variant="outlined"
+                    />
+                  </Stack>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="body2" color="text.secondary">Certificates</Typography>
+                    <Chip 
+                      label={row.keyCredentials?.length || 0} 
+                      size="small" 
+                      color={hasCerts ? "warning" : "default"}
+                      variant="outlined"
+                    />
+                  </Stack>
+                </Stack>
+              </Box>
+            </>
+          )}
+
+          <Divider />
+
+          {/* Permission Preview */}
+          <CippPermissionPreview
+            applicationManifest={row}
+            title="API Permissions"
+            maxHeight="400px"
+            showAppIds={true}
+          />
+        </Stack>
       );
     },
   };

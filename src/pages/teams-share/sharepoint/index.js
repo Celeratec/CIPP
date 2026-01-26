@@ -1,6 +1,16 @@
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
-import { Button } from "@mui/material";
+import { 
+  Button,
+  Paper,
+  Avatar,
+  Typography,
+  Chip,
+  Divider,
+  useTheme,
+} from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { Box, Stack } from "@mui/system";
 import {
   Add,
   AddToPhotos,
@@ -9,14 +19,22 @@ import {
   AdminPanelSettings,
   NoAccounts,
   Delete,
+  Language,
+  Storage,
+  Folder,
+  CalendarToday,
+  Person,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { CippDataTable } from "/src/components/CippTable/CippDataTable";
 import { useSettings } from "/src/hooks/use-settings";
+import { getCippFormatting } from "/src/utils/get-cipp-formatting";
+import { getInitials, stringToColor } from "/src/utils/get-initials";
 
 const Page = () => {
   const pageTitle = "SharePoint Sites";
   const tenantFilter = useSettings().currentTenant;
+  const theme = useTheme();
 
   const actions = [
     {
@@ -192,26 +210,158 @@ const Page = () => {
   ];
 
   const offCanvas = {
-    extendedInfoFields: ["displayName", "description", "webUrl"],
     actions: actions,
     children: (row) => (
-      <CippDataTable
-        title="Site Members"
-        queryKey={`site-members-${row.siteId}`}
-        api={{
-          url: "/api/ListGraphRequest",
-          data: {
-            Endpoint: `/sites/${row.siteId}/lists/User%20Information%20List/items`,
-            AsApp: "true",
-            expand: "fields",
-            tenantFilter: tenantFilter,
-          },
-          dataKey: "Results",
-        }}
-        simpleColumns={["fields.Title", "fields.EMail", "fields.IsSiteAdmin"]}
-      />
+      <Stack spacing={3}>
+        {/* Hero Section */}
+        <Paper 
+          elevation={0}
+          sx={{ 
+            p: 2.5,
+            borderRadius: 2,
+            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+            borderLeft: `4px solid ${theme.palette.primary.main}`,
+          }}
+        >
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Avatar
+              sx={{
+                bgcolor: stringToColor(row.displayName || "S"),
+                width: 56,
+                height: 56,
+              }}
+            >
+              <Language />
+            </Avatar>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25 }}>
+                {row.displayName || "Unknown Site"}
+              </Typography>
+              {row.ownerPrincipalName && (
+                <Typography variant="body2" color="text.secondary" noWrap>
+                  Owner: {row.ownerPrincipalName}
+                </Typography>
+              )}
+            </Box>
+          </Stack>
+        </Paper>
+
+        {/* Site Info */}
+        <Box>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+            <Storage fontSize="small" color="action" />
+            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+              Storage & Usage
+            </Typography>
+          </Stack>
+          <Stack spacing={1}>
+            {row.storageUsedInGigabytes !== undefined && (
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Storage Used</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {row.storageUsedInGigabytes} GB
+                </Typography>
+              </Stack>
+            )}
+            {row.storageAllocatedInGigabytes !== undefined && (
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Storage Allocated</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {row.storageAllocatedInGigabytes} GB
+                </Typography>
+              </Stack>
+            )}
+            {row.fileCount !== undefined && (
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">File Count</Typography>
+                <Chip label={row.fileCount.toLocaleString()} size="small" variant="outlined" />
+              </Stack>
+            )}
+          </Stack>
+        </Box>
+
+        {/* Timeline */}
+        <Divider />
+        <Box>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+            <CalendarToday fontSize="small" color="action" />
+            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+              Activity
+            </Typography>
+          </Stack>
+          <Stack spacing={1}>
+            {row.createdDateTime && (
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Created</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {getCippFormatting(row.createdDateTime, "createdDateTime")}
+                </Typography>
+              </Stack>
+            )}
+            {row.lastActivityDate && (
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Last Activity</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {getCippFormatting(row.lastActivityDate, "lastActivityDate")}
+                </Typography>
+              </Stack>
+            )}
+          </Stack>
+        </Box>
+
+        {/* URL */}
+        {row.webUrl && (
+          <>
+            <Divider />
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                Site URL
+              </Typography>
+              <Typography 
+                component="a"
+                href={row.webUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="body2"
+                sx={{ 
+                  color: "primary.main",
+                  textDecoration: "none",
+                  "&:hover": { textDecoration: "underline" },
+                  wordBreak: "break-all",
+                }}
+              >
+                {row.webUrl}
+              </Typography>
+            </Box>
+          </>
+        )}
+
+        <Divider />
+
+        {/* Site Members Table */}
+        <Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
+            Site Members
+          </Typography>
+          <CippDataTable
+            title="Site Members"
+            queryKey={`site-members-${row.siteId}`}
+            api={{
+              url: "/api/ListGraphRequest",
+              data: {
+                Endpoint: `/sites/${row.siteId}/lists/User%20Information%20List/items`,
+                AsApp: "true",
+                expand: "fields",
+                tenantFilter: tenantFilter,
+              },
+              dataKey: "Results",
+            }}
+            simpleColumns={["fields.Title", "fields.EMail", "fields.IsSiteAdmin"]}
+          />
+        </Box>
+      </Stack>
     ),
-    size: "lg", // Make the offcanvas extra large
+    size: "lg",
   };
 
   return (

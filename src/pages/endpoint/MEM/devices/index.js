@@ -3,6 +3,16 @@ import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx"
 import { useSettings } from "/src/hooks/use-settings";
 import { EyeIcon } from "@heroicons/react/24/outline";
 import {
+  Paper,
+  Avatar,
+  Typography,
+  Chip,
+  Divider,
+  useTheme,
+} from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { Box, Stack } from "@mui/system";
+import {
   Sync,
   RestartAlt,
   LocationOn,
@@ -17,11 +27,26 @@ import {
   AutoMode,
   Recycling,
   ManageAccounts,
+  Computer,
+  PhoneAndroid,
+  PhoneIphone,
+  Laptop,
+  CheckCircle,
+  Cancel,
+  Warning,
+  Help,
+  Person,
+  CalendarToday,
+  Info as InfoIcon,
+  Business,
 } from "@mui/icons-material";
+import { getCippFormatting } from "/src/utils/get-cipp-formatting";
+import { getInitials, stringToColor } from "/src/utils/get-initials";
 
 const Page = () => {
   const pageTitle = "Devices";
   const tenantFilter = useSettings().currentTenant;
+  const theme = useTheme();
 
   // Card view configuration (works for both mobile and desktop)
   const cardConfig = {
@@ -400,9 +425,254 @@ const Page = () => {
     },
   ];
 
+  // Helper functions for device styling
+  const getOSIcon = (os) => {
+    const osLower = String(os || "").toLowerCase();
+    if (osLower.includes("windows")) return <Computer fontSize="small" />;
+    if (osLower.includes("ios") || osLower.includes("iphone") || osLower.includes("ipad")) return <PhoneIphone fontSize="small" />;
+    if (osLower.includes("android")) return <PhoneAndroid fontSize="small" />;
+    if (osLower.includes("macos") || osLower.includes("mac")) return <Laptop fontSize="small" />;
+    return <Computer fontSize="small" />;
+  };
+
+  const getComplianceInfo = (state) => {
+    switch (String(state || "").toLowerCase()) {
+      case "compliant":
+        return { label: "Compliant", color: theme.palette.success.main, icon: <CheckCircle fontSize="small" /> };
+      case "noncompliant":
+        return { label: "Non-Compliant", color: theme.palette.error.main, icon: <Cancel fontSize="small" /> };
+      case "ingraceperiod":
+        return { label: "In Grace Period", color: theme.palette.warning.main, icon: <Warning fontSize="small" /> };
+      default:
+        return { label: "Unknown", color: theme.palette.grey[500], icon: <Help fontSize="small" /> };
+    }
+  };
+
   const offCanvas = {
-    extendedInfoFields: ["deviceName", "userPrincipalName"],
     actions: actions,
+    children: (row) => {
+      const complianceInfo = getComplianceInfo(row.complianceState);
+      const osIcon = getOSIcon(row.operatingSystem);
+      
+      return (
+        <Stack spacing={3}>
+          {/* Hero Section */}
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2.5,
+              borderRadius: 2,
+              background: `linear-gradient(135deg, ${alpha(complianceInfo.color, 0.15)} 0%, ${alpha(complianceInfo.color, 0.05)} 100%)`,
+              borderLeft: `4px solid ${complianceInfo.color}`,
+            }}
+          >
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar
+                sx={{
+                  bgcolor: stringToColor(row.deviceName || "D"),
+                  width: 56,
+                  height: 56,
+                  fontSize: "1.25rem",
+                  fontWeight: 600,
+                }}
+              >
+                {osIcon}
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25 }}>
+                  {row.deviceName || "Unknown Device"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" noWrap>
+                  {row.userPrincipalName || "No user assigned"}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+
+          {/* Status Badges */}
+          <Box>
+            <Typography 
+              variant="overline" 
+              color="text.secondary" 
+              sx={{ fontWeight: 600, letterSpacing: 1, mb: 1.5, display: "block" }}
+            >
+              Compliance Status
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                icon={complianceInfo.icon}
+                label={complianceInfo.label}
+                sx={{ 
+                  fontWeight: 600, 
+                  bgcolor: alpha(complianceInfo.color, 0.1),
+                  color: complianceInfo.color,
+                  borderColor: complianceInfo.color,
+                }}
+                variant="outlined"
+              />
+              {row.managedDeviceOwnerType && (
+                <Chip
+                  label={row.managedDeviceOwnerType === "company" ? "Corporate" : "Personal"}
+                  color={row.managedDeviceOwnerType === "company" ? "primary" : "default"}
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+              {row.isEncrypted && (
+                <Chip
+                  icon={<Security fontSize="small" />}
+                  label="Encrypted"
+                  color="success"
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+            </Stack>
+          </Box>
+
+          <Divider />
+
+          {/* Device Information */}
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <InfoIcon fontSize="small" color="action" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Device Information
+              </Typography>
+            </Stack>
+            <Stack spacing={1}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Operating System</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {row.operatingSystem}
+                </Typography>
+              </Stack>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">OS Version</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {row.osVersion}
+                </Typography>
+              </Stack>
+              {row.manufacturer && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Manufacturer</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {row.manufacturer}
+                  </Typography>
+                </Stack>
+              )}
+              {row.model && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Model</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {row.model}
+                  </Typography>
+                </Stack>
+              )}
+              {row.serialNumber && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Serial Number</Typography>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      fontFamily: "monospace",
+                      bgcolor: alpha(theme.palette.text.primary, 0.05),
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: 0.5,
+                    }}
+                  >
+                    {row.serialNumber}
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
+          </Box>
+
+          {/* User & Enrollment */}
+          <Divider />
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <Person fontSize="small" color="action" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                User & Enrollment
+              </Typography>
+            </Stack>
+            <Stack spacing={1}>
+              {row.userPrincipalName && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Primary User</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+                    {row.userPrincipalName}
+                  </Typography>
+                </Stack>
+              )}
+              {row.deviceEnrollmentType && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Enrollment Type</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {row.deviceEnrollmentType}
+                  </Typography>
+                </Stack>
+              )}
+              {row.joinType && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Join Type</Typography>
+                  <Chip label={row.joinType} size="small" variant="outlined" />
+                </Stack>
+              )}
+            </Stack>
+          </Box>
+
+          {/* Timeline */}
+          <Divider />
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <CalendarToday fontSize="small" color="action" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Timeline
+              </Typography>
+            </Stack>
+            <Stack spacing={1}>
+              {row.enrolledDateTime && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Enrolled</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {getCippFormatting(row.enrolledDateTime, "enrolledDateTime")}
+                  </Typography>
+                </Stack>
+              )}
+              {row.lastSyncDateTime && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Last Sync</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {getCippFormatting(row.lastSyncDateTime, "lastSyncDateTime")}
+                  </Typography>
+                </Stack>
+              )}
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Device ID</Typography>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    fontFamily: "monospace",
+                    bgcolor: alpha(theme.palette.text.primary, 0.05),
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 0.5,
+                    maxWidth: 180,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {row.id}
+                </Typography>
+              </Stack>
+            </Stack>
+          </Box>
+        </Stack>
+      );
+    },
   };
 
   return (

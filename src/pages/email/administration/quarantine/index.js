@@ -9,13 +9,34 @@ import {
   Skeleton,
   Typography,
   CircularProgress,
+  Paper,
+  Avatar,
+  Chip,
+  Divider,
+  useTheme,
 } from "@mui/material";
-import { Block, Close, Done, DoneAll } from "@mui/icons-material";
+import { alpha } from "@mui/material/styles";
+import { Box, Stack } from "@mui/system";
+import { 
+  Block, 
+  Close, 
+  Done, 
+  DoneAll,
+  Email,
+  Security,
+  CheckCircle,
+  Pending,
+  Cancel,
+  CalendarToday,
+  Person,
+} from "@mui/icons-material";
 import { CippMessageViewer } from "/src/components/CippComponents/CippMessageViewer.jsx";
 import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
 import { useSettings } from "/src/hooks/use-settings";
 import { EyeIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 import { CippDataTable } from "/src/components/CippTable/CippDataTable";
+import { getCippFormatting } from "/src/utils/get-cipp-formatting";
+import { getInitials, stringToColor } from "/src/utils/get-initials";
 
 const simpleColumns = [
   "ReceivedTime",
@@ -32,6 +53,7 @@ const pageTitle = "Quarantine Management";
 
 const Page = () => {
   const tenantFilter = useSettings().currentTenant;
+  const theme = useTheme();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogContent, setDialogContent] = useState(null);
   const [messageId, setMessageId] = useState(null);
@@ -144,9 +166,171 @@ const Page = () => {
     },
   ];
 
+  // Helper for release status
+  const getReleaseStatusInfo = (status) => {
+    switch (String(status || "").toUpperCase()) {
+      case "RELEASED":
+        return { label: "Released", color: theme.palette.success.main, icon: <CheckCircle fontSize="small" /> };
+      case "DENIED":
+        return { label: "Denied", color: theme.palette.error.main, icon: <Cancel fontSize="small" /> };
+      case "REQUESTED":
+        return { label: "Requested", color: theme.palette.warning.main, icon: <Pending fontSize="small" /> };
+      case "NOTRELEASED":
+      default:
+        return { label: "Not Released", color: theme.palette.warning.main, icon: <Pending fontSize="small" /> };
+    }
+  };
+
   const offCanvas = {
-    extendedInfoFields: ["MessageId", "RecipientAddress", "Type"],
     actions: actions,
+    children: (row) => {
+      const statusInfo = getReleaseStatusInfo(row.ReleaseStatus);
+      
+      return (
+        <Stack spacing={3}>
+          {/* Hero Section */}
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2.5,
+              borderRadius: 2,
+              background: `linear-gradient(135deg, ${alpha(statusInfo.color, 0.15)} 0%, ${alpha(statusInfo.color, 0.05)} 100%)`,
+              borderLeft: `4px solid ${statusInfo.color}`,
+            }}
+          >
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar
+                sx={{
+                  bgcolor: statusInfo.color,
+                  width: 56,
+                  height: 56,
+                }}
+              >
+                <Email />
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25, lineHeight: 1.3 }}>
+                  {row.Subject || "No Subject"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" noWrap>
+                  From: {row.SenderAddress}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+
+          {/* Status */}
+          <Box>
+            <Typography 
+              variant="overline" 
+              color="text.secondary" 
+              sx={{ fontWeight: 600, letterSpacing: 1, mb: 1.5, display: "block" }}
+            >
+              Quarantine Status
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                icon={statusInfo.icon}
+                label={statusInfo.label}
+                sx={{ 
+                  fontWeight: 600, 
+                  bgcolor: alpha(statusInfo.color, 0.1),
+                  color: statusInfo.color,
+                  borderColor: statusInfo.color,
+                }}
+                variant="outlined"
+              />
+              {row.Type && (
+                <Chip
+                  icon={<Security fontSize="small" />}
+                  label={row.Type}
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+            </Stack>
+          </Box>
+
+          <Divider />
+
+          {/* Message Details */}
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <Email fontSize="small" color="action" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Message Details
+              </Typography>
+            </Stack>
+            <Stack spacing={1}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Sender</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+                  {row.SenderAddress}
+                </Typography>
+              </Stack>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Recipient</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+                  {row.RecipientAddress}
+                </Typography>
+              </Stack>
+              {row.ReceivedTime && (
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">Received</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {getCippFormatting(row.ReceivedTime, "ReceivedTime")}
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
+          </Box>
+
+          {/* Policy Info */}
+          {row.PolicyName && (
+            <>
+              <Divider />
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                  <Security fontSize="small" color="action" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Policy Information
+                  </Typography>
+                </Stack>
+                <Stack spacing={1}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="body2" color="text.secondary">Policy Name</Typography>
+                    <Chip label={row.PolicyName} size="small" variant="outlined" />
+                  </Stack>
+                </Stack>
+              </Box>
+            </>
+          )}
+
+          {/* Message ID */}
+          <Divider />
+          <Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Message ID
+            </Typography>
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                p: 1.5, 
+                borderRadius: 1.5,
+                backgroundColor: alpha(theme.palette.background.default, 0.5),
+              }}
+            >
+              <Typography 
+                variant="caption" 
+                sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
+              >
+                {row.MessageId}
+              </Typography>
+            </Paper>
+          </Box>
+        </Stack>
+      );
+    },
   };
 
   const filterList = [
