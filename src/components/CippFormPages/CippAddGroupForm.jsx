@@ -53,7 +53,9 @@ const getGroupTypeDescription = (groupType) => {
 
 const CippAddGroupForm = (props) => {
   const { formControl } = props;
-  const selectedGroupType = useWatch({ control: formControl.control, name: "groupType" });
+  const groupTypeWatch = useWatch({ control: formControl.control, name: "groupType" });
+  // Handle both object format from autoComplete and string format
+  const selectedGroupType = groupTypeWatch?.value || groupTypeWatch;
 
   return (
     <Grid container spacing={2}>
@@ -69,11 +71,14 @@ const CippAddGroupForm = (props) => {
 
       <Grid size={{ xs: 12 }}>
         <CippFormComponent
-          type="radio"
+          type="autoComplete"
           name="groupType"
+          label="Select Group Type"
           formControl={formControl}
           options={groupTypeOptions.map(({ label, value }) => ({ label, value }))}
+          multiple={false}
           required={true}
+          placeholder="Choose a group type..."
         />
       </Grid>
 
