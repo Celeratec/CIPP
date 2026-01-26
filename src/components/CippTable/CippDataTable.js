@@ -132,6 +132,10 @@ const CardView = ({
   actions = [],
   tenant = null,
   showSearch = true,
+  offCanvas = null,
+  setOffCanvasData = null,
+  setOffCanvasRowIndex = null,
+  setOffcanvasVisible = null,
 }) => {
   const theme = useTheme();
 
@@ -429,7 +433,7 @@ const CardView = ({
                       </Box>
                     )}
                     {/* Info icon to open offCanvas panel */}
-                    {offCanvas && (
+                    {offCanvas && setOffCanvasData && setOffcanvasVisible && (
                       <Tooltip title="Quick Info" arrow>
                         <IconButton
                           size="small"
@@ -437,7 +441,7 @@ const CardView = ({
                             e.stopPropagation();
                             setOffCanvasData(item);
                             const idx = filteredData?.findIndex(r => r === item) ?? 0;
-                            setOffCanvasRowIndex(idx);
+                            if (setOffCanvasRowIndex) setOffCanvasRowIndex(idx);
                             setOffcanvasVisible(true);
                           }}
                           sx={{
@@ -661,6 +665,9 @@ const CardView = ({
     cardActions,
     onCardClick,
     offCanvas,
+    setOffCanvasData,
+    setOffCanvasRowIndex,
+    setOffcanvasVisible,
   ]);
 
   // Fixed card height for uniform appearance
@@ -1592,6 +1599,10 @@ export const CippDataTable = (props) => {
               actions={actions}
               tenant={settings?.currentTenant}
               showSearch={isMobile || simple}
+              offCanvas={offCanvas}
+              setOffCanvasData={setOffCanvasData}
+              setOffCanvasRowIndex={setOffCanvasRowIndex}
+              setOffcanvasVisible={setOffcanvasVisible}
             />
           )}
         </Card>
