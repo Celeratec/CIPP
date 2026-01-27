@@ -67,13 +67,13 @@ const Page = () => {
   const graphUserRequest = ApiGetCall({
     url: `/api/ListUsers?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
     queryKey: `ListUsers-${userId}`,
-    waiting: !!userId,
+    waiting: router.isReady && !!userId,
   });
   
   const userRequest = ApiGetCall({
     url: `/api/ListUserMailboxDetails?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}&userMail=${graphUserRequest.data?.[0]?.userPrincipalName}`,
     queryKey: `Mailbox-${userId}`,
-    waiting: !!userId && !!graphUserRequest.data?.[0]?.userPrincipalName,
+    waiting: router.isReady && !!userId && !!graphUserRequest.data?.[0]?.userPrincipalName,
   });
 
   const usersList = ApiGetCall({
@@ -90,31 +90,31 @@ const Page = () => {
   const oooRequest = ApiGetCall({
     url: `/api/ListOoO?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
     queryKey: `ooo-${userId}`,
-    waiting: !!userId,
+    waiting: router.isReady && !!userId,
   });
 
   const calPermissions = ApiGetCall({
     url: `/api/ListCalendarPermissions?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
     queryKey: `CalendarPermissions-${userId}`,
-    waiting: !!userId,
+    waiting: router.isReady && !!userId,
   });
 
   const contactPermissions = ApiGetCall({
     url: `/api/ListContactPermissions?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
     queryKey: `ContactPermissions-${userId}`,
-    waiting: !!userId,
+    waiting: router.isReady && !!userId,
   });
 
   const mailboxRulesRequest = ApiGetCall({
     url: `/api/ListUserMailboxRules?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
     queryKey: `MailboxRules-${userId}`,
-    waiting: !!userId,
+    waiting: router.isReady && !!userId,
   });
 
   const junkEmailConfigRequest = ApiGetCall({
     url: `/api/ListUserTrustedBlockedSenders?UserId=${userId}&userPrincipalName=${graphUserRequest.data?.[0]?.userPrincipalName}&tenantFilter=${userSettingsDefaults.currentTenant}`,
     queryKey: `TrustedBlockedSenders-${userId}`,
-    waiting: !!userId && !!graphUserRequest.data?.[0]?.userPrincipalName,
+    waiting: router.isReady && !!userId && !!graphUserRequest.data?.[0]?.userPrincipalName,
   });
 
   const groupsList = ApiGetCall({

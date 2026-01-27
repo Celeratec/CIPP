@@ -27,7 +27,7 @@ const Page = () => {
   const userRequest = ApiGetCall({
     url: `/api/ListUsers?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
     queryKey: `ListUsers-${userId}`,
-    waiting: !!userId,
+    waiting: router.isReady && !!userId,
   });
 
   const formControl = useForm({
@@ -38,8 +38,8 @@ const Page = () => {
   });
 
   useEffect(() => {
-    if (userRequest.isSuccess) {
-      const user = userRequest.data?.[0];
+    if (userRequest.isSuccess && userRequest.data?.[0]) {
+      const user = userRequest.data[0];
       //if we have userSettingsDefaults.userAttributes set, grab the .label from each userSsettingsDefaults, then set defaultAttributes.${label}.value to user.${label}
       let defaultAttributes = {};
       if (userSettingsDefaults.userAttributes) {
@@ -56,7 +56,7 @@ const Page = () => {
         usageLocation: usageLocation,
         defaultAttributes: defaultAttributes,
         tenantFilter: userSettingsDefaults.currentTenant,
-        licenses: user.assignedLicenses.map((license) => ({
+        licenses: (user.assignedLicenses || []).map((license) => ({
           label: getCippLicenseTranslation([license]),
           value: license.skuId,
         })),
