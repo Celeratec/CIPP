@@ -47,7 +47,6 @@ import CippContactPermissionsDialog from "../../../../../components/CippComponen
 
 const Page = () => {
   const userSettingsDefaults = useSettings();
-  const [waiting, setWaiting] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [actionData, setActionData] = useState({ ready: false });
   const createDialog = useDialog();
@@ -64,15 +63,17 @@ const Page = () => {
       tenantFilter: userSettingsDefaults.currentTenant,
     },
   });
+  
   const graphUserRequest = ApiGetCall({
     url: `/api/ListUsers?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
     queryKey: `ListUsers-${userId}`,
-    waiting: waiting,
+    waiting: !!userId,
   });
+  
   const userRequest = ApiGetCall({
     url: `/api/ListUserMailboxDetails?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}&userMail=${graphUserRequest.data?.[0]?.userPrincipalName}`,
     queryKey: `Mailbox-${userId}`,
-    waiting: waiting && !!graphUserRequest.data?.[0]?.userPrincipalName,
+    waiting: !!userId && !!graphUserRequest.data?.[0]?.userPrincipalName,
   });
 
   const usersList = ApiGetCall({
@@ -89,31 +90,31 @@ const Page = () => {
   const oooRequest = ApiGetCall({
     url: `/api/ListOoO?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
     queryKey: `ooo-${userId}`,
-    waiting: waiting,
+    waiting: !!userId,
   });
 
   const calPermissions = ApiGetCall({
     url: `/api/ListCalendarPermissions?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
     queryKey: `CalendarPermissions-${userId}`,
-    waiting: waiting,
+    waiting: !!userId,
   });
 
   const contactPermissions = ApiGetCall({
     url: `/api/ListContactPermissions?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
     queryKey: `ContactPermissions-${userId}`,
-    waiting: waiting,
+    waiting: !!userId,
   });
 
   const mailboxRulesRequest = ApiGetCall({
     url: `/api/ListUserMailboxRules?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
     queryKey: `MailboxRules-${userId}`,
-    waiting: waiting,
+    waiting: !!userId,
   });
 
   const junkEmailConfigRequest = ApiGetCall({
     url: `/api/ListUserTrustedBlockedSenders?UserId=${userId}&userPrincipalName=${graphUserRequest.data?.[0]?.userPrincipalName}&tenantFilter=${userSettingsDefaults.currentTenant}`,
     queryKey: `TrustedBlockedSenders-${userId}`,
-    waiting: waiting && !!graphUserRequest.data?.[0]?.userPrincipalName,
+    waiting: !!userId && !!graphUserRequest.data?.[0]?.userPrincipalName,
   });
 
   const groupsList = ApiGetCall({
@@ -325,12 +326,6 @@ const Page = () => {
     }
   }, [oooRequest.isSuccess, oooRequest.data]);
 
-  useEffect(() => {
-    //if userId is defined, we can fetch the user data
-    if (userId) {
-      setWaiting(true);
-    }
-  }, [userId]);
 
   useEffect(() => {
     if (userRequest.isSuccess && userRequest.data?.[0]) {
