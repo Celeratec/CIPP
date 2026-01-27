@@ -11,6 +11,7 @@ import {
   CircularProgress,
   Chip,
   Paper,
+  ButtonBase,
 } from "@mui/material";
 import { 
   AccountCircle, 
@@ -27,12 +28,14 @@ import {
   Cloud,
   Business,
   Email,
+  OpenInNew,
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 import { Stack, Grid, Box } from "@mui/system";
 import { useState, useRef } from "react";
 import { ApiPostCall } from "../../api/ApiCall";
 import { alpha, useTheme } from "@mui/material/styles";
+import { useRouter } from "next/router";
 
 // Section component for consistent styling
 const InfoSection = ({ icon: Icon, title, children, isEmpty = false }) => {
@@ -70,6 +73,7 @@ const InfoRow = ({ label, value, fullWidth = false }) => {
 export const CippUserInfoCard = (props) => {
   const { user, tenant, isFetching = false, ...other } = props;
   const theme = useTheme();
+  const router = useRouter();
   const [photoTimestamp, setPhotoTimestamp] = useState(Date.now());
   const [uploadError, setUploadError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -78,6 +82,13 @@ export const CippUserInfoCard = (props) => {
   // API mutations
   const setPhotoMutation = ApiPostCall({ urlFromData: true });
   const removePhotoMutation = ApiPostCall({ urlFromData: true });
+
+  // Navigate to View User page
+  const handleViewUser = () => {
+    if (user?.id) {
+      router.push(`/identity/administration/users/user?userId=${user.id}`);
+    }
+  };
 
   // Helper function to check if a section has any data
   const hasWorkInfo =
@@ -205,17 +216,34 @@ export const CippUserInfoCard = (props) => {
           <Stack direction="row" spacing={2.5} alignItems="flex-start">
             {/* Avatar with photo controls */}
             <Box sx={{ position: "relative" }}>
-              <Avatar
-                sx={{
-                  width: 80,
-                  height: 80,
-                  border: `3px solid ${theme.palette.background.paper}`,
-                  boxShadow: theme.shadows[2],
-                }}
-                src={imageUrl}
-              >
-                <AccountCircle sx={{ fontSize: 48 }} />
-              </Avatar>
+              <Tooltip title="View User">
+                <ButtonBase
+                  onClick={handleViewUser}
+                  sx={{
+                    borderRadius: "50%",
+                    "&:hover": {
+                      "& .MuiAvatar-root": {
+                        boxShadow: theme.shadows[4],
+                        transform: "scale(1.02)",
+                      },
+                    },
+                  }}
+                >
+                  <Avatar
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      border: `3px solid ${theme.palette.background.paper}`,
+                      boxShadow: theme.shadows[2],
+                      cursor: "pointer",
+                      transition: "all 0.2s ease-in-out",
+                    }}
+                    src={imageUrl}
+                  >
+                    <AccountCircle sx={{ fontSize: 48 }} />
+                  </Avatar>
+                </ButtonBase>
+              </Tooltip>
               {isLoading && (
                 <CircularProgress
                   size={86}
@@ -282,9 +310,27 @@ export const CippUserInfoCard = (props) => {
 
             {/* Name and basic info */}
             <Box sx={{ flex: 1, minWidth: 0, pt: 0.5 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                {user?.displayName || "Unknown User"}
-              </Typography>
+              <Tooltip title="View User">
+                <Typography 
+                  variant="h6" 
+                  onClick={handleViewUser}
+                  sx={{ 
+                    fontWeight: 600, 
+                    mb: 0.5,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                    "&:hover": {
+                      color: "primary.main",
+                      textDecoration: "underline",
+                    },
+                  }}
+                >
+                  {user?.displayName || "Unknown User"}
+                  <OpenInNew sx={{ fontSize: 16, opacity: 0.5 }} />
+                </Typography>
+              </Tooltip>
               <Typography 
                 variant="body2" 
                 color="text.secondary" 

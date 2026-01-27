@@ -48,17 +48,20 @@ const InfoSection = ({ icon: Icon, title, children }) => (
 // Stat card component for key metrics
 const StatCard = ({ icon: Icon, label, value, color = "primary", subtitle }) => {
   const theme = useTheme();
+  // Handle "default" color by using grey
+  const paletteColor = color === "default" ? theme.palette.grey[500] : theme.palette[color]?.main || theme.palette.grey[500];
+  
   return (
     <Paper
       variant="outlined"
       sx={{
         p: 1.5,
         textAlign: "center",
-        borderColor: alpha(theme.palette[color].main, 0.3),
-        bgcolor: alpha(theme.palette[color].main, 0.04),
+        borderColor: alpha(paletteColor, 0.3),
+        bgcolor: alpha(paletteColor, 0.04),
       }}
     >
-      <Icon sx={{ color: theme.palette[color].main, fontSize: 24, mb: 0.5 }} />
+      <Icon sx={{ color: paletteColor, fontSize: 24, mb: 0.5 }} />
       <Typography variant="caption" color="text.secondary" display="block">
         {label}
       </Typography>
