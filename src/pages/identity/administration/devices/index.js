@@ -25,8 +25,8 @@ const Page = () => {
       },
     ],
     extraFields: [
-      { field: "manufacturer" },
-      { field: "model" },
+      { field: "manufacturer", maxLines: 1 },
+      { field: "model", maxLines: 1 },
     ],
     // Additional fields shown only on desktop cards
     desktopFields: [
@@ -35,6 +35,13 @@ const Page = () => {
       { field: "approximateLastSignInDateTime", label: "Last Sign-In" },
       { field: "profileType", label: "Profile" },
     ],
+    // Grid sizing for consistent card widths
+    cardGridProps: {
+      xs: 12,
+      sm: 6,
+      md: 4,
+      lg: 3,
+    },
   };
 
   const actions = [

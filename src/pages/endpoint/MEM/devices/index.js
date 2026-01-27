@@ -68,8 +68,8 @@ const Page = () => {
       },
     ],
     extraFields: [
-      { field: "operatingSystem" },
-      { field: "model" },
+      { field: "operatingSystem", maxLines: 1 },
+      { field: "model", maxLines: 1 },
     ],
     // Additional fields shown only on desktop cards
     desktopFields: [
@@ -78,6 +78,13 @@ const Page = () => {
       { field: "enrolledDateTime", label: "Enrolled" },
       { field: "managedDeviceOwnerType", label: "Owner Type" },
     ],
+    // Grid sizing for consistent card widths
+    cardGridProps: {
+      xs: 12,
+      sm: 6,
+      md: 4,
+      lg: 3,
+    },
   };
 
   const actions = [

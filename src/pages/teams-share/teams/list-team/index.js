@@ -11,7 +11,7 @@ const Page = () => {
   // Card view configuration (works for both mobile and desktop)
   const cardConfig = {
     title: "displayName",
-    subtitle: "description",
+    subtitle: "mailNickname",
     avatar: {
       field: "displayName",
     },
@@ -25,12 +25,20 @@ const Page = () => {
         },
       },
     ],
-    extraFields: [],
+    extraFields: [
+      { field: "description", maxLines: 2 },
+    ],
     // Additional fields shown only on desktop cards
     desktopFields: [
-      { field: "mailNickname", label: "Mail Nickname" },
       { field: "id", label: "Team ID" },
     ],
+    // Grid sizing for consistent card widths
+    cardGridProps: {
+      xs: 12,
+      sm: 6,
+      md: 4,
+      lg: 3,
+    },
   };
 
   const actions = [

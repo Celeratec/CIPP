@@ -485,7 +485,6 @@ const Page = () => {
     ],
     desktopFieldsLayout: "column",
     desktopFieldsMax: 1,
-    maxQuickActions: 6,
     quickActionsVariant: "button",
     mobileQuickActionsVariant: "icon",
     cardGridProps: {

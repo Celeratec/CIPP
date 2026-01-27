@@ -28,13 +28,20 @@ const Page = () => {
       },
     ],
     extraFields: [
-      { field: "Company" },
+      { field: "Company", maxLines: 1 },
+      { field: "Title", maxLines: 1 },
     ],
     // Additional fields shown only on desktop cards
     desktopFields: [
       { field: "Department", label: "Department" },
-      { field: "Title", label: "Title" },
     ],
+    // Grid sizing for consistent card widths
+    cardGridProps: {
+      xs: 12,
+      sm: 6,
+      md: 4,
+      lg: 3,
+    },
   };
 
   const actions = useMemo(

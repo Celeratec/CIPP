@@ -69,11 +69,11 @@ const Page = () => {
           m365: { label: "M365", color: "primary", icon: <GroupSharp fontSize="small" /> },
           M365: { label: "M365", color: "primary", icon: <GroupSharp fontSize="small" /> },
           // Regular Security groups (no mail)
-          generic: { label: "Security", color: "secondary", icon: <Security fontSize="small" /> },
-          Generic: { label: "Security", color: "secondary", icon: <Security fontSize="small" /> },
+          generic: { label: "Security", color: "warning", icon: <Security fontSize="small" /> },
+          Generic: { label: "Security", color: "warning", icon: <Security fontSize="small" /> },
           // Mail-Enabled Security groups
-          security: { label: "Mail Security", color: "secondary", icon: <Security fontSize="small" /> },
-          Security: { label: "Mail Security", color: "secondary", icon: <Security fontSize="small" /> },
+          security: { label: "Mail Security", color: "warning", icon: <Security fontSize="small" /> },
+          Security: { label: "Mail Security", color: "warning", icon: <Security fontSize="small" /> },
           // Distribution Lists
           distributionList: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
           DistributionList: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
@@ -407,10 +407,10 @@ const Page = () => {
       return { label: "Distribution List", color: theme.palette.info.main, icon: <Email fontSize="small" /> };
     }
     if (groupType.includes("security") && row?.mailEnabled) {
-      return { label: "Mail-Enabled Security", color: theme.palette.secondary.main, icon: <Security fontSize="small" /> };
+      return { label: "Mail-Enabled Security", color: theme.palette.warning.main, icon: <Security fontSize="small" /> };
     }
     if (groupType.includes("security") || groupType.includes("generic")) {
-      return { label: "Security Group", color: theme.palette.secondary.main, icon: <Security fontSize="small" /> };
+      return { label: "Security Group", color: theme.palette.warning.main, icon: <Security fontSize="small" /> };
     }
     return { label: "Group", color: theme.palette.grey[600], icon: <People fontSize="small" /> };
   };

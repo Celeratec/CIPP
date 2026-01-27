@@ -121,7 +121,6 @@ const stringToColor = (string) => {
 const CardView = ({
   data,
   config,
-  onCardClick,
   isLoading,
   searchTerm,
   searchInput,
@@ -351,11 +350,9 @@ const CardView = ({
           key={item.id || item.RowKey || index}
         >
           <Card
-            onClick={() => onCardClick(item, index)}
             sx={{
               height: CARD_HEIGHT,
               width: "100%",
-              cursor: "pointer",
               transition: "all 0.15s ease-in-out",
               display: "flex",
               flexDirection: "column",
@@ -365,11 +362,7 @@ const CardView = ({
                 ? undefined 
                 : `4px solid ${isLicensed ? theme.palette.primary.main : theme.palette.grey[400]}`,
               "&:hover": {
-                transform: "translateY(-2px)",
-                boxShadow: theme.shadows[8],
-              },
-              "&:active": {
-                transform: "translateY(0)",
+                boxShadow: theme.shadows[4],
               },
               // Apply dynamic styles from cardSx
               ...dynamicCardSx,
@@ -482,10 +475,10 @@ const CardView = ({
               {typeof config.customContent === "function" && config.customContent(item)}
 
               {/* Info Section */}
-              <Box sx={{ overflow: "hidden" }}>
+              <Box sx={{ overflow: "hidden", minWidth: 0 }}>
                 {/* Extra fields (job title, department) */}
                 {extraFields.length > 0 && (
-                  <Stack spacing={0.25} sx={{ mb: 1 }}>
+                  <Stack spacing={0.25} sx={{ mb: 1, minWidth: 0 }}>
                     {extraFields.slice(0, config.extraFieldsMax ?? 2).map((field, fieldIndex) => {
                       const rawValue = getNestedValue(item, field.field || field);
                       const formattedValue =
@@ -500,9 +493,10 @@ const CardView = ({
                           direction="row" 
                           spacing={0.5} 
                           alignItems="center"
+                          sx={{ minWidth: 0 }}
                         >
                           {field.icon && (
-                            <SvgIcon sx={{ fontSize: 14, color: "text.secondary" }}>
+                            <SvgIcon sx={{ fontSize: 14, color: "text.secondary", flexShrink: 0 }}>
                               {field.icon}
                             </SvgIcon>
                           )}
@@ -514,6 +508,8 @@ const CardView = ({
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               maxWidth: "100%",
+                              minWidth: 0,
+                              wordBreak: "break-word",
                               ...(field.maxLines ? {
                                 display: "-webkit-box",
                                 WebkitLineClamp: field.maxLines,
@@ -638,7 +634,7 @@ const CardView = ({
                   <CippQuickActions
                     actions={cardActions}
                     data={item}
-                    maxActions={config.maxQuickActions ?? (isMobile ? 4 : 6)}
+                    maxActions={isMobile ? (config.mobileMaxQuickActions ?? 7) : (config.maxQuickActions ?? 8)}
                     showOnHover={false}
                     variant={isMobile && config.mobileQuickActionsVariant ? config.mobileQuickActionsVariant : (config.quickActionsVariant ?? "icon")}
                     onOffCanvasClick={offCanvas ? (itemData) => {
@@ -663,7 +659,6 @@ const CardView = ({
     tenant,
     theme,
     cardActions,
-    onCardClick,
     offCanvas,
     setOffCanvasData,
     setOffCanvasRowIndex,
@@ -790,7 +785,6 @@ export const CippDataTable = (props) => {
     cardConfig = null, // Configuration for card view (renamed from mobileCardConfig)
     mobileCardConfig = null, // Deprecated: use cardConfig instead
     defaultViewMode = "cards", // Default view mode: 'cards' or 'table'
-    onCardClick: customOnCardClick = null, // Custom handler for card clicks (bypasses off-canvas)
     viewModeStorageKey: viewModeStorageKeyOverride = null,
     showRowActionsMenu = true,
     rowSx = null, // Optional row styling callback (row) => sx object
@@ -1507,18 +1501,6 @@ export const CippDataTable = (props) => {
     }
   }, [simpleColumns]);
 
-  // Handle card click for card view
-  const handleCardClick = (item, index) => {
-    // If custom handler provided, use it instead of opening off-canvas
-    if (customOnCardClick) {
-      customOnCardClick(item, index);
-      return;
-    }
-    setOffCanvasData(item);
-    setOffCanvasRowIndex(index);
-    setOffcanvasVisible(true);
-  };
-
   // Render the standalone toolbar for card view (not embedded in table)
   const renderStandaloneToolbar = () => {
     if (simple) return null;
@@ -1588,7 +1570,6 @@ export const CippDataTable = (props) => {
             <CardView
               data={usedData}
               config={effectiveCardConfig}
-              onCardClick={handleCardClick}
               isLoading={getRequestData.isFetching || isFetching}
               searchTerm={debouncedCardSearchTerm}
               searchInput={cardSearchInput}

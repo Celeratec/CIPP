@@ -71,13 +71,21 @@ const Page = () => {
         },
       },
     ],
-    extraFields: [],
+    extraFields: [
+      { field: "AppAssignment", maxLines: 2 },
+    ],
     // Additional fields shown only on desktop cards
     desktopFields: [
-      { field: "AppAssignment", label: "Assigned To" },
       { field: "lastModifiedDateTime", label: "Last Modified" },
       { field: "createdDateTime", label: "Created" },
     ],
+    // Grid sizing for consistent card widths
+    cardGridProps: {
+      xs: 12,
+      sm: 6,
+      md: 4,
+      lg: 3,
+    },
   };
 
   const actions = [

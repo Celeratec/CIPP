@@ -41,19 +41,27 @@ const Page = () => {
         tooltip: "Mailbox Type",
         conditions: {
           UserMailbox: { label: "User", color: "primary" },
-          SharedMailbox: { label: "Shared", color: "secondary", icon: <Group fontSize="small" /> },
-          RoomMailbox: { label: "Room", color: "info" },
+          SharedMailbox: { label: "Shared", color: "info", icon: <Group fontSize="small" /> },
+          RoomMailbox: { label: "Room", color: "warning" },
           EquipmentMailbox: { label: "Equip", color: "default" },
         },
       },
     ],
-    extraFields: [],
+    extraFields: [
+      { field: "UPN", maxLines: 1 },
+    ],
     // Additional fields shown only on desktop cards
     desktopFields: [
-      { field: "UPN", label: "UPN" },
       { field: "recipientType", label: "Type" },
       { field: "AdditionalEmailAddresses", label: "Aliases" },
     ],
+    // Grid sizing for consistent card widths
+    cardGridProps: {
+      xs: 12,
+      sm: 6,
+      md: 4,
+      lg: 3,
+    },
   };
 
   // Helper function to get mailbox type info
