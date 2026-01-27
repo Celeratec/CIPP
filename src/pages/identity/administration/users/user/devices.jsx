@@ -4,41 +4,77 @@ import { useRouter } from "next/router";
 import { ApiGetCall } from "/src/api/ApiCall";
 import CippFormSkeleton from "/src/components/CippFormPages/CippFormSkeleton";
 import CalendarIcon from "@heroicons/react/24/outline/CalendarIcon";
-import { Check, Mail, Fingerprint } from "@mui/icons-material";
+import { 
+  Mail, 
+  Fingerprint, 
+  Launch,
+  Computer,
+  PhoneAndroid,
+  PhoneIphone,
+  Laptop,
+  CheckCircle,
+  Cancel,
+  Warning,
+  Sync,
+  Visibility,
+} from "@mui/icons-material";
 import { HeaderedTabbedLayout } from "../../../../../layouts/HeaderedTabbedLayout";
 import tabOptions from "./tabOptions";
-import ReactTimeAgo from "react-time-ago";
 import { CippCopyToClipBoard } from "../../../../../components/CippComponents/CippCopyToClipboard";
+import { CippTimeAgo } from "../../../../../components/CippComponents/CippTimeAgo";
 import { Box, Stack } from "@mui/system";
 import { Grid } from "@mui/system";
-import { CippUserInfoCard } from "../../../../../components/CippCards/CippUserInfoCard";
-import { Typography } from "@mui/material";
-import { CippBannerListCard } from "../../../../../components/CippCards/CippBannerListCard";
+import { 
+  Typography, 
+  Button, 
+  Card, 
+  CardContent, 
+  Chip,
+  Avatar,
+  Divider,
+  Paper,
+} from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
+import { CippDataTable } from "/src/components/CippTable/CippDataTable";
+import { useCippUserActions } from "/src/components/CippComponents/CippUserActions";
+import { getCippFormatting } from "/src/utils/get-cipp-formatting";
+import { stringToColor } from "/src/utils/get-initials";
 
 const Page = () => {
   const userSettingsDefaults = useSettings();
   const router = useRouter();
   const { userId } = router.query;
+  const tenant = userSettingsDefaults.currentTenant;
+  const theme = useTheme();
+  const userActions = useCippUserActions();
 
   const userRequest = ApiGetCall({
-    url: `/api/ListUsers?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
+    url: `/api/ListUsers?UserId=${userId}&tenantFilter=${tenant}`,
     queryKey: `ListUsers-${userId}`,
   });
 
-  const MFARequest = ApiGetCall({
+  // Get user's registered devices (devices they've registered in Entra)
+  const registeredDevices = ApiGetCall({
     url: "/api/ListGraphRequest",
     data: {
-      Endpoint: `/users/${userId}/authentication/methods`,
-      tenantFilter: userSettingsDefaults.currentTenant,
-      noPagination: true,
-      $top: 99,
+      Endpoint: `users/${userId}/registeredDevices`,
+      tenantFilter: tenant,
+      $select: "id,displayName,deviceId,operatingSystem,operatingSystemVersion,trustType,approximateLastSignInDateTime,accountEnabled,manufacturer,model,isCompliant,isManaged",
     },
-    queryKey: `MFA-${userId}`,
+    queryKey: `UserRegisteredDevices-${userId}`,
+    waiting: !!userId,
   });
 
-  const signInLogs = ApiGetCall({
-    url: `/api/ListUserSigninLogs?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}&top=1`,
-    queryKey: `ListSignIns-${userId}`,
+  // Get user's owned devices
+  const ownedDevices = ApiGetCall({
+    url: "/api/ListGraphRequest",
+    data: {
+      Endpoint: `users/${userId}/ownedDevices`,
+      tenantFilter: tenant,
+      $select: "id,displayName,deviceId,operatingSystem,operatingSystemVersion,trustType,approximateLastSignInDateTime,accountEnabled,manufacturer,model,isCompliant,isManaged",
+    },
+    queryKey: `UserOwnedDevices-${userId}`,
+    waiting: !!userId,
   });
 
   // Set the title and subtitle for the layout
@@ -58,315 +94,314 @@ const Page = () => {
           icon: <CalendarIcon />,
           text: (
             <>
-              Created: <ReactTimeAgo date={new Date(userRequest.data?.[0]?.createdDateTime)} />{" "}
+              Created: <CippTimeAgo data={userRequest.data?.[0]?.createdDateTime} />
             </>
+          ),
+        },
+        {
+          icon: <Launch style={{ color: "#757575" }} />,
+          text: (
+            <Button
+              color="muted"
+              style={{ paddingLeft: 0 }}
+              size="small"
+              href={`https://entra.microsoft.com/${tenant}/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/${userId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View in Entra
+            </Button>
           ),
         },
       ]
     : [];
 
-  const data = userRequest.data?.[0];
+  const getOSIcon = (os) => {
+    const osLower = String(os || "").toLowerCase();
+    if (osLower.includes("windows")) return <Computer fontSize="small" />;
+    if (osLower.includes("ios") || osLower.includes("iphone") || osLower.includes("ipad")) return <PhoneIphone fontSize="small" />;
+    if (osLower.includes("android")) return <PhoneAndroid fontSize="small" />;
+    if (osLower.includes("macos") || osLower.includes("mac")) return <Laptop fontSize="small" />;
+    return <Computer fontSize="small" />;
+  };
 
-  // Prepare the sign-in log item
-  let signInLogItem = null;
-  let conditionalAccessPoliciesItems = [];
-  let mfaDevicesItems = [];
-
-  if (signInLogs.isSuccess && signInLogs.data && signInLogs.data.length > 0) {
-    const signInData = signInLogs.data[0];
-
-    signInLogItem = {
-      id: 1,
-      cardLabelBox: {
-        cardLabelBoxHeader: new Date(signInData.createdDateTime).getDate().toString(),
-        cardLabelBoxText: new Date(signInData.createdDateTime).toLocaleString("default", {
-          month: "short",
-          year: "numeric",
-        }),
-      },
-      text: `Login ${signInData.status.errorCode === 0 ? "successful" : "failed"} from ${
-        signInData.ipAddress || "unknown location"
-      }`,
-      subtext: `Logged into application ${signInData.resourceDisplayName || "Unknown Application"}`,
-      statusColor: signInData.status.errorCode === 0 ? "success.main" : "error.main",
-      statusText: signInData.status.errorCode === 0 ? "Success" : "Failed",
-      propertyItems: [
-        {
-          label: "Client App Used",
-          value: signInData.clientAppUsed || "N/A",
-        },
-        {
-          label: "Device Detail",
-          value:
-            signInData.deviceDetail?.operatingSystem || signInData.deviceDetail?.browser || "N/A",
-        },
-        {
-          label: "MFA Type used",
-          value: signInData.mfaDetail?.authMethod || "N/A",
-        },
-        {
-          label: "Additional Details",
-          value: signInData.status?.additionalDetails || "N/A",
-        },
-      ],
-    };
-
-    // Prepare the conditional access policies items
-    if (
-      signInData.appliedConditionalAccessPolicies &&
-      Array.isArray(signInData.appliedConditionalAccessPolicies)
-    ) {
-      // Filter policies where result is "success"
-      const appliedPolicies = signInData.appliedConditionalAccessPolicies.filter(
-        (policy) => policy.result === "success"
-      );
-
-      if (appliedPolicies.length > 0) {
-        conditionalAccessPoliciesItems = appliedPolicies.map((policy) => ({
-          id: policy.id,
-          cardLabelBox: {
-            cardLabelBoxHeader: new Date(signInData.createdDateTime).getDate().toString(),
-            cardLabelBoxText: new Date(signInData.createdDateTime).toLocaleString("default", {
-              month: "short",
-              year: "numeric",
-            }),
-          },
-          text: policy.displayName,
-          subtext: `Policy applied: ${policy.result}`,
-          statusColor: "success.main",
-          statusText: "Applied",
-          propertyItems: [
-            {
-              label: "Grant Controls",
-              value:
-                policy.enforcedGrantControls.length > 0
-                  ? policy.enforcedGrantControls.join(", ")
-                  : "None",
-            },
-            {
-              label: "Session Controls",
-              value:
-                policy.enforcedSessionControls.length > 0
-                  ? policy.enforcedSessionControls.join(", ")
-                  : "None",
-            },
-            {
-              label: "Conditions Satisfied",
-              value: policy.conditionsSatisfied || "N/A",
-            },
-          ],
-        }));
-      } else {
-        // No applied policies
-        conditionalAccessPoliciesItems = [
-          {
-            id: 1,
-            cardLabelBox: {
-              cardLabelBoxHeader: new Date(signInData.createdDateTime).getDate().toString(),
-              cardLabelBoxText: new Date(signInData.createdDateTime).toLocaleString("default", {
-                month: "short",
-                year: "numeric",
-              }),
-            },
-            text: "No conditional access policies applied",
-            subtext: "No conditional access policies were applied during this sign-in.",
-            statusColor: "warning.main",
-            statusText: "No Policies Applied",
-            propertyItems: [],
-          },
-        ];
-      }
-    } else {
-      // appliedConditionalAccessPolicies is missing or not an array
-      conditionalAccessPoliciesItems = [
-        {
-          id: 1,
-          cardLabelBox: {
-            cardLabelBoxHeader: new Date(signInData.createdDateTime).getDate().toString(),
-            cardLabelBoxText: new Date(signInData.createdDateTime).toLocaleString("default", {
-              month: "short",
-              year: "numeric",
-            }),
-          },
-          text: "No conditional access policies available",
-          subtext: "No conditional access policies data is available for this sign-in.",
-          statusColor: "warning.main",
-          statusText: "No Data",
-          propertyItems: [],
-        },
-      ];
+  const getComplianceInfo = (device) => {
+    if (device.isCompliant === true) {
+      return { label: "Compliant", color: "success", icon: <CheckCircle fontSize="small" /> };
+    } else if (device.isCompliant === false) {
+      return { label: "Non-Compliant", color: "error", icon: <Cancel fontSize="small" /> };
     }
-  } else if (signInLogs.isError) {
-    signInLogItem = {
-      id: 1,
-      cardLabelBox: "!",
-      text: "Error loading sign-in logs. Do you have a P1 license?",
-      subtext: signInLogs.error.message,
-      statusColor: "error.main",
-      statusText: "Error",
-      propertyItems: [],
-    };
+    return { label: "Unknown", color: "default", icon: <Warning fontSize="small" /> };
+  };
 
-    // Handle error for conditional access policies
-    conditionalAccessPoliciesItems = [
-      {
-        id: 1,
-        cardLabelBox: "!",
-        text: "Error loading conditional access policies. Do you have a P1 license?",
-        subtext: signInLogs.error.message,
-        statusColor: "error.main",
-        statusText: "Error",
-        propertyItems: [],
-      },
-    ];
-  } else if (signInLogs.isSuccess && (!signInLogs.data || signInLogs.data.length === 0)) {
-    signInLogItem = {
-      id: 1,
-      cardLabelBox: "-",
-      text: "No sign-in logs available",
-      subtext:
-        "There are no sign-in logs for this user, or you do not have a P1 license to detect this data.",
-      statusColor: "warning.main",
-      statusText: "No Data",
-      propertyItems: [],
-    };
+  const deviceActions = [
+    {
+      label: "View in Entra",
+      link: `https://entra.microsoft.com/${tenant}/#view/Microsoft_AAD_Devices/DeviceDetailsMenuBlade/~/Properties/objectId/[id]/deviceId/`,
+      color: "info",
+      icon: <Visibility />,
+      target: "_blank",
+      external: true,
+    },
+  ];
 
-    conditionalAccessPoliciesItems = [
-      {
-        id: 1,
-        cardLabelBox: "-",
-        text: "No conditional access policies available",
-        subtext:
-          "There are no conditional access policies for this user, or you do not have a P1 license to detect this data.",
-        statusColor: "warning.main",
-        statusText: "No Data",
-        propertyItems: [],
-      },
-    ];
-  }
-
-  // Prepare MFA devices items
-  if (MFARequest.isSuccess && MFARequest.data) {
-    const mfaResults = MFARequest.data.Results || [];
-
-    // Exclude password authentication method
-    const mfaDevices = mfaResults.filter(
-      (method) => method["@odata.type"] !== "#microsoft.graph.passwordAuthenticationMethod"
-    );
-
-    if (mfaDevices.length > 0) {
-      mfaDevicesItems = mfaDevices.map((device, index) => ({
-        id: index,
-        cardLabelBox: {
-          cardLabelBoxHeader: <Check />,
-        },
-        text: device.displayName || "MFA Device",
-        subtext: device.deviceTag || device.clientAppName || "Unknown device",
-        statusColor: "success.main",
-        statusText: "Enabled",
-        propertyItems: [
-          {
-            label: "Device Name",
-            value: device.displayName || "N/A",
-          },
-          {
-            label: "App Version",
-            value: device.phoneAppVersion || "N/A",
-          },
-          {
-            label: "Created Date",
-            value: device.createdDateTime
-              ? new Date(device.createdDateTime).toLocaleString()
-              : "N/A",
-          },
-          {
-            label: "Authentication Method",
-            value: device["@odata.type"]?.split(".").pop() || "N/A",
-          },
-        ],
-      }));
+  // Combine and deduplicate devices
+  const registeredDevicesList = registeredDevices.data?.Results || [];
+  const ownedDevicesList = ownedDevices.data?.Results || [];
+  
+  // Create a map to deduplicate by device ID
+  const deviceMap = new Map();
+  registeredDevicesList.forEach(device => {
+    deviceMap.set(device.id, { ...device, relationship: "Registered" });
+  });
+  ownedDevicesList.forEach(device => {
+    if (deviceMap.has(device.id)) {
+      deviceMap.set(device.id, { ...deviceMap.get(device.id), relationship: "Registered & Owned" });
     } else {
-      // No MFA devices other than password
-      mfaDevicesItems = [
-        {
-          id: 1,
-          cardLabelBox: "-",
-          text: "No MFA devices available",
-          subtext: "The user does not have any MFA devices registered.",
-          statusColor: "warning.main",
-          statusText: "No Devices",
-          propertyItems: [],
-        },
-      ];
+      deviceMap.set(device.id, { ...device, relationship: "Owned" });
     }
-  } else if (MFARequest.isError) {
-    // Error fetching MFA devices
-    mfaDevicesItems = [
-      {
-        id: 1,
-        cardLabelBox: "!",
-        text: "Error loading MFA devices",
-        subtext: MFARequest.error.message,
-        statusColor: "error.main",
-        statusText: "Error",
-        propertyItems: [],
-      },
-    ];
-  } else if (MFARequest.isSuccess && (!MFARequest.data || !MFARequest.data.Results)) {
-    // No MFA devices data available
-    mfaDevicesItems = [
-      {
-        id: 1,
-        cardLabelBox: "-",
-        text: "No MFA devices available",
-        subtext: "The user does not have any MFA devices registered.",
-        statusColor: "warning.main",
-        statusText: "No Devices",
-        propertyItems: [],
-      },
-    ];
-  }
+  });
+  
+  const allDevices = Array.from(deviceMap.values());
+
+  const isLoading = userRequest.isLoading || registeredDevices.isLoading || ownedDevices.isLoading;
+  const isFetching = registeredDevices.isFetching || ownedDevices.isFetching;
 
   return (
     <HeaderedTabbedLayout
       tabOptions={tabOptions}
       title={title}
       subtitle={subtitle}
+      actions={userActions}
+      actionsData={userRequest.data?.[0]}
       isFetching={userRequest.isLoading}
     >
-      {userRequest.isLoading && <CippFormSkeleton layout={[2, 1, 2, 2]} />}
+      {isLoading && <CippFormSkeleton layout={[2, 1, 2, 2]} />}
       {userRequest.isSuccess && (
         <Box
           sx={{
             flexGrow: 1,
-            py: 4,
+            py: 2,
           }}
         >
-          <Grid container spacing={2}>
-            <Grid size={4}>
-              <CippUserInfoCard user={data} isFetching={userRequest.isLoading} />
+          <Grid container spacing={3}>
+            {/* Summary Cards */}
+            <Grid size={12}>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Card>
+                    <CardContent>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }}>
+                          <Computer sx={{ color: theme.palette.primary.main }} />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="h4">{allDevices.length}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Total Devices
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Card>
+                    <CardContent>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar sx={{ bgcolor: alpha(theme.palette.success.main, 0.1) }}>
+                          <CheckCircle sx={{ color: theme.palette.success.main }} />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="h4">
+                            {allDevices.filter(d => d.isCompliant === true).length}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Compliant
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Card>
+                    <CardContent>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar sx={{ bgcolor: alpha(theme.palette.error.main, 0.1) }}>
+                          <Cancel sx={{ color: theme.palette.error.main }} />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="h4">
+                            {allDevices.filter(d => d.isCompliant === false).length}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Non-Compliant
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Card>
+                    <CardContent>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar sx={{ bgcolor: alpha(theme.palette.info.main, 0.1) }}>
+                          <Sync sx={{ color: theme.palette.info.main }} />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="h4">
+                            {allDevices.filter(d => d.isManaged === true).length}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Managed
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
             </Grid>
-            <Grid size={8}>
-              <Stack spacing={3}>
-                <Typography variant="h6">Latest Logon</Typography>
-                <CippBannerListCard
-                  isFetching={signInLogs.isLoading}
-                  items={signInLogItem ? [signInLogItem] : []}
-                  isCollapsible={signInLogItem ? true : false}
-                />
-                <Typography variant="h6">Applied Conditional Access Policies</Typography>
-                <CippBannerListCard
-                  isFetching={signInLogs.isLoading}
-                  items={conditionalAccessPoliciesItems}
-                  isCollapsible={conditionalAccessPoliciesItems.length > 0 ? true : false}
-                />
-                <Typography variant="h6">Multi-Factor Authentication Devices</Typography>
-                <CippBannerListCard
-                  isFetching={MFARequest.isLoading}
-                  items={mfaDevicesItems}
-                  isCollapsible={mfaDevicesItems.length > 0 ? true : false}
-                />
-              </Stack>
+
+            {/* Devices Table */}
+            <Grid size={12}>
+              <CippDataTable
+                title="User Devices"
+                data={allDevices}
+                isFetching={isFetching}
+                simpleColumns={[
+                  "displayName",
+                  "operatingSystem",
+                  "operatingSystemVersion",
+                  "manufacturer",
+                  "model",
+                  "trustType",
+                  "isCompliant",
+                  "isManaged",
+                  "relationship",
+                  "approximateLastSignInDateTime",
+                ]}
+                actions={deviceActions}
+                offCanvas={{
+                  children: (row) => {
+                    const complianceInfo = getComplianceInfo(row);
+                    const osIcon = getOSIcon(row.operatingSystem);
+                    
+                    return (
+                      <Stack spacing={3}>
+                        {/* Hero Section */}
+                        <Paper 
+                          elevation={0}
+                          sx={{ 
+                            p: 2.5,
+                            borderRadius: 2,
+                            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+                            borderLeft: `4px solid ${theme.palette.primary.main}`,
+                          }}
+                        >
+                          <Stack direction="row" spacing={2} alignItems="center">
+                            <Avatar
+                              sx={{
+                                bgcolor: stringToColor(row.displayName || "D"),
+                                width: 56,
+                                height: 56,
+                              }}
+                            >
+                              {osIcon}
+                            </Avatar>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25 }}>
+                                {row.displayName || "Unknown Device"}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {row.operatingSystem} {row.operatingSystemVersion}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </Paper>
+
+                        {/* Status Badges */}
+                        <Box>
+                          <Typography 
+                            variant="overline" 
+                            color="text.secondary" 
+                            sx={{ fontWeight: 600, letterSpacing: 1, mb: 1.5, display: "block" }}
+                          >
+                            Device Status
+                          </Typography>
+                          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                            <Chip
+                              icon={complianceInfo.icon}
+                              label={complianceInfo.label}
+                              color={complianceInfo.color}
+                              variant="outlined"
+                              size="small"
+                            />
+                            {row.isManaged && (
+                              <Chip
+                                icon={<Sync fontSize="small" />}
+                                label="Managed"
+                                color="info"
+                                variant="outlined"
+                                size="small"
+                              />
+                            )}
+                            <Chip
+                              label={row.accountEnabled ? "Enabled" : "Disabled"}
+                              color={row.accountEnabled ? "success" : "error"}
+                              variant="outlined"
+                              size="small"
+                            />
+                            <Chip
+                              label={row.relationship}
+                              color="default"
+                              variant="outlined"
+                              size="small"
+                            />
+                          </Stack>
+                        </Box>
+
+                        <Divider />
+
+                        {/* Device Details */}
+                        <Box>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+                            Device Information
+                          </Typography>
+                          <Stack spacing={1}>
+                            {row.manufacturer && (
+                              <Stack direction="row" justifyContent="space-between">
+                                <Typography variant="body2" color="text.secondary">Manufacturer</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>{row.manufacturer}</Typography>
+                              </Stack>
+                            )}
+                            {row.model && (
+                              <Stack direction="row" justifyContent="space-between">
+                                <Typography variant="body2" color="text.secondary">Model</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>{row.model}</Typography>
+                              </Stack>
+                            )}
+                            <Stack direction="row" justifyContent="space-between">
+                              <Typography variant="body2" color="text.secondary">Trust Type</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 500 }}>{row.trustType || "N/A"}</Typography>
+                            </Stack>
+                            <Stack direction="row" justifyContent="space-between">
+                              <Typography variant="body2" color="text.secondary">Last Sign-In</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                {row.approximateLastSignInDateTime 
+                                  ? getCippFormatting(row.approximateLastSignInDateTime, "approximateLastSignInDateTime")
+                                  : "N/A"}
+                              </Typography>
+                            </Stack>
+                          </Stack>
+                        </Box>
+                      </Stack>
+                    );
+                  },
+                }}
+              />
             </Grid>
           </Grid>
         </Box>

@@ -16,11 +16,14 @@ import { CippCopyToClipBoard } from "../../../../../components/CippComponents/Ci
 import { CippTimeAgo } from "../../../../../components/CippComponents/CippTimeAgo";
 import { Button, Alert } from "@mui/material";
 import { Box } from "@mui/system";
+import { useCippUserActions } from "/src/components/CippComponents/CippUserActions";
+
 const Page = () => {
   const userSettingsDefaults = useSettings();
   const router = useRouter();
   const { userId } = router.query;
   const [waiting, setWaiting] = useState(false);
+  const userActions = useCippUserActions();
 
   const userRequest = ApiGetCall({
     url: `/api/ListUsers?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
@@ -117,6 +120,8 @@ const Page = () => {
       tabOptions={tabOptions}
       title={title}
       subtitle={subtitle}
+      actions={userActions}
+      actionsData={userRequest.data?.[0]}
       isFetching={userRequest.isLoading}
     >
       {userRequest.isSuccess && userRequest.data?.[0]?.onPremisesSyncEnabled && (

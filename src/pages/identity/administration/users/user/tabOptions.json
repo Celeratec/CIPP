@@ -8,6 +8,10 @@
     "path": "/identity/administration/users/user/edit"
   },
   {
+    "label": "Devices",
+    "path": "/identity/administration/users/user/devices"
+  },
+  {
     "label": "Exchange Settings",
     "path": "/identity/administration/users/user/exchange"
   },

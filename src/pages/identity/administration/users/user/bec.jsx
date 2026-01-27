@@ -4,19 +4,93 @@ import { useSettings } from "/src/hooks/use-settings";
 import { useRouter } from "next/router";
 import { ApiGetCall } from "/src/api/ApiCall";
 import CalendarIcon from "@heroicons/react/24/outline/CalendarIcon";
-import { CheckCircle, Download, Mail, Fingerprint, Launch } from "@mui/icons-material";
+import { 
+  CheckCircle, 
+  Download, 
+  Mail, 
+  Fingerprint, 
+  Launch,
+  Warning,
+  Info,
+} from "@mui/icons-material";
 import { HeaderedTabbedLayout } from "../../../../../layouts/HeaderedTabbedLayout";
 import tabOptions from "./tabOptions";
-import ReactTimeAgo from "react-time-ago";
 import { CippCopyToClipBoard } from "../../../../../components/CippComponents/CippCopyToClipboard";
+import { CippTimeAgo } from "../../../../../components/CippComponents/CippTimeAgo";
 import { Box, Stack } from "@mui/system";
 import { Grid } from "@mui/system";
 import CippRemediationCard from "../../../../../components/CippCards/CippRemediationCard";
 import CippButtonCard from "../../../../../components/CippCards/CippButtonCard";
-import { SvgIcon, Typography, CircularProgress, Button } from "@mui/material";
+import { SvgIcon, Typography, CircularProgress, Button, Chip } from "@mui/material";
 import { PropertyList } from "../../../../../components/property-list";
 import { PropertyListItem } from "../../../../../components/property-list-item";
 import { CippHead } from "../../../../../components/CippComponents/CippHead";
+import { useCippUserActions } from "/src/components/CippComponents/CippUserActions";
+
+// Reusable BEC Check Card Component
+const BecCheckCard = ({ 
+  title, 
+  items, 
+  itemsFound,
+  noItemsMessage,
+  itemsFoundMessage,
+  renderItem,
+  infoCheck = false, // For informational checks (MFA, passwords) that aren't necessarily bad
+}) => {
+  const hasItems = items && items.length > 0;
+  
+  // Determine icon and color based on whether items were found
+  // For security checks: found = warning (potential issue), not found = success (all clear)
+  // For info checks: found = info (just information), not found = disabled (no data)
+  const getIconConfig = () => {
+    if (infoCheck) {
+      return hasItems 
+        ? { icon: <Info />, color: "info" }
+        : { icon: <CheckCircle />, color: "disabled" };
+    }
+    return hasItems 
+      ? { icon: <Warning />, color: "warning" }
+      : { icon: <CheckCircle />, color: "success" };
+  };
+
+  const { icon, color } = getIconConfig();
+
+  return (
+    <CippButtonCard
+      variant="outlined"
+      isFetching={false}
+      title={
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Box>{title}</Box>
+          <Stack direction="row" spacing={1} alignItems="center">
+            {hasItems && (
+              <Chip 
+                label={`${items.length} found`} 
+                size="small" 
+                color={infoCheck ? "info" : "warning"}
+                variant="outlined"
+              />
+            )}
+            <SvgIcon color={color}>
+              {icon}
+            </SvgIcon>
+          </Stack>
+        </Stack>
+      }
+    >
+      <Typography variant="body2" gutterBottom>
+        {hasItems ? itemsFoundMessage : noItemsMessage}
+      </Typography>
+      {hasItems && (
+        <Box mt={2}>
+          <PropertyList>
+            {items.map((item, index) => renderItem(item, index))}
+          </PropertyList>
+        </Box>
+      )}
+    </CippButtonCard>
+  );
+};
 
 const Page = () => {
   const userSettingsDefaults = useSettings();
@@ -26,6 +100,8 @@ const Page = () => {
   const [restart, setRestart] = useState(false);
   const [initialReady, setInitialReady] = useState(false);
   const [becCheckReady, setBecCheckReady] = useState(false);
+  const userActions = useCippUserActions();
+
   const userRequest = ApiGetCall({
     url: `/api/ListUsers?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
     queryKey: `ListUsers-${userId}`,
@@ -96,56 +172,6 @@ const Page = () => {
   const isFetching =
     userRequest.isLoading || becInitialCall.isLoading || becPollingCall.isLoading || isLoading;
 
-  // Helper functions to determine messages
-  const getRuleMessage = () => {
-    if (!becPollingCall.data) return null;
-    if (becPollingCall.data.NewRules && becPollingCall.data.NewRules.length > 0) {
-      // Example condition to check for potential breach
-      const hasPotentialBreach = becPollingCall.data.NewRules.some((rule) =>
-        rule.MoveToFolder?.includes("RSS")
-      );
-      if (hasPotentialBreach) {
-        return "Potential Breach found. The rules for this user contain classic signs of a breach.";
-      }
-      return "Rules have been found. Please review the list below and take action as needed.";
-    }
-    return "No new rules found.";
-  };
-
-  const getUserMessage = () => {
-    if (!becPollingCall.data) return null;
-    if (becPollingCall.data.NewUsers && becPollingCall.data.NewUsers.length > 0) {
-      return "New users have been found in the last 14 days. Please review the list below and take action as needed.";
-    }
-    return "No new users found.";
-  };
-
-  const getAppMessage = () => {
-    if (!becPollingCall.data) return null;
-    if (becPollingCall.data.AddedApps && becPollingCall.data.AddedApps.length > 0) {
-      // Example condition to check for potential breach
-      const hasPotentialBreach = becPollingCall.data.AddedApps.some(
-        (app) => /* your condition here */ false
-      );
-      if (hasPotentialBreach) {
-        return "Potential Breach found.";
-      }
-      return "New applications have been found. Please review the list below and take action as needed.";
-    }
-    return "No new applications found.";
-  };
-
-  const getMailboxPermissionMessage = () => {
-    if (!becPollingCall.data) return null;
-    if (
-      becPollingCall.data.MailboxPermissionChanges &&
-      becPollingCall.data.MailboxPermissionChanges.length > 0
-    ) {
-      return "Mailbox permission changes have been found.";
-    }
-    return "No mailbox permission changes found.";
-  };
-
   const subtitle = userRequest.isSuccess
     ? [
         {
@@ -160,7 +186,7 @@ const Page = () => {
           icon: <CalendarIcon />,
           text: (
             <>
-              Created: <ReactTimeAgo date={new Date(userRequest.data?.[0]?.createdDateTime)} />
+              Created: <CippTimeAgo data={userRequest.data?.[0]?.createdDateTime} />
             </>
           ),
         },
@@ -187,6 +213,8 @@ const Page = () => {
       tabOptions={tabOptions}
       title={userRequest.isSuccess ? userRequest.data?.[0]?.displayName : ""}
       subtitle={subtitle}
+      actions={userActions}
+      actionsData={userRequest.data?.[0]}
       isFetching={userRequest.isFetching}
     >
       <CippHead title="Compromise Remediation" />
@@ -253,17 +281,16 @@ const Page = () => {
             {/* All Steps */}
             <Grid size={{ xs: 12, md: 7 }}>
               <Stack spacing={3}>
+                {/* Log Information Card */}
                 <CippButtonCard
                   variant="outlined"
                   isFetching={false}
                   title={
                     <Stack direction="row" justifyContent={"space-between"}>
-                      <Box>Log information</Box>
-                      <Stack direction="row" spacing={2}>
-                        <SvgIcon color="success">
-                          <CheckCircle />
-                        </SvgIcon>
-                      </Stack>
+                      <Box>Log Information</Box>
+                      <SvgIcon color="success">
+                        <CheckCircle />
+                      </SvgIcon>
                     </Stack>
                   }
                 >
@@ -272,297 +299,110 @@ const Page = () => {
                     {new Date(becPollingCall.data?.ExtractedAt).toLocaleString()}. This data might
                     be cached. To get the latest version of the data, click the Refresh Data button.
                   </Typography>
-                  {/* Optionally, display list of new rules */}
-                  {becPollingCall.data &&
-                    becPollingCall.data.NewRules &&
-                    becPollingCall.data.NewRules.length > 0 && (
-                      <Box mt={2}>
-                        {/* Replace with your component to display rules */}
-                        {/* Example: <RuleList rules={becPollingCall.data.NewRules} /> */}
-                      </Box>
-                    )}
                 </CippButtonCard>
-                {/* Check 1: Recently added rules */}
-                <CippButtonCard
-                  variant="outlined"
-                  isFetching={false}
-                  title={
-                    <Stack direction="row" justifyContent={"space-between"}>
-                      <Box>Check 1: Mailbox Rules</Box>
-                      <Stack direction="row" spacing={2}>
-                        {becPollingCall.data &&
-                        becPollingCall.data.NewRules &&
-                        becPollingCall.data.NewRules.length > 0 ? (
-                          <SvgIcon color="success">
-                            <CheckCircle />
-                          </SvgIcon>
-                        ) : (
-                          <SvgIcon color="disabled">
-                            <CheckCircle />
-                          </SvgIcon>
-                        )}
-                      </Stack>
-                    </Stack>
-                  }
-                >
-                  <Typography variant="body2" gutterBottom>
-                    {getRuleMessage()}
-                  </Typography>
-                  {/* Optionally, display list of new rules */}
-                  {becPollingCall.data &&
-                    becPollingCall.data.NewRules &&
-                    becPollingCall.data.NewRules.length > 0 && (
-                      <Box mt={2}>
-                        <PropertyList>
-                          {becPollingCall.data.NewRules.map((rule, index) => (
-                            <PropertyListItem
-                              key={index}
-                              label={rule?.Name}
-                              value={rule?.Description}
-                            />
-                          ))}
-                        </PropertyList>
-                      </Box>
-                    )}
-                </CippButtonCard>
+
+                {/* Check 1: Mailbox Rules */}
+                <BecCheckCard
+                  title="Check 1: Mailbox Rules"
+                  items={becPollingCall.data?.NewRules}
+                  noItemsMessage="No suspicious mailbox rules found. This is a good sign."
+                  itemsFoundMessage="Mailbox rules have been found. Please review the list below - rules that forward or delete emails could indicate compromise."
+                  renderItem={(rule, index) => (
+                    <PropertyListItem
+                      key={index}
+                      label={rule?.Name}
+                      value={rule?.Description}
+                    />
+                  )}
+                />
 
                 {/* Check 2: Recently added users */}
-                <CippButtonCard
-                  variant="outlined"
-                  isFetching={false}
-                  title={
-                    <Stack direction="row" justifyContent={"space-between"}>
-                      <Box>Check 2: Recently added users</Box>
-                      <Stack direction="row" spacing={2}>
-                        {becPollingCall.data &&
-                        becPollingCall.data.NewUsers &&
-                        becPollingCall.data.NewUsers.length > 0 ? (
-                          <SvgIcon color="success">
-                            <CheckCircle />
-                          </SvgIcon>
-                        ) : (
-                          <SvgIcon color="disabled">
-                            <CheckCircle />
-                          </SvgIcon>
-                        )}
-                      </Stack>
-                    </Stack>
-                  }
-                >
-                  <Typography variant="body2" gutterBottom>
-                    {getUserMessage()}
-                  </Typography>
-                  {/* Optionally, display list of new users */}
-                  {becPollingCall.data &&
-                    becPollingCall.data.NewUsers &&
-                    becPollingCall.data.NewUsers.length > 0 && (
-                      <Box mt={2}>
-                        <PropertyList>
-                          {becPollingCall.data.NewUsers.map((user, index) => (
-                            <PropertyListItem
-                              key={index}
-                              label={user?.userPrincipalName}
-                              value={user?.createdDateTime}
-                            />
-                          ))}
-                        </PropertyList>
-                      </Box>
-                    )}
-                </CippButtonCard>
+                <BecCheckCard
+                  title="Check 2: Recently Added Users"
+                  items={becPollingCall.data?.NewUsers}
+                  noItemsMessage="No new users have been added in the last 14 days."
+                  itemsFoundMessage="New users have been found in the last 14 days. Please verify these accounts are legitimate."
+                  renderItem={(user, index) => (
+                    <PropertyListItem
+                      key={index}
+                      label={user?.userPrincipalName}
+                      value={user?.createdDateTime}
+                    />
+                  )}
+                />
 
                 {/* Check 3: New Applications */}
-                <CippButtonCard
-                  variant="outlined"
-                  isFetching={false}
-                  title={
-                    <Stack direction="row" justifyContent={"space-between"}>
-                      <Box>Check 3: New Applications</Box>
-                      <Stack direction="row" spacing={2}>
-                        {becPollingCall.data &&
-                        becPollingCall.data.AddedApps &&
-                        becPollingCall.data.AddedApps.length > 0 ? (
-                          <SvgIcon color="success">
-                            <CheckCircle />
-                          </SvgIcon>
-                        ) : (
-                          <SvgIcon color="disabled">
-                            <CheckCircle />
-                          </SvgIcon>
-                        )}
-                      </Stack>
-                    </Stack>
-                  }
-                >
-                  <Typography variant="body2" gutterBottom>
-                    {getAppMessage()}
-                  </Typography>
-                  {/* Optionally, display list of added applications */}
-                  {becPollingCall.data &&
-                    becPollingCall.data.AddedApps &&
-                    becPollingCall.data.AddedApps.length > 0 && (
-                      <Box mt={2}>
-                        <PropertyList>
-                          {becPollingCall.data.AddedApps.map((app, index) => (
-                            <PropertyListItem
-                              key={index}
-                              label={`${app?.displayName} - ${app?.appId}`}
-                              value={app?.createdDateTime}
-                            />
-                          ))}
-                        </PropertyList>
-                      </Box>
-                    )}
-                </CippButtonCard>
+                <BecCheckCard
+                  title="Check 3: New Applications"
+                  items={becPollingCall.data?.AddedApps}
+                  noItemsMessage="No new applications have been added recently."
+                  itemsFoundMessage="New applications have been found. Please verify these apps are authorized and legitimate."
+                  renderItem={(app, index) => (
+                    <PropertyListItem
+                      key={index}
+                      label={`${app?.displayName} - ${app?.appId}`}
+                      value={app?.createdDateTime}
+                    />
+                  )}
+                />
 
-                {/* Check 4: Mailbox permission changes */}
-                <CippButtonCard
-                  variant="outlined"
-                  isFetching={false}
-                  title={
-                    <Stack direction="row" justifyContent={"space-between"}>
-                      <Box>Check 4: Mailbox permission changes</Box>
-                      <Stack direction="row" spacing={2}>
-                        {becPollingCall.data &&
-                        becPollingCall.data.MailboxPermissionChanges &&
-                        becPollingCall.data.MailboxPermissionChanges.length > 0 ? (
-                          <SvgIcon color="success">
-                            <CheckCircle />
-                          </SvgIcon>
-                        ) : (
-                          <SvgIcon color="disabled">
-                            <CheckCircle />
-                          </SvgIcon>
-                        )}
-                      </Stack>
-                    </Stack>
-                  }
-                >
-                  <Typography variant="body2" gutterBottom>
-                    {getMailboxPermissionMessage()}
-                  </Typography>
-                  {/* Optionally, display list of mailbox permission changes */}
-                  {becPollingCall.data &&
-                    becPollingCall.data.MailboxPermissionChanges &&
-                    becPollingCall.data.MailboxPermissionChanges.length > 0 && (
-                      <Box mt={2}>
-                        <PropertyList>
-                          {becPollingCall.data.MailboxPermissionChanges.map((permission, index) => (
-                            <PropertyListItem
-                              key={index}
-                              label={permission.UserKey}
-                              value={`${permission.Operation} - ${permission.Permissions}`}
-                            />
-                          ))}
-                        </PropertyList>
-                      </Box>
-                    )}
-                </CippButtonCard>
+                {/* Check 4: Mailbox Permission Changes */}
+                <BecCheckCard
+                  title="Check 4: Mailbox Permission Changes"
+                  items={becPollingCall.data?.MailboxPermissionChanges}
+                  noItemsMessage="No mailbox permission changes detected."
+                  itemsFoundMessage="Mailbox permission changes have been detected. Review to ensure these were authorized."
+                  renderItem={(permission, index) => (
+                    <PropertyListItem
+                      key={index}
+                      label={permission.UserKey}
+                      value={`${permission.Operation} - ${permission.Permissions}`}
+                    />
+                  )}
+                />
 
-                <CippButtonCard
-                  variant="outlined"
-                  isFetching={false}
-                  title={
-                    <Stack direction="row" justifyContent={"space-between"}>
-                      <Box>Check 5: MFA Devices</Box>
-                      <Stack direction="row" spacing={2}>
-                        {becPollingCall.data &&
-                        becPollingCall.data.MFADevices &&
-                        becPollingCall.data.MFADevices.length > 0 ? (
-                          <SvgIcon color="success">
-                            <CheckCircle />
-                          </SvgIcon>
-                        ) : (
-                          <SvgIcon color="disabled">
-                            <CheckCircle />
-                          </SvgIcon>
-                        )}
-                      </Stack>
-                    </Stack>
-                  }
-                >
-                  <Typography variant="body2" gutterBottom>
-                    MFA Devices have been found. Please review the list below and take action as
-                    required
-                  </Typography>
-                  {/* Optionally, display list of mailbox permission changes */}
-                  {becPollingCall.data &&
-                    becPollingCall.data.MFADevices &&
-                    becPollingCall.data.MFADevices.length > 0 && (
-                      <Box mt={2}>
-                        <PropertyList>
-                          {becPollingCall.data.MFADevices.map((permission, index) => (
-                            <PropertyListItem
-                              key={index}
-                              label={permission["@odata.type"]}
-                              value={`${permission?.displayName} - Registered at ${permission?.createdDateTime}`}
-                            />
-                          ))}
-                        </PropertyList>
-                      </Box>
-                    )}
-                </CippButtonCard>
+                {/* Check 5: MFA Devices - Informational */}
+                <BecCheckCard
+                  title="Check 5: MFA Devices"
+                  items={becPollingCall.data?.MFADevices}
+                  infoCheck={true}
+                  noItemsMessage="No MFA devices registered for this user."
+                  itemsFoundMessage="MFA Devices are registered for this user. Review to ensure no unauthorized devices have been added."
+                  renderItem={(device, index) => (
+                    <PropertyListItem
+                      key={index}
+                      label={device["@odata.type"]?.replace("#microsoft.graph.", "")}
+                      value={`${device?.displayName || "Unknown"} - Registered at ${device?.createdDateTime}`}
+                    />
+                  )}
+                />
 
-                <CippButtonCard
-                  variant="outlined"
-                  isFetching={false}
-                  title={
-                    <Stack direction="row" justifyContent={"space-between"}>
-                      <Box>Check 6: Password Changes</Box>
-                      <Stack direction="row" spacing={2}>
-                        {becPollingCall.data &&
-                        becPollingCall.data.ChangedPasswords &&
-                        becPollingCall.data.ChangedPasswords.length > 0 ? (
-                          <SvgIcon color="success">
-                            <CheckCircle />
-                          </SvgIcon>
-                        ) : (
-                          <SvgIcon color="disabled">
-                            <CheckCircle />
-                          </SvgIcon>
-                        )}
-                      </Stack>
-                    </Stack>
-                  }
-                >
-                  <Typography variant="body2" gutterBottom>
-                    Latest password changes for the tenant can be seen below
-                  </Typography>
-                  {/* Optionally, display list of mailbox permission changes */}
-                  {becPollingCall.data &&
-                    becPollingCall.data.ChangedPasswords &&
-                    becPollingCall.data.ChangedPasswords.length > 0 && (
-                      <Box mt={2}>
-                        <PropertyList>
-                          {becPollingCall.data.ChangedPasswords.map((permission, index) => (
-                            <PropertyListItem
-                              key={index}
-                              label={permission?.displayName}
-                              value={`${permission?.lastPasswordChangeDateTime}`}
-                            />
-                          ))}
-                        </PropertyList>
-                      </Box>
-                    )}
-                </CippButtonCard>
+                {/* Check 6: Password Changes - Informational */}
+                <BecCheckCard
+                  title="Check 6: Password Changes"
+                  items={becPollingCall.data?.ChangedPasswords}
+                  infoCheck={true}
+                  noItemsMessage="No recent password changes detected."
+                  itemsFoundMessage="Recent password changes detected. Verify these were initiated by legitimate users."
+                  renderItem={(user, index) => (
+                    <PropertyListItem
+                      key={index}
+                      label={user?.displayName}
+                      value={user?.lastPasswordChangeDateTime}
+                    />
+                  )}
+                />
 
-                {/* Check 6: Report Data */}
+                {/* Report Download Card */}
                 <CippButtonCard
                   variant="outlined"
                   isFetching={false}
                   title={
                     <Stack direction="row" justifyContent={"space-between"}>
-                      <Box>Report</Box>
-                      <Stack direction="row" spacing={2}>
-                        {becPollingCall.data ? (
-                          <SvgIcon color="success">
-                            <CheckCircle />
-                          </SvgIcon>
-                        ) : (
-                          <SvgIcon color="disabled">
-                            <CheckCircle />
-                          </SvgIcon>
-                        )}
-                      </Stack>
+                      <Box>Download Report</Box>
+                      <SvgIcon color={becPollingCall.data ? "success" : "disabled"}>
+                        <CheckCircle />
+                      </SvgIcon>
                     </Stack>
                   }
                 >
@@ -570,7 +410,6 @@ const Page = () => {
                     Click this button to download a report of all the data found during this
                     research to perform your own analysis.
                   </Typography>
-                  {/* Implement download functionality */}
                   {becPollingCall.data && (
                     <Box sx={{ mt: 2 }}>
                       <Button

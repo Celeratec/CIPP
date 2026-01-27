@@ -17,6 +17,9 @@ import {
   PersonAdd,
   Block,
   PlayArrow,
+  Security,
+  Rule,
+  Settings,
 } from "@mui/icons-material";
 import { HeaderedTabbedLayout } from "../../../../../layouts/HeaderedTabbedLayout";
 import tabOptions from "./tabOptions";
@@ -29,7 +32,7 @@ import { CippExchangeInfoCard } from "../../../../../components/CippCards/CippEx
 import { useEffect, useState, useMemo } from "react";
 import CippExchangeSettingsForm from "../../../../../components/CippFormPages/CippExchangeSettingsForm";
 import { useForm } from "react-hook-form";
-import { Alert, Button, Collapse, CircularProgress, Typography } from "@mui/material";
+import { Alert, Button, Collapse, CircularProgress, Typography, Divider } from "@mui/material";
 import { CippApiResults } from "../../../../../components/CippComponents/CippApiResults";
 import { CippPropertyListCard } from "../../../../../components/CippCards/CippPropertyListCard";
 import { getCippTranslation } from "../../../../../utils/get-cipp-translation";
@@ -1324,11 +1327,24 @@ const Page = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 8 }}>
                   <Stack spacing={3}>
+                    {/* Email Configuration Section */}
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <AlternateEmail color="primary" />
+                      <Typography variant="h6">Email Configuration</Typography>
+                    </Stack>
                     <CippBannerListCard
                       isFetching={graphUserRequest.isLoading}
                       items={proxyAddressesCard}
                       isCollapsible={true}
                     />
+
+                    <Divider sx={{ my: 1 }} />
+
+                    {/* Permissions Section */}
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Security color="primary" />
+                      <Typography variant="h6">Permissions</Typography>
+                    </Stack>
                     <CippBannerListCard
                       isFetching={userRequest.isLoading}
                       items={permissions}
@@ -1344,6 +1360,14 @@ const Page = () => {
                       items={contactCard}
                       isCollapsible={true}
                     />
+
+                    <Divider sx={{ my: 1 }} />
+
+                    {/* Rules & Filters Section */}
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Rule color="primary" />
+                      <Typography variant="h6">Rules & Filters</Typography>
+                    </Stack>
                     <CippBannerListCard
                       isFetching={mailboxRulesRequest.isLoading}
                       items={mailboxRulesCard}
@@ -1354,6 +1378,14 @@ const Page = () => {
                       items={junkEmailConfigCard}
                       isCollapsible={true}
                     />
+
+                    <Divider sx={{ my: 1 }} />
+
+                    {/* Mailbox Settings Section */}
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Settings color="primary" />
+                      <Typography variant="h6">Mailbox Settings</Typography>
+                    </Stack>
                     <CippExchangeSettingsForm
                       userId={userId}
                       calPermissions={calPermissions.data}

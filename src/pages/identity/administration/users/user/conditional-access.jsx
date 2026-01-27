@@ -7,8 +7,8 @@ import CalendarIcon from "@heroicons/react/24/outline/CalendarIcon";
 import { Mail, Fingerprint, Launch } from "@mui/icons-material";
 import { HeaderedTabbedLayout } from "../../../../../layouts/HeaderedTabbedLayout";
 import tabOptions from "./tabOptions";
-import ReactTimeAgo from "react-time-ago";
 import { CippCopyToClipBoard } from "../../../../../components/CippComponents/CippCopyToClipboard";
+import { CippTimeAgo } from "../../../../../components/CippComponents/CippTimeAgo";
 import { Box, Stack, Typography, Button } from "@mui/material";
 import { Grid } from "@mui/system";
 import CippFormComponent from "/src/components/CippComponents/CippFormComponent";
@@ -18,6 +18,7 @@ import { useForm } from "react-hook-form";
 import CippButtonCard from "../../../../../components/CippCards/CippButtonCard";
 import { ApiGetCall, ApiPostCall } from "../../../../../api/ApiCall";
 import { CippApiResults } from "../../../../../components/CippComponents/CippApiResults";
+import { useCippUserActions } from "/src/components/CippComponents/CippUserActions";
 
 const Page = () => {
   const userSettingsDefaults = useSettings();
@@ -26,6 +27,7 @@ const Page = () => {
 
   const tenant = userSettingsDefaults.currentTenant;
   const [formParams, setFormParams] = useState(false);
+  const userActions = useCippUserActions();
 
   const userRequest = ApiGetCall({
     url: `/api/ListUsers?UserId=${userId}&tenantFilter=${tenant}`,
@@ -49,7 +51,7 @@ const Page = () => {
           icon: <CalendarIcon />,
           text: (
             <>
-              Created: <ReactTimeAgo date={new Date(userRequest.data?.[0]?.createdDateTime)} />
+              Created: <CippTimeAgo data={userRequest.data?.[0]?.createdDateTime} />
             </>
           ),
         },
@@ -96,6 +98,8 @@ const Page = () => {
       tabOptions={tabOptions}
       title={title}
       subtitle={subtitle}
+      actions={userActions}
+      actionsData={userRequest.data?.[0]}
       isFetching={userRequest.isLoading}
     >
       {userRequest.isLoading && <CippFormSkeleton layout={[2, 1, 2, 2]} />}
