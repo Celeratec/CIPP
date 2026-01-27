@@ -5,7 +5,8 @@ import LoadingPage from "../pages/loading.js";
 import ApiOfflinePage from "../pages/api-offline.js";
 
 export const PrivateRoute = ({ children, routeType }) => {
-  // Track if we've ever been authenticated to prevent flashing Access Denied during refetch
+  // Track if we've ever been authenticated to prevent flashing loading/unauthenticated during navigation
+  // Once authenticated, we render children immediately and let auth checks happen in background
   const wasAuthenticated = useRef(false);
 
   const session = ApiGetCall({
@@ -23,8 +24,33 @@ export const PrivateRoute = ({ children, routeType }) => {
     waiting: !session.isSuccess || session.data?.clientPrincipal === null,
   });
 
-  // Check if the session is still loading before determining authentication status
-  // Also show loading during refetch if we have no previous data
+  // FAST PATH: If already authenticated, render children immediately
+  // Auth checks continue in background - no loading screen during navigation
+  if (wasAuthenticated.current) {
+    // Still check for critical errors that require immediate action
+    if (
+      apiRoles?.error?.response?.status === 404 ||
+      apiRoles?.error?.response?.status === 502 ||
+      apiRoles?.error?.response?.status === 503
+    ) {
+      return <ApiOfflinePage />;
+    }
+    
+    // Check if session has definitively expired (not just loading/refetching)
+    if (
+      session?.isSuccess && 
+      session?.data?.clientPrincipal === null &&
+      !session.isFetching
+    ) {
+      wasAuthenticated.current = false;
+      return <UnauthenticatedPage />;
+    }
+    
+    // Render children - auth is validated in background
+    return children;
+  }
+
+  // INITIAL LOAD PATH: Only show loading on first authentication
   if (
     session.isLoading ||
     apiRoles.isLoading ||
@@ -46,13 +72,7 @@ export const PrivateRoute = ({ children, routeType }) => {
 
   // If not logged into SWA
   if (session?.data?.clientPrincipal === null || session?.data === undefined) {
-    // Only show unauthenticated if we weren't previously authenticated
-    // This prevents flash when the session is being validated
-    if (!wasAuthenticated.current) {
-      return <UnauthenticatedPage />;
-    }
-    // If we were authenticated before, show loading while state settles
-    return <LoadingPage />;
+    return <UnauthenticatedPage />;
   }
 
   // Handle user detail mismatch - trigger refetch but don't block rendering
@@ -68,23 +88,15 @@ export const PrivateRoute = ({ children, routeType }) => {
     apiRoles.refetch();
   }
 
-  // Extract roles - handle refetch state gracefully
+  // Extract roles
   let roles = null;
-
   if (apiRoles?.data?.clientPrincipal !== null && apiRoles?.data !== undefined) {
     roles = apiRoles?.data?.clientPrincipal?.userRoles ?? [];
   } else {
-    // During refetch, if we were previously authenticated, show loading instead of unauthenticated
-    if (wasAuthenticated.current || apiRoles.isFetching) {
-      return <LoadingPage />;
-    }
     return <UnauthenticatedPage />;
   }
 
   if (roles === null) {
-    if (wasAuthenticated.current) {
-      return <LoadingPage />;
-    }
     return <UnauthenticatedPage />;
   }
 
@@ -98,14 +110,10 @@ export const PrivateRoute = ({ children, routeType }) => {
   }
 
   if (!isAuthenticated) {
-    // If we were previously authenticated, this might be a transient state
-    if (wasAuthenticated.current) {
-      return <LoadingPage />;
-    }
     return <UnauthenticatedPage />;
   }
 
-  // Mark as successfully authenticated
+  // Mark as successfully authenticated - future renders will use fast path
   wasAuthenticated.current = true;
   
   return children;
