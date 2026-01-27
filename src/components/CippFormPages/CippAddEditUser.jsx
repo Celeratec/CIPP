@@ -1,4 +1,5 @@
-import { Alert, Divider, InputAdornment, Typography } from "@mui/material";
+import { Alert, Divider, InputAdornment, Typography, Card, CardContent } from "@mui/material";
+import { Stack, Box } from "@mui/system";
 import CippFormComponent from "/src/components/CippComponents/CippFormComponent";
 import { CippFormCondition } from "/src/components/CippComponents/CippFormCondition";
 import { CippFormDomainSelector } from "/src/components/CippComponents/CippFormDomainSelector";
@@ -11,6 +12,37 @@ import { useSettings } from "../../hooks/use-settings";
 import { useWatch } from "react-hook-form";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
+import {
+  Person,
+  Key,
+  Badge,
+  Business,
+  ContactPhone,
+  Group,
+  Schedule,
+  Extension,
+  FileCopy,
+} from "@mui/icons-material";
+
+// Section Header Component for consistent styling
+const SectionHeader = ({ icon: Icon, title }) => (
+  <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
+    <Icon color="primary" fontSize="small" />
+    <Typography variant="subtitle1" fontWeight={600}>
+      {title}
+    </Typography>
+  </Stack>
+);
+
+// Section Card Component for visual grouping
+const FormSection = ({ icon, title, children, noPadding = false }) => (
+  <Card variant="outlined" sx={{ mb: 3 }}>
+    <CardContent sx={{ p: noPadding ? 0 : 2.5, "&:last-child": { pb: noPadding ? 0 : 2.5 } }}>
+      {title && <SectionHeader icon={icon} title={title} />}
+      {children}
+    </CardContent>
+  </Card>
+);
 
 const CippAddEditUser = (props) => {
   const { formControl, userSettingsDefaults, formType = "add" } = props;
@@ -225,514 +257,563 @@ const CippAddEditUser = (props) => {
   }, [watcher.userTemplate, formType]);
 
   return (
-    <Grid container spacing={2}>
+    <Box>
+      {/* Template/Copy Section - Only for Add mode */}
       {formType === "add" && (
-        <>
+        <FormSection icon={FileCopy} title="Quick Setup">
+          <Grid container spacing={2}>
+            <Grid size={{ md: 6, xs: 12 }}>
+              <CippFormUserSelector
+                formControl={formControl}
+                name="userProperties"
+                label="Copy properties from another user"
+                multiple={false}
+                select={
+                  "id,userPrincipalName,displayName,givenName,surname,mailNickname,jobTitle,department,streetAddress,city,state,postalCode,companyName,mobilePhone,businessPhones,usageLocation,office"
+                }
+                addedField={{
+                  groupType: "calculatedGroupType",
+                  displayName: "displayName",
+                  userPrincipalName: "userPrincipalName",
+                  id: "id",
+                  givenName: "givenName",
+                  surname: "surname",
+                  mailNickname: "mailNickname",
+                  jobTitle: "jobTitle",
+                  department: "department",
+                  streetAddress: "streetAddress",
+                  city: "city",
+                  state: "state",
+                  postalCode: "postalCode",
+                  companyName: "companyName",
+                  mobilePhone: "mobilePhone",
+                  businessPhones: "businessPhones",
+                  usageLocation: "usageLocation",
+                  office: "office",
+                }}
+              />
+            </Grid>
+            <Grid size={{ md: 6, xs: 12 }}>
+              <CippFormComponent
+                type="autoComplete"
+                label="User Template"
+                name="userTemplate"
+                multiple={false}
+                options={
+                  userTemplates.isSuccess
+                    ? userTemplates.data?.map((template) => ({
+                        label: template.templateName,
+                        value: template.GUID,
+                        addedFields: template,
+                      }))
+                    : []
+                }
+                formControl={formControl}
+              />
+            </Grid>
+          </Grid>
+        </FormSection>
+      )}
+
+      {/* Account Information Section */}
+      <FormSection icon={Person} title="Account Information">
+        <Grid container spacing={2}>
           <Grid size={{ md: 6, xs: 12 }}>
-            <CippFormUserSelector
+            <CippFormComponent
+              type="textField"
+              fullWidth
+              label="First Name"
+              name="givenName"
               formControl={formControl}
-              name="userProperties"
-              label="Copy properties from another user"
-              multiple={false}
-              select={
-                "id,userPrincipalName,displayName,givenName,surname,mailNickname,jobTitle,department,streetAddress,city,state,postalCode,companyName,mobilePhone,businessPhones,usageLocation,office"
-              }
-              addedField={{
-                groupType: "calculatedGroupType",
-                displayName: "displayName",
-                userPrincipalName: "userPrincipalName",
-                id: "id",
-                givenName: "givenName",
-                surname: "surname",
-                mailNickname: "mailNickname",
-                jobTitle: "jobTitle",
-                department: "department",
-                streetAddress: "streetAddress",
-                city: "city",
-                state: "state",
-                postalCode: "postalCode",
-                companyName: "companyName",
-                mobilePhone: "mobilePhone",
-                businessPhones: "businessPhones",
-                usageLocation: "usageLocation",
-                office: "office",
+            />
+          </Grid>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="textField"
+              fullWidth
+              label="Last Name"
+              name="surname"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <CippFormComponent
+              type="textField"
+              fullWidth
+              label="Display Name"
+              name="displayName"
+              formControl={formControl}
+              onChange={(e) => {
+                setDisplayNameManuallySet(true);
               }}
             />
           </Grid>
           <Grid size={{ md: 6, xs: 12 }}>
             <CippFormComponent
-              type="autoComplete"
-              label="User Template (optional)"
-              name="userTemplate"
-              multiple={false}
-              options={
-                userTemplates.isSuccess
-                  ? userTemplates.data?.map((template) => ({
-                      label: template.templateName,
-                      value: template.GUID,
-                      addedFields: template,
-                    }))
-                  : []
-              }
-              formControl={formControl}
-            />
-          </Grid>
-        </>
-      )}
-      <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="First Name"
-          name="givenName"
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="Last Name"
-          name="surname"
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="Display Name"
-          name="displayName"
-          formControl={formControl}
-          onChange={(e) => {
-            setDisplayNameManuallySet(true);
-          }}
-        />
-      </Grid>
-      <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="Username"
-          InputProps={{
-            endAdornment: <InputAdornment position="end">@</InputAdornment>,
-          }}
-          name="username"
-          formControl={formControl}
-          onChange={(e) => {
-            setUsernameManuallySet(true);
-          }}
-        />
-      </Grid>
-      <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormDomainSelector
-          formControl={formControl}
-          name="primDomain"
-          label="Primary Domain name"
-        />
-      </Grid>
-      <Grid size={{ xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="Add Aliases"
-          placeholder="One alias per line"
-          name="addedAliases"
-          formControl={formControl}
-          multiline
-          rows={4}
-        />
-      </Grid>
-
-      <Grid size={{ xs: 12 }}>
-        <Typography variant="h6">Settings</Typography>
-      </Grid>
-      <Grid size={{ xs: 6 }}>
-        <CippFormComponent
-          type="switch"
-          label="Create password manually"
-          name="Autopassword"
-          formControl={formControl}
-        />
-        <CippFormCondition
-          formControl={formControl}
-          field="Autopassword"
-          compareType="is"
-          compareValue={true}
-        >
-          <Grid size={{ xs: 12 }}>
-            <CippFormComponent
-              type="password"
+              type="textField"
               fullWidth
-              label="Password"
-              name="password"
+              label="Username"
+              InputProps={{
+                endAdornment: <InputAdornment position="end">@</InputAdornment>,
+              }}
+              name="username"
               formControl={formControl}
+              onChange={(e) => {
+                setUsernameManuallySet(true);
+              }}
             />
           </Grid>
-        </CippFormCondition>
-      </Grid>
-      <Grid size={{ xs: 6 }}>
-        <CippFormComponent
-          type="switch"
-          label="Require password change at next logon"
-          name="MustChangePass"
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ xs: 12 }}>
-        <CippFormComponent
-          type="autoComplete"
-          label="Usage Location"
-          name="usageLocation"
-          multiple={false}
-          defaultValue={userSettingsDefaults?.usageLocation || "US"}
-          options={countryList.map(({ Code, Name }) => ({
-            label: Name,
-            value: Code,
-          }))}
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ xs: 12 }}>
-        <CippFormLicenseSelector label="Licenses" name="licenses" formControl={formControl} />
-      </Grid>
-      {integrationSettings?.data?.Sherweb?.Enabled === true && (
-        <>
-          <CippFormCondition
-            formControl={formControl}
-            field="licenses"
-            compareType="labelContains"
-            compareValue="(0 available)"
-            labelCompare={true}
-          >
-            <Grid size={{ xs: 6 }}>
-              <CippFormComponent
-                type="switch"
-                label="0 Licences available. Purchase new licence?"
-                name="sherweb"
-                formControl={formControl}
-              />
-            </Grid>
-            <CippFormCondition
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormDomainSelector
               formControl={formControl}
-              field="sherweb"
-              compareType="is"
-              compareValue={true}
-            >
-              <Grid size={{ xs: 12 }}>
-                <Alert severity="info">
-                  This will Purchase a new Sherweb License for the user, according to the terms and
-                  conditions with Sherweb. When the license becomes available, CIPP will assign the
-                  license to this user.
-                </Alert>
-              </Grid>
-              <Grid size={{ xs: 12 }}>
-                <CippFormComponent
-                  type="autoComplete"
-                  api={{
-                    queryKey: `SKU-${tenantDomain}`,
-                    url: "/api/ListCSPsku",
-                    data: { currentSkuOnly: true },
-                    labelField: (option) => `${option?.productName} (${option?.sku})`,
-                    valueField: "sku",
-                  }}
-                  label="Sherweb License"
-                  name="sherwebLicense"
-                  formControl={formControl}
-                />
-              </Grid>
-            </CippFormCondition>
-          </CippFormCondition>
-        </>
-      )}
-      <Grid size={{ xs: 6 }}>
-        <CippFormComponent
-          type="switch"
-          label="Remove all licenses"
-          name="removeLicenses"
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="Job Title"
-          name="jobTitle"
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="Street"
-          name="streetAddress"
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="City"
-          name="city"
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="State/Province"
-          name="state"
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="Postal Code"
-          name="postalCode"
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="Country"
-          name="country"
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="Company Name"
-          name="companyName"
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="Department"
-          name="department"
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="Mobile #"
-          name="mobilePhone"
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="Business #"
-          name="businessPhones[0]"
-          formControl={formControl}
-        />
-      </Grid>
-      <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          fullWidth
-          label="Alternate Email Address"
-          name="otherMails"
-          formControl={formControl}
-        />
-      </Grid>
-      {userSettingsDefaults?.userAttributes
-        ?.filter((attribute) => attribute.value !== "sponsor")
-        .map((attribute, idx) => (
-          <Grid size={{ xs: 6 }} key={idx}>
+              name="primDomain"
+              label="Primary Domain"
+            />
+          </Grid>
+          <Grid size={{ xs: 12 }}>
             <CippFormComponent
               type="textField"
               fullWidth
-              label={attribute.label}
-              name={`defaultAttributes.${attribute.label}.Value`}
+              label="Email Aliases"
+              placeholder="One alias per line"
+              name="addedAliases"
               formControl={formControl}
+              multiline
+              rows={2}
             />
           </Grid>
-        ))}
-
-      {/* Set Manager */}
-      <Grid size={{ xs: 12 }}>
-        <CippFormUserSelector
-          formControl={formControl}
-          name="setManager"
-          label="Set Manager"
-          valueField="userPrincipalName"
-          multiple={false}
-        />
-      </Grid>
-      {userSettingsDefaults?.userAttributes?.some((attribute) => attribute.value === "sponsor") && (
-        <Grid size={{ xs: 12 }}>
-          <CippFormUserSelector
-            formControl={formControl}
-            name="setSponsor"
-            label="Set Sponsor"
-            valueField="userPrincipalName"
-            multiple={false}
-          />
         </Grid>
-      )}
-      <Grid size={{ xs: 12 }}>
-        <CippFormUserSelector
-          formControl={formControl}
-          name="copyFrom"
-          label="Copy groups from user"
-          multiple={false}
-        />
-      </Grid>
-      {formType === "edit" && (
-        <Grid size={{ xs: 12 }}>
-          <CippFormComponent
-            type="autoComplete"
-            label="Add to Groups"
-            name="AddToGroups"
-            multiple={true}
-            options={filteredTenantGroups?.map((tenantGroup) => ({
-              label: tenantGroup.displayName,
-              value: tenantGroup.id,
-              addedFields: {
-                groupType: tenantGroup.groupType,
-              },
-            }))}
-            creatable={false}
-            formControl={formControl}
-          />
-        </Grid>
-      )}
-      {formType === "edit" && (
-        <Grid size={{ xs: 12 }}>
-          <CippFormComponent
-            type="autoComplete"
-            label="Remove from Groups"
-            name="RemoveFromGroups"
-            multiple={true}
-            options={userGroups?.data?.map((userGroups) => ({
-              label: userGroups.DisplayName,
-              value: userGroups.id,
-              addedFields: {
-                groupType: userGroups.groupType,
-              },
-            }))}
-            creatable={false}
-            formControl={formControl}
-          />
-        </Grid>
-      )}
-      {/* Manual Entry Custom Data Fields */}
-      {currentTenantManualMappings.length > 0 && (
-        <>
-          <Grid size={{ xs: 12 }}>
-            <Typography variant="h6">Custom Data</Typography>
-          </Grid>
-          {currentTenantManualMappings.map((mapping, index) => {
-            const fieldName = `customData.${mapping.customDataAttribute.value}`;
-            const fieldLabel = mapping.manualEntryFieldLabel;
-            const dataType = mapping.customDataAttribute.addedFields.dataType;
+      </FormSection>
 
-            // Determine field type based on the custom data attribute type
-            const getFieldType = (dataType) => {
-              switch (dataType?.toLowerCase()) {
-                case "boolean":
-                  return "switch";
-                case "datetime":
-                case "date":
-                  return "datePicker";
-                case "string":
-                default:
-                  return "textField";
-              }
-            };
-
-            return (
-              <Grid size={{ md: 6, xs: 12 }} key={`manual-entry-${index}`}>
-                <CippFormComponent
-                  type={getFieldType(dataType)}
-                  fullWidth
-                  label={fieldLabel}
-                  name={fieldName}
-                  formControl={formControl}
-                  placeholder={`Enter ${fieldLabel.toLowerCase()}`}
-                />
-              </Grid>
-            );
-          })}
-        </>
-      )}
-      {/* Schedule User Creation */}
-      {formType === "add" && (
-        <>
-          <Grid size={{ xs: 12 }}>
-            <Divider />
-          </Grid>
-          <Grid size={{ xs: 12 }}>
+      {/* Password & Security Section */}
+      <FormSection icon={Key} title="Password & Security">
+        <Grid container spacing={2}>
+          <Grid size={{ md: 6, xs: 12 }}>
             <CippFormComponent
               type="switch"
-              label="Schedule user creation"
-              name="Scheduled.enabled"
+              label="Set password manually"
+              name="Autopassword"
               formControl={formControl}
             />
+            <CippFormCondition
+              formControl={formControl}
+              field="Autopassword"
+              compareType="is"
+              compareValue={true}
+            >
+              <Box sx={{ mt: 2 }}>
+                <CippFormComponent
+                  type="password"
+                  fullWidth
+                  label="Password"
+                  name="password"
+                  formControl={formControl}
+                />
+              </Box>
+            </CippFormCondition>
+          </Grid>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="switch"
+              label="Require password change at next logon"
+              name="MustChangePass"
+              formControl={formControl}
+            />
+          </Grid>
+        </Grid>
+      </FormSection>
+
+      {/* Licensing Section */}
+      <FormSection icon={Badge} title="Licensing">
+        <Grid container spacing={2}>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="autoComplete"
+              label="Usage Location"
+              name="usageLocation"
+              multiple={false}
+              defaultValue={userSettingsDefaults?.usageLocation || "US"}
+              options={countryList.map(({ Code, Name }) => ({
+                label: Name,
+                value: Code,
+              }))}
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="switch"
+              label="Remove all licenses"
+              name="removeLicenses"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <CippFormLicenseSelector label="Licenses" name="licenses" formControl={formControl} />
+          </Grid>
+          {integrationSettings?.data?.Sherweb?.Enabled === true && (
+            <CippFormCondition
+              formControl={formControl}
+              field="licenses"
+              compareType="labelContains"
+              compareValue="(0 available)"
+              labelCompare={true}
+            >
+              <Grid size={{ xs: 12 }}>
+                <CippFormComponent
+                  type="switch"
+                  label="0 Licences available. Purchase new licence?"
+                  name="sherweb"
+                  formControl={formControl}
+                />
+              </Grid>
+              <CippFormCondition
+                formControl={formControl}
+                field="sherweb"
+                compareType="is"
+                compareValue={true}
+              >
+                <Grid size={{ xs: 12 }}>
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    This will Purchase a new Sherweb License for the user, according to the terms
+                    and conditions with Sherweb. When the license becomes available, CIPP will
+                    assign the license to this user.
+                  </Alert>
+                  <CippFormComponent
+                    type="autoComplete"
+                    api={{
+                      queryKey: `SKU-${tenantDomain}`,
+                      url: "/api/ListCSPsku",
+                      data: { currentSkuOnly: true },
+                      labelField: (option) => `${option?.productName} (${option?.sku})`,
+                      valueField: "sku",
+                    }}
+                    label="Sherweb License"
+                    name="sherwebLicense"
+                    formControl={formControl}
+                  />
+                </Grid>
+              </CippFormCondition>
+            </CippFormCondition>
+          )}
+        </Grid>
+      </FormSection>
+
+      {/* Organization Section */}
+      <FormSection icon={Business} title="Organization">
+        <Grid container spacing={2}>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="textField"
+              fullWidth
+              label="Job Title"
+              name="jobTitle"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="textField"
+              fullWidth
+              label="Department"
+              name="department"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="textField"
+              fullWidth
+              label="Company Name"
+              name="companyName"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormUserSelector
+              formControl={formControl}
+              name="setManager"
+              label="Manager"
+              valueField="userPrincipalName"
+              multiple={false}
+            />
+          </Grid>
+          {userSettingsDefaults?.userAttributes?.some(
+            (attribute) => attribute.value === "sponsor"
+          ) && (
+            <Grid size={{ md: 6, xs: 12 }}>
+              <CippFormUserSelector
+                formControl={formControl}
+                name="setSponsor"
+                label="Sponsor"
+                valueField="userPrincipalName"
+                multiple={false}
+              />
+            </Grid>
+          )}
+        </Grid>
+      </FormSection>
+
+      {/* Contact Information Section */}
+      <FormSection icon={ContactPhone} title="Contact Information">
+        <Grid container spacing={2}>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="textField"
+              fullWidth
+              label="Mobile Phone"
+              name="mobilePhone"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="textField"
+              fullWidth
+              label="Business Phone"
+              name="businessPhones[0]"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="textField"
+              fullWidth
+              label="Alternate Email"
+              name="otherMails"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="textField"
+              fullWidth
+              label="Street Address"
+              name="streetAddress"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="textField"
+              fullWidth
+              label="City"
+              name="city"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="textField"
+              fullWidth
+              label="State/Province"
+              name="state"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="textField"
+              fullWidth
+              label="Postal Code"
+              name="postalCode"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="textField"
+              fullWidth
+              label="Country"
+              name="country"
+              formControl={formControl}
+            />
+          </Grid>
+        </Grid>
+      </FormSection>
+
+      {/* Custom Attributes Section */}
+      {userSettingsDefaults?.userAttributes?.filter((attribute) => attribute.value !== "sponsor")
+        .length > 0 && (
+        <FormSection icon={Extension} title="Custom Attributes">
+          <Grid container spacing={2}>
+            {userSettingsDefaults?.userAttributes
+              ?.filter((attribute) => attribute.value !== "sponsor")
+              .map((attribute, idx) => (
+                <Grid size={{ md: 6, xs: 12 }} key={idx}>
+                  <CippFormComponent
+                    type="textField"
+                    fullWidth
+                    label={attribute.label}
+                    name={`defaultAttributes.${attribute.label}.Value`}
+                    formControl={formControl}
+                  />
+                </Grid>
+              ))}
+          </Grid>
+        </FormSection>
+      )}
+
+      {/* Group Membership Section */}
+      {(formType === "edit" || formType === "add") && (
+        <FormSection icon={Group} title="Group Membership">
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12 }}>
+              <CippFormUserSelector
+                formControl={formControl}
+                name="copyFrom"
+                label="Copy groups from user"
+                multiple={false}
+              />
+            </Grid>
+            {formType === "edit" && (
+              <>
+                <Grid size={{ md: 6, xs: 12 }}>
+                  <CippFormComponent
+                    type="autoComplete"
+                    label="Add to Groups"
+                    name="AddToGroups"
+                    multiple={true}
+                    options={filteredTenantGroups?.map((tenantGroup) => ({
+                      label: tenantGroup.displayName,
+                      value: tenantGroup.id,
+                      addedFields: {
+                        groupType: tenantGroup.groupType,
+                      },
+                    }))}
+                    creatable={false}
+                    formControl={formControl}
+                  />
+                </Grid>
+                <Grid size={{ md: 6, xs: 12 }}>
+                  <CippFormComponent
+                    type="autoComplete"
+                    label="Remove from Groups"
+                    name="RemoveFromGroups"
+                    multiple={true}
+                    options={userGroups?.data?.map((userGroups) => ({
+                      label: userGroups.DisplayName,
+                      value: userGroups.id,
+                      addedFields: {
+                        groupType: userGroups.groupType,
+                      },
+                    }))}
+                    creatable={false}
+                    formControl={formControl}
+                  />
+                </Grid>
+              </>
+            )}
+          </Grid>
+        </FormSection>
+      )}
+
+      {/* Custom Data Section */}
+      {currentTenantManualMappings.length > 0 && (
+        <FormSection icon={Extension} title="Custom Data">
+          <Grid container spacing={2}>
+            {currentTenantManualMappings.map((mapping, index) => {
+              const fieldName = `customData.${mapping.customDataAttribute.value}`;
+              const fieldLabel = mapping.manualEntryFieldLabel;
+              const dataType = mapping.customDataAttribute.addedFields.dataType;
+
+              // Determine field type based on the custom data attribute type
+              const getFieldType = (dataType) => {
+                switch (dataType?.toLowerCase()) {
+                  case "boolean":
+                    return "switch";
+                  case "datetime":
+                  case "date":
+                    return "datePicker";
+                  case "string":
+                  default:
+                    return "textField";
+                }
+              };
+
+              return (
+                <Grid size={{ md: 6, xs: 12 }} key={`manual-entry-${index}`}>
+                  <CippFormComponent
+                    type={getFieldType(dataType)}
+                    fullWidth
+                    label={fieldLabel}
+                    name={fieldName}
+                    formControl={formControl}
+                    placeholder={`Enter ${fieldLabel.toLowerCase()}`}
+                  />
+                </Grid>
+              );
+            })}
+          </Grid>
+        </FormSection>
+      )}
+
+      {/* Schedule Section - Only for Add mode */}
+      {formType === "add" && (
+        <FormSection icon={Schedule} title="Scheduling">
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12 }}>
+              <CippFormComponent
+                type="switch"
+                label="Schedule user creation for later"
+                name="Scheduled.enabled"
+                formControl={formControl}
+              />
+            </Grid>
             <CippFormCondition
               formControl={formControl}
               field="Scheduled.enabled"
               compareType="is"
               compareValue={true}
             >
-              <Grid size={{ xs: 12 }}>
-                <label>Scheduled creation Date</label>
+              <Grid size={{ md: 6, xs: 12 }}>
                 <CippFormComponent
                   type="datePicker"
+                  label="Scheduled Date"
                   name="Scheduled.date"
                   formControl={formControl}
                 />
               </Grid>
               <Grid size={{ xs: 12 }}>
-                <CippFormComponent
-                  type="switch"
-                  label="Send results to Webhook"
-                  name="postExecution.webhook"
-                  formControl={formControl}
-                />
-                <CippFormComponent
-                  type="switch"
-                  label="Send results to E-mail"
-                  name="postExecution.email"
-                  formControl={formControl}
-                />
-                <CippFormComponent
-                  type="switch"
-                  label="Send results to PSA"
-                  name="postExecution.psa"
-                  formControl={formControl}
-                />
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Notification Options
+                </Typography>
+                <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
+                  <CippFormComponent
+                    type="switch"
+                    label="Send to Webhook"
+                    name="postExecution.webhook"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    type="switch"
+                    label="Send to Email"
+                    name="postExecution.email"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
+                    type="switch"
+                    label="Send to PSA"
+                    name="postExecution.psa"
+                    formControl={formControl}
+                  />
+                </Stack>
+              </Grid>
+              <Grid size={{ xs: 12 }}>
                 <CippFormComponent
                   type="textField"
                   fullWidth
                   label="Reference"
                   name="reference"
-                  placeholder="Enter a reference that will be added to the notification title"
+                  placeholder="Enter a reference for the notification title"
                   formControl={formControl}
                 />
               </Grid>
             </CippFormCondition>
           </Grid>
-        </>
+        </FormSection>
       )}
-    </Grid>
+    </Box>
   );
 };
 

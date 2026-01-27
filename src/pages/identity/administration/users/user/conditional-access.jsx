@@ -4,12 +4,20 @@ import { useSettings } from "/src/hooks/use-settings";
 import { useRouter } from "next/router";
 import CippFormSkeleton from "/src/components/CippFormPages/CippFormSkeleton";
 import CalendarIcon from "@heroicons/react/24/outline/CalendarIcon";
-import { Mail, Fingerprint, Launch } from "@mui/icons-material";
+import { 
+  Mail, 
+  Fingerprint, 
+  Launch,
+  Apps,
+  LocationOn,
+  Devices,
+  Warning,
+} from "@mui/icons-material";
 import { HeaderedTabbedLayout } from "../../../../../layouts/HeaderedTabbedLayout";
 import tabOptions from "./tabOptions";
 import { CippCopyToClipBoard } from "../../../../../components/CippComponents/CippCopyToClipboard";
 import { CippTimeAgo } from "../../../../../components/CippComponents/CippTimeAgo";
-import { Box, Stack, Typography, Button } from "@mui/material";
+import { Box, Stack, Typography, Button, Divider } from "@mui/material";
 import { Grid } from "@mui/system";
 import CippFormComponent from "/src/components/CippComponents/CippFormComponent";
 import countryList from "/src/data/countryList";
@@ -117,130 +125,160 @@ const Page = () => {
                 title={"Test Conditional Access Policy"}
                 CardButton={
                   <Button type="submit" variant="contained" form="ca-test-form">
-                    Test policies
+                    Test Policies
                   </Button>
                 }
               >
                 {/* Form Starts Here */}
                 <form id="ca-test-form" onSubmit={formControl.handleSubmit(onSubmit)}>
-                  <Typography variant="body2" sx={{ mb: 2 }}>
-                    Test your conditional access policies before putting them in production. The
-                    returned results will show you if the user is allowed or denied access based on
-                    the policy.
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Simulate a sign-in to see which policies would apply and their results.
                   </Typography>
 
-                  <Stack spacing={2}>
-                    {/* Mandatory Parameters */}
-                    <Typography variant="subtitle1">Mandatory Parameters:</Typography>
-                    <CippFormComponent
-                      type="autoComplete"
-                      label="Select the application to test"
-                      name="includeApplications"
-                      multiple={false}
-                      api={{
-                        tenantFilter: tenant,
-                        url: "/api/ListGraphRequest",
-                        dataKey: "Results",
-                        labelField: (option) => `${option.displayName}`,
-                        valueField: "id",
-                        queryKey: `ServicePrincipals-${tenant}`,
-                        data: {
-                          Endpoint: "ServicePrincipals",
-                          manualPagination: true,
-                          $select: "id,displayName",
-                          $count: true,
-                          $orderby: "displayName",
-                          $top: 999,
-                        },
-                      }}
-                      formControl={formControl}
-                    />
+                  <Stack spacing={2.5}>
+                    {/* Application Selection */}
+                    <Box>
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                        <Apps fontSize="small" color="primary" />
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          Application
+                        </Typography>
+                      </Stack>
+                      <CippFormComponent
+                        type="autoComplete"
+                        label="Target Application"
+                        name="includeApplications"
+                        multiple={false}
+                        api={{
+                          tenantFilter: tenant,
+                          url: "/api/ListGraphRequest",
+                          dataKey: "Results",
+                          labelField: (option) => `${option.displayName}`,
+                          valueField: "id",
+                          queryKey: `ServicePrincipals-${tenant}`,
+                          data: {
+                            Endpoint: "ServicePrincipals",
+                            manualPagination: true,
+                            $select: "id,displayName",
+                            $count: true,
+                            $orderby: "displayName",
+                            $top: 999,
+                          },
+                        }}
+                        formControl={formControl}
+                      />
+                    </Box>
 
-                    {/* Optional Parameters */}
-                    <Typography variant="subtitle1">Optional Parameters:</Typography>
+                    <Divider />
 
-                    {/* Test from this country */}
-                    <CippFormComponent
-                      type="autoComplete"
-                      label="Test from this country"
-                      name="country"
-                      options={countryList.map(({ Code, Name }) => ({
-                        value: Code,
-                        label: Name,
-                      }))}
-                      formControl={formControl}
-                    />
+                    {/* Location Context */}
+                    <Box>
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                        <LocationOn fontSize="small" color="primary" />
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          Location Context
+                        </Typography>
+                      </Stack>
+                      <Stack spacing={2}>
+                        <CippFormComponent
+                          type="autoComplete"
+                          label="Country"
+                          name="country"
+                          options={countryList.map(({ Code, Name }) => ({
+                            value: Code,
+                            label: Name,
+                          }))}
+                          formControl={formControl}
+                        />
+                        <CippFormComponent
+                          type="textField"
+                          label="IP Address"
+                          name="IpAddress"
+                          placeholder="e.g., 8.8.8.8"
+                          formControl={formControl}
+                        />
+                      </Stack>
+                    </Box>
 
-                    {/* Test from this IP */}
-                    <CippFormComponent
-                      type="textField"
-                      label="Test from this IP"
-                      name="IpAddress"
-                      placeholder="8.8.8.8"
-                      formControl={formControl}
-                    />
+                    <Divider />
 
-                    {/* Device Platform */}
-                    <CippFormComponent
-                      type="autoComplete"
-                      label="Select the device platform to test"
-                      name="devicePlatform"
-                      options={[
-                        { value: "Windows", label: "Windows" },
-                        { value: "iOS", label: "iOS" },
-                        { value: "Android", label: "Android" },
-                        { value: "MacOS", label: "MacOS" },
-                        { value: "Linux", label: "Linux" },
-                      ]}
-                      formControl={formControl}
-                    />
+                    {/* Device Context */}
+                    <Box>
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                        <Devices fontSize="small" color="primary" />
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          Device Context
+                        </Typography>
+                      </Stack>
+                      <Stack spacing={2}>
+                        <CippFormComponent
+                          type="autoComplete"
+                          label="Platform"
+                          name="devicePlatform"
+                          options={[
+                            { value: "Windows", label: "Windows" },
+                            { value: "iOS", label: "iOS" },
+                            { value: "Android", label: "Android" },
+                            { value: "MacOS", label: "macOS" },
+                            { value: "Linux", label: "Linux" },
+                          ]}
+                          formControl={formControl}
+                        />
+                        <CippFormComponent
+                          type="autoComplete"
+                          label="Client App Type"
+                          name="clientAppType"
+                          options={[
+                            { value: "all", label: "All" },
+                            { value: "Browser", label: "Browser" },
+                            { value: "mobileAppsAndDesktopClients", label: "Mobile/Desktop Apps" },
+                            { value: "exchangeActiveSync", label: "Exchange ActiveSync" },
+                            { value: "easSupported", label: "EAS Supported" },
+                            { value: "other", label: "Other Clients" },
+                          ]}
+                          formControl={formControl}
+                        />
+                      </Stack>
+                    </Box>
 
-                    {/* Client Application Type */}
-                    <CippFormComponent
-                      type="autoComplete"
-                      label="Select the client application type to test"
-                      name="clientAppType"
-                      options={[
-                        { value: "all", label: "All" },
-                        { value: "Browser", label: "Browser" },
-                        {
-                          value: "mobileAppsAndDesktopClients",
-                          label: "Mobile apps and desktop clients",
-                        },
-                        { value: "exchangeActiveSync", label: "Exchange ActiveSync" },
-                        { value: "easSupported", label: "EAS supported" },
-                        { value: "other", label: "Other clients" },
-                      ]}
-                      formControl={formControl}
-                    />
+                    <Divider />
 
-                    {/* Sign-in risk level */}
-                    <CippFormComponent
-                      type="autoComplete"
-                      label="Select the sign-in risk level of the user signing in"
-                      name="SignInRiskLevel"
-                      options={[
-                        { value: "low", label: "Low" },
-                        { value: "medium", label: "Medium" },
-                        { value: "high", label: "High" },
-                        { value: "none", label: "None" },
-                      ]}
-                      formControl={formControl}
-                    />
+                    {/* Risk Levels */}
+                    <Box>
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                        <Warning fontSize="small" color="primary" />
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          Risk Levels
+                        </Typography>
+                      </Stack>
+                      <Stack spacing={2}>
+                        <CippFormComponent
+                          type="autoComplete"
+                          label="Sign-in Risk"
+                          name="SignInRiskLevel"
+                          options={[
+                            { value: "none", label: "None" },
+                            { value: "low", label: "Low" },
+                            { value: "medium", label: "Medium" },
+                            { value: "high", label: "High" },
+                          ]}
+                          formControl={formControl}
+                        />
+                        <CippFormComponent
+                          type="autoComplete"
+                          label="User Risk"
+                          name="userRiskLevel"
+                          options={[
+                            { value: "none", label: "None" },
+                            { value: "low", label: "Low" },
+                            { value: "medium", label: "Medium" },
+                            { value: "high", label: "High" },
+                          ]}
+                          formControl={formControl}
+                        />
+                      </Stack>
+                    </Box>
 
-                    {/* User risk level */}
-                    <CippFormComponent
-                      type="autoComplete"
-                      label="Select the user risk level of the user signing in"
-                      name="userRiskLevel"
-                      options={[
-                        { value: "low", label: "Low" },
-                        { value: "medium", label: "Medium" },
-                        { value: "high", label: "High" },
-                        { value: "none", label: "None" },
-                      ]}
-                      formControl={formControl}
-                    />
                     <CippApiResults apiObject={postRequest} errorsOnly={true} />
                   </Stack>
                 </form>

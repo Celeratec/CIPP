@@ -4,14 +4,25 @@ import { useRouter } from "next/router";
 import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
 import CippFormSkeleton from "/src/components/CippFormPages/CippFormSkeleton";
 import CalendarIcon from "@heroicons/react/24/outline/CalendarIcon";
-import { AdminPanelSettings, Check, Group, Mail, Fingerprint, Launch } from "@mui/icons-material";
+import { 
+  AdminPanelSettings, 
+  Check, 
+  Group, 
+  Mail, 
+  Fingerprint, 
+  Launch,
+  Login,
+  Security,
+  Devices,
+  Badge,
+} from "@mui/icons-material";
 import { HeaderedTabbedLayout } from "../../../../../layouts/HeaderedTabbedLayout";
 import tabOptions from "./tabOptions";
 import { CippCopyToClipBoard } from "../../../../../components/CippComponents/CippCopyToClipboard";
 import { Box, Stack } from "@mui/system";
 import { Grid } from "@mui/system";
 import { CippUserInfoCard } from "../../../../../components/CippCards/CippUserInfoCard";
-import { SvgIcon, Typography } from "@mui/material";
+import { SvgIcon, Typography, Divider } from "@mui/material";
 import { CippBannerListCard } from "../../../../../components/CippCards/CippBannerListCard";
 import { CippTimeAgo } from "../../../../../components/CippComponents/CippTimeAgo";
 import { useEffect, useState } from "react";
@@ -603,25 +614,42 @@ const Page = () => {
             </Grid>
             <Grid size={{ xs: 12, md: 8 }}>
               <Stack spacing={3}>
-                <Typography variant="h6">Latest Logon</Typography>
+                {/* Sign-In Activity Section */}
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Login color="primary" />
+                  <Typography variant="h6">Sign-In Activity</Typography>
+                </Stack>
                 <CippBannerListCard
                   isFetching={userBulkRequest.isPending}
                   items={signInLogItem ? [signInLogItem] : []}
                   isCollapsible={signInLogItem ? true : false}
                 />
-                <Typography variant="h6">Applied Conditional Access Policies</Typography>
+
+                <Divider sx={{ my: 1 }} />
+
+                {/* Security Section */}
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Security color="primary" />
+                  <Typography variant="h6">Security</Typography>
+                </Stack>
                 <CippBannerListCard
                   isFetching={userBulkRequest.isPending}
                   items={conditionalAccessPoliciesItems}
                   isCollapsible={conditionalAccessPoliciesItems.length > 0 ? true : false}
                 />
-                <Typography variant="h6">Multi-Factor Authentication Devices</Typography>
                 <CippBannerListCard
                   isFetching={userBulkRequest.isPending}
                   items={mfaDevicesItems}
                   isCollapsible={mfaDevicesItems.length > 0 ? true : false}
                 />
-                <Typography variant="h6">Memberships</Typography>
+
+                <Divider sx={{ my: 1 }} />
+
+                {/* Memberships Section */}
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Badge color="primary" />
+                  <Typography variant="h6">Memberships</Typography>
+                </Stack>
                 <CippBannerListCard
                   isFetching={userBulkRequest.isPending}
                   items={groupMembershipItems}
