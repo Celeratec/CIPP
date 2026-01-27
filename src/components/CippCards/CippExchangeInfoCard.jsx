@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import {
   Card,
-  CardHeader,
+  CardContent,
   Divider,
   Skeleton,
   Chip,
@@ -9,16 +9,74 @@ import {
   Typography,
   CircularProgress,
   Alert,
+  Paper,
+  LinearProgress,
+  Tooltip,
 } from "@mui/material";
-import { PropertyList } from "/src/components/property-list";
-import { PropertyListItem } from "/src/components/property-list-item";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
-import { Check as CheckIcon, Close as CloseIcon, Sync } from "@mui/icons-material";
-import { LinearProgressWithLabel } from "../linearProgressWithLabel";
-import { Stack, Grid } from "@mui/system";
+import { 
+  Check as CheckIcon, 
+  Close as CloseIcon, 
+  Sync,
+  Mail,
+  Storage,
+  Forward,
+  Archive,
+  Security,
+  SettingsEthernet,
+  Warning,
+  CheckCircle,
+  Block,
+  VisibilityOff,
+} from "@mui/icons-material";
+import { Stack, Grid, Box } from "@mui/system";
+import { alpha, useTheme } from "@mui/material/styles";
+
+// Section component for consistent styling
+const InfoSection = ({ icon: Icon, title, children }) => (
+  <Box sx={{ mb: 2.5 }}>
+    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+      <Icon fontSize="small" color="primary" />
+      <Typography variant="subtitle2" fontWeight={600}>
+        {title}
+      </Typography>
+    </Stack>
+    {children}
+  </Box>
+);
+
+// Stat card component for key metrics
+const StatCard = ({ icon: Icon, label, value, color = "primary", subtitle }) => {
+  const theme = useTheme();
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 1.5,
+        textAlign: "center",
+        borderColor: alpha(theme.palette[color].main, 0.3),
+        bgcolor: alpha(theme.palette[color].main, 0.04),
+      }}
+    >
+      <Icon sx={{ color: theme.palette[color].main, fontSize: 24, mb: 0.5 }} />
+      <Typography variant="caption" color="text.secondary" display="block">
+        {label}
+      </Typography>
+      <Typography variant="body2" fontWeight={600}>
+        {value}
+      </Typography>
+      {subtitle && (
+        <Typography variant="caption" color="text.secondary">
+          {subtitle}
+        </Typography>
+      )}
+    </Paper>
+  );
+};
 
 export const CippExchangeInfoCard = (props) => {
   const { exchangeData, isLoading = false, isFetching = false, handleRefresh, ...other } = props;
+  const theme = useTheme();
 
   // Define the protocols array
   const protocols = [
@@ -32,277 +90,377 @@ export const CippExchangeInfoCard = (props) => {
 
   // Define mailbox hold types array
   const holds = [
-    { name: "Compliance Tag Hold", enabled: exchangeData?.ComplianceTagHold },
-    { name: "Retention Hold", enabled: exchangeData?.RetentionHold },
-    { name: "Litigation Hold", enabled: exchangeData?.LitigationHold },
-    { name: "In-Place Hold", enabled: exchangeData?.InPlaceHold },
-    { name: "eDiscovery Hold", enabled: exchangeData?.EDiscoveryHold },
-    { name: "Purview Retention Hold", enabled: exchangeData?.PurviewRetentionHold },
-    { name: "Excluded from Org-Wide Hold", enabled: exchangeData?.ExcludedFromOrgWideHold },
+    { name: "Litigation", enabled: exchangeData?.LitigationHold },
+    { name: "Retention", enabled: exchangeData?.RetentionHold },
+    { name: "Compliance Tag", enabled: exchangeData?.ComplianceTagHold },
+    { name: "In-Place", enabled: exchangeData?.InPlaceHold },
+    { name: "eDiscovery", enabled: exchangeData?.EDiscoveryHold },
+    { name: "Purview Retention", enabled: exchangeData?.PurviewRetentionHold },
   ];
+
+  const activeHolds = holds.filter(h => h.enabled);
+  const enabledProtocols = protocols.filter(p => p.enabled);
+
+  // Calculate usage percentage
+  const usagePercent = exchangeData?.TotalItemSize && exchangeData?.ProhibitSendReceiveQuota
+    ? Math.round((exchangeData.TotalItemSize / exchangeData.ProhibitSendReceiveQuota) * 100)
+    : 0;
+
+  // Determine forwarding status
+  const forwardingAddress = exchangeData?.ForwardingAddress;
+  let forwardingType = "None";
+  let cleanAddress = "";
+  if (forwardingAddress) {
+    if (forwardingAddress.startsWith("smtp:")) {
+      forwardingType = "External";
+      cleanAddress = forwardingAddress.replace("smtp:", "");
+    } else {
+      forwardingType = "Internal";
+      cleanAddress = forwardingAddress;
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Card {...other}>
+        <CardContent>
+          <Stack spacing={2}>
+            <Skeleton variant="rectangular" height={80} />
+            <Skeleton variant="rectangular" height={60} />
+            <Skeleton variant="rectangular" height={100} />
+          </Stack>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card {...other}>
-      <CardHeader
-        title={
-          <Stack
-            direction="row"
-            sx={{ alignItems: "center", display: "flex", justifyContent: "space-between" }}
-          >
-            <Typography variant="h6">Exchange Information</Typography>
+      <CardContent sx={{ p: 0 }}>
+        {/* Header */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.primary.main, 0.02)} 100%)`,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Mail color="primary" />
+              <Typography variant="h6" fontWeight={600}>
+                Exchange Mailbox
+              </Typography>
+            </Stack>
             {isFetching ? (
               <CircularProgress size={20} />
             ) : (
-              <IconButton onClick={handleRefresh} size="small">
-                <Sync />
-              </IconButton>
+              <Tooltip title="Refresh">
+                <IconButton onClick={handleRefresh} size="small">
+                  <Sync />
+                </IconButton>
+              </Tooltip>
             )}
           </Stack>
-        }
-      />
-      {exchangeData?.BlockedForSpam === true ? (
-        <Alert severity="warning" sx={{ mx: 2, mt: 2, mb: 2 }}>
-          This mailbox is currently blocked for spam.
-        </Alert>
-      ) : null}
-      <Divider />
-      <PropertyList>
-        <PropertyListItem
-          divider
-          value={
-            isLoading ? (
-              <Skeleton variant="text" width={200} />
-            ) : (
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <Typography variant="inherit" color="text.primary" gutterBottom>
-                    Mailbox Type:
-                  </Typography>
-                  <Typography variant="inherit">
-                    {exchangeData?.RecipientTypeDetails || "N/A"}
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <Typography variant="inherit" color="text.primary" gutterBottom>
-                    Hidden from GAL:
-                  </Typography>
-                  <Typography variant="inherit">
-                    {getCippFormatting(
-                      exchangeData?.HiddenFromAddressLists,
-                      "HiddenFromAddressLists"
-                    )}
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <Typography variant="inherit" color="text.primary" gutterBottom>
-                    Blocked For Spam:
-                  </Typography>
-                  <Typography variant="inherit">
-                    {getCippFormatting(exchangeData?.BlockedForSpam, "BlockedForSpam")}
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 12, md: 12 }}>
-                  <Typography variant="inherit" color="text.primary" gutterBottom>
-                    Retention Policy:
-                  </Typography>
-                  <Typography variant="inherit">
-                    {getCippFormatting(exchangeData?.RetentionPolicy, "RetentionPolicy")}
-                  </Typography>
-                </Grid>
-              </Grid>
-            )
-          }
-        />
-        <PropertyListItem
-          divider
-          label="Mailbox Usage"
-          value={
-            isLoading ? (
-              <Skeleton variant="text" width={80} />
-            ) : exchangeData?.TotalItemSize != null ? (
-              <LinearProgressWithLabel
-                sx={{ width: "100%" }}
-                variant="determinate"
-                addedLabel={`(${Math.round(exchangeData.TotalItemSize)} GB of ${Math.round(
-                  exchangeData?.ProhibitSendReceiveQuota
-                )}GB)`}
-                value={
-                  Math.round(
-                    (exchangeData?.TotalItemSize / exchangeData?.ProhibitSendReceiveQuota) *
-                      100 *
-                      100
-                  ) / 100
-                }
+
+          {/* Spam Alert */}
+          {exchangeData?.BlockedForSpam && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              This mailbox is currently blocked for spam.
+            </Alert>
+          )}
+
+          {/* Quick Stats */}
+          <Grid container spacing={1.5}>
+            <Grid size={{ xs: 6, sm: 3 }}>
+              <StatCard
+                icon={Mail}
+                label="Type"
+                value={exchangeData?.RecipientTypeDetails || "N/A"}
+                color="primary"
               />
-            ) : (
-              "N/A"
-            )
-          }
-        />
-        <PropertyListItem
-          divider
-          value={
-            isLoading ? (
-              <Skeleton variant="text" width={200} />
-            ) : (
-              (() => {
-                const forwardingAddress = exchangeData?.ForwardingAddress;
-                const forwardAndDeliver = exchangeData?.ForwardAndDeliver;
+            </Grid>
+            <Grid size={{ xs: 6, sm: 3 }}>
+              <StatCard
+                icon={SettingsEthernet}
+                label="Protocols"
+                value={`${enabledProtocols.length}/${protocols.length}`}
+                color="info"
+              />
+            </Grid>
+            <Grid size={{ xs: 6, sm: 3 }}>
+              <StatCard
+                icon={Security}
+                label="Holds"
+                value={activeHolds.length > 0 ? activeHolds.length : "None"}
+                color={activeHolds.length > 0 ? "warning" : "success"}
+              />
+            </Grid>
+            <Grid size={{ xs: 6, sm: 3 }}>
+              <StatCard
+                icon={Archive}
+                label="Archive"
+                value={exchangeData?.ArchiveMailBox ? "Enabled" : "Disabled"}
+                color={exchangeData?.ArchiveMailBox ? "success" : "default"}
+              />
+            </Grid>
+          </Grid>
+        </Paper>
 
-                // Determine forwarding type and clean address
-                let forwardingType = "None";
-                let cleanAddress = "";
+        {/* Content */}
+        <Box sx={{ p: 2.5 }}>
+          {/* Storage Usage */}
+          <InfoSection icon={Storage} title="Storage Usage">
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Mailbox Size
+                </Typography>
+                <Typography variant="body2" fontWeight={600}>
+                  {exchangeData?.TotalItemSize != null 
+                    ? `${Math.round(exchangeData.TotalItemSize * 100) / 100} GB` 
+                    : "N/A"} 
+                  {exchangeData?.ProhibitSendReceiveQuota && (
+                    <Typography component="span" variant="body2" color="text.secondary">
+                      {" "}/ {Math.round(exchangeData.ProhibitSendReceiveQuota)} GB
+                    </Typography>
+                  )}
+                </Typography>
+              </Stack>
+              <LinearProgress
+                variant="determinate"
+                value={Math.min(usagePercent, 100)}
+                sx={{
+                  height: 8,
+                  borderRadius: 4,
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  "& .MuiLinearProgress-bar": {
+                    borderRadius: 4,
+                    bgcolor: usagePercent > 90 
+                      ? theme.palette.error.main 
+                      : usagePercent > 75 
+                        ? theme.palette.warning.main 
+                        : theme.palette.primary.main,
+                  },
+                }}
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                {usagePercent}% used
+              </Typography>
+            </Paper>
+          </InfoSection>
 
-                if (forwardingAddress) {
-                  if (forwardingAddress.startsWith("smtp:")) {
-                    forwardingType = "External";
-                    cleanAddress = forwardingAddress.replace("smtp:", "");
-                  } else {
-                    forwardingType = "Internal";
-                    cleanAddress = forwardingAddress;
-                  }
-                }
+          <Divider sx={{ my: 2 }} />
 
-                return (
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Typography variant="inherit" color="text.primary" gutterBottom>
-                        Forwarding Status:
-                      </Typography>
-                      <Typography variant="inherit">
-                        {forwardingType === "None"
-                          ? getCippFormatting(false, "ForwardingStatus")
-                          : `${forwardingType} Forwarding`}
-                      </Typography>
-                    </Grid>
-                    {forwardingType !== "None" && (
-                      <>
-                        <Grid size={{ xs: 12, md: 6 }}>
-                          <Typography variant="inherit" color="text.primary" gutterBottom>
-                            Keep Copy in Mailbox:
-                          </Typography>
-                          <Typography variant="inherit">
-                            {getCippFormatting(forwardAndDeliver, "ForwardAndDeliver")}
-                          </Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12, md: 12 }}>
-                          <Typography variant="inherit" color="text.primary" gutterBottom>
-                            Forwarding Address:
-                          </Typography>
-                          <Typography variant="inherit">{cleanAddress}</Typography>
-                        </Grid>
-                      </>
+          {/* Mailbox Settings */}
+          <InfoSection icon={Mail} title="Mailbox Settings">
+            <Grid container spacing={1.5}>
+              <Grid size={{ xs: 6 }}>
+                <Paper variant="outlined" sx={{ p: 1.5 }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    {exchangeData?.HiddenFromAddressLists ? (
+                      <VisibilityOff fontSize="small" color="warning" />
+                    ) : (
+                      <CheckCircle fontSize="small" color="success" />
                     )}
-                  </Grid>
-                );
-              })()
-            )
-          }
-        />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Address List
+                      </Typography>
+                      <Typography variant="body2" fontWeight={500}>
+                        {exchangeData?.HiddenFromAddressLists ? "Hidden" : "Visible"}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Paper>
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <Paper variant="outlined" sx={{ p: 1.5 }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    {exchangeData?.BlockedForSpam ? (
+                      <Block fontSize="small" color="error" />
+                    ) : (
+                      <CheckCircle fontSize="small" color="success" />
+                    )}
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Spam Status
+                      </Typography>
+                      <Typography variant="body2" fontWeight={500}>
+                        {exchangeData?.BlockedForSpam ? "Blocked" : "Clear"}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Paper>
+              </Grid>
+            </Grid>
+            {exchangeData?.RetentionPolicy && (
+              <Paper variant="outlined" sx={{ p: 1.5, mt: 1.5 }}>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Retention Policy
+                </Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  {exchangeData.RetentionPolicy}
+                </Typography>
+              </Paper>
+            )}
+          </InfoSection>
 
-        {/* Archive section - always show status */}
-        <PropertyListItem
-          divider
-          value={
-            isLoading ? (
-              <Skeleton variant="text" width={200} />
+          <Divider sx={{ my: 2 }} />
+
+          {/* Forwarding */}
+          <InfoSection icon={Forward} title="Forwarding">
+            {forwardingType === "None" ? (
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  p: 1.5, 
+                  bgcolor: alpha(theme.palette.success.main, 0.04),
+                  borderColor: alpha(theme.palette.success.main, 0.3),
+                }}
+              >
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <CheckCircle fontSize="small" color="success" />
+                  <Typography variant="body2">No forwarding configured</Typography>
+                </Stack>
+              </Paper>
             ) : (
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Typography variant="inherit" color="text.primary" gutterBottom>
-                    Archive Mailbox Enabled:
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  p: 1.5, 
+                  bgcolor: alpha(theme.palette.warning.main, 0.04),
+                  borderColor: alpha(theme.palette.warning.main, 0.3),
+                }}
+              >
+                <Stack spacing={1}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Warning fontSize="small" color="warning" />
+                    <Chip 
+                      label={`${forwardingType} Forwarding Active`} 
+                      color="warning" 
+                      size="small" 
+                    />
+                  </Stack>
+                  <Typography variant="body2">
+                    <strong>To:</strong> {cleanAddress}
                   </Typography>
-                  <Typography variant="inherit">
-                    {getCippFormatting(exchangeData?.ArchiveMailBox, "ArchiveMailBox")}
+                  <Typography variant="caption" color="text.secondary">
+                    {exchangeData?.ForwardAndDeliver 
+                      ? "Copy kept in mailbox" 
+                      : "No copy kept in mailbox"}
                   </Typography>
-                </Grid>
-                {exchangeData?.ArchiveMailBox && (
-                  <>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Typography variant="inherit" color="text.primary" gutterBottom>
-                        Auto Expanding Archive:
+                </Stack>
+              </Paper>
+            )}
+          </InfoSection>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Archive */}
+          {exchangeData?.ArchiveMailBox && (
+            <>
+              <InfoSection icon={Archive} title="Archive Mailbox">
+                <Grid container spacing={1.5}>
+                  <Grid size={{ xs: 6 }}>
+                    <Paper variant="outlined" sx={{ p: 1.5 }}>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Archive Size
                       </Typography>
-                      <Typography variant="inherit">
-                        {getCippFormatting(
-                          exchangeData?.AutoExpandingArchive,
-                          "AutoExpandingArchive"
-                        )}
-                      </Typography>
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Typography variant="inherit" color="text.primary" gutterBottom>
-                        Total Archive Item Size:
-                      </Typography>
-                      <Typography variant="inherit">
+                      <Typography variant="body2" fontWeight={600}>
                         {exchangeData?.TotalArchiveItemSize != null
                           ? `${exchangeData.TotalArchiveItemSize} GB`
                           : "N/A"}
                       </Typography>
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Typography variant="inherit" color="text.primary" gutterBottom>
-                        Total Archive Item Count:
+                    </Paper>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Paper variant="outlined" sx={{ p: 1.5 }}>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Archive Items
                       </Typography>
-                      <Typography variant="inherit">
-                        {exchangeData?.TotalArchiveItemCount != null
-                          ? exchangeData.TotalArchiveItemCount
-                          : "N/A"}
+                      <Typography variant="body2" fontWeight={600}>
+                        {exchangeData?.TotalArchiveItemCount?.toLocaleString() || "N/A"}
                       </Typography>
-                    </Grid>
-                  </>
-                )}
-              </Grid>
-            )
-          }
-        />
+                    </Paper>
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Chip
+                        icon={exchangeData?.AutoExpandingArchive ? <CheckIcon /> : <CloseIcon />}
+                        label="Auto-Expanding Archive"
+                        color={exchangeData?.AutoExpandingArchive ? "success" : "default"}
+                        variant="outlined"
+                        size="small"
+                      />
+                    </Stack>
+                  </Grid>
+                </Grid>
+              </InfoSection>
+              <Divider sx={{ my: 2 }} />
+            </>
+          )}
 
-        <PropertyListItem
-          divider
-          label="Mailbox Holds"
-          value={
-            isLoading ? (
-              <Skeleton variant="text" width={200} />
+          {/* Protocols */}
+          <InfoSection icon={SettingsEthernet} title="Protocols">
+            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+              {protocols.map((protocol) => (
+                <Chip
+                  key={protocol.name}
+                  label={protocol.name}
+                  icon={protocol.enabled ? <CheckIcon /> : <CloseIcon />}
+                  color={protocol.enabled ? "success" : "default"}
+                  variant={protocol.enabled ? "filled" : "outlined"}
+                  size="small"
+                  sx={{ fontWeight: 500 }}
+                />
+              ))}
+            </Stack>
+          </InfoSection>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Holds */}
+          <InfoSection icon={Security} title="Mailbox Holds">
+            {activeHolds.length === 0 ? (
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  p: 1.5, 
+                  bgcolor: alpha(theme.palette.success.main, 0.04),
+                  borderColor: alpha(theme.palette.success.main, 0.3),
+                }}
+              >
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <CheckCircle fontSize="small" color="success" />
+                  <Typography variant="body2">No holds applied</Typography>
+                </Stack>
+              </Paper>
             ) : (
-              <div>
+              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
                 {holds.map((hold) => (
-                  <Chip
-                    key={hold.name}
-                    label={hold.name}
-                    icon={hold.enabled ? <CheckIcon /> : <CloseIcon />}
-                    color={hold.enabled ? "success" : "default"}
-                    variant="outlined"
-                    size="small"
-                    sx={{ mr: 1, mb: 1 }}
-                  />
+                  hold.enabled && (
+                    <Chip
+                      key={hold.name}
+                      label={hold.name}
+                      icon={<Security />}
+                      color="warning"
+                      size="small"
+                      sx={{ fontWeight: 500 }}
+                    />
+                  )
                 ))}
-              </div>
-            )
-          }
-        />
-        <PropertyListItem
-          divider
-          label="Mailbox Protocols"
-          value={
-            isLoading ? (
-              <Skeleton variant="text" width={200} />
-            ) : (
-              <div>
-                {protocols.map((protocol) => (
-                  <Chip
-                    key={protocol.name}
-                    label={protocol.name}
-                    icon={protocol.enabled ? <CheckIcon /> : <CloseIcon />}
-                    color={protocol.enabled ? "success" : "default"}
-                    variant="outlined"
-                    size="small"
-                    sx={{ mr: 1, mb: 1 }}
-                  />
-                ))}
-              </div>
-            )
-          }
-        />
-      </PropertyList>
+              </Stack>
+            )}
+            {exchangeData?.ExcludedFromOrgWideHold && (
+              <Alert severity="info" sx={{ mt: 1.5 }}>
+                This mailbox is excluded from organization-wide holds.
+              </Alert>
+            )}
+          </InfoSection>
+        </Box>
+      </CardContent>
     </Card>
   );
 };

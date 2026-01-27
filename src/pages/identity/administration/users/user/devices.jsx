@@ -16,7 +16,9 @@ import {
   Cancel,
   Warning,
   Sync,
-  Visibility,
+  OpenInNew,
+  Schedule,
+  Devices,
 } from "@mui/icons-material";
 import { HeaderedTabbedLayout } from "../../../../../layouts/HeaderedTabbedLayout";
 import tabOptions from "./tabOptions";
@@ -32,13 +34,185 @@ import {
   Chip,
   Avatar,
   Divider,
-  Paper,
+  IconButton,
+  Tooltip,
+  CardActionArea,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { CippDataTable } from "/src/components/CippTable/CippDataTable";
 import { useCippUserActions } from "/src/components/CippComponents/CippUserActions";
-import { getCippFormatting } from "/src/utils/get-cipp-formatting";
-import { stringToColor } from "/src/utils/get-initials";
+
+// Device Card Component
+const DeviceCard = ({ device, tenant, theme }) => {
+  const getOSIcon = (os) => {
+    const osLower = String(os || "").toLowerCase();
+    if (osLower.includes("windows")) return <Computer />;
+    if (osLower.includes("ios") || osLower.includes("iphone") || osLower.includes("ipad")) return <PhoneIphone />;
+    if (osLower.includes("android")) return <PhoneAndroid />;
+    if (osLower.includes("macos") || osLower.includes("mac")) return <Laptop />;
+    return <Computer />;
+  };
+
+  const getComplianceInfo = () => {
+    if (device.isCompliant === true) {
+      return { label: "Compliant", color: "success", icon: <CheckCircle fontSize="small" /> };
+    } else if (device.isCompliant === false) {
+      return { label: "Non-Compliant", color: "error", icon: <Cancel fontSize="small" /> };
+    }
+    return { label: "Unknown", color: "default", icon: <Warning fontSize="small" /> };
+  };
+
+  const getOSColor = (os) => {
+    const osLower = String(os || "").toLowerCase();
+    if (osLower.includes("windows")) return theme.palette.info.main;
+    if (osLower.includes("ios") || osLower.includes("iphone") || osLower.includes("ipad") || osLower.includes("macos") || osLower.includes("mac")) return theme.palette.grey[700];
+    if (osLower.includes("android")) return theme.palette.success.main;
+    return theme.palette.primary.main;
+  };
+
+  const complianceInfo = getComplianceInfo();
+  const osIcon = getOSIcon(device.operatingSystem);
+  const osColor = getOSColor(device.operatingSystem);
+
+  const entraUrl = `https://entra.microsoft.com/${tenant}/#view/Microsoft_AAD_Devices/DeviceDetailsMenuBlade/~/Properties/objectId/${device.id}`;
+
+  return (
+    <Card 
+      variant="outlined"
+      sx={{ 
+        height: "100%",
+        transition: "all 0.2s ease-in-out",
+        "&:hover": {
+          borderColor: theme.palette.primary.main,
+          boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.15)}`,
+        },
+      }}
+    >
+      <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2.5 } }}>
+        {/* Header with device name and actions */}
+        <Stack direction="row" spacing={2} alignItems="flex-start" sx={{ mb: 2 }}>
+          <Avatar
+            sx={{
+              bgcolor: alpha(osColor, 0.1),
+              color: osColor,
+              width: 48,
+              height: 48,
+            }}
+          >
+            {osIcon}
+          </Avatar>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Typography 
+                variant="subtitle1" 
+                sx={{ 
+                  fontWeight: 600, 
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  flex: 1,
+                }}
+              >
+                {device.displayName || "Unknown Device"}
+              </Typography>
+              <Tooltip title="View in Entra">
+                <IconButton
+                  size="small"
+                  href={entraUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ ml: 1 }}
+                >
+                  <OpenInNew fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+            <Typography variant="body2" color="text.secondary">
+              {device.operatingSystem} {device.operatingSystemVersion}
+            </Typography>
+          </Box>
+        </Stack>
+
+        {/* Status Chips */}
+        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
+          <Chip
+            icon={complianceInfo.icon}
+            label={complianceInfo.label}
+            color={complianceInfo.color}
+            size="small"
+            sx={{ fontWeight: 500 }}
+          />
+          {device.isManaged && (
+            <Chip
+              icon={<Sync fontSize="small" />}
+              label="Managed"
+              color="info"
+              size="small"
+              sx={{ fontWeight: 500 }}
+            />
+          )}
+          {!device.accountEnabled && (
+            <Chip
+              label="Disabled"
+              color="error"
+              variant="outlined"
+              size="small"
+            />
+          )}
+        </Stack>
+
+        <Divider sx={{ my: 1.5 }} />
+
+        {/* Device Details */}
+        <Stack spacing={1}>
+          {(device.manufacturer || device.model) && (
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="caption" color="text.secondary">
+                Device
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 500, textAlign: "right" }}>
+                {[device.manufacturer, device.model].filter(Boolean).join(" ")}
+              </Typography>
+            </Stack>
+          )}
+          {device.trustType && (
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="caption" color="text.secondary">
+                Trust Type
+              </Typography>
+              <Chip 
+                label={device.trustType} 
+                size="small" 
+                variant="outlined"
+                sx={{ height: 20, fontSize: "0.7rem" }}
+              />
+            </Stack>
+          )}
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="caption" color="text.secondary">
+              Relationship
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              {device.relationship}
+            </Typography>
+          </Stack>
+          {device.approximateLastSignInDateTime && (
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="caption" color="text.secondary">
+                Last Sign-In
+              </Typography>
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                <Schedule fontSize="small" sx={{ color: "text.secondary", fontSize: 14 }} />
+                <Typography variant="body2">
+                  <CippTimeAgo data={device.approximateLastSignInDateTime} />
+                </Typography>
+              </Stack>
+            </Stack>
+          )}
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+};
 
 const Page = () => {
   const userSettingsDefaults = useSettings();
@@ -116,35 +290,6 @@ const Page = () => {
       ]
     : [];
 
-  const getOSIcon = (os) => {
-    const osLower = String(os || "").toLowerCase();
-    if (osLower.includes("windows")) return <Computer fontSize="small" />;
-    if (osLower.includes("ios") || osLower.includes("iphone") || osLower.includes("ipad")) return <PhoneIphone fontSize="small" />;
-    if (osLower.includes("android")) return <PhoneAndroid fontSize="small" />;
-    if (osLower.includes("macos") || osLower.includes("mac")) return <Laptop fontSize="small" />;
-    return <Computer fontSize="small" />;
-  };
-
-  const getComplianceInfo = (device) => {
-    if (device.isCompliant === true) {
-      return { label: "Compliant", color: "success", icon: <CheckCircle fontSize="small" /> };
-    } else if (device.isCompliant === false) {
-      return { label: "Non-Compliant", color: "error", icon: <Cancel fontSize="small" /> };
-    }
-    return { label: "Unknown", color: "default", icon: <Warning fontSize="small" /> };
-  };
-
-  const deviceActions = [
-    {
-      label: "View in Entra",
-      link: `https://entra.microsoft.com/${tenant}/#view/Microsoft_AAD_Devices/DeviceDetailsMenuBlade/~/Properties/objectId/[id]/deviceId/`,
-      color: "info",
-      icon: <Visibility />,
-      target: "_blank",
-      external: true,
-    },
-  ];
-
   // Combine and deduplicate devices
   const registeredDevicesList = registeredDevices.data?.Results || [];
   const ownedDevicesList = ownedDevices.data?.Results || [];
@@ -165,7 +310,12 @@ const Page = () => {
   const allDevices = Array.from(deviceMap.values());
 
   const isLoading = userRequest.isLoading || registeredDevices.isLoading || ownedDevices.isLoading;
-  const isFetching = registeredDevices.isFetching || ownedDevices.isFetching;
+
+  // Calculate stats
+  const totalDevices = allDevices.length;
+  const compliantDevices = allDevices.filter(d => d.isCompliant === true).length;
+  const nonCompliantDevices = allDevices.filter(d => d.isCompliant === false).length;
+  const managedDevices = allDevices.filter(d => d.isManaged === true).length;
 
   return (
     <HeaderedTabbedLayout
@@ -184,226 +334,97 @@ const Page = () => {
             py: 2,
           }}
         >
-          <Grid container spacing={3}>
-            {/* Summary Cards */}
-            <Grid size={12}>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Card>
-                    <CardContent>
-                      <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }}>
-                          <Computer sx={{ color: theme.palette.primary.main }} />
-                        </Avatar>
-                        <Box>
-                          <Typography variant="h4">{allDevices.length}</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Total Devices
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </CardContent>
-                  </Card>
+          {/* Summary Stats Bar */}
+          <Card variant="outlined" sx={{ mb: 3 }}>
+            <CardContent sx={{ py: 2, "&:last-child": { pb: 2 } }}>
+              <Stack 
+                direction={{ xs: "column", sm: "row" }} 
+                spacing={{ xs: 2, sm: 4 }}
+                divider={<Divider orientation="vertical" flexItem />}
+                justifyContent="center"
+                alignItems="center"
+              >
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), width: 36, height: 36 }}>
+                    <Devices sx={{ color: theme.palette.primary.main, fontSize: 20 }} />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h5" sx={{ fontWeight: 600, lineHeight: 1 }}>
+                      {totalDevices}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Total Devices
+                    </Typography>
+                  </Box>
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <Avatar sx={{ bgcolor: alpha(theme.palette.success.main, 0.1), width: 36, height: 36 }}>
+                    <CheckCircle sx={{ color: theme.palette.success.main, fontSize: 20 }} />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h5" sx={{ fontWeight: 600, lineHeight: 1 }}>
+                      {compliantDevices}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Compliant
+                    </Typography>
+                  </Box>
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <Avatar sx={{ bgcolor: alpha(theme.palette.error.main, 0.1), width: 36, height: 36 }}>
+                    <Cancel sx={{ color: theme.palette.error.main, fontSize: 20 }} />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h5" sx={{ fontWeight: 600, lineHeight: 1 }}>
+                      {nonCompliantDevices}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Non-Compliant
+                    </Typography>
+                  </Box>
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <Avatar sx={{ bgcolor: alpha(theme.palette.info.main, 0.1), width: 36, height: 36 }}>
+                    <Sync sx={{ color: theme.palette.info.main, fontSize: 20 }} />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h5" sx={{ fontWeight: 600, lineHeight: 1 }}>
+                      {managedDevices}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Managed
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Stack>
+            </CardContent>
+          </Card>
+
+          {/* Device Cards Grid */}
+          {allDevices.length === 0 ? (
+            <Card variant="outlined">
+              <CardContent sx={{ textAlign: "center", py: 6 }}>
+                <Devices sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
+                <Typography variant="h6" color="text.secondary">
+                  No Devices Found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  This user has no registered or owned devices.
+                </Typography>
+              </CardContent>
+            </Card>
+          ) : (
+            <Grid container spacing={2}>
+              {allDevices.map((device) => (
+                <Grid key={device.id} size={{ xs: 12, sm: 6, lg: 4 }}>
+                  <DeviceCard device={device} tenant={tenant} theme={theme} />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Card>
-                    <CardContent>
-                      <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar sx={{ bgcolor: alpha(theme.palette.success.main, 0.1) }}>
-                          <CheckCircle sx={{ color: theme.palette.success.main }} />
-                        </Avatar>
-                        <Box>
-                          <Typography variant="h4">
-                            {allDevices.filter(d => d.isCompliant === true).length}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Compliant
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Card>
-                    <CardContent>
-                      <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar sx={{ bgcolor: alpha(theme.palette.error.main, 0.1) }}>
-                          <Cancel sx={{ color: theme.palette.error.main }} />
-                        </Avatar>
-                        <Box>
-                          <Typography variant="h4">
-                            {allDevices.filter(d => d.isCompliant === false).length}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Non-Compliant
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Card>
-                    <CardContent>
-                      <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar sx={{ bgcolor: alpha(theme.palette.info.main, 0.1) }}>
-                          <Sync sx={{ color: theme.palette.info.main }} />
-                        </Avatar>
-                        <Box>
-                          <Typography variant="h4">
-                            {allDevices.filter(d => d.isManaged === true).length}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Managed
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
+              ))}
             </Grid>
-
-            {/* Devices Table */}
-            <Grid size={12}>
-              <CippDataTable
-                title="User Devices"
-                data={allDevices}
-                isFetching={isFetching}
-                simpleColumns={[
-                  "displayName",
-                  "operatingSystem",
-                  "operatingSystemVersion",
-                  "manufacturer",
-                  "model",
-                  "trustType",
-                  "isCompliant",
-                  "isManaged",
-                  "relationship",
-                  "approximateLastSignInDateTime",
-                ]}
-                actions={deviceActions}
-                offCanvas={{
-                  children: (row) => {
-                    const complianceInfo = getComplianceInfo(row);
-                    const osIcon = getOSIcon(row.operatingSystem);
-                    
-                    return (
-                      <Stack spacing={3}>
-                        {/* Hero Section */}
-                        <Paper 
-                          elevation={0}
-                          sx={{ 
-                            p: 2.5,
-                            borderRadius: 2,
-                            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
-                            borderLeft: `4px solid ${theme.palette.primary.main}`,
-                          }}
-                        >
-                          <Stack direction="row" spacing={2} alignItems="center">
-                            <Avatar
-                              sx={{
-                                bgcolor: stringToColor(row.displayName || "D"),
-                                width: 56,
-                                height: 56,
-                              }}
-                            >
-                              {osIcon}
-                            </Avatar>
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
-                              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25 }}>
-                                {row.displayName || "Unknown Device"}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {row.operatingSystem} {row.operatingSystemVersion}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                        </Paper>
-
-                        {/* Status Badges */}
-                        <Box>
-                          <Typography 
-                            variant="overline" 
-                            color="text.secondary" 
-                            sx={{ fontWeight: 600, letterSpacing: 1, mb: 1.5, display: "block" }}
-                          >
-                            Device Status
-                          </Typography>
-                          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                            <Chip
-                              icon={complianceInfo.icon}
-                              label={complianceInfo.label}
-                              color={complianceInfo.color}
-                              variant="outlined"
-                              size="small"
-                            />
-                            {row.isManaged && (
-                              <Chip
-                                icon={<Sync fontSize="small" />}
-                                label="Managed"
-                                color="info"
-                                variant="outlined"
-                                size="small"
-                              />
-                            )}
-                            <Chip
-                              label={row.accountEnabled ? "Enabled" : "Disabled"}
-                              color={row.accountEnabled ? "success" : "error"}
-                              variant="outlined"
-                              size="small"
-                            />
-                            <Chip
-                              label={row.relationship}
-                              color="default"
-                              variant="outlined"
-                              size="small"
-                            />
-                          </Stack>
-                        </Box>
-
-                        <Divider />
-
-                        {/* Device Details */}
-                        <Box>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
-                            Device Information
-                          </Typography>
-                          <Stack spacing={1}>
-                            {row.manufacturer && (
-                              <Stack direction="row" justifyContent="space-between">
-                                <Typography variant="body2" color="text.secondary">Manufacturer</Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 500 }}>{row.manufacturer}</Typography>
-                              </Stack>
-                            )}
-                            {row.model && (
-                              <Stack direction="row" justifyContent="space-between">
-                                <Typography variant="body2" color="text.secondary">Model</Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 500 }}>{row.model}</Typography>
-                              </Stack>
-                            )}
-                            <Stack direction="row" justifyContent="space-between">
-                              <Typography variant="body2" color="text.secondary">Trust Type</Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 500 }}>{row.trustType || "N/A"}</Typography>
-                            </Stack>
-                            <Stack direction="row" justifyContent="space-between">
-                              <Typography variant="body2" color="text.secondary">Last Sign-In</Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                {row.approximateLastSignInDateTime 
-                                  ? getCippFormatting(row.approximateLastSignInDateTime, "approximateLastSignInDateTime")
-                                  : "N/A"}
-                              </Typography>
-                            </Stack>
-                          </Stack>
-                        </Box>
-                      </Stack>
-                    );
-                  },
-                }}
-              />
-            </Grid>
-          </Grid>
+          )}
         </Box>
       )}
     </HeaderedTabbedLayout>

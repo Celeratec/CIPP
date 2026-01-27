@@ -158,6 +158,8 @@ export const Layout = (props) => {
       };
       const filteredMenu = filterItemsByRole(nativeMenuItems);
       setMenuItems(filteredMenu);
+      // Show sidebar when user roles are loaded successfully
+      setHideSidebar(false);
     } else if (
       swaStatus.isLoading ||
       swaStatus.data?.clientPrincipal === null ||
