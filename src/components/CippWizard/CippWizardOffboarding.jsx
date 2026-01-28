@@ -1,4 +1,15 @@
-import { Alert, Stack, Typography, Card, CardContent, CardHeader, Divider, useMediaQuery } from "@mui/material";
+import { 
+  Alert, 
+  Stack, 
+  Typography, 
+  Card, 
+  CardContent, 
+  Box, 
+  Divider, 
+  useMediaQuery,
+  alpha,
+  Chip,
+} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import CippWizardStepButtons from "./CippWizardStepButtons";
 import CippFormComponent from "../CippComponents/CippFormComponent";
@@ -7,6 +18,13 @@ import { useWatch } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { Grid } from "@mui/system";
 import { useSettings } from "../../hooks/use-settings";
+import { 
+  PersonOff,
+  Settings,
+  Share,
+  Schedule,
+  NotificationsActive,
+} from "@mui/icons-material";
 
 export const CippWizardOffboarding = (props) => {
   const { postUrl, formControl, onPreviousStep, onNextStep, currentStep } = props;
@@ -76,28 +94,67 @@ export const CippWizardOffboarding = (props) => {
   };
 
   return (
-    <Stack spacing={{ xs: 2, md: 4 }}>
-      <Grid container spacing={{ xs: 2, md: 4 }}>
+    <Stack spacing={smDown ? 2 : 3}>
+      {/* Header */}
+      <Box sx={{ textAlign: "center" }}>
+        <Box
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: smDown ? 56 : 72,
+            height: smDown ? 56 : 72,
+            borderRadius: "50%",
+            bgcolor: alpha(theme.palette.error.main, 0.1),
+            color: "error.main",
+            mb: 1.5,
+            border: `2px solid ${alpha(theme.palette.error.main, 0.2)}`,
+          }}
+        >
+          <PersonOff sx={{ fontSize: smDown ? 28 : 36 }} />
+        </Box>
+        <Typography variant={smDown ? "h6" : "h5"} fontWeight={600} gutterBottom>
+          Offboarding Options
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 450, mx: 'auto' }}>
+          Configure what actions to take when offboarding the selected user(s)
+        </Typography>
+      </Box>
+
+      <Grid container spacing={smDown ? 2 : 3}>
         <Grid size={{ xs: 12, lg: 6 }}>
           <Card variant="outlined">
-            <CardHeader 
-              title="Offboarding Settings" 
-              titleTypographyProps={{ variant: smDown ? "subtitle1" : "h6" }}
-              sx={{ py: smDown ? 1.5 : 2, px: smDown ? 2 : 3 }}
-            />
-            <Divider />
-            <CardContent sx={{ px: smDown ? 2 : 3, py: smDown ? 1.5 : 2 }}>
-              <Stack spacing={smDown ? 1 : 1.5}>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: getDefaultsSource() === "tenant" ? "primary.main" : "warning.main",
-                    fontStyle: "italic",
-                  }}
-                >
-                  {getDefaultsSource() === "tenant" ? "Using Tenant Defaults" : "Using User Defaults"}
-                </Typography>
-                <Stack spacing={smDown ? 0.5 : 1}>
+            <Box sx={{ p: smDown ? 2 : 2.5, borderBottom: 1, borderColor: 'divider' }}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 36,
+                      height: 36,
+                      borderRadius: 1.5,
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      color: "primary.main",
+                    }}
+                  >
+                    <Settings fontSize="small" />
+                  </Box>
+                  <Typography variant={smDown ? "subtitle1" : "h6"} fontWeight={600}>
+                    Offboarding Settings
+                  </Typography>
+                </Stack>
+                <Chip
+                  label={getDefaultsSource() === "tenant" ? "Tenant Defaults" : "User Defaults"}
+                  size="small"
+                  color={getDefaultsSource() === "tenant" ? "primary" : "warning"}
+                  variant="outlined"
+                />
+              </Stack>
+            </Box>
+            <CardContent sx={{ px: smDown ? 2 : 2.5, py: smDown ? 1.5 : 2 }}>
+              <Stack spacing={smDown ? 0.5 : 1}>
                   <CippFormComponent
                     name="ConvertToShared"
                     label="Convert to Shared Mailbox"
@@ -189,23 +246,39 @@ export const CippWizardOffboarding = (props) => {
                     formControl={formControl}
                   />
                 </Stack>
-              </Stack>
             </CardContent>
           </Card>
         </Grid>
 
         <Grid size={{ xs: 12, lg: 6 }}>
           <Card variant="outlined">
-            <CardHeader 
-              title="Permissions and forwarding" 
-              titleTypographyProps={{ variant: smDown ? "subtitle1" : "h6" }}
-              sx={{ py: smDown ? 1.5 : 2, px: smDown ? 2 : 3 }}
-            />
-            <Divider />
-            <CardContent sx={{ px: smDown ? 2 : 3, py: smDown ? 1.5 : 2 }}>
+            <Box sx={{ p: smDown ? 2 : 2.5, borderBottom: 1, borderColor: 'divider' }}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 36,
+                    height: 36,
+                    borderRadius: 1.5,
+                    bgcolor: alpha(theme.palette.info.main, 0.1),
+                    color: "info.main",
+                  }}
+                >
+                  <Share fontSize="small" />
+                </Box>
+                <Typography variant={smDown ? "subtitle1" : "h6"} fontWeight={600}>
+                  Permissions & Forwarding
+                </Typography>
+              </Stack>
+            </Box>
+            <CardContent sx={{ px: smDown ? 2 : 2.5, py: smDown ? 1.5 : 2 }}>
               <Stack spacing={smDown ? 2 : 2.5}>
                 <Stack spacing={smDown ? 1 : 1.5}>
-                  <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600}>Mailbox Access</Typography>
+                  <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600} color="text.secondary">
+                    Mailbox Access
+                  </Typography>
                   <CippFormComponent
                     name="AccessNoAutomap"
                     label="Grant Full Access (no automap)"
@@ -280,8 +353,11 @@ export const CippWizardOffboarding = (props) => {
                   />
                 </Stack>
 
+                <Divider />
                 <Stack spacing={smDown ? 1 : 1.5}>
-                  <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600}>Email Forwarding</Typography>
+                  <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600} color="text.secondary">
+                    Email Forwarding
+                  </Typography>
                   <CippFormComponent
                     name="disableForwarding"
                     label="Disable Email Forwarding"
@@ -330,8 +406,11 @@ export const CippWizardOffboarding = (props) => {
                   </CippFormCondition>
                 </Stack>
 
+                <Divider />
                 <Stack spacing={smDown ? 1 : 1.5}>
-                  <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600}>Out of Office</Typography>
+                  <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600} color="text.secondary">
+                    Out of Office
+                  </Typography>
                   <CippFormComponent
                     name="OOO"
                     label="Out of Office Message"
@@ -357,13 +436,28 @@ export const CippWizardOffboarding = (props) => {
       )}
 
       <Card variant="outlined">
-        <CardHeader 
-          title="Scheduling & Notifications" 
-          titleTypographyProps={{ variant: smDown ? "subtitle1" : "h6" }}
-          sx={{ py: smDown ? 1.5 : 2, px: smDown ? 2 : 3 }}
-        />
-        <Divider />
-        <CardContent sx={{ px: smDown ? 2 : 3, py: smDown ? 1.5 : 2 }}>
+        <Box sx={{ p: smDown ? 2 : 2.5, borderBottom: 1, borderColor: 'divider' }}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 36,
+                height: 36,
+                borderRadius: 1.5,
+                bgcolor: alpha(theme.palette.warning.main, 0.1),
+                color: "warning.main",
+              }}
+            >
+              <Schedule fontSize="small" />
+            </Box>
+            <Typography variant={smDown ? "subtitle1" : "h6"} fontWeight={600}>
+              Scheduling & Notifications
+            </Typography>
+          </Stack>
+        </Box>
+        <CardContent sx={{ px: smDown ? 2 : 2.5, py: smDown ? 1.5 : 2 }}>
           <Grid container spacing={{ xs: 1.5, md: 3 }}>
             <Grid size={{ xs: 12 }}>
               <CippFormComponent
@@ -381,7 +475,7 @@ export const CippWizardOffboarding = (props) => {
               compareValue={true}
             >
               <Grid size={{ sm: 6, xs: 12 }}>
-                <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600} sx={{ mb: 0.5 }}>
+                <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600} color="text.secondary" sx={{ mb: 0.5 }}>
                   Scheduled Offboarding Date
                 </Typography>
                 <CippFormComponent
@@ -393,7 +487,7 @@ export const CippWizardOffboarding = (props) => {
               </Grid>
 
               <Grid size={{ sm: 6, xs: 12 }}>
-                <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600} sx={{ mb: 0.5 }}>
+                <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600} color="text.secondary" sx={{ mb: 0.5 }}>
                   Send results to:
                 </Typography>
                 <Stack spacing={smDown ? 0.5 : 1}>

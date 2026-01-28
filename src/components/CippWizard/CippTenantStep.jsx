@@ -20,33 +20,35 @@ export const CippTenantStep = (props) => {
   const smDown = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
-    <Stack spacing={smDown ? 1.5 : 2.5}>
+    <Stack spacing={smDown ? 2 : 3}>
       {preText}
-      {/* Header - more compact on mobile */}
-      <Box sx={{ textAlign: "center", mb: smDown ? 0.5 : 1 }}>
+      {/* Header */}
+      <Box sx={{ textAlign: "center" }}>
         <Box
           sx={{
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: smDown ? 48 : 56,
-            height: smDown ? 48 : 56,
+            width: smDown ? 56 : 72,
+            height: smDown ? 56 : 72,
             borderRadius: "50%",
             bgcolor: alpha(theme.palette.primary.main, 0.1),
             color: "primary.main",
-            mb: 1,
+            mb: 1.5,
+            border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
           }}
         >
-          <Business sx={{ fontSize: smDown ? 24 : 28 }} />
+          <Business sx={{ fontSize: smDown ? 28 : 36 }} />
         </Box>
-        <Typography variant={smDown ? "subtitle1" : "h6"} fontWeight={600}>
-          Select a tenant
+        <Typography variant={smDown ? "h6" : "h5"} fontWeight={600} gutterBottom>
+          {type === "multiple" ? "Select Tenants" : "Select a Tenant"}
         </Typography>
-        {!smDown && (
-          <Typography variant="body2" color="text.secondary">
-            Start typing to search tenants
-          </Typography>
-        )}
+        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: 'auto' }}>
+          {type === "multiple" 
+            ? "Choose one or more tenants to apply this action to"
+            : "Start typing to search and select a tenant"
+          }
+        </Typography>
       </Box>
       <CippFormTenantSelector
         valueField={valueField}
