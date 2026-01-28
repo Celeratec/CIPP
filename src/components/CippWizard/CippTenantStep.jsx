@@ -1,7 +1,8 @@
-import { Stack, Typography, useMediaQuery } from "@mui/material";
+import { Stack, Typography, useMediaQuery, Box, alpha } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { CippWizardStepButtons } from "./CippWizardStepButtons";
 import { CippFormTenantSelector } from "../CippComponents/CippFormTenantSelector";
+import { Business } from "@mui/icons-material";
 
 export const CippTenantStep = (props) => {
   const {
@@ -19,14 +20,34 @@ export const CippTenantStep = (props) => {
   const smDown = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
-    <Stack spacing={smDown ? 2 : 3}>
+    <Stack spacing={smDown ? 1.5 : 2.5}>
       {preText}
-      <Stack spacing={0.5}>
-        <Typography variant={smDown ? "subtitle1" : "h6"}>Select a tenant</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Start typing to search tenants.
+      {/* Header - more compact on mobile */}
+      <Box sx={{ textAlign: "center", mb: smDown ? 0.5 : 1 }}>
+        <Box
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: smDown ? 48 : 56,
+            height: smDown ? 48 : 56,
+            borderRadius: "50%",
+            bgcolor: alpha(theme.palette.primary.main, 0.1),
+            color: "primary.main",
+            mb: 1,
+          }}
+        >
+          <Business sx={{ fontSize: smDown ? 24 : 28 }} />
+        </Box>
+        <Typography variant={smDown ? "subtitle1" : "h6"} fontWeight={600}>
+          Select a tenant
         </Typography>
-      </Stack>
+        {!smDown && (
+          <Typography variant="body2" color="text.secondary">
+            Start typing to search tenants
+          </Typography>
+        )}
+      </Box>
       <CippFormTenantSelector
         valueField={valueField}
         formControl={formControl}
@@ -34,7 +55,6 @@ export const CippTenantStep = (props) => {
         type={type}
         includeOffboardingDefaults={includeOffboardingDefaults}
         preselectedEnabled={true}
-        sx={{ mt: smDown ? 0.5 : 1 }}
       />
       <CippWizardStepButtons
         currentStep={currentStep}

@@ -9,13 +9,14 @@ import {
   Stepper,
   SvgIcon,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { styled, useTheme } from "@mui/material/styles";
 import { ClearIcon } from "@mui/x-date-pickers";
 
 const WizardStepConnector = styled(StepConnector)(({ theme }) => ({
   [`&.${stepConnectorClasses.vertical}`]: {
-    marginLeft: 16,
+    marginLeft: 14,
   },
   [`& .${stepConnectorClasses.lineVertical}`]: {
     borderColor:
@@ -30,7 +31,9 @@ const WizardStepConnector = styled(StepConnector)(({ theme }) => ({
 }));
 
 const WizardStepIcon = (props) => {
-  const { active, completed, error } = props;
+  const { active, completed, error, compact = false } = props;
+  const size = compact ? 28 : 36;
+  const innerSize = compact ? 8 : 12;
 
   if (error) {
     return (
@@ -41,9 +44,9 @@ const WizardStepIcon = (props) => {
           borderRadius: "50%",
           color: "primary.contrastText",
           display: "flex",
-          height: 36,
+          height: size,
           justifyContent: "center",
-          width: 36,
+          width: size,
         }}
       >
         <SvgIcon fontSize="small">
@@ -63,17 +66,17 @@ const WizardStepIcon = (props) => {
           borderWidth: 2,
           color: "primary.main",
           display: "flex",
-          height: 36,
+          height: size,
           justifyContent: "center",
-          width: 36,
+          width: size,
         }}
       >
         <Box
           sx={{
             backgroundColor: "primary.main",
             borderRadius: "50%",
-            height: 12,
-            width: 12,
+            height: innerSize,
+            width: innerSize,
           }}
         />
       </Box>
@@ -88,9 +91,9 @@ const WizardStepIcon = (props) => {
           borderRadius: "50%",
           color: "primary.contrastText",
           display: "flex",
-          height: 36,
+          height: size,
           justifyContent: "center",
-          width: 36,
+          width: size,
         }}
       >
         <SvgIcon fontSize="small">
@@ -107,8 +110,8 @@ const WizardStepIcon = (props) => {
         borderRadius: "50%",
         borderStyle: "solid",
         borderWidth: 2,
-        height: 36,
-        width: 36,
+        height: size,
+        width: size,
       }}
     />
   );
@@ -116,6 +119,44 @@ const WizardStepIcon = (props) => {
 
 export const WizardSteps = (props) => {
   const { activeStep = 1, orientation = "vertical", steps = [] } = props;
+  const theme = useTheme();
+  const isHorizontal = orientation === "horizontal";
+  const smDown = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // Create a custom step icon component that passes the compact prop
+  const CompactStepIcon = (stepIconProps) => (
+    <WizardStepIcon {...stepIconProps} compact={isHorizontal} />
+  );
+
+  // Mobile-friendly step indicator
+  if (smDown && isHorizontal) {
+    const currentStepData = steps[activeStep];
+    return (
+      <Box sx={{ textAlign: 'center', py: 1 }}>
+        <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 1 }}>
+          Step {activeStep + 1} of {steps.length}
+        </Typography>
+        <Typography variant="subtitle1" fontWeight={600}>
+          {currentStepData?.description}
+        </Typography>
+        {/* Mobile step dots */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 1.5 }}>
+          {steps.map((step, index) => (
+            <Box
+              key={index}
+              sx={{
+                width: index === activeStep ? 24 : 8,
+                height: 8,
+                borderRadius: 4,
+                bgcolor: index <= activeStep ? 'primary.main' : 'action.disabled',
+                transition: 'all 0.3s ease',
+              }}
+            />
+          ))}
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <div>
@@ -123,14 +164,34 @@ export const WizardSteps = (props) => {
         orientation={orientation}
         activeStep={activeStep}
         connector={<WizardStepConnector />}
+        sx={{
+          ...(isHorizontal && {
+            '& .MuiStepLabel-root': {
+              py: 0,
+            },
+          }),
+        }}
       >
-        {steps.map((step) => (
-          <Step key={step.title}>
-            <StepLabel error={step.error ?? false} slots={{ stepIcon: WizardStepIcon }}>
-              <Typography variant="subtitle2">
-                {`Step ${steps.indexOf(step) ? steps.indexOf(step) + 1 : 1}`}
-              </Typography>
-              <Typography color="text.secondary" variant="body2">
+        {steps.map((step, index) => (
+          <Step key={step.title || index}>
+            <StepLabel 
+              error={step.error ?? false} 
+              slots={{ stepIcon: CompactStepIcon }}
+              sx={{
+                '& .MuiStepLabel-labelContainer': {
+                  ...(isHorizontal && {
+                    maxWidth: 120,
+                  }),
+                },
+              }}
+            >
+              <Typography 
+                variant={isHorizontal ? "caption" : "subtitle2"} 
+                fontWeight={600}
+                sx={{ 
+                  lineHeight: 1.2,
+                }}
+              >
                 {step.description}
               </Typography>
             </StepLabel>

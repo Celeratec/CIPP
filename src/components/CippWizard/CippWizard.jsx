@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { Card, CardContent, Container, Stack, useMediaQuery } from "@mui/material";
+import { Card, CardContent, Container, Stack, useMediaQuery, LinearProgress, Box, Typography, Chip } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { Grid } from "@mui/system";
 import { WizardSteps } from "./wizard-steps";
@@ -68,8 +68,42 @@ export const CippWizard = (props) => {
     return currentStep.maxWidth ?? contentMaxWidth;
   }, [activeStep, stepsWithVisibility, contentMaxWidth]);
 
+  // Calculate progress percentage
+  const progressPercentage = useMemo(() => {
+    return ((activeStep + 1) / stepsWithVisibility.length) * 100;
+  }, [activeStep, stepsWithVisibility.length]);
+
+  // Get summary of selected values for display
+  const selectedSummary = useMemo(() => {
+    const summary = [];
+    const tenant = formWatcher?.tenantFilter;
+    const user = formWatcher?.user;
+    
+    if (tenant?.label || tenant?.value) {
+      summary.push({ label: "Tenant", value: tenant.label || tenant.value });
+    }
+    if (user) {
+      const userCount = Array.isArray(user) ? user.length : 1;
+      summary.push({ label: "Users", value: `${userCount} selected` });
+    }
+    return summary;
+  }, [formWatcher?.tenantFilter, formWatcher?.user]);
+
   return (
-    <Card>
+    <Card sx={{ overflow: 'visible' }}>
+      {/* Progress bar */}
+      <LinearProgress 
+        variant="determinate" 
+        value={progressPercentage} 
+        sx={{ 
+          height: smDown ? 3 : 4,
+          borderRadius: 0,
+          '& .MuiLinearProgress-bar': {
+            transition: 'transform 0.3s ease',
+          },
+        }} 
+      />
+      
       {orientation === "vertical" ? (
         <CardContent sx={{ p: smDown ? 2 : 3 }}>
           <Grid container spacing={smDown ? 2 : 3}>
@@ -87,19 +121,43 @@ export const CippWizard = (props) => {
           </Grid>
         </CardContent>
       ) : (
-        <CardContent sx={{ p: smDown ? 2 : 3 }}>
-          <Stack spacing={smDown ? 3 : 6}>
-            <WizardSteps
-              postUrl={postUrl}
-              activeStep={activeStep}
-              orientation={orientation}
-              steps={stepsWithVisibility}
-            />
-            <div>
-              <Container maxWidth={currentStepMaxWidth} sx={{ px: smDown ? 0 : 2 }}>
+        <CardContent sx={{ p: smDown ? 1.5 : 3 }}>
+          <Stack spacing={smDown ? 2 : 4}>
+            <Box>
+              <WizardSteps
+                postUrl={postUrl}
+                activeStep={activeStep}
+                orientation={orientation}
+                steps={stepsWithVisibility}
+              />
+              {/* Selection summary chips - hidden on mobile as info is shown differently */}
+              {selectedSummary.length > 0 && activeStep > 0 && !smDown && (
+                <Stack 
+                  direction="row" 
+                  spacing={1} 
+                  sx={{ mt: 2, justifyContent: 'center', flexWrap: 'wrap', gap: 1 }}
+                >
+                  {selectedSummary.map((item) => (
+                    <Chip
+                      key={item.label}
+                      label={`${item.label}: ${item.value}`}
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                    />
+                  ))}
+                </Stack>
+              )}
+            </Box>
+            <Box sx={{ px: smDown ? 0.5 : 0 }}>
+              <Container 
+                maxWidth={currentStepMaxWidth} 
+                sx={{ px: smDown ? 0 : 2 }}
+                disableGutters={smDown}
+              >
                 {content}
               </Container>
-            </div>
+            </Box>
           </Stack>
         </CardContent>
       )}

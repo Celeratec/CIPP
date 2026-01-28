@@ -1,10 +1,12 @@
-import { Card, Stack, Typography } from "@mui/material";
+import { Card, Stack, Typography, Box, Divider, alpha, useMediaQuery } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { Grid } from "@mui/system";
 import { PropertyList } from "../property-list";
 import { PropertyListItem } from "../property-list-item";
 import CippWizardStepButtons from "./CippWizardStepButtons";
 import { getCippTranslation } from "../../utils/get-cipp-translation";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
+import { CheckCircleOutline } from "@mui/icons-material";
 
 export const CippWizardConfirmation = (props) => {
   const { 
@@ -14,9 +16,13 @@ export const CippWizardConfirmation = (props) => {
     onPreviousStep, 
     onNextStep, 
     currentStep,
-    columns = 2 // Default to 2 columns for backward compatibility
+    columns = 2, // Default to 2 columns for backward compatibility
+    replacementBehaviour,
+    queryKeys,
   } = props;
   
+  const theme = useTheme();
+  const smDown = useMediaQuery(theme.breakpoints.down("sm"));
   const formValues = formControl.getValues();
   const formEntries = Object.entries(formValues);
 
@@ -105,21 +111,48 @@ export const CippWizardConfirmation = (props) => {
   const gridSize = getGridSize();
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={smDown ? 1.5 : 2.5}>
+      {/* Header - more compact on mobile */}
+      <Box sx={{ textAlign: "center", mb: smDown ? 0.5 : 1 }}>
+        <Box
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: smDown ? 48 : 56,
+            height: smDown ? 48 : 56,
+            borderRadius: "50%",
+            bgcolor: alpha(theme.palette.success.main, 0.1),
+            color: "success.main",
+            mb: 1,
+          }}
+        >
+          <CheckCircleOutline sx={{ fontSize: smDown ? 24 : 28 }} />
+        </Box>
+        <Typography variant={smDown ? "subtitle1" : "h6"} fontWeight={600}>
+          Review and Confirm
+        </Typography>
+        {!smDown && (
+          <Typography variant="body2" color="text.secondary">
+            Please review your selections before submitting
+          </Typography>
+        )}
+      </Box>
+
       {filteredEntries.length === 0 ? (
         <Card variant="outlined">
-          <Stack p={3}>
-            <Typography variant="h6">
-              You've completed the steps in this wizard. Hit submit to save your changes.
+          <Stack p={smDown ? 2 : 3} alignItems="center">
+            <Typography variant="body2" color="text.secondary" textAlign="center">
+              You've completed all the steps. Click submit to save your changes.
             </Typography>
           </Stack>
         </Card>
       ) : (
-        <Card variant="outlined">
-          <Grid container spacing={3}>
+        <Card variant="outlined" sx={{ overflow: 'hidden' }}>
+          <Grid container spacing={0}>
             {columnEntries.map((columnData, index) => (
               <Grid key={index} size={gridSize}>
-                <PropertyList>
+                <PropertyList sx={{ py: smDown ? 0.5 : 1 }}>
                   {columnData.map(([key, value]) => (
                     <PropertyListItem
                       key={key}
@@ -128,6 +161,9 @@ export const CippWizardConfirmation = (props) => {
                     />
                   ))}
                 </PropertyList>
+                {index < columnEntries.length - 1 && smDown && (
+                  <Divider sx={{ mx: 2 }} />
+                )}
               </Grid>
             ))}
           </Grid>
@@ -142,6 +178,8 @@ export const CippWizardConfirmation = (props) => {
         onNextStep={onNextStep}
         formControl={formControl}
         noSubmitButton={formValues?.noSubmitButton}
+        replacementBehaviour={replacementBehaviour}
+        queryKeys={queryKeys}
       />
     </Stack>
   );

@@ -1,4 +1,5 @@
-import { Alert, Stack, Typography, Card, CardContent, CardHeader, Divider } from "@mui/material";
+import { Alert, Stack, Typography, Card, CardContent, CardHeader, Divider, useMediaQuery } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import CippWizardStepButtons from "./CippWizardStepButtons";
 import CippFormComponent from "../CippComponents/CippFormComponent";
 import { CippFormCondition } from "../CippComponents/CippFormCondition";
@@ -9,6 +10,8 @@ import { useSettings } from "../../hooks/use-settings";
 
 export const CippWizardOffboarding = (props) => {
   const { postUrl, formControl, onPreviousStep, onNextStep, currentStep } = props;
+  const theme = useTheme();
+  const smDown = useMediaQuery(theme.breakpoints.down("sm"));
   const currentTenant = formControl.watch("tenantFilter");
   const selectedUsers = useWatch({ control: formControl.control, name: "user" }) || [];
   const [showAlert, setShowAlert] = useState(false);
@@ -73,16 +76,20 @@ export const CippWizardOffboarding = (props) => {
   };
 
   return (
-    <Stack spacing={{ xs: 2.5, md: 4 }}>
-      <Grid container spacing={{ xs: 2.5, md: 4 }}>
+    <Stack spacing={{ xs: 2, md: 4 }}>
+      <Grid container spacing={{ xs: 2, md: 4 }}>
         <Grid size={{ xs: 12, lg: 6 }}>
           <Card variant="outlined">
-            <CardHeader title="Offboarding Settings" />
+            <CardHeader 
+              title="Offboarding Settings" 
+              titleTypographyProps={{ variant: smDown ? "subtitle1" : "h6" }}
+              sx={{ py: smDown ? 1.5 : 2, px: smDown ? 2 : 3 }}
+            />
             <Divider />
-            <CardContent>
-              <Stack spacing={1.5}>
+            <CardContent sx={{ px: smDown ? 2 : 3, py: smDown ? 1.5 : 2 }}>
+              <Stack spacing={smDown ? 1 : 1.5}>
                 <Typography
-                  variant="body2"
+                  variant="caption"
                   sx={{
                     color: getDefaultsSource() === "tenant" ? "primary.main" : "warning.main",
                     fontStyle: "italic",
@@ -90,7 +97,7 @@ export const CippWizardOffboarding = (props) => {
                 >
                   {getDefaultsSource() === "tenant" ? "Using Tenant Defaults" : "Using User Defaults"}
                 </Typography>
-                <Stack spacing={1}>
+                <Stack spacing={smDown ? 0.5 : 1}>
                   <CippFormComponent
                     name="ConvertToShared"
                     label="Convert to Shared Mailbox"
@@ -189,12 +196,16 @@ export const CippWizardOffboarding = (props) => {
 
         <Grid size={{ xs: 12, lg: 6 }}>
           <Card variant="outlined">
-            <CardHeader title="Permissions and forwarding" />
+            <CardHeader 
+              title="Permissions and forwarding" 
+              titleTypographyProps={{ variant: smDown ? "subtitle1" : "h6" }}
+              sx={{ py: smDown ? 1.5 : 2, px: smDown ? 2 : 3 }}
+            />
             <Divider />
-            <CardContent>
-              <Stack spacing={2.5}>
-                <Stack spacing={1.5}>
-                  <Typography variant="subtitle2">Mailbox Access</Typography>
+            <CardContent sx={{ px: smDown ? 2 : 3, py: smDown ? 1.5 : 2 }}>
+              <Stack spacing={smDown ? 2 : 2.5}>
+                <Stack spacing={smDown ? 1 : 1.5}>
+                  <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600}>Mailbox Access</Typography>
                   <CippFormComponent
                     name="AccessNoAutomap"
                     label="Grant Full Access (no automap)"
@@ -269,8 +280,8 @@ export const CippWizardOffboarding = (props) => {
                   />
                 </Stack>
 
-                <Stack spacing={1.5}>
-                  <Typography variant="subtitle2">Email Forwarding</Typography>
+                <Stack spacing={smDown ? 1 : 1.5}>
+                  <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600}>Email Forwarding</Typography>
                   <CippFormComponent
                     name="disableForwarding"
                     label="Disable Email Forwarding"
@@ -284,7 +295,7 @@ export const CippWizardOffboarding = (props) => {
                     compareType="isNot"
                     compareValue={true}
                   >
-                    <Stack spacing={1.5}>
+                    <Stack spacing={smDown ? 1 : 1.5}>
                       <CippFormComponent
                         name="forward"
                         label="Forward Email To"
@@ -319,8 +330,8 @@ export const CippWizardOffboarding = (props) => {
                   </CippFormCondition>
                 </Stack>
 
-                <Stack spacing={1.5}>
-                  <Typography variant="subtitle2">Out of Office</Typography>
+                <Stack spacing={smDown ? 1 : 1.5}>
+                  <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600}>Out of Office</Typography>
                   <CippFormComponent
                     name="OOO"
                     label="Out of Office Message"
@@ -337,16 +348,23 @@ export const CippWizardOffboarding = (props) => {
       </Grid>
 
       {showAlert && (
-        <Alert severity="warning">
-          You have selected more than 2 users. This offboarding must be scheduled.
+        <Alert severity="warning" sx={{ py: smDown ? 1 : 1.5 }}>
+          {smDown 
+            ? "3+ users selected. Scheduling required." 
+            : "You have selected more than 2 users. This offboarding must be scheduled."
+          }
         </Alert>
       )}
 
       <Card variant="outlined">
-        <CardHeader title="Scheduling & Notifications" />
+        <CardHeader 
+          title="Scheduling & Notifications" 
+          titleTypographyProps={{ variant: smDown ? "subtitle1" : "h6" }}
+          sx={{ py: smDown ? 1.5 : 2, px: smDown ? 2 : 3 }}
+        />
         <Divider />
-        <CardContent>
-          <Grid container spacing={{ xs: 2, md: 3 }}>
+        <CardContent sx={{ px: smDown ? 2 : 3, py: smDown ? 1.5 : 2 }}>
+          <Grid container spacing={{ xs: 1.5, md: 3 }}>
             <Grid size={{ xs: 12 }}>
               <CippFormComponent
                 name="Scheduled.enabled"
@@ -363,7 +381,9 @@ export const CippWizardOffboarding = (props) => {
               compareValue={true}
             >
               <Grid size={{ sm: 6, xs: 12 }}>
-                <Typography variant="subtitle2">Scheduled Offboarding Date</Typography>
+                <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600} sx={{ mb: 0.5 }}>
+                  Scheduled Offboarding Date
+                </Typography>
                 <CippFormComponent
                   name="Scheduled.date"
                   type="datePicker"
@@ -373,8 +393,10 @@ export const CippWizardOffboarding = (props) => {
               </Grid>
 
               <Grid size={{ sm: 6, xs: 12 }}>
-                <Typography variant="subtitle2">Send results to:</Typography>
-                <Stack spacing={1}>
+                <Typography variant={smDown ? "body2" : "subtitle2"} fontWeight={600} sx={{ mb: 0.5 }}>
+                  Send results to:
+                </Typography>
+                <Stack spacing={smDown ? 0.5 : 1}>
                   <CippFormComponent
                     name="postExecution.webhook"
                     label="Webhook"
@@ -396,13 +418,13 @@ export const CippWizardOffboarding = (props) => {
                 </Stack>
               </Grid>
 
-              <Grid size={{ sm: 12, xs: 12 }}>
+              <Grid size={{ xs: 12 }}>
                 <CippFormComponent
                   type="textField"
                   fullWidth
                   label="Reference"
                   name="reference"
-                  placeholder="Enter a reference that will be added to the notification title and scheduled task"
+                  placeholder={smDown ? "Add a reference" : "Enter a reference that will be added to the notification title and scheduled task"}
                   formControl={formControl}
                 />
               </Grid>
@@ -418,6 +440,7 @@ export const CippWizardOffboarding = (props) => {
         onNextStep={onNextStep}
         formControl={formControl}
         replacementBehaviour="removeNulls"
+        sticky={true}
       />
     </Stack>
   );
