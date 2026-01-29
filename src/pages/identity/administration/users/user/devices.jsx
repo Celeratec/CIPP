@@ -39,7 +39,7 @@ import {
   CardActionArea,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { useCippUserActions } from "/src/components/CippComponents/CippUserActions";
+import { useCippUserActions } from "../../../../../components/CippComponents/CippUserActions";
 
 // Device Card Component
 const DeviceCard = ({ device, tenant, theme }) => {

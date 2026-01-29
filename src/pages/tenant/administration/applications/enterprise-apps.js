@@ -35,8 +35,8 @@ import {
 import { usePermissions } from "../../../../hooks/use-permissions.js";
 import tabOptions from "./tabOptions";
 import Link from "next/link";
-import { getCippFormatting } from "/src/utils/get-cipp-formatting";
-import { getInitials, stringToColor } from "/src/utils/get-initials";
+import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
+import { getInitials, stringToColor } from "../../../../utils/get-initials";
 
 const Page = () => {
   const pageTitle = "Enterprise Applications";

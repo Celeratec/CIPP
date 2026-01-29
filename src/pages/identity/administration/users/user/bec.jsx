@@ -25,7 +25,7 @@ import { SvgIcon, Typography, CircularProgress, Button, Chip } from "@mui/materi
 import { PropertyList } from "../../../../../components/property-list";
 import { PropertyListItem } from "../../../../../components/property-list-item";
 import { CippHead } from "../../../../../components/CippComponents/CippHead";
-import { useCippUserActions } from "/src/components/CippComponents/CippUserActions";
+import { useCippUserActions } from "../../../../../components/CippComponents/CippUserActions";
 
 // Reusable BEC Check Card Component
 const BecCheckCard = ({ 
