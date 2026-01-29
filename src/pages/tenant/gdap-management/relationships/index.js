@@ -1,8 +1,8 @@
-import { TabbedLayout } from "/src/layouts/TabbedLayout";
-import { Layout as DashboardLayout } from "/src/layouts/index.js";
+import { TabbedLayout } from "../../../../layouts/TabbedLayout";
+import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import tabOptions from "../tabOptions";
-import CippTablePage from "/src/components/CippComponents/CippTablePage";
-import CippGdapActions from "/src/components/CippComponents/CippGdapActions";
+import CippTablePage from "../../../../components/CippComponents/CippTablePage";
+import CippGdapActions from "../../../../components/CippComponents/CippGdapActions";
 import {
   Paper,
   Avatar,
@@ -22,8 +22,8 @@ import {
   CalendarToday,
   Security,
 } from "@mui/icons-material";
-import { getCippFormatting } from "/src/utils/get-cipp-formatting";
-import { getInitials, stringToColor } from "/src/utils/get-initials";
+import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
+import { getInitials, stringToColor } from "../../../../utils/get-initials";
 
 const pageTitle = "GDAP Relationships";
 

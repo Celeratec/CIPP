@@ -1,5 +1,5 @@
-import { Layout as DashboardLayout } from "/src/layouts/index.js";
-import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
+import { Layout as DashboardLayout } from "../../../../layouts/index.js";
+import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
 import {
   Paper,
   Avatar,
@@ -24,8 +24,8 @@ import {
   CalendarToday,
   LocalOffer,
 } from "@mui/icons-material";
-import { getCippFormatting } from "/src/utils/get-cipp-formatting";
-import { getInitials, stringToColor } from "/src/utils/get-initials";
+import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
+import { getInitials, stringToColor } from "../../../../utils/get-initials";
 
 const Page = () => {
   const pageTitle = "Incidents List";

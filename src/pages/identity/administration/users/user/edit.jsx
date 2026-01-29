@@ -1,13 +1,13 @@
-import CippFormPage from "/src/components/CippFormPages/CippFormPage";
-import { Layout as DashboardLayout } from "/src/layouts/index.js";
+import CippFormPage from "../../../../../components/CippFormPages/CippFormPage";
+import { Layout as DashboardLayout } from "../../../../../layouts/index.js";
 import { useForm } from "react-hook-form";
-import { useSettings } from "/src/hooks/use-settings";
-import CippAddEditUser from "/src/components/CippFormPages/CippAddEditUser";
+import { useSettings } from "../../../../../hooks/use-settings";
+import CippAddEditUser from "../../../../../components/CippFormPages/CippAddEditUser";
 import { useRouter } from "next/router";
-import { ApiGetCall } from "/src/api/ApiCall";
-import { useEffect } from "react";
-import CippFormSkeleton from "/src/components/CippFormPages/CippFormSkeleton";
-import { getCippLicenseTranslation } from "/src/utils/get-cipp-license-translation";
+import { ApiGetCall } from "../../../../../api/ApiCall";
+import { useState, useEffect } from "react";
+import CippFormSkeleton from "../../../../../components/CippFormPages/CippFormSkeleton";
+import { getCippLicenseTranslation } from "../../../../../utils/get-cipp-license-translation";
 import CalendarIcon from "@heroicons/react/24/outline/CalendarIcon";
 import { Mail, Fingerprint, Launch } from "@mui/icons-material";
 import { HeaderedTabbedLayout } from "../../../../../layouts/HeaderedTabbedLayout";
@@ -16,7 +16,7 @@ import { CippCopyToClipBoard } from "../../../../../components/CippComponents/Ci
 import { CippTimeAgo } from "../../../../../components/CippComponents/CippTimeAgo";
 import { Button, Alert } from "@mui/material";
 import { Box } from "@mui/system";
-import { useCippUserActions } from "/src/components/CippComponents/CippUserActions";
+import { useCippUserActions } from "../../../../../components/CippComponents/CippUserActions";
 
 const Page = () => {
   const userSettingsDefaults = useSettings();

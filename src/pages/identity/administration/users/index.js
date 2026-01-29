@@ -1,13 +1,13 @@
-import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
-import { Layout as DashboardLayout } from "/src/layouts/index.js";
-import { useSettings } from "/src/hooks/use-settings.js";
-import { ApiGetCall } from "/src/api/ApiCall";
+import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
+import { Layout as DashboardLayout } from "../../../../layouts/index.js";
+import { useSettings } from "../../../../hooks/use-settings.js";
+import { ApiGetCall } from "../../../../api/ApiCall";
 import { PermissionButton } from "../../../../utils/permissions";
-import { CippInviteGuestDrawer } from "/src/components/CippComponents/CippInviteGuestDrawer.jsx";
-import { CippBulkUserDrawer } from "/src/components/CippComponents/CippBulkUserDrawer.jsx";
-import { CippAddUserDrawer } from "/src/components/CippComponents/CippAddUserDrawer.jsx";
-import { CippApiLogsDrawer } from "/src/components/CippComponents/CippApiLogsDrawer.jsx";
-import { useCippUserActions } from "/src/components/CippComponents/CippUserActions";
+import { CippInviteGuestDrawer } from "../../../../components/CippComponents/CippInviteGuestDrawer.jsx";
+import { CippBulkUserDrawer } from "../../../../components/CippComponents/CippBulkUserDrawer.jsx";
+import { CippAddUserDrawer } from "../../../../components/CippComponents/CippAddUserDrawer.jsx";
+import { CippApiLogsDrawer } from "../../../../components/CippComponents/CippApiLogsDrawer.jsx";
+import { useCippUserActions } from "../../../../components/CippComponents/CippUserActions";
 import { 
   Box, 
   Tooltip, 
@@ -42,8 +42,8 @@ import {
   Info as InfoIcon,
   VerifiedUser,
 } from "@mui/icons-material";
-import { getCippFormatting } from "/src/utils/get-cipp-formatting";
-import CippUserAvatar from "/src/components/CippComponents/CippUserAvatar";
+import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
+import CippUserAvatar from "../../../../components/CippComponents/CippUserAvatar";
 
 const Page = () => {
   const router = useRouter();

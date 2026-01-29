@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Layout as DashboardLayout } from "/src/layouts/index.js";
-import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
+import { Layout as DashboardLayout } from "../../../../layouts/index.js";
+import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
 import {
   Button,
   Accordion,
@@ -30,10 +30,10 @@ import {
 } from "@mui/icons-material";
 import { FunnelIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useForm } from "react-hook-form";
-import CippFormComponent from "/src/components/CippComponents/CippFormComponent";
-import { useSettings } from "/src/hooks/use-settings";
-import { getCippFormatting } from "/src/utils/get-cipp-formatting";
-import { getInitials, stringToColor } from "/src/utils/get-initials";
+import CippFormComponent from "../../../../components/CippComponents/CippFormComponent";
+import { useSettings } from "../../../../hooks/use-settings";
+import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
+import { getInitials, stringToColor } from "../../../../utils/get-initials";
 
 const apiUrl = "/api/ListAppConsentRequests";
 const pageTitle = "App Consent Requests";

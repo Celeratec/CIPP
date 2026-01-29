@@ -1,6 +1,6 @@
-import { Layout as DashboardLayout } from "/src/layouts/index.js";
-import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
-import { getCippFormatting } from "/src/utils/get-cipp-formatting";
+import { Layout as DashboardLayout } from "../../../../layouts/index.js";
+import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
+import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import { Avatar, Box, Chip, Divider, Paper, Stack, Typography, useMediaQuery } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import {
@@ -16,8 +16,8 @@ import {
   Warning,
 } from "@mui/icons-material";
 import { ShieldCheckIcon } from "@heroicons/react/24/outline";
-import { ApiGetCall } from "/src/api/ApiCall";
-import { getInitials, stringToColor } from "/src/utils/get-initials";
+import { ApiGetCall } from "../../../../api/ApiCall";
+import { getInitials, stringToColor } from "../../../../utils/get-initials";
 
 const Page = () => {
   const pageTitle = "Risky Users";

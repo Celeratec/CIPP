@@ -1,5 +1,5 @@
-import { Layout as DashboardLayout } from "/src/layouts/index.js";
-import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
+import { Layout as DashboardLayout } from "../../../../layouts/index.js";
+import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
 import { useEffect, useState } from "react";
 import {
   Dialog,
@@ -30,13 +30,13 @@ import {
   CalendarToday,
   Person,
 } from "@mui/icons-material";
-import { CippMessageViewer } from "/src/components/CippComponents/CippMessageViewer.jsx";
-import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
-import { useSettings } from "/src/hooks/use-settings";
+import { CippMessageViewer } from "../../../../components/CippComponents/CippMessageViewer.jsx";
+import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall";
+import { useSettings } from "../../../../hooks/use-settings";
 import { EyeIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
-import { CippDataTable } from "/src/components/CippTable/CippDataTable";
-import { getCippFormatting } from "/src/utils/get-cipp-formatting";
-import { getInitials, stringToColor } from "/src/utils/get-initials";
+import { CippDataTable } from "../../../../components/CippTable/CippDataTable";
+import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
+import { getInitials, stringToColor } from "../../../../utils/get-initials";
 
 const simpleColumns = [
   "ReceivedTime",

@@ -1,5 +1,5 @@
-import { Layout as DashboardLayout } from "/src/layouts/index.js";
-import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
+import { Layout as DashboardLayout } from "../../../../layouts/index.js";
+import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
 import { 
   Button,
   Paper,
@@ -24,8 +24,8 @@ import {
 } from "@mui/icons-material";
 import { TrashIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import { getCippFormatting } from "/src/utils/get-cipp-formatting";
-import { stringToColor } from "/src/utils/get-initials";
+import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
+import { stringToColor } from "../../../../utils/get-initials";
 
 const Page = () => {
   const pageTitle = "Spam Filters";

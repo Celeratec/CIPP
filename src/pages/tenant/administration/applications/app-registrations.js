@@ -1,10 +1,10 @@
 // this page is going to need some love for accounting for filters: https://github.com/KelvinTegelaar/CIPP/blob/main/src/views/tenant/administration/ListEnterpriseApps.jsx#L83
-import { Layout as DashboardLayout } from "/src/layouts/index.js";
-import { TabbedLayout } from "/src/layouts/TabbedLayout";
-import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
-import { CippFormComponent } from "/src/components/CippComponents/CippFormComponent.jsx";
-import { CertificateCredentialRemovalForm } from "/src/components/CippComponents/CertificateCredentialRemovalForm.jsx";
-import CippPermissionPreview from "/src/components/CippComponents/CippPermissionPreview.jsx";
+import { Layout as DashboardLayout } from "../../../../layouts/index.js";
+import { TabbedLayout } from "../../../../layouts/TabbedLayout";
+import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
+import { CippFormComponent } from "../../../../components/CippComponents/CippFormComponent.jsx";
+import { CertificateCredentialRemovalForm } from "../../../../components/CippComponents/CertificateCredentialRemovalForm.jsx";
+import CippPermissionPreview from "../../../../components/CippComponents/CippPermissionPreview.jsx";
 import {
   Paper,
   Avatar,
@@ -26,10 +26,10 @@ import {
   VpnKey,
   CalendarToday,
 } from "@mui/icons-material";
-import { usePermissions } from "/src/hooks/use-permissions.js";
+import { usePermissions } from "../../../../hooks/use-permissions.js";
 import tabOptions from "./tabOptions";
-import { getCippFormatting } from "/src/utils/get-cipp-formatting";
-import { getInitials, stringToColor } from "/src/utils/get-initials";
+import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
+import { getInitials, stringToColor } from "../../../../utils/get-initials";
 
 const Page = () => {
   const pageTitle = "App Registrations";

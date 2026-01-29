@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Layout as DashboardLayout } from "/src/layouts/index.js";
-import { useSettings } from "/src/hooks/use-settings";
+import { Layout as DashboardLayout } from "../../../../../layouts/index.js";
+import { useSettings } from "../../../../../hooks/use-settings";
 import { useRouter } from "next/router";
-import CippFormSkeleton from "/src/components/CippFormPages/CippFormSkeleton";
+import CippFormSkeleton from "../../../../../components/CippFormPages/CippFormSkeleton";
 import CalendarIcon from "@heroicons/react/24/outline/CalendarIcon";
 import { 
   Mail, 
@@ -19,9 +19,9 @@ import { CippCopyToClipBoard } from "../../../../../components/CippComponents/Ci
 import { CippTimeAgo } from "../../../../../components/CippComponents/CippTimeAgo";
 import { Box, Stack, Typography, Button, Divider } from "@mui/material";
 import { Grid } from "@mui/system";
-import CippFormComponent from "/src/components/CippComponents/CippFormComponent";
-import countryList from "/src/data/countryList";
-import { CippDataTable } from "/src/components/CippTable/CippDataTable";
+import CippFormComponent from "../../../../../components/CippComponents/CippFormComponent";
+import countryList from "../../../../../data/countryList";
+import { CippDataTable } from "../../../../../components/CippTable/CippDataTable";
 import { useForm } from "react-hook-form";
 import CippButtonCard from "../../../../../components/CippCards/CippButtonCard";
 import { ApiGetCall, ApiPostCall } from "../../../../../api/ApiCall";

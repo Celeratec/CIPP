@@ -26,7 +26,7 @@ import {
   Cloud,
   Storage,
 } from "@mui/icons-material";
-import { ApiGetCall } from "/src/api/ApiCall";
+import { ApiGetCall } from "../../api/ApiCall";
 import { useEffect } from "react";
 
 const CippVersionProperties = () => {

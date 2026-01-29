@@ -1,6 +1,6 @@
-import { Layout as DashboardLayout } from "/src/layouts/index.js";
-import { CippTablePage } from "/src/components/CippComponents/CippTablePage.jsx";
-import { CippApiDialog } from "/src/components/CippComponents/CippApiDialog.jsx";
+import { Layout as DashboardLayout } from "../../../../layouts/index.js";
+import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
+import { CippApiDialog } from "../../../../components/CippComponents/CippApiDialog.jsx";
 import { 
   Button,
   Paper,
@@ -28,7 +28,7 @@ import {
 } from "@mui/icons-material";
 import { useDialog } from "../../../../hooks/use-dialog";
 import Link from "next/link";
-import { getInitials, stringToColor } from "/src/utils/get-initials";
+import { getInitials, stringToColor } from "../../../../utils/get-initials";
 
 const Page = () => {
   const pageTitle = "Autopilot Devices";
