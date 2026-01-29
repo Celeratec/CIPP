@@ -50,11 +50,33 @@ const getSettingIcon = (key) => {
   return <Tune fontSize="small" />;
 };
 
+// PowerShell type patterns that indicate unserialized data
+const powershellTypePatterns = [
+  "System.Collections.Hashtable",
+  "System.Object[]",
+  "System.Collections.ArrayList",
+  "System.Collections.Generic.List",
+  "System.Collections.Generic.Dictionary",
+  "System.Management.Automation.PSCustomObject",
+];
+
+// Helper to check if a value is an unserialized PowerShell type
+const isPowerShellTypeString = (value) => {
+  if (typeof value !== 'string') return false;
+  return powershellTypePatterns.some(pattern => value.includes(pattern));
+};
+
 // Helper to format value for display
 const formatDisplayValue = (value, key) => {
   if (value === true) return { text: "Yes", isBoolean: true, enabled: true };
   if (value === false) return { text: "No", isBoolean: true, enabled: false };
   if (value === null || value === undefined) return { text: "Not set", isBoolean: false };
+  
+  // Handle PowerShell type strings that weren't properly serialized
+  if (isPowerShellTypeString(value)) {
+    return { text: "Complex data", isBoolean: false };
+  }
+  
   if (typeof value === 'object') {
     if (Array.isArray(value)) {
       return { text: `${value.length} item${value.length !== 1 ? 's' : ''} selected`, isBoolean: false };
@@ -96,6 +118,11 @@ export const CippWizardConfirmation = (props) => {
     "addrow",
     "Scheduled",
     "postExecution",
+    "userTemplate",      // Contains template object with addedFields
+    "userProperties",    // Contains copied user properties
+    "copyFrom",          // User selector for copying groups
+    "defaultAttributes", // Complex custom attributes object
+    "customData",        // Custom data mappings
   ];
 
   // Filter and categorize entries
@@ -124,12 +151,15 @@ export const CippWizardConfirmation = (props) => {
       !["user", "userPrincipalName", "username"].includes(key) &&
       !key.startsWith('HIDDEN_') &&
       value !== null &&
-      value !== undefined
+      value !== undefined &&
+      !isPowerShellTypeString(value)  // Filter out unserialized PowerShell types
   );
 
   // Separate boolean settings from other settings
   const booleanSettings = settingsEntries.filter(([_, value]) => typeof value === 'boolean');
-  const otherSettings = settingsEntries.filter(([_, value]) => typeof value !== 'boolean');
+  const otherSettings = settingsEntries.filter(([_, value]) => 
+    typeof value !== 'boolean' && !isPowerShellTypeString(value)
+  );
 
   // Count enabled settings
   const enabledCount = booleanSettings.filter(([_, value]) => value === true).length;

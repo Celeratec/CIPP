@@ -56,6 +56,24 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
     );
   }
 
+  // Handle PowerShell type strings that weren't properly serialized
+  const powershellTypePatterns = [
+    "System.Collections.Hashtable",
+    "System.Object[]",
+    "System.Collections.ArrayList",
+    "System.Collections.Generic.List",
+    "System.Collections.Generic.Dictionary",
+    "System.Management.Automation.PSCustomObject",
+  ];
+  
+  if (typeof data === "string" && powershellTypePatterns.some(pattern => data.includes(pattern))) {
+    return isText ? (
+      "Complex data (not displayed)"
+    ) : (
+      <Chip variant="outlined" label="Complex data" size="small" color="warning" />
+    );
+  }
+
   const portalIcons = {
     portal_m365: CogIcon,
     portal_exchange: MailOutline,
