@@ -91,7 +91,7 @@ export const Layout = (props) => {
   const [menuItems, setMenuItems] = useState(nativeMenuItems);
   const lastUserSettingsUpdate = useRef(null);
   const currentTenant = settings?.currentTenant;
-  const [hideSidebar, setHideSidebar] = useState(false);
+  const [hideSidebar, setHideSidebar] = useState(true);
 
   const swaStatus = ApiGetCall({
     url: "/.auth/me",
