@@ -19,6 +19,7 @@ import {
   DialogContentText,
   DialogActions,
   Button,
+  Collapse,
 } from "@mui/material";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 import { 
@@ -36,6 +37,8 @@ import {
   Block,
   VisibilityOff,
   Info as InfoIcon,
+  ExpandMore,
+  ExpandLess,
 } from "@mui/icons-material";
 import { Stack, Grid, Box } from "@mui/system";
 import { alpha, useTheme } from "@mui/material/styles";
@@ -115,6 +118,9 @@ export const CippExchangeInfoCard = (props) => {
     currentlyEnabled: false,
   });
   const [isToggling, setIsToggling] = useState(false);
+  
+  // State for security recommendation collapse (collapsed by default)
+  const [securityRecommendationExpanded, setSecurityRecommendationExpanded] = useState(false);
   
   // API call for toggling protocols
   const toggleProtocol = ApiPostCall({
@@ -562,29 +568,52 @@ export const CippExchangeInfoCard = (props) => {
               ))}
             </Stack>
             
-            {/* Security Recommendations */}
-            <Paper 
-              variant="outlined" 
-              sx={{ 
-                p: 1.5, 
-                bgcolor: alpha(theme.palette.info.main, 0.04),
-                borderColor: alpha(theme.palette.info.main, 0.3),
-              }}
-            >
-              <Stack direction="row" spacing={1} alignItems="flex-start">
-                <InfoIcon fontSize="small" color="info" sx={{ mt: 0.25, flexShrink: 0 }} />
-                <Box>
-                  <Typography variant="caption" fontWeight={600} color="info.main" sx={{ display: "block", mb: 0.5 }}>
-                    Security Recommendation
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.5 }}>
-                    For improved security, consider disabling <strong>POP</strong> and <strong>IMAP</strong> protocols as they are legacy protocols 
-                    that may use basic authentication. These should only be enabled if users require third-party email clients 
-                    like Apple Mail or Thunderbird. Modern clients like Outlook use MAPI or EWS which support modern authentication.
-                  </Typography>
+            {/* Security Recommendations - Only show if IMAP or POP is enabled */}
+            {(exchangeData?.MailboxImapEnabled || exchangeData?.MailboxPopEnabled) && (
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  bgcolor: alpha(theme.palette.info.main, 0.04),
+                  borderColor: alpha(theme.palette.info.main, 0.3),
+                  overflow: "hidden",
+                }}
+              >
+                <Box
+                  onClick={() => setSecurityRecommendationExpanded(!securityRecommendationExpanded)}
+                  sx={{ 
+                    p: 1.5,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    "&:hover": {
+                      bgcolor: alpha(theme.palette.info.main, 0.08),
+                    },
+                  }}
+                >
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <InfoIcon fontSize="small" color="info" sx={{ flexShrink: 0 }} />
+                    <Typography variant="caption" fontWeight={600} color="info.main">
+                      Security Recommendation
+                    </Typography>
+                  </Stack>
+                  {securityRecommendationExpanded ? (
+                    <ExpandLess fontSize="small" color="info" />
+                  ) : (
+                    <ExpandMore fontSize="small" color="info" />
+                  )}
                 </Box>
-              </Stack>
-            </Paper>
+                <Collapse in={securityRecommendationExpanded}>
+                  <Box sx={{ px: 1.5, pb: 1.5 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.5 }}>
+                      For improved security, consider disabling <strong>POP</strong> and <strong>IMAP</strong> protocols as they are legacy protocols 
+                      that may use basic authentication. These should only be enabled if users require third-party email clients 
+                      like Apple Mail or Thunderbird. Modern clients like Outlook use MAPI or EWS which support modern authentication.
+                    </Typography>
+                  </Box>
+                </Collapse>
+              </Paper>
+            )}
           </InfoSection>
 
           <Divider sx={{ my: 2 }} />
