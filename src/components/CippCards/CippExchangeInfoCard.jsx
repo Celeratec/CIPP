@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -126,6 +126,10 @@ export const CippExchangeInfoCard = (props) => {
   const [galDialog, setGalDialog] = useState(false);
   const [isTogglingGal, setIsTogglingGal] = useState(false);
   
+  // State for spam status dialog
+  const [spamDialog, setSpamDialog] = useState(false);
+  const [isClearingSpam, setIsClearingSpam] = useState(false);
+  
   // API call for toggling protocols
   const toggleProtocol = ApiPostCall({
     urlFromData: true,
@@ -134,6 +138,12 @@ export const CippExchangeInfoCard = (props) => {
   
   // API call for toggling GAL visibility
   const toggleGalVisibility = ApiPostCall({
+    urlFromData: true,
+    relatedQueryKeys: [`Mailbox-${exchangeData?.UserId}`],
+  });
+  
+  // API call for clearing spam status
+  const clearSpamStatus = ApiPostCall({
     urlFromData: true,
     relatedQueryKeys: [`Mailbox-${exchangeData?.UserId}`],
   });
@@ -210,6 +220,31 @@ export const CippExchangeInfoCard = (props) => {
     }
   };
 
+  // Handle clearing spam status
+  const handleClearSpam = async () => {
+    setIsClearingSpam(true);
+    
+    try {
+      await clearSpamStatus.mutateAsync({
+        url: "/api/ExecRemoveRestrictedUser",
+        data: {
+          SenderAddress: userPrincipalName,
+          tenantFilter: settings.currentTenant,
+        },
+      });
+      
+      // Refresh the data after successful clear
+      if (handleRefresh) {
+        handleRefresh();
+      }
+    } catch (error) {
+      console.error("Failed to clear spam status:", error);
+    } finally {
+      setIsClearingSpam(false);
+      setSpamDialog(false);
+    }
+  };
+
   // Define the protocols array with detailed information
   const protocolInfo = {
     EWS: {
@@ -250,14 +285,35 @@ export const CippExchangeInfoCard = (props) => {
     },
   };
 
-  const protocols = [
+  // Modern protocols (recommended)
+  const modernProtocols = [
     { name: "EWS", enabled: exchangeData?.EWSEnabled, ...protocolInfo.EWS },
     { name: "MAPI", enabled: exchangeData?.MailboxMAPIEnabled, ...protocolInfo.MAPI },
     { name: "OWA", enabled: exchangeData?.MailboxOWAEnabled, ...protocolInfo.OWA },
-    { name: "IMAP", enabled: exchangeData?.MailboxImapEnabled, ...protocolInfo.IMAP },
-    { name: "POP", enabled: exchangeData?.MailboxPopEnabled, ...protocolInfo.POP },
     { name: "ActiveSync", enabled: exchangeData?.MailboxActiveSyncEnabled, ...protocolInfo.ActiveSync },
   ];
+  
+  // Legacy protocols (security risk)
+  const legacyProtocols = [
+    { name: "IMAP", enabled: exchangeData?.MailboxImapEnabled, ...protocolInfo.IMAP },
+    { name: "POP", enabled: exchangeData?.MailboxPopEnabled, ...protocolInfo.POP },
+  ];
+  
+  // Combined for dialog lookups
+  const protocols = [...modernProtocols, ...legacyProtocols];
+  
+  // Track if any legacy protocol is enabled
+  const anyLegacyEnabled = legacyProtocols.some(p => p.enabled);
+  
+  // State for legacy protocols section expansion
+  const [legacyProtocolsExpanded, setLegacyProtocolsExpanded] = useState(anyLegacyEnabled);
+  
+  // Auto-expand legacy section when any legacy protocol gets enabled
+  useEffect(() => {
+    if (anyLegacyEnabled) {
+      setLegacyProtocolsExpanded(true);
+    }
+  }, [anyLegacyEnabled]);
 
   // Define mailbox hold types array
   const holds = [
@@ -354,10 +410,11 @@ export const CippExchangeInfoCard = (props) => {
             </Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
               <StatCard
-                icon={SettingsEthernet}
-                label="Protocols"
+                icon={anyLegacyEnabled ? Warning : SettingsEthernet}
+                label={anyLegacyEnabled ? "Protocols ⚠️" : "Protocols"}
                 value={`${enabledProtocols.length}/${protocols.length}`}
-                color="info"
+                color={anyLegacyEnabled ? "warning" : "info"}
+                subtitle={anyLegacyEnabled ? "Legacy enabled" : undefined}
               />
             </Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
@@ -463,23 +520,39 @@ export const CippExchangeInfoCard = (props) => {
                 </Tooltip>
               </Grid>
               <Grid size={{ xs: 6 }}>
-                <Paper variant="outlined" sx={{ p: 1.5 }}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    {exchangeData?.BlockedForSpam ? (
-                      <Block fontSize="small" color="error" />
-                    ) : (
-                      <CheckCircle fontSize="small" color="success" />
-                    )}
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Spam Status
-                      </Typography>
-                      <Typography variant="body2" fontWeight={500}>
-                        {exchangeData?.BlockedForSpam ? "Blocked" : "Clear"}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Paper>
+                <Tooltip title={exchangeData?.BlockedForSpam && userPrincipalName ? "Click to clear spam block" : ""}>
+                  <Paper 
+                    variant="outlined" 
+                    onClick={exchangeData?.BlockedForSpam && userPrincipalName ? () => setSpamDialog(true) : undefined}
+                    sx={{ 
+                      p: 1.5,
+                      cursor: exchangeData?.BlockedForSpam && userPrincipalName ? "pointer" : "default",
+                      transition: "all 0.15s ease-in-out",
+                      "&:hover": exchangeData?.BlockedForSpam && userPrincipalName ? {
+                        borderColor: "error.main",
+                        bgcolor: (theme) => alpha(theme.palette.error.main, 0.04),
+                      } : {},
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      {isClearingSpam ? (
+                        <CircularProgress size={20} />
+                      ) : exchangeData?.BlockedForSpam ? (
+                        <Block fontSize="small" color="error" />
+                      ) : (
+                        <CheckCircle fontSize="small" color="success" />
+                      )}
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Spam Status
+                        </Typography>
+                        <Typography variant="body2" fontWeight={500} color={exchangeData?.BlockedForSpam ? "error.main" : "inherit"}>
+                          {exchangeData?.BlockedForSpam ? "Blocked" : "Clear"}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Paper>
+                </Tooltip>
               </Grid>
             </Grid>
             {exchangeData?.RetentionPolicy && (
@@ -591,8 +664,9 @@ export const CippExchangeInfoCard = (props) => {
 
           {/* Protocols */}
           <InfoSection icon={SettingsEthernet} title="Protocols">
+            {/* Modern Protocols */}
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
-              {protocols.map((protocol) => (
+              {modernProtocols.map((protocol) => (
                 <Tooltip 
                   key={protocol.name} 
                   title={userPrincipalName 
@@ -620,11 +694,116 @@ export const CippExchangeInfoCard = (props) => {
               ))}
             </Stack>
             
+            {/* Legacy Protocols Section - Collapsible */}
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                bgcolor: anyLegacyEnabled 
+                  ? alpha(theme.palette.error.main, 0.04)
+                  : alpha(theme.palette.grey[500], 0.04),
+                borderColor: anyLegacyEnabled 
+                  ? alpha(theme.palette.error.main, 0.3)
+                  : alpha(theme.palette.grey[500], 0.2),
+                overflow: "hidden",
+              }}
+            >
+              <Box
+                onClick={() => setLegacyProtocolsExpanded(!legacyProtocolsExpanded)}
+                sx={{ 
+                  p: 1.5,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  "&:hover": {
+                    bgcolor: anyLegacyEnabled 
+                      ? alpha(theme.palette.error.main, 0.08)
+                      : alpha(theme.palette.grey[500], 0.08),
+                  },
+                }}
+              >
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Warning 
+                    fontSize="small" 
+                    sx={{ 
+                      flexShrink: 0,
+                      color: anyLegacyEnabled ? "error.main" : "text.disabled",
+                    }} 
+                  />
+                  <Typography 
+                    variant="caption" 
+                    fontWeight={600} 
+                    sx={{ color: anyLegacyEnabled ? "error.main" : "text.secondary" }}
+                  >
+                    Legacy Protocols {anyLegacyEnabled ? "(Security Risk)" : "(Disabled)"}
+                  </Typography>
+                  {anyLegacyEnabled && (
+                    <Chip 
+                      label="Not Recommended" 
+                      size="small" 
+                      color="error" 
+                      variant="outlined"
+                      sx={{ height: 18, fontSize: "0.65rem" }}
+                    />
+                  )}
+                </Stack>
+                {legacyProtocolsExpanded ? (
+                  <ExpandLess fontSize="small" sx={{ color: anyLegacyEnabled ? "error.main" : "text.disabled" }} />
+                ) : (
+                  <ExpandMore fontSize="small" sx={{ color: anyLegacyEnabled ? "error.main" : "text.disabled" }} />
+                )}
+              </Box>
+              <Collapse in={legacyProtocolsExpanded}>
+                <Box sx={{ px: 1.5, pb: 1.5 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5, lineHeight: 1.5 }}>
+                    These legacy protocols may bypass modern authentication and MFA protections. 
+                    Only enable if required for third-party email clients like Apple Mail or Thunderbird.
+                  </Typography>
+                  <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                    {legacyProtocols.map((protocol) => (
+                      <Tooltip 
+                        key={protocol.name} 
+                        title={userPrincipalName 
+                          ? `${protocol.fullName} - Click to ${protocol.enabled ? 'disable' : 'enable'}` 
+                          : `${protocol.fullName} - User info not available`}
+                      >
+                        <Chip
+                          label={protocol.name}
+                          icon={protocol.enabled ? <Warning /> : <CloseIcon />}
+                          color={protocol.enabled ? "error" : "default"}
+                          variant={protocol.enabled ? "filled" : "outlined"}
+                          size="small"
+                          onClick={userPrincipalName ? () => handleProtocolClick(protocol.name, protocol.enabled) : undefined}
+                          sx={{ 
+                            fontWeight: 500,
+                            cursor: userPrincipalName ? "pointer" : "default",
+                            "&:hover": userPrincipalName ? {
+                              opacity: 0.8,
+                              transform: "scale(1.02)",
+                            } : {},
+                            transition: "all 0.15s ease-in-out",
+                            ...(protocol.enabled && {
+                              bgcolor: alpha(theme.palette.error.main, 0.9),
+                              "&:hover": userPrincipalName ? {
+                                bgcolor: alpha(theme.palette.error.main, 0.75),
+                                transform: "scale(1.02)",
+                              } : {},
+                            }),
+                          }}
+                        />
+                      </Tooltip>
+                    ))}
+                  </Stack>
+                </Box>
+              </Collapse>
+            </Paper>
+            
             {/* Security Recommendations - Only show if IMAP or POP is enabled */}
-            {(exchangeData?.MailboxImapEnabled || exchangeData?.MailboxPopEnabled) && (
+            {anyLegacyEnabled && (
               <Paper 
                 variant="outlined" 
                 sx={{ 
+                  mt: 1.5,
                   bgcolor: alpha(theme.palette.info.main, 0.04),
                   borderColor: alpha(theme.palette.info.main, 0.3),
                   overflow: "hidden",
@@ -718,8 +897,17 @@ export const CippExchangeInfoCard = (props) => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>
-          {protocolDialog.currentlyEnabled ? "Disable" : "Enable"} {protocolDialog.protocol}?
+        <DialogTitle sx={{ 
+          color: (!protocolDialog.currentlyEnabled && protocolInfo[protocolDialog.protocol]?.securityRisk === "high") 
+            ? "error.main" 
+            : "inherit" 
+        }}>
+          {protocolDialog.currentlyEnabled 
+            ? `Disable ${protocolDialog.protocol}?` 
+            : (protocolInfo[protocolDialog.protocol]?.securityRisk === "high" 
+                ? `⚠️ Enable ${protocolDialog.protocol}? (Not Recommended)` 
+                : `Enable ${protocolDialog.protocol}?`)
+          }
         </DialogTitle>
         <DialogContent>
           <DialogContentText component="div">
@@ -744,22 +932,46 @@ export const CippExchangeInfoCard = (props) => {
             )}
             
             {!protocolDialog.currentlyEnabled && protocolDialog.protocol && protocolInfo[protocolDialog.protocol] && (
-              <Alert 
-                severity={protocolInfo[protocolDialog.protocol].securityRisk === "high" ? "warning" : "info"} 
-                sx={{ mt: 2 }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                  Enabling this protocol will allow access from:
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  {protocolInfo[protocolDialog.protocol].affectedApps}
-                </Typography>
+              <>
                 {protocolInfo[protocolDialog.protocol].securityRisk === "high" && (
-                  <Typography variant="body2" color="warning.dark" sx={{ fontWeight: 500 }}>
-                    Note: This is a legacy protocol with potential security concerns.
-                  </Typography>
+                  <Alert 
+                    severity="error" 
+                    sx={{ mt: 2 }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 700, mb: 1 }}>
+                      Security Warning - Not Recommended
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>{protocolDialog.protocol}</strong> is a legacy protocol that may use basic authentication, 
+                      which transmits credentials in a less secure manner. Enabling this protocol:
+                    </Typography>
+                    <Typography variant="body2" component="div">
+                      <ul style={{ margin: 0, paddingLeft: 20 }}>
+                        <li>Decreases the overall security of the mailbox</li>
+                        <li>May bypass modern authentication and MFA protections</li>
+                        <li>Increases vulnerability to credential theft attacks</li>
+                        <li>Is not recommended by Microsoft security best practices</li>
+                      </ul>
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
+                      Only enable if the user requires a third-party email client (like Apple Mail or Thunderbird) 
+                      that does not support modern authentication.
+                    </Typography>
+                  </Alert>
                 )}
-              </Alert>
+                
+                <Alert 
+                  severity={protocolInfo[protocolDialog.protocol].securityRisk === "high" ? "warning" : "info"} 
+                  sx={{ mt: 2 }}
+                >
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                    Enabling this protocol will allow access from:
+                  </Typography>
+                  <Typography variant="body2">
+                    {protocolInfo[protocolDialog.protocol].affectedApps}
+                  </Typography>
+                </Alert>
+              </>
             )}
           </DialogContentText>
           {toggleProtocol.isError && (
@@ -774,12 +986,21 @@ export const CippExchangeInfoCard = (props) => {
           </Button>
           <Button
             onClick={handleProtocolToggle}
-            color={protocolDialog.currentlyEnabled ? "error" : "primary"}
+            color={
+              protocolDialog.currentlyEnabled 
+                ? "error" 
+                : (protocolInfo[protocolDialog.protocol]?.securityRisk === "high" ? "error" : "primary")
+            }
             variant="contained"
             disabled={isToggling}
             startIcon={isToggling ? <CircularProgress size={16} color="inherit" /> : null}
           >
-            {isToggling ? "Updating..." : protocolDialog.currentlyEnabled ? "Disable" : "Enable"}
+            {isToggling 
+              ? "Updating..." 
+              : protocolDialog.currentlyEnabled 
+                ? "Disable" 
+                : (protocolInfo[protocolDialog.protocol]?.securityRisk === "high" ? "Enable Anyway" : "Enable")
+            }
           </Button>
         </DialogActions>
       </Dialog>
@@ -848,6 +1069,63 @@ export const CippExchangeInfoCard = (props) => {
             startIcon={isTogglingGal ? <CircularProgress size={16} color="inherit" /> : null}
           >
             {isTogglingGal ? "Updating..." : exchangeData?.HiddenFromAddressLists ? "Show in GAL" : "Hide from GAL"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Spam Status Clear Confirmation Dialog */}
+      <Dialog
+        open={spamDialog}
+        onClose={() => setSpamDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Clear Spam Block?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText component="div">
+            This mailbox is currently blocked from sending email due to suspected spam activity.
+            
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                Before clearing this block, please ensure:
+              </Typography>
+              <Typography variant="body2" component="div">
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  <li>The user's account has not been compromised</li>
+                  <li>The user's password has been reset if there's any suspicion of compromise</li>
+                  <li>Any malicious mail rules or forwarding have been removed</li>
+                  <li>MFA is enabled on the account</li>
+                </ul>
+              </Typography>
+            </Alert>
+            
+            <Alert severity="info" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                Clearing this block will allow the user to send email again. If the spam behavior continues, 
+                the mailbox may be automatically blocked again by Microsoft.
+              </Typography>
+            </Alert>
+          </DialogContentText>
+          {clearSpamStatus.isError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {clearSpamStatus.error?.message || "Failed to clear spam status"}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSpamDialog(false)} disabled={isClearingSpam}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleClearSpam}
+            color="success"
+            variant="contained"
+            disabled={isClearingSpam}
+            startIcon={isClearingSpam ? <CircularProgress size={16} color="inherit" /> : <CheckCircle />}
+          >
+            {isClearingSpam ? "Clearing..." : "Clear Spam Block"}
           </Button>
         </DialogActions>
       </Dialog>
