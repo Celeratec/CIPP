@@ -88,12 +88,21 @@ const Page = () => {
   const [signInLogsDialogOpen, setSignInLogsDialogOpen] = useState(false);
   const userActions = useCippUserActions();
   const tenant = router.query.tenantFilter ?? userSettingsDefaults.currentTenant;
+  const settingsReady = userSettingsDefaults.isInitialized && !!tenant;
+  const queryReady = router.isReady && !!userId && settingsReady;
 
   const userRequest = ApiGetCall({
     url: `/api/ListUsers?UserId=${userId}&tenantFilter=${tenant}`,
     queryKey: `ListUsers-${userId}-${tenant}`,
-    waiting: router.isReady && !!userId && !!tenant,
+    waiting: queryReady,
   });
+
+  // Trigger refetch when query conditions become ready
+  useEffect(() => {
+    if (queryReady && !userRequest.isSuccess && !userRequest.isFetching) {
+      userRequest.refetch();
+    }
+  }, [queryReady, userId, tenant]);
 
   const userBulkRequest = ApiPostCall({
     urlFromData: true,

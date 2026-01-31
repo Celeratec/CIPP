@@ -24,12 +24,21 @@ const Page = () => {
   const { userId } = router.query;
   const userActions = useCippUserActions();
   const tenant = userSettingsDefaults.currentTenant;
+  const settingsReady = userSettingsDefaults.isInitialized && !!tenant;
+  const queryReady = router.isReady && !!userId && settingsReady;
 
   const userRequest = ApiGetCall({
     url: `/api/ListUsers?UserId=${userId}&tenantFilter=${tenant}`,
     queryKey: `ListUsers-${userId}-${tenant}`,
-    waiting: router.isReady && !!userId && !!tenant,
+    waiting: queryReady,
   });
+
+  // Trigger refetch when query conditions become ready
+  useEffect(() => {
+    if (queryReady && !userRequest.isSuccess && !userRequest.isFetching) {
+      userRequest.refetch();
+    }
+  }, [queryReady, userId, tenant]);
 
   const formControl = useForm({
     mode: "onBlur",
