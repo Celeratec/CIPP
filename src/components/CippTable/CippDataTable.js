@@ -135,6 +135,7 @@ const CardView = ({
   setOffCanvasData = null,
   setOffCanvasRowIndex = null,
   setOffcanvasVisible = null,
+  onCardClick = null,
 }) => {
   const theme = useTheme();
 
@@ -386,10 +387,15 @@ const CardView = ({
                     displayName={avatarField}
                     size={48}
                     enablePhoto={true}
-                    sx={{ flexShrink: 0 }}
+                    sx={{ 
+                      flexShrink: 0,
+                      cursor: onCardClick ? "pointer" : "default",
+                    }}
+                    onClick={onCardClick ? () => onCardClick(item) : undefined}
                   />
                 ) : (
                   <Avatar
+                    onClick={onCardClick ? () => onCardClick(item) : undefined}
                     sx={{
                       bgcolor: stringToColor(avatarField),
                       width: 48,
@@ -397,6 +403,7 @@ const CardView = ({
                       fontSize: "1rem",
                       fontWeight: 600,
                       flexShrink: 0,
+                      cursor: onCardClick ? "pointer" : "default",
                     }}
                   >
                     {getInitials(avatarField)}
@@ -407,12 +414,18 @@ const CardView = ({
                   <Stack direction="row" alignItems="center" spacing={0.5} sx={{ width: "100%" }}>
                     <Typography
                       variant="subtitle2"
+                      onClick={onCardClick ? () => onCardClick(item) : undefined}
                       sx={{
                         fontWeight: 600,
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
                         flex: 1,
+                        cursor: onCardClick ? "pointer" : "default",
+                        "&:hover": onCardClick ? {
+                          textDecoration: "underline",
+                          color: "primary.main",
+                        } : {},
                       }}
                     >
                       {titleValue}
@@ -788,6 +801,7 @@ export const CippDataTable = (props) => {
     viewModeStorageKey: viewModeStorageKeyOverride = null,
     showRowActionsMenu = true,
     rowSx = null, // Optional row styling callback (row) => sx object
+    onCardClick = null, // Callback when card avatar/title is clicked for navigation
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
   const [configuredSimpleColumns, setConfiguredSimpleColumns] = useState(simpleColumns);
@@ -1584,6 +1598,7 @@ export const CippDataTable = (props) => {
               setOffCanvasData={setOffCanvasData}
               setOffCanvasRowIndex={setOffCanvasRowIndex}
               setOffcanvasVisible={setOffcanvasVisible}
+              onCardClick={onCardClick}
             />
           )}
         </Card>

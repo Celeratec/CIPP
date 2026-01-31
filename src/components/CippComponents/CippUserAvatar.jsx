@@ -50,6 +50,7 @@ const CippUserAvatar = memo(({
   size = 48,
   sx = {},
   enablePhoto = true,
+  onClick = null,
 }) => {
   const [photoUrl, setPhotoUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -167,6 +168,7 @@ const CippUserAvatar = memo(({
     <Avatar
       ref={avatarRef}
       src={photoUrl}
+      onClick={onClick}
       sx={{
         bgcolor: bgColor,
         width: size,
