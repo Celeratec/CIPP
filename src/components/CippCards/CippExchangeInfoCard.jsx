@@ -411,10 +411,9 @@ export const CippExchangeInfoCard = (props) => {
             <Grid size={{ xs: 6, sm: 3 }}>
               <StatCard
                 icon={anyLegacyEnabled ? Warning : SettingsEthernet}
-                label={anyLegacyEnabled ? "Protocols ⚠️" : "Protocols"}
+                label="Protocols"
                 value={`${enabledProtocols.length}/${protocols.length}`}
                 color={anyLegacyEnabled ? "warning" : "info"}
-                subtitle={anyLegacyEnabled ? "Legacy enabled" : undefined}
               />
             </Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
