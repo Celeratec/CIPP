@@ -35,6 +35,7 @@ import {
   CheckCircle,
   Block,
   VisibilityOff,
+  Info as InfoIcon,
 } from "@mui/icons-material";
 import { Stack, Grid, Box } from "@mui/system";
 import { alpha, useTheme } from "@mui/material/styles";
@@ -167,14 +168,53 @@ export const CippExchangeInfoCard = (props) => {
     }
   };
 
-  // Define the protocols array
+  // Define the protocols array with detailed information
+  const protocolInfo = {
+    EWS: {
+      fullName: "Exchange Web Services",
+      affectedApps: "Outlook for Windows (older versions), Outlook for Mac (older versions), third-party apps using EWS API, calendar sync tools, and some backup solutions",
+      securityRisk: "medium",
+      recommendation: "Consider disabling if not needed. Modern Outlook uses REST/Graph API instead.",
+    },
+    MAPI: {
+      fullName: "MAPI over HTTP",
+      affectedApps: "Outlook for Windows (desktop client), some third-party email clients, and legacy applications",
+      securityRisk: "low",
+      recommendation: "Generally safe to keep enabled for Outlook desktop users.",
+    },
+    OWA: {
+      fullName: "Outlook on the Web",
+      affectedApps: "Outlook Web App (browser access), Outlook PWA (Progressive Web App)",
+      securityRisk: "low",
+      recommendation: "Keep enabled for web-based email access. Protected by modern authentication.",
+    },
+    IMAP: {
+      fullName: "Internet Message Access Protocol",
+      affectedApps: "Apple Mail (macOS/iOS), Thunderbird, Android Gmail app, third-party email clients, and legacy applications",
+      securityRisk: "high",
+      recommendation: "Disable if not needed. Legacy protocol that may use basic authentication.",
+    },
+    POP: {
+      fullName: "Post Office Protocol",
+      affectedApps: "Legacy email clients, some older mobile apps, and applications that download email locally",
+      securityRisk: "high",
+      recommendation: "Disable if not needed. Outdated protocol with security concerns.",
+    },
+    ActiveSync: {
+      fullName: "Exchange ActiveSync",
+      affectedApps: "Native iOS Mail app, native Android Mail app, Windows Mail app, and mobile device management (MDM) solutions",
+      securityRisk: "medium",
+      recommendation: "Keep enabled for mobile device access unless using Outlook mobile app exclusively.",
+    },
+  };
+
   const protocols = [
-    { name: "EWS", enabled: exchangeData?.EWSEnabled },
-    { name: "MAPI", enabled: exchangeData?.MailboxMAPIEnabled },
-    { name: "OWA", enabled: exchangeData?.MailboxOWAEnabled },
-    { name: "IMAP", enabled: exchangeData?.MailboxImapEnabled },
-    { name: "POP", enabled: exchangeData?.MailboxPopEnabled },
-    { name: "ActiveSync", enabled: exchangeData?.MailboxActiveSyncEnabled },
+    { name: "EWS", enabled: exchangeData?.EWSEnabled, ...protocolInfo.EWS },
+    { name: "MAPI", enabled: exchangeData?.MailboxMAPIEnabled, ...protocolInfo.MAPI },
+    { name: "OWA", enabled: exchangeData?.MailboxOWAEnabled, ...protocolInfo.OWA },
+    { name: "IMAP", enabled: exchangeData?.MailboxImapEnabled, ...protocolInfo.IMAP },
+    { name: "POP", enabled: exchangeData?.MailboxPopEnabled, ...protocolInfo.POP },
+    { name: "ActiveSync", enabled: exchangeData?.MailboxActiveSyncEnabled, ...protocolInfo.ActiveSync },
   ];
 
   // Define mailbox hold types array
@@ -493,11 +533,13 @@ export const CippExchangeInfoCard = (props) => {
 
           {/* Protocols */}
           <InfoSection icon={SettingsEthernet} title="Protocols">
-            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
               {protocols.map((protocol) => (
                 <Tooltip 
                   key={protocol.name} 
-                  title={userPrincipalName ? `Click to ${protocol.enabled ? 'disable' : 'enable'} ${protocol.name}` : 'User info not available'}
+                  title={userPrincipalName 
+                    ? `${protocol.fullName} - Click to ${protocol.enabled ? 'disable' : 'enable'}` 
+                    : `${protocol.fullName} - User info not available`}
                 >
                   <Chip
                     label={protocol.name}
@@ -519,6 +561,30 @@ export const CippExchangeInfoCard = (props) => {
                 </Tooltip>
               ))}
             </Stack>
+            
+            {/* Security Recommendations */}
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                p: 1.5, 
+                bgcolor: alpha(theme.palette.info.main, 0.04),
+                borderColor: alpha(theme.palette.info.main, 0.3),
+              }}
+            >
+              <Stack direction="row" spacing={1} alignItems="flex-start">
+                <InfoIcon fontSize="small" color="info" sx={{ mt: 0.25, flexShrink: 0 }} />
+                <Box>
+                  <Typography variant="caption" fontWeight={600} color="info.main" sx={{ display: "block", mb: 0.5 }}>
+                    Security Recommendation
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.5 }}>
+                    For improved security, consider disabling <strong>POP</strong> and <strong>IMAP</strong> protocols as they are legacy protocols 
+                    that may use basic authentication. These should only be enabled if users require third-party email clients 
+                    like Apple Mail or Thunderbird. Modern clients like Outlook use MAPI or EWS which support modern authentication.
+                  </Typography>
+                </Box>
+              </Stack>
+            </Paper>
           </InfoSection>
 
           <Divider sx={{ my: 2 }} />
@@ -568,20 +634,51 @@ export const CippExchangeInfoCard = (props) => {
       <Dialog
         open={protocolDialog.open}
         onClose={handleDialogClose}
-        maxWidth="xs"
+        maxWidth="sm"
         fullWidth
       >
         <DialogTitle>
           {protocolDialog.currentlyEnabled ? "Disable" : "Enable"} {protocolDialog.protocol}?
         </DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText component="div">
+            {protocolDialog.protocol && protocolInfo[protocolDialog.protocol] && (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                <strong>{protocolInfo[protocolDialog.protocol].fullName}</strong>
+              </Typography>
+            )}
+            
             Are you sure you want to {protocolDialog.currentlyEnabled ? "disable" : "enable"}{" "}
             <strong>{protocolDialog.protocol}</strong> for this mailbox?
-            {protocolDialog.currentlyEnabled && (
-              <Box component="span" sx={{ display: "block", mt: 1, color: "warning.main" }}>
-                Warning: Disabling this protocol may affect the user's ability to access their mailbox using certain applications.
-              </Box>
+            
+            {protocolDialog.currentlyEnabled && protocolDialog.protocol && protocolInfo[protocolDialog.protocol] && (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                  The following applications will no longer be able to access this mailbox:
+                </Typography>
+                <Typography variant="body2">
+                  {protocolInfo[protocolDialog.protocol].affectedApps}
+                </Typography>
+              </Alert>
+            )}
+            
+            {!protocolDialog.currentlyEnabled && protocolDialog.protocol && protocolInfo[protocolDialog.protocol] && (
+              <Alert 
+                severity={protocolInfo[protocolDialog.protocol].securityRisk === "high" ? "warning" : "info"} 
+                sx={{ mt: 2 }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                  Enabling this protocol will allow access from:
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  {protocolInfo[protocolDialog.protocol].affectedApps}
+                </Typography>
+                {protocolInfo[protocolDialog.protocol].securityRisk === "high" && (
+                  <Typography variant="body2" color="warning.dark" sx={{ fontWeight: 500 }}>
+                    Note: This is a legacy protocol with potential security concerns.
+                  </Typography>
+                )}
+              </Alert>
             )}
           </DialogContentText>
           {toggleProtocol.isError && (
