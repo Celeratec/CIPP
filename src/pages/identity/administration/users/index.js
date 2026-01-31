@@ -161,8 +161,9 @@ const Page = () => {
       },
       {
         field: "mail",
-        tooltip: "Mail Enabled",
+        tooltip: "Exchange Settings",
         iconOnly: true,
+        link: "/identity/administration/users/user/exchange?userId=[id]",
         conditions: {
           enabled: { label: "Mail enabled", color: "success", icon: <Email fontSize="small" /> },
           disabled: { label: "Not mail enabled", color: "error", icon: <Email fontSize="small" /> },

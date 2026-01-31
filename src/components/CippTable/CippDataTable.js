@@ -138,6 +138,7 @@ const CardView = ({
   onCardClick = null,
 }) => {
   const theme = useTheme();
+  const router = useRouter();
 
   const formatFieldValue = (value) => {
     if (value === null || value === undefined) return "";
@@ -171,7 +172,7 @@ const CardView = ({
   const CARD_HEIGHT = "auto";
 
   // Render badge based on config
-  const renderBadge = (badge, item, badgeIndex, isCompact = false) => {
+  const renderBadge = (badge, item, badgeIndex, isCompact = false, router = null) => {
     let fieldValue = getNestedValue(item, badge.field);
     
     // Apply transform function if provided
@@ -193,6 +194,40 @@ const CardView = ({
 
     if (!badgeConfig) return null;
 
+    // Helper to resolve link template with item data
+    const resolveLink = (linkTemplate) => {
+      if (!linkTemplate) return null;
+      return linkTemplate.replace(/\[(\w+)\]/g, (match, key) => {
+        return item[key] || "";
+      });
+    };
+
+    // Get the link if badge has one and condition is met
+    const badgeLink = badge.link ? resolveLink(badge.link) : null;
+    const isClickable = !!badgeLink && router;
+
+    // Wrapper for clickable badges
+    const wrapWithClick = (element) => {
+      if (!isClickable) return element;
+      return (
+        <Box
+          key={badgeIndex}
+          onClick={(e) => {
+            e.stopPropagation();
+            router.push(badgeLink);
+          }}
+          sx={{ 
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            "&:hover": { opacity: 0.8 },
+          }}
+        >
+          {element}
+        </Box>
+      );
+    };
+
     if (badge.iconOnly && badgeConfig.icon && isValidElement(badgeConfig.icon)) {
       const tooltipText = badge.tooltip || badgeConfig.label || getCippTranslation(badge.field);
       const color =
@@ -209,8 +244,9 @@ const CardView = ({
           : badgeConfig.color === "secondary"
           ? "secondary.main"
           : "text.secondary";
-      return (
-        <Tooltip key={badgeIndex} title={tooltipText}>
+      
+      const badgeElement = (
+        <Tooltip title={isClickable ? `${tooltipText} (Click to open)` : tooltipText}>
           <Box sx={{ display: "inline-flex", alignItems: "center" }}>
             <SvgIcon sx={{ fontSize: isCompact ? 18 : 20, color }}>
               {badgeConfig.icon}
@@ -218,11 +254,12 @@ const CardView = ({
           </Box>
         </Tooltip>
       );
+      return wrapWithClick(badgeElement);
     }
 
     if (badgeConfig.icon === "check") {
-      return (
-        <Tooltip key={badgeIndex} title={badge.tooltip || getCippTranslation(badge.field)}>
+      const badgeElement = (
+        <Tooltip title={badge.tooltip || getCippTranslation(badge.field)}>
           <CheckCircle
             sx={{
               fontSize: isCompact ? 20 : 22,
@@ -232,9 +269,10 @@ const CardView = ({
           />
         </Tooltip>
       );
+      return wrapWithClick(badgeElement);
     } else if (badgeConfig.icon === "cancel") {
-      return (
-        <Tooltip key={badgeIndex} title={badge.tooltip || getCippTranslation(badge.field)}>
+      const badgeElement = (
+        <Tooltip title={badge.tooltip || getCippTranslation(badge.field)}>
           <Cancel
             sx={{
               fontSize: isCompact ? 20 : 22,
@@ -244,20 +282,25 @@ const CardView = ({
           />
         </Tooltip>
       );
+      return wrapWithClick(badgeElement);
     }
 
-    return (
+    const badgeElement = (
       <Chip
-        key={badgeIndex}
         label={badgeConfig.label}
         icon={
           badgeConfig.icon && isValidElement(badgeConfig.icon) ? badgeConfig.icon : undefined
         }
         size="small"
         color={badgeConfig.color || "default"}
-        sx={{ height: isCompact ? 22 : 24, fontSize: isCompact ? "0.7rem" : "0.75rem" }}
+        sx={{ 
+          height: isCompact ? 22 : 24, 
+          fontSize: isCompact ? "0.7rem" : "0.75rem",
+          cursor: isClickable ? "pointer" : "default",
+        }}
       />
     );
+    return wrapWithClick(badgeElement);
   };
 
   // Filter and sort data based on search term and custom sorting
@@ -434,7 +477,7 @@ const CardView = ({
                     {config.badges?.length > 0 && (
                       <Box sx={{ display: "flex", gap: 0.5, ml: "auto", flexShrink: 0 }}>
                         {config.badges.map((badge, badgeIndex) =>
-                          renderBadge(badge, item, badgeIndex, true)
+                          renderBadge(badge, item, badgeIndex, true, router)
                         )}
                       </Box>
                     )}

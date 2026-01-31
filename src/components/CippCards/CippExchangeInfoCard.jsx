@@ -1,4 +1,5 @@
 import PropTypes from "prop-types";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -12,6 +13,12 @@ import {
   Paper,
   LinearProgress,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
 } from "@mui/material";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 import { 
@@ -31,6 +38,8 @@ import {
 } from "@mui/icons-material";
 import { Stack, Grid, Box } from "@mui/system";
 import { alpha, useTheme } from "@mui/material/styles";
+import { ApiPostCall } from "../../api/ApiCall";
+import { useSettings } from "../../hooks/use-settings";
 
 // Section component for consistent styling
 const InfoSection = ({ icon: Icon, title, children }) => (
@@ -59,13 +68,23 @@ const StatCard = ({ icon: Icon, label, value, color = "primary", subtitle }) => 
         textAlign: "center",
         borderColor: alpha(paletteColor, 0.3),
         bgcolor: alpha(paletteColor, 0.04),
+        overflow: "hidden",
       }}
     >
       <Icon sx={{ color: paletteColor, fontSize: 24, mb: 0.5 }} />
       <Typography variant="caption" color="text.secondary" display="block">
         {label}
       </Typography>
-      <Typography variant="body2" fontWeight={600}>
+      <Typography 
+        variant="body2" 
+        fontWeight={600}
+        sx={{
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+        title={value}
+      >
         {value}
       </Typography>
       {subtitle && (
@@ -77,9 +96,76 @@ const StatCard = ({ icon: Icon, label, value, color = "primary", subtitle }) => 
   );
 };
 
+// Format camelCase or PascalCase strings to have spaces (e.g., "UserMailbox" -> "User Mailbox")
+const formatMailboxType = (type) => {
+  if (!type) return "N/A";
+  return type.replace(/([a-z])([A-Z])/g, "$1 $2");
+};
+
 export const CippExchangeInfoCard = (props) => {
-  const { exchangeData, isLoading = false, isFetching = false, handleRefresh, ...other } = props;
+  const { exchangeData, isLoading = false, isFetching = false, handleRefresh, userPrincipalName, ...other } = props;
   const theme = useTheme();
+  const settings = useSettings();
+  
+  // State for protocol toggle dialog
+  const [protocolDialog, setProtocolDialog] = useState({
+    open: false,
+    protocol: null,
+    currentlyEnabled: false,
+  });
+  const [isToggling, setIsToggling] = useState(false);
+  
+  // API call for toggling protocols
+  const toggleProtocol = ApiPostCall({
+    urlFromData: true,
+    relatedQueryKeys: [`Mailbox-${exchangeData?.UserId}`],
+  });
+
+  // Handle protocol chip click
+  const handleProtocolClick = (protocol, isEnabled) => {
+    setProtocolDialog({
+      open: true,
+      protocol,
+      currentlyEnabled: isEnabled,
+    });
+  };
+
+  // Handle dialog close
+  const handleDialogClose = () => {
+    setProtocolDialog({
+      open: false,
+      protocol: null,
+      currentlyEnabled: false,
+    });
+  };
+
+  // Handle protocol toggle confirmation
+  const handleProtocolToggle = async () => {
+    const { protocol, currentlyEnabled } = protocolDialog;
+    setIsToggling(true);
+    
+    try {
+      await toggleProtocol.mutateAsync({
+        url: "/api/ExecSetCASMailbox",
+        data: {
+          user: userPrincipalName,
+          tenantFilter: settings.currentTenant,
+          protocol: protocol,
+          enable: !currentlyEnabled,
+        },
+      });
+      
+      // Refresh the data after successful toggle
+      if (handleRefresh) {
+        handleRefresh();
+      }
+    } catch (error) {
+      console.error("Failed to toggle protocol:", error);
+    } finally {
+      setIsToggling(false);
+      handleDialogClose();
+    }
+  };
 
   // Define the protocols array
   const protocols = [
@@ -180,7 +266,7 @@ export const CippExchangeInfoCard = (props) => {
               <StatCard
                 icon={Mail}
                 label="Type"
-                value={exchangeData?.RecipientTypeDetails || "N/A"}
+                value={formatMailboxType(exchangeData?.RecipientTypeDetails)}
                 color="primary"
               />
             </Grid>
@@ -409,15 +495,28 @@ export const CippExchangeInfoCard = (props) => {
           <InfoSection icon={SettingsEthernet} title="Protocols">
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
               {protocols.map((protocol) => (
-                <Chip
-                  key={protocol.name}
-                  label={protocol.name}
-                  icon={protocol.enabled ? <CheckIcon /> : <CloseIcon />}
-                  color={protocol.enabled ? "success" : "default"}
-                  variant={protocol.enabled ? "filled" : "outlined"}
-                  size="small"
-                  sx={{ fontWeight: 500 }}
-                />
+                <Tooltip 
+                  key={protocol.name} 
+                  title={userPrincipalName ? `Click to ${protocol.enabled ? 'disable' : 'enable'} ${protocol.name}` : 'User info not available'}
+                >
+                  <Chip
+                    label={protocol.name}
+                    icon={protocol.enabled ? <CheckIcon /> : <CloseIcon />}
+                    color={protocol.enabled ? "success" : "default"}
+                    variant={protocol.enabled ? "filled" : "outlined"}
+                    size="small"
+                    onClick={userPrincipalName ? () => handleProtocolClick(protocol.name, protocol.enabled) : undefined}
+                    sx={{ 
+                      fontWeight: 500,
+                      cursor: userPrincipalName ? "pointer" : "default",
+                      "&:hover": userPrincipalName ? {
+                        opacity: 0.8,
+                        transform: "scale(1.02)",
+                      } : {},
+                      transition: "all 0.15s ease-in-out",
+                    }}
+                  />
+                </Tooltip>
               ))}
             </Stack>
           </InfoSection>
@@ -464,6 +563,48 @@ export const CippExchangeInfoCard = (props) => {
           </InfoSection>
         </Box>
       </CardContent>
+      
+      {/* Protocol Toggle Confirmation Dialog */}
+      <Dialog
+        open={protocolDialog.open}
+        onClose={handleDialogClose}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          {protocolDialog.currentlyEnabled ? "Disable" : "Enable"} {protocolDialog.protocol}?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to {protocolDialog.currentlyEnabled ? "disable" : "enable"}{" "}
+            <strong>{protocolDialog.protocol}</strong> for this mailbox?
+            {protocolDialog.currentlyEnabled && (
+              <Box component="span" sx={{ display: "block", mt: 1, color: "warning.main" }}>
+                Warning: Disabling this protocol may affect the user's ability to access their mailbox using certain applications.
+              </Box>
+            )}
+          </DialogContentText>
+          {toggleProtocol.isError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {toggleProtocol.error?.message || "Failed to update protocol setting"}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose} disabled={isToggling}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleProtocolToggle}
+            color={protocolDialog.currentlyEnabled ? "error" : "primary"}
+            variant="contained"
+            disabled={isToggling}
+            startIcon={isToggling ? <CircularProgress size={16} color="inherit" /> : null}
+          >
+            {isToggling ? "Updating..." : protocolDialog.currentlyEnabled ? "Disable" : "Enable"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 };
@@ -473,4 +614,5 @@ CippExchangeInfoCard.propTypes = {
   isLoading: PropTypes.bool,
   isFetching: PropTypes.bool,
   handleRefresh: PropTypes.func,
+  userPrincipalName: PropTypes.string,
 };

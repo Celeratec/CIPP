@@ -1320,6 +1320,7 @@ const Page = () => {
                     isLoading={userRequest.isLoading}
                     isFetching={userRequest.isFetching}
                     handleRefresh={() => userRequest.refetch()}
+                    userPrincipalName={graphUserRequest.data?.[0]?.userPrincipalName}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 8 }}>
