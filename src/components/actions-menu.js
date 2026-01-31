@@ -8,11 +8,39 @@ import {
   Menu,
   MenuItem,
   SvgIcon,
+  Box,
+  alpha,
 } from "@mui/material";
 import { useMemo, useState } from "react";
 import { usePopover } from "../hooks/use-popover";
 import { useDialog } from "../hooks/use-dialog";
 import { CippApiDialog } from "./CippComponents/CippApiDialog";
+import { 
+  Visibility, 
+  Edit, 
+  Security, 
+  Settings, 
+  Warning,
+  Circle,
+} from "@mui/icons-material";
+
+// Get icon for category
+const getCategoryIcon = (category) => {
+  switch (category.toLowerCase()) {
+    case "view":
+      return <Visibility sx={{ fontSize: 14 }} />;
+    case "edit":
+      return <Edit sx={{ fontSize: 14 }} />;
+    case "security":
+      return <Security sx={{ fontSize: 14 }} />;
+    case "manage":
+      return <Settings sx={{ fontSize: 14 }} />;
+    case "danger":
+      return <Warning sx={{ fontSize: 14 }} />;
+    default:
+      return <Circle sx={{ fontSize: 8 }} />;
+  }
+};
 
 export const ActionsMenu = (props) => {
   const { actions = [], label = "Actions", data, queryKeys, ...other } = props;
@@ -41,8 +69,7 @@ export const ActionsMenu = (props) => {
       .replace(/([a-z])([A-Z])/g, "$1 $2")
       .replace(/^./, (match) => match.toUpperCase());
 
-  const getActionColor = (action, category) => {
-    if (action.color) return action.color;
+  const getCategoryColor = (category) => {
     switch (category.toLowerCase()) {
       case "view":
         return "success";
@@ -57,6 +84,11 @@ export const ActionsMenu = (props) => {
       default:
         return "text.secondary";
     }
+  };
+
+  const getActionColor = (action, category) => {
+    if (action.color) return action.color;
+    return getCategoryColor(category);
   };
   const handleActionDisabled = (row, action) => {
     //add nullsaftey for row. It can sometimes be undefined(still loading) or null(no data)
@@ -103,56 +135,76 @@ export const ActionsMenu = (props) => {
           vertical: "top",
         }}
       >
-        {groupedActions.map(([category, categoryActions], groupIndex) => (
-          <div key={category}>
-            <ListSubheader
-              disableSticky
-              sx={{
-                textTransform: "uppercase",
-                fontSize: "0.7rem",
-                letterSpacing: "0.06em",
-                fontWeight: 600,
-                lineHeight: 1.8,
-              }}
-            >
-              {getCategoryLabel(category)}
-            </ListSubheader>
-            {categoryActions.map((action, index) => {
-              const actionColor = getActionColor(action, category);
-              const iconSx =
-                actionColor === "text.secondary"
-                  ? { minWidth: "30px", color: actionColor }
-                  : { minWidth: "30px", color: (theme) => theme.palette[actionColor].main };
+        {groupedActions.map(([category, categoryActions], groupIndex) => {
+          const categoryColor = getCategoryColor(category);
+          const headerBgColor = categoryColor === "text.secondary" 
+            ? (theme) => alpha(theme.palette.grey[500], 0.08)
+            : (theme) => alpha(theme.palette[categoryColor].main, 0.08);
+          const headerTextColor = categoryColor === "text.secondary"
+            ? "text.secondary"
+            : `${categoryColor}.main`;
+            
+          return (
+            <Box key={category}>
+              <ListSubheader
+                disableSticky
+                sx={{
+                  textTransform: "uppercase",
+                  fontSize: "0.7rem",
+                  letterSpacing: "0.06em",
+                  fontWeight: 700,
+                  lineHeight: 1.8,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  bgcolor: headerBgColor,
+                  color: headerTextColor,
+                  borderRadius: 0.5,
+                  mx: 0.5,
+                  mt: groupIndex > 0 ? 0.5 : 0,
+                  py: 0.5,
+                }}
+              >
+                {getCategoryIcon(category)}
+                {getCategoryLabel(category)}
+              </ListSubheader>
+              {categoryActions.map((action, index) => {
+                const actionColor = getActionColor(action, category);
+                const iconSx =
+                  actionColor === "text.secondary"
+                    ? { minWidth: "30px", color: actionColor }
+                    : { minWidth: "30px", color: (theme) => theme.palette[actionColor].main };
 
-              return (
-                <MenuItem
-                  disabled={handleActionDisabled(data, action)}
-                  key={`${category}-${index}`}
-                  onClick={() => {
-                    setActionData({
-                      data: data,
-                      action: action,
-                      ready: true,
-                    });
+                return (
+                  <MenuItem
+                    disabled={handleActionDisabled(data, action)}
+                    key={`${category}-${index}`}
+                    onClick={() => {
+                      setActionData({
+                        data: data,
+                        action: action,
+                        ready: true,
+                      });
 
-                    if (action?.noConfirm && action.customFunction) {
-                      action.customFunction(data, action, {});
-                    } else {
-                      createDialog.handleOpen();
-                      popover.handleClose();
-                    }
-                  }}
-                >
-                  <SvgIcon fontSize="small" sx={iconSx}>
-                    {action.icon}
-                  </SvgIcon>
-                  <ListItemText>{action.label}</ListItemText>
-                </MenuItem>
-              );
-            })}
-            {groupIndex < groupedActions.length - 1 && <Divider sx={{ my: 0.5 }} />}
-          </div>
-        ))}
+                      if (action?.noConfirm && action.customFunction) {
+                        action.customFunction(data, action, {});
+                      } else {
+                        createDialog.handleOpen();
+                        popover.handleClose();
+                      }
+                    }}
+                  >
+                    <SvgIcon fontSize="small" sx={iconSx}>
+                      {action.icon}
+                    </SvgIcon>
+                    <ListItemText>{action.label}</ListItemText>
+                  </MenuItem>
+                );
+              })}
+              {groupIndex < groupedActions.length - 1 && <Divider sx={{ my: 0.5 }} />}
+            </Box>
+          );
+        })}
       </Menu>
       {actionData.ready && (
         <CippApiDialog
