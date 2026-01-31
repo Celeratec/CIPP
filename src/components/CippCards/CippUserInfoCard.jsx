@@ -12,6 +12,13 @@ import {
   Chip,
   Paper,
   ButtonBase,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+  Alert,
 } from "@mui/material";
 import { 
   AccountCircle, 
@@ -29,13 +36,16 @@ import {
   Business,
   Email,
   OpenInNew,
+  Close,
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
+import { getCippLicenseTranslation } from "../../utils/get-cipp-license-translation";
 import { Stack, Grid, Box } from "@mui/system";
 import { useState, useRef } from "react";
 import { ApiPostCall } from "../../api/ApiCall";
 import { alpha, useTheme } from "@mui/material/styles";
 import { useRouter } from "next/router";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Section component for consistent styling
 const InfoSection = ({ icon: Icon, title, children, isEmpty = false }) => {
@@ -71,13 +81,128 @@ const InfoRow = ({ label, value, fullWidth = false }) => {
 };
 
 export const CippUserInfoCard = (props) => {
-  const { user, tenant, isFetching = false, ...other } = props;
+  const { user, tenant, isFetching = false, onRefresh, ...other } = props;
   const theme = useTheme();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [photoTimestamp, setPhotoTimestamp] = useState(Date.now());
   const [uploadError, setUploadError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const fileInputRef = useRef(null);
+  
+  // License removal state
+  const [licenseDialog, setLicenseDialog] = useState({
+    open: false,
+    license: null,
+    licenseName: null,
+  });
+  const [isRemovingLicense, setIsRemovingLicense] = useState(false);
+  const [licenseError, setLicenseError] = useState(null);
+  
+  // License removal API
+  const removeLicenseMutation = ApiPostCall({
+    urlFromData: true,
+    relatedQueryKeys: [`ListUsers-${user?.id}`],
+  });
+  
+  // Handle license chip click for removal
+  const handleLicenseClick = (license, licenseName) => {
+    setLicenseDialog({
+      open: true,
+      license,
+      licenseName,
+    });
+    setLicenseError(null);
+  };
+  
+  // Handle dialog close
+  const handleLicenseDialogClose = () => {
+    setLicenseDialog({
+      open: false,
+      license: null,
+      licenseName: null,
+    });
+    setLicenseError(null);
+  };
+  
+  // Handle license removal
+  const handleRemoveLicense = async () => {
+    const { license } = licenseDialog;
+    setIsRemovingLicense(true);
+    setLicenseError(null);
+    
+    try {
+      await removeLicenseMutation.mutateAsync({
+        url: "/api/ExecBulkLicense",
+        data: [{
+          tenantFilter: tenant,
+          userIds: user.id,
+          LicenseOperation: "Remove",
+          Licenses: [{ value: license.skuId }],
+        }],
+      });
+      
+      // Invalidate user queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: [`ListUsers-${user?.id}`] });
+      
+      // Call onRefresh if provided
+      if (onRefresh) {
+        onRefresh();
+      }
+      
+      handleLicenseDialogClose();
+    } catch (error) {
+      console.error("Failed to remove license:", error);
+      setLicenseError(error.message || "Failed to remove license");
+    } finally {
+      setIsRemovingLicense(false);
+    }
+  };
+  
+  // Get translated license names with skuId preserved
+  const getLicenseChips = () => {
+    if (!user?.assignedLicenses || user.assignedLicenses.length === 0) {
+      return null;
+    }
+    
+    return user.assignedLicenses.map((license, index) => {
+      // Get the translated name for this single license
+      const translatedNames = getCippLicenseTranslation([license]);
+      const displayName = Array.isArray(translatedNames) ? translatedNames[0] : translatedNames;
+      
+      return (
+        <Tooltip 
+          key={license.skuId || index} 
+          title={`Click to remove: ${displayName}`}
+        >
+          <Chip
+            label={displayName}
+            variant="outlined"
+            size="small"
+            color="info"
+            onDelete={() => handleLicenseClick(license, displayName)}
+            deleteIcon={<Close sx={{ fontSize: 16 }} />}
+            sx={{
+              maxWidth: "100%",
+              height: "auto",
+              cursor: "pointer",
+              "& .MuiChip-label": {
+                whiteSpace: "normal",
+                wordBreak: "break-word",
+                py: 0.5,
+              },
+              "& .MuiChip-deleteIcon": {
+                color: "text.secondary",
+                "&:hover": {
+                  color: "error.main",
+                },
+              },
+            }}
+          />
+        </Tooltip>
+      );
+    });
+  };
 
   // API mutations
   const setPhotoMutation = ApiPostCall({ urlFromData: true });
@@ -407,7 +532,7 @@ export const CippUserInfoCard = (props) => {
               </Paper>
             ) : (
               <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                {getCippFormatting(user?.assignedLicenses, "assignedLicenses")}
+                {getLicenseChips()}
               </Stack>
             )}
           </InfoSection>
@@ -500,6 +625,63 @@ export const CippUserInfoCard = (props) => {
           )}
         </Box>
       </CardContent>
+      
+      {/* License Removal Confirmation Dialog */}
+      <Dialog
+        open={licenseDialog.open}
+        onClose={handleLicenseDialogClose}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Remove License?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText component="div">
+            Are you sure you want to remove the following license from{" "}
+            <strong>{user?.displayName}</strong>?
+            
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                p: 2, 
+                mt: 2, 
+                bgcolor: alpha(theme.palette.warning.main, 0.04),
+                borderColor: alpha(theme.palette.warning.main, 0.3),
+              }}
+            >
+              <Typography variant="body1" fontWeight={600}>
+                {licenseDialog.licenseName}
+              </Typography>
+            </Paper>
+            
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              This action will immediately remove the license from the user's account. 
+              The user may lose access to associated services and features.
+            </Alert>
+          </DialogContentText>
+          
+          {licenseError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {licenseError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleLicenseDialogClose} disabled={isRemovingLicense}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleRemoveLicense}
+            color="error"
+            variant="contained"
+            disabled={isRemovingLicense}
+            startIcon={isRemovingLicense ? <CircularProgress size={16} color="inherit" /> : <Delete />}
+          >
+            {isRemovingLicense ? "Removing..." : "Remove License"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 };
@@ -508,4 +690,5 @@ CippUserInfoCard.propTypes = {
   user: PropTypes.object,
   tenant: PropTypes.string,
   isFetching: PropTypes.bool,
+  onRefresh: PropTypes.func,
 };

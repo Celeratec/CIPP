@@ -613,6 +613,7 @@ const Page = () => {
                 user={data}
                 tenant={userSettingsDefaults.currentTenant}
                 isFetching={userRequest.isLoading}
+                onRefresh={() => userRequest.refetch()}
               />
             </Grid>
             <Grid size={{ xs: 12, md: 8 }}>
