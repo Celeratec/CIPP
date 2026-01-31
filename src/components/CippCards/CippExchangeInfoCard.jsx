@@ -122,8 +122,18 @@ export const CippExchangeInfoCard = (props) => {
   // State for security recommendation collapse (collapsed by default)
   const [securityRecommendationExpanded, setSecurityRecommendationExpanded] = useState(false);
   
+  // State for GAL visibility dialog
+  const [galDialog, setGalDialog] = useState(false);
+  const [isTogglingGal, setIsTogglingGal] = useState(false);
+  
   // API call for toggling protocols
   const toggleProtocol = ApiPostCall({
+    urlFromData: true,
+    relatedQueryKeys: [`Mailbox-${exchangeData?.UserId}`],
+  });
+  
+  // API call for toggling GAL visibility
+  const toggleGalVisibility = ApiPostCall({
     urlFromData: true,
     relatedQueryKeys: [`Mailbox-${exchangeData?.UserId}`],
   });
@@ -171,6 +181,32 @@ export const CippExchangeInfoCard = (props) => {
     } finally {
       setIsToggling(false);
       handleDialogClose();
+    }
+  };
+
+  // Handle GAL visibility toggle
+  const handleGalToggle = async () => {
+    setIsTogglingGal(true);
+    
+    try {
+      await toggleGalVisibility.mutateAsync({
+        url: "/api/ExecHideFromGAL",
+        data: {
+          ID: userPrincipalName,
+          tenantFilter: settings.currentTenant,
+          HideFromGAL: !exchangeData?.HiddenFromAddressLists,
+        },
+      });
+      
+      // Refresh the data after successful toggle
+      if (handleRefresh) {
+        handleRefresh();
+      }
+    } catch (error) {
+      console.error("Failed to toggle GAL visibility:", error);
+    } finally {
+      setIsTogglingGal(false);
+      setGalDialog(false);
     }
   };
 
@@ -392,23 +428,39 @@ export const CippExchangeInfoCard = (props) => {
           <InfoSection icon={Mail} title="Mailbox Settings">
             <Grid container spacing={1.5}>
               <Grid size={{ xs: 6 }}>
-                <Paper variant="outlined" sx={{ p: 1.5 }}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    {exchangeData?.HiddenFromAddressLists ? (
-                      <VisibilityOff fontSize="small" color="warning" />
-                    ) : (
-                      <CheckCircle fontSize="small" color="success" />
-                    )}
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Address List
-                      </Typography>
-                      <Typography variant="body2" fontWeight={500}>
-                        {exchangeData?.HiddenFromAddressLists ? "Hidden" : "Visible"}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Paper>
+                <Tooltip title={userPrincipalName ? `Click to ${exchangeData?.HiddenFromAddressLists ? 'show in' : 'hide from'} Global Address List` : 'User info not available'}>
+                  <Paper 
+                    variant="outlined" 
+                    onClick={userPrincipalName ? () => setGalDialog(true) : undefined}
+                    sx={{ 
+                      p: 1.5,
+                      cursor: userPrincipalName ? "pointer" : "default",
+                      transition: "all 0.15s ease-in-out",
+                      "&:hover": userPrincipalName ? {
+                        borderColor: "primary.main",
+                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                      } : {},
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      {isTogglingGal ? (
+                        <CircularProgress size={20} />
+                      ) : exchangeData?.HiddenFromAddressLists ? (
+                        <VisibilityOff fontSize="small" color="warning" />
+                      ) : (
+                        <CheckCircle fontSize="small" color="success" />
+                      )}
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Address List
+                        </Typography>
+                        <Typography variant="body2" fontWeight={500}>
+                          {exchangeData?.HiddenFromAddressLists ? "Hidden" : "Visible"}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Paper>
+                </Tooltip>
               </Grid>
               <Grid size={{ xs: 6 }}>
                 <Paper variant="outlined" sx={{ p: 1.5 }}>
@@ -728,6 +780,74 @@ export const CippExchangeInfoCard = (props) => {
             startIcon={isToggling ? <CircularProgress size={16} color="inherit" /> : null}
           >
             {isToggling ? "Updating..." : protocolDialog.currentlyEnabled ? "Disable" : "Enable"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* GAL Visibility Toggle Confirmation Dialog */}
+      <Dialog
+        open={galDialog}
+        onClose={() => setGalDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {exchangeData?.HiddenFromAddressLists ? "Show in" : "Hide from"} Global Address List?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText component="div">
+            Are you sure you want to {exchangeData?.HiddenFromAddressLists ? "show" : "hide"} this mailbox 
+            {exchangeData?.HiddenFromAddressLists ? " in" : " from"} the Global Address List?
+            
+            {!exchangeData?.HiddenFromAddressLists ? (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                  When hidden from the Global Address List:
+                </Typography>
+                <Typography variant="body2" component="div">
+                  <ul style={{ margin: 0, paddingLeft: 20 }}>
+                    <li>Users will not be able to find this mailbox when searching the address book</li>
+                    <li>The mailbox will not appear in Outlook's autocomplete suggestions</li>
+                    <li>Users can still send email if they know the exact address</li>
+                  </ul>
+                </Typography>
+              </Alert>
+            ) : (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                <Typography variant="body2">
+                  The mailbox will become visible in the Global Address List and users will be able to 
+                  find it when searching the address book.
+                </Typography>
+              </Alert>
+            )}
+            
+            {exchangeData?.onPremisesSyncEnabled && (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                <Typography variant="body2">
+                  <strong>Note:</strong> This mailbox is synced from Active Directory. Changes made here 
+                  may be overwritten on the next sync cycle.
+                </Typography>
+              </Alert>
+            )}
+          </DialogContentText>
+          {toggleGalVisibility.isError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {toggleGalVisibility.error?.message || "Failed to update GAL visibility"}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setGalDialog(false)} disabled={isTogglingGal}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleGalToggle}
+            color={exchangeData?.HiddenFromAddressLists ? "primary" : "warning"}
+            variant="contained"
+            disabled={isTogglingGal}
+            startIcon={isTogglingGal ? <CircularProgress size={16} color="inherit" /> : null}
+          >
+            {isTogglingGal ? "Updating..." : exchangeData?.HiddenFromAddressLists ? "Show in GAL" : "Hide from GAL"}
           </Button>
         </DialogActions>
       </Dialog>
