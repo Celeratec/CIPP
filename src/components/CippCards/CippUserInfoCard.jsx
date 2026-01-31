@@ -37,6 +37,8 @@ import {
   Email,
   OpenInNew,
   Close,
+  ContentCopy,
+  Check as CheckIcon,
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 import { getCippLicenseTranslation } from "../../utils/get-cipp-license-translation";
@@ -98,6 +100,7 @@ export const CippUserInfoCard = (props) => {
   });
   const [isRemovingLicense, setIsRemovingLicense] = useState(false);
   const [licenseError, setLicenseError] = useState(null);
+  const [copiedLicenseId, setCopiedLicenseId] = useState(null);
   
   // License removal API
   const removeLicenseMutation = ApiPostCall({
@@ -159,6 +162,14 @@ export const CippUserInfoCard = (props) => {
     }
   };
   
+  // Handle copying license name
+  const handleCopyLicense = (licenseId, displayName) => {
+    navigator.clipboard.writeText(displayName).then(() => {
+      setCopiedLicenseId(licenseId);
+      setTimeout(() => setCopiedLicenseId(null), 2000);
+    });
+  };
+  
   // Get translated license names with skuId preserved
   const getLicenseChips = () => {
     if (!user?.assignedLicenses || user.assignedLicenses.length === 0) {
@@ -169,37 +180,82 @@ export const CippUserInfoCard = (props) => {
       // Get the translated name for this single license
       const translatedNames = getCippLicenseTranslation([license]);
       const displayName = Array.isArray(translatedNames) ? translatedNames[0] : translatedNames;
+      const licenseId = license.skuId || index;
+      const isCopied = copiedLicenseId === licenseId;
       
       return (
-        <Tooltip 
-          key={license.skuId || index} 
-          title={`Click to remove: ${displayName}`}
+        <Box 
+          key={licenseId}
+          sx={{
+            display: "inline-flex",
+            alignItems: "stretch",
+            border: `1px solid ${alpha(theme.palette.info.main, 0.5)}`,
+            borderRadius: 1,
+            overflow: "hidden",
+            maxWidth: "100%",
+            bgcolor: alpha(theme.palette.info.main, 0.04),
+            "&:hover": {
+              borderColor: theme.palette.info.main,
+            },
+          }}
         >
-          <Chip
-            label={displayName}
-            variant="outlined"
-            size="small"
-            color="info"
-            onDelete={() => handleLicenseClick(license, displayName)}
-            deleteIcon={<Close sx={{ fontSize: 16 }} />}
-            sx={{
-              maxWidth: "100%",
-              height: "auto",
-              cursor: "pointer",
-              "& .MuiChip-label": {
-                whiteSpace: "normal",
-                wordBreak: "break-word",
+          {/* Copy button */}
+          <Tooltip title={isCopied ? "Copied!" : "Copy license name"}>
+            <ButtonBase
+              onClick={() => handleCopyLicense(licenseId, displayName)}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                px: 1,
                 py: 0.5,
-              },
-              "& .MuiChip-deleteIcon": {
+                minWidth: 0,
+                flex: 1,
+                justifyContent: "flex-start",
+                "&:hover": {
+                  bgcolor: alpha(theme.palette.info.main, 0.08),
+                },
+              }}
+            >
+              {isCopied ? (
+                <CheckIcon sx={{ fontSize: 14, color: "success.main", flexShrink: 0 }} />
+              ) : (
+                <ContentCopy sx={{ fontSize: 14, color: "info.main", flexShrink: 0 }} />
+              )}
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 500,
+                  color: isCopied ? "success.main" : "text.primary",
+                  whiteSpace: "normal",
+                  wordBreak: "break-word",
+                  textAlign: "left",
+                  lineHeight: 1.3,
+                }}
+              >
+                {displayName}
+              </Typography>
+            </ButtonBase>
+          </Tooltip>
+          
+          {/* Remove button */}
+          <Tooltip title="Remove license">
+            <ButtonBase
+              onClick={() => handleLicenseClick(license, displayName)}
+              sx={{
+                px: 0.75,
+                borderLeft: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
                 color: "text.secondary",
                 "&:hover": {
+                  bgcolor: alpha(theme.palette.error.main, 0.08),
                   color: "error.main",
                 },
-              },
-            }}
-          />
-        </Tooltip>
+              }}
+            >
+              <Close sx={{ fontSize: 16 }} />
+            </ButtonBase>
+          </Tooltip>
+        </Box>
       );
     });
   };
