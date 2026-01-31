@@ -23,11 +23,12 @@ const Page = () => {
   const router = useRouter();
   const { userId } = router.query;
   const userActions = useCippUserActions();
+  const tenant = userSettingsDefaults.currentTenant;
 
   const userRequest = ApiGetCall({
-    url: `/api/ListUsers?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}`,
-    queryKey: `ListUsers-${userId}`,
-    waiting: router.isReady && !!userId,
+    url: `/api/ListUsers?UserId=${userId}&tenantFilter=${tenant}`,
+    queryKey: `ListUsers-${userId}-${tenant}`,
+    waiting: router.isReady && !!userId && !!tenant,
   });
 
   const formControl = useForm({
@@ -55,7 +56,7 @@ const Page = () => {
         ...user,
         usageLocation: usageLocation,
         defaultAttributes: defaultAttributes,
-        tenantFilter: userSettingsDefaults.currentTenant,
+        tenantFilter: tenant,
         licenses: (user.assignedLicenses || []).map((license) => ({
           label: getCippLicenseTranslation([license]),
           value: license.skuId,
@@ -93,7 +94,7 @@ const Page = () => {
               color="muted"
               style={{ paddingLeft: 0 }}
               size="small"
-              href={`https://entra.microsoft.com/${userSettingsDefaults.currentTenant}/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/${userId}`}
+              href={`https://entra.microsoft.com/${tenant}/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/${userId}`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -120,7 +121,7 @@ const Page = () => {
         </Alert>
       )}
       <CippFormPage
-        queryKey={[`ListUsers-${userId}`, `Licenses-${userSettingsDefaults.currentTenant}`]}
+        queryKey={[`ListUsers-${userId}-${tenant}`, `Licenses-${tenant}`]}
         formControl={formControl}
         title={title}
         hideBackButton={true}

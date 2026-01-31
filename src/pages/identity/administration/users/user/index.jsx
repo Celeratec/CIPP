@@ -87,13 +87,12 @@ const Page = () => {
   const { userId } = router.query;
   const [signInLogsDialogOpen, setSignInLogsDialogOpen] = useState(false);
   const userActions = useCippUserActions();
+  const tenant = router.query.tenantFilter ?? userSettingsDefaults.currentTenant;
 
   const userRequest = ApiGetCall({
-    url: `/api/ListUsers?UserId=${userId}&tenantFilter=${
-      router.query.tenantFilter ?? userSettingsDefaults.currentTenant
-    }`,
-    queryKey: `ListUsers-${userId}`,
-    waiting: router.isReady && !!userId,
+    url: `/api/ListUsers?UserId=${userId}&tenantFilter=${tenant}`,
+    queryKey: `ListUsers-${userId}-${tenant}`,
+    waiting: router.isReady && !!userId && !!tenant,
   });
 
   const userBulkRequest = ApiPostCall({
