@@ -291,12 +291,13 @@ const Page = () => {
             >
               Account Status
             </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ alignItems: "center" }}>
               <Chip
                 icon={isEnabled ? <CheckCircle fontSize="small" /> : <Cancel fontSize="small" />}
                 label={isEnabled ? "Enabled" : "Disabled"}
                 color={isEnabled ? "success" : "error"}
                 variant="filled"
+                size="small"
                 sx={{ fontWeight: 600 }}
               />
               <Chip
