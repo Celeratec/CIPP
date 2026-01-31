@@ -392,11 +392,18 @@ const CardView = ({
           md={gridProps.md}
           lg={gridProps.lg}
           key={item.id || item.RowKey || index}
+          sx={{ 
+            minWidth: 0, // Allow grid item to shrink below content size
+            maxWidth: "100%",
+          }}
         >
           <Card
             sx={{
               height: CARD_HEIGHT,
               width: "100%",
+              maxWidth: "100%",
+              minWidth: 0, // Allow card to shrink below content size
+              overflow: "hidden", // Prevent content overflow
               transition: "all 0.15s ease-in-out",
               display: "flex",
               flexDirection: "column",
@@ -591,10 +598,12 @@ const CardView = ({
                       mt: 0.5,
                       pt: 1, 
                       borderTop: `1px dashed ${theme.palette.divider}`,
+                      minWidth: 0,
+                      overflow: "hidden",
                     }}
                   >
                     {config.desktopFieldsLayout === "column" ? (
-                      <Stack spacing={0.5}>
+                      <Stack spacing={0.5} sx={{ minWidth: 0 }}>
                         {desktopFields.slice(0, config.desktopFieldsMax ?? 4).map((field, fieldIndex) => {
                           const rawValue = getNestedValue(item, field.field || field);
                           const formattedValue =
@@ -606,9 +615,9 @@ const CardView = ({
                           const href = getFieldHref(field, value);
 
                           return (
-                            <Stack key={fieldIndex} direction="row" spacing={0.5} alignItems="center">
+                            <Stack key={fieldIndex} direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, maxWidth: "100%" }}>
                               {field.icon && (
-                                <SvgIcon sx={{ fontSize: 12, color: "text.disabled" }}>
+                                <SvgIcon sx={{ fontSize: 12, color: "text.disabled", flexShrink: 0 }}>
                                   {field.icon}
                                 </SvgIcon>
                               )}
@@ -624,6 +633,8 @@ const CardView = ({
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
                                   whiteSpace: "nowrap",
+                                  minWidth: 0,
+                                  maxWidth: "100%",
                                   color: href ? "primary.main" : "text.secondary",
                                   textDecoration: href ? "underline" : "none",
                                 }}
@@ -635,7 +646,7 @@ const CardView = ({
                         })}
                       </Stack>
                     ) : (
-                      <Grid container spacing={0.5}>
+                      <Grid container spacing={0.5} sx={{ minWidth: 0 }}>
                         {desktopFields.slice(0, config.desktopFieldsMax ?? 4).map((field, fieldIndex) => {
                           const rawValue = getNestedValue(item, field.field || field);
                           const value = formatFieldValue(rawValue);
@@ -643,10 +654,10 @@ const CardView = ({
                           const href = getFieldHref(field, value);
                           
                           return (
-                            <Grid item xs={6} key={fieldIndex}>
-                              <Stack direction="row" spacing={0.5} alignItems="center">
+                            <Grid item xs={6} key={fieldIndex} sx={{ minWidth: 0, overflow: "hidden" }}>
+                              <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, maxWidth: "100%" }}>
                                 {field.icon && (
-                                  <SvgIcon sx={{ fontSize: 12, color: "text.disabled" }}>
+                                  <SvgIcon sx={{ fontSize: 12, color: "text.disabled", flexShrink: 0 }}>
                                     {field.icon}
                                   </SvgIcon>
                                 )}
@@ -662,6 +673,8 @@ const CardView = ({
                                     overflow: "hidden",
                                     textOverflow: "ellipsis",
                                     whiteSpace: "nowrap",
+                                    minWidth: 0,
+                                    maxWidth: "100%",
                                     color: href ? "primary.main" : "text.secondary",
                                     textDecoration: href ? "underline" : "none",
                                   }}
