@@ -49,17 +49,17 @@ export const AccountPopover = (props) => {
   });
 
   const userDetails = orgData.data?.clientPrincipal?.userDetails;
-  const tenantFilter =
-    settings.currentTenant && settings.currentTenant !== "AllTenants"
-      ? settings.currentTenant
-      : userDetails?.split("@")?.[1];
+  
+  // For the logged-in user's photo, always use their home tenant (from their email domain)
+  // not the currently selected customer tenant
+  const userHomeTenant = userDetails?.split("@")?.[1];
 
   // Cache user photo with user-specific key
   const userPhoto = ApiGetCall({
     url: "/api/ListUserPhoto",
-    data: { UserID: userDetails, TenantFilter: tenantFilter },
-    queryKey: `userPhoto-${tenantFilter || "unknown"}-${userDetails || "unknown"}`,
-    waiting: !!userDetails && !!tenantFilter,
+    data: { UserID: userDetails, TenantFilter: userHomeTenant },
+    queryKey: `userPhoto-${userHomeTenant || "unknown"}-${userDetails || "unknown"}`,
+    waiting: !!userDetails && !!userHomeTenant,
     staleTime: Infinity,
     responseType: "blob",
     convertToDataUrl: true,
