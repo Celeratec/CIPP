@@ -25,7 +25,7 @@ import { CippUserInfoCard } from "../../../../../components/CippCards/CippUserIn
 import { SvgIcon, Typography, Divider } from "@mui/material";
 import { CippBannerListCard } from "../../../../../components/CippCards/CippBannerListCard";
 import { CippTimeAgo } from "../../../../../components/CippComponents/CippTimeAgo";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useCippUserActions } from "../../../../../components/CippComponents/CippUserActions";
 import { EyeIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { CippDataTable } from "../../../../../components/CippTable/CippDataTable";
@@ -108,7 +108,8 @@ const Page = () => {
     urlFromData: true,
   });
 
-  function refreshFunction() {
+  // Memoized refresh function to avoid unnecessary re-creations
+  const refreshFunction = useCallback(() => {
     userBulkRequest.mutate({
       url: "/api/ListGraphBulkRequest",
       data: {
@@ -133,7 +134,7 @@ const Page = () => {
         noPaginateIds: ["signInLogs"],
       },
     });
-  }
+  }, [userId, userSettingsDefaults.currentTenant, userBulkRequest]);
 
   useEffect(() => {
     if (userId && userSettingsDefaults.currentTenant && !userBulkRequest.isSuccess) {
@@ -141,53 +142,63 @@ const Page = () => {
     }
   }, [userId, userSettingsDefaults.currentTenant, userBulkRequest.isSuccess]);
 
-  const bulkData = userBulkRequest?.data?.data ?? [];
-  const signInLogsData = bulkData?.find((item) => item.id === "signInLogs");
-  const userMemberOfData = bulkData?.find((item) => item.id === "userMemberOf");
-  const mfaDevicesData = bulkData?.find((item) => item.id === "mfaDevices");
+  // Memoize bulk data parsing to avoid recalculation on every render
+  const { signInLogsData, userMemberOfData, mfaDevicesData, signInLogs, userMemberOf, mfaDevices } = useMemo(() => {
+    const bulkData = userBulkRequest?.data?.data ?? [];
+    const signInLogsData = bulkData?.find((item) => item.id === "signInLogs");
+    const userMemberOfData = bulkData?.find((item) => item.id === "userMemberOf");
+    const mfaDevicesData = bulkData?.find((item) => item.id === "mfaDevices");
 
-  const signInLogs = signInLogsData?.body?.value || [];
-  const userMemberOf = userMemberOfData?.body?.value || [];
-  const mfaDevices = mfaDevicesData?.body?.value || [];
+    return {
+      signInLogsData,
+      userMemberOfData,
+      mfaDevicesData,
+      signInLogs: signInLogsData?.body?.value || [],
+      userMemberOf: userMemberOfData?.body?.value || [],
+      mfaDevices: mfaDevicesData?.body?.value || [],
+    };
+  }, [userBulkRequest?.data?.data]);
 
-  // Set the title and subtitle for the layout
+  // Set the title and subtitle for the layout - memoized for performance
   const title = userRequest.isSuccess ? userRequest.data?.[0]?.displayName : "Loading...";
 
-  const subtitle = userRequest.isSuccess
-    ? [
-        {
-          icon: <Mail />,
-          text: <CippCopyToClipBoard type="chip" text={userRequest.data?.[0]?.userPrincipalName} />,
-        },
-        {
-          icon: <Fingerprint />,
-          text: <CippCopyToClipBoard type="chip" text={userRequest.data?.[0]?.id} />,
-        },
-        {
-          icon: <CalendarIcon />,
-          text: (
-            <>
-              Created: <CippTimeAgo data={userRequest.data?.[0]?.createdDateTime} />
-            </>
-          ),
-        },
-        {
-          icon: <Launch style={{ color: "#757575" }} />,
-          text: (
-            <Button
-              color="muted"
-              style={{ paddingLeft: 0 }}
-              size="small"
-              href={`https://entra.microsoft.com/${userSettingsDefaults.currentTenant}/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/${userId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View in Entra
-            </Button>
-          ),
-        },
-      ]
-    : [];
+  const subtitle = useMemo(() => {
+    if (!userRequest.isSuccess) return [];
+    const userData = userRequest.data?.[0];
+    return [
+      {
+        icon: <Mail />,
+        text: <CippCopyToClipBoard type="chip" text={userData?.userPrincipalName} />,
+      },
+      {
+        icon: <Fingerprint />,
+        text: <CippCopyToClipBoard type="chip" text={userData?.id} />,
+      },
+      {
+        icon: <CalendarIcon />,
+        text: (
+          <>
+            Created: <CippTimeAgo data={userData?.createdDateTime} />
+          </>
+        ),
+      },
+      {
+        icon: <Launch style={{ color: "#757575" }} />,
+        text: (
+          <Button
+            color="muted"
+            style={{ paddingLeft: 0 }}
+            size="small"
+            href={`https://entra.microsoft.com/${userSettingsDefaults.currentTenant}/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/${userId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View in Entra
+          </Button>
+        ),
+      },
+    ];
+  }, [userRequest.isSuccess, userRequest.data, userSettingsDefaults.currentTenant, userId]);
 
   const data = userRequest.data?.[0];
 
@@ -527,67 +538,62 @@ const Page = () => {
     ];
   }
 
-  const groupMembershipItems = userMemberOf
-    ? [
-        {
-          id: 1,
-          cardLabelBox: {
-            cardLabelBoxHeader: <Group />,
-          },
-          text: "Groups",
-          subtext: "List of groups the user is a member of",
-          statusText: ` ${
-            userMemberOf?.filter((item) => item?.["@odata.type"] === "#microsoft.graph.group")
-              .length
-          } Group(s)`,
-          statusColor: "info.main",
-          table: {
-            title: "Group Memberships",
-            hideTitle: true,
-            actions: [
-              {
-                icon: <PencilIcon />,
-                label: "Edit Group",
-                link: "/identity/administration/groups/edit?groupId=[id]&groupType=[calculatedGroupType]",
-              },
-            ],
-            data: userMemberOf?.filter(
-              (item) => item?.["@odata.type"] === "#microsoft.graph.group",
-            ),
-            refreshFunction: refreshFunction,
-            simpleColumns: ["displayName", "groupTypes", "securityEnabled", "mailEnabled"],
-          },
+  // Memoize group membership items
+  const groupMembershipItems = useMemo(() => {
+    if (!userMemberOf) return [];
+    const groups = userMemberOf.filter((item) => item?.["@odata.type"] === "#microsoft.graph.group");
+    return [
+      {
+        id: 1,
+        cardLabelBox: {
+          cardLabelBoxHeader: <Group />,
         },
-      ]
-    : [];
+        text: "Groups",
+        subtext: "List of groups the user is a member of",
+        statusText: ` ${groups.length} Group(s)`,
+        statusColor: "info.main",
+        table: {
+          title: "Group Memberships",
+          hideTitle: true,
+          actions: [
+            {
+              icon: <PencilIcon />,
+              label: "Edit Group",
+              link: "/identity/administration/groups/edit?groupId=[id]&groupType=[calculatedGroupType]",
+            },
+          ],
+          data: groups,
+          refreshFunction: refreshFunction,
+          simpleColumns: ["displayName", "groupTypes", "securityEnabled", "mailEnabled"],
+        },
+      },
+    ];
+  }, [userMemberOf, refreshFunction]);
 
-  const roleMembershipItems = userMemberOf
-    ? [
-        {
-          id: 1,
-          cardLabelBox: {
-            cardLabelBoxHeader: <AdminPanelSettings />,
-          },
-          text: "Admin Roles",
-          subtext: "List of roles the user is a member of",
-          statusText: ` ${
-            userMemberOf?.filter(
-              (item) => item?.["@odata.type"] === "#microsoft.graph.directoryRole",
-            ).length
-          } Role(s)`,
-          statusColor: "info.main",
-          table: {
-            title: "Admin Roles",
-            hideTitle: true,
-            data: userMemberOf?.filter(
-              (item) => item?.["@odata.type"] === "#microsoft.graph.directoryRole",
-            ),
-            simpleColumns: ["displayName", "description"],
-            refreshFunction: refreshFunction,
-          },
+  // Memoize role membership items
+  const roleMembershipItems = useMemo(() => {
+    if (!userMemberOf) return [];
+    const roles = userMemberOf.filter((item) => item?.["@odata.type"] === "#microsoft.graph.directoryRole");
+    return [
+      {
+        id: 1,
+        cardLabelBox: {
+          cardLabelBoxHeader: <AdminPanelSettings />,
         },
-      ]
-    : [];
+        text: "Admin Roles",
+        subtext: "List of roles the user is a member of",
+        statusText: ` ${roles.length} Role(s)`,
+        statusColor: "info.main",
+        table: {
+          title: "Admin Roles",
+          hideTitle: true,
+          data: roles,
+          simpleColumns: ["displayName", "description"],
+          refreshFunction: refreshFunction,
+        },
+      },
+    ];
+  }, [userMemberOf, refreshFunction]);
 
   return (
     <HeaderedTabbedLayout
