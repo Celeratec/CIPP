@@ -326,12 +326,14 @@ const Page = () => {
     // Additional fields shown only on desktop cards
     desktopFields: [
       { field: "mail", label: "Email", icon: <Email />, linkType: "email" },
-      { field: "mobilePhone", label: "Mobile", icon: <Smartphone />, linkType: "tel" },
+      { field: "mobilePhone", label: "Mobile", icon: <Smartphone />, linkType: "tel", editable: true, editField: "mobilePhone" },
       { 
         field: "businessPhones", 
         label: "Work", 
         icon: <Phone />, 
         linkType: "tel",
+        editable: true,
+        editField: "businessPhones",
         formatter: (value) => Array.isArray(value) && value.length > 0 ? value[0] : value,
       },
     ],
@@ -770,6 +772,7 @@ const Page = () => {
         manualPagination: true,
         $select:
           "id,accountEnabled,businessPhones,city,createdDateTime,companyName,country,department,displayName,faxNumber,givenName,isResourceAccount,jobTitle,mail,mailNickname,mobilePhone,officeLocation,otherMails,postalCode,preferredDataLocation,preferredLanguage,proxyAddresses,showInAddressList,state,streetAddress,surname,usageLocation,userPrincipalName,userType,assignedLicenses,licenseAssignmentStates,onPremisesSyncEnabled,OnPremisesImmutableId,onPremisesLastSyncDateTime,onPremisesDistinguishedName",
+        $expand: "manager($select=id,displayName)",
         $count: true,
         $orderby: "displayName",
         $top: 999,

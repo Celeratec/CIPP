@@ -6,6 +6,7 @@ import {
   Divider,
   ListItemIcon,
   ListItemText,
+  ListSubheader,
   MenuItem,
   SvgIcon,
   useMediaQuery,
@@ -25,6 +26,7 @@ import {
   CircularProgress,
   ClickAwayListener,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { ResourceUnavailable } from "../resource-unavailable";
 import { ResourceError } from "../resource-error";
 import { Scrollbar } from "../scrollbar";
@@ -33,7 +35,7 @@ import { ApiGetCallWithPagination, ApiPostCall } from "../../api/ApiCall";
 import { utilTableMode } from "./util-tablemode";
 import { utilColumnsFromAPI, resolveSimpleColumnVariables } from "./util-columnsFromAPI";
 import { CIPPTableToptoolbar } from "./CIPPTableToptoolbar";
-import { Info, More, MoreHoriz, Search, CheckCircle, Cancel, Refresh, ViewModule, TableChart, Email, Phone, Business, CalendarToday, Badge } from "@mui/icons-material";
+import { Info, More, MoreHoriz, Search, CheckCircle, Cancel, Refresh, ViewModule, TableChart, Email, Phone, Business, CalendarToday, Badge, Visibility, Edit, Security, Settings, Warning, Circle } from "@mui/icons-material";
 import { CippOffCanvas } from "../CippComponents/CippOffCanvas";
 import { useDialog } from "../../hooks/use-dialog";
 import { CippApiDialog } from "../CippComponents/CippApiDialog";
@@ -45,6 +47,46 @@ import { isEqual } from "lodash"; // Import lodash for deep comparison
 import { useRouter } from "next/router";
 import { getCippTranslation } from "../../utils/get-cipp-translation";
 import CippUserAvatar from "../CippComponents/CippUserAvatar";
+
+// Helper functions for row action category grouping and styling
+const getCategoryIcon = (category) => {
+  switch (category.toLowerCase()) {
+    case "view":
+      return <Visibility sx={{ fontSize: 14 }} />;
+    case "edit":
+      return <Edit sx={{ fontSize: 14 }} />;
+    case "security":
+      return <Security sx={{ fontSize: 14 }} />;
+    case "manage":
+      return <Settings sx={{ fontSize: 14 }} />;
+    case "danger":
+      return <Warning sx={{ fontSize: 14 }} />;
+    default:
+      return <Circle sx={{ fontSize: 8 }} />;
+  }
+};
+
+const getCategoryColor = (category) => {
+  switch (category.toLowerCase()) {
+    case "view":
+      return "success";
+    case "edit":
+      return "info";
+    case "security":
+      return "warning";
+    case "manage":
+      return "secondary";
+    case "danger":
+      return "error";
+    default:
+      return "text.secondary";
+  }
+};
+
+const getCategoryLabel = (category) =>
+  category
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/^./, (match) => match.toUpperCase());
 
 // Resolve dot-delimited property paths against arbitrary data objects.
 const getNestedValue = (source, path) => {
@@ -241,12 +283,20 @@ const CardView = ({
     }));
 
     try {
+      // Handle array fields (like businessPhones) - wrap single value in array
+      let valueToSave = newValue;
+      const originalValue = getNestedValue(item, field.field || fieldName);
+      if (Array.isArray(originalValue) || fieldName === "businessPhones") {
+        valueToSave = newValue ? [newValue] : [];
+      }
+
       await editMutation.mutateAsync({
         url: editApiUrl,
         data: {
           tenantFilter: tenant,
+          id: item.id,
           userPrincipalName: item.userPrincipalName,
-          [fieldName]: newValue,
+          [fieldName]: valueToSave,
         },
       });
       // Update the item in local state (data is from parent, so this update is optimistic display only)
@@ -855,6 +905,8 @@ const CardView = ({
                     {config.desktopFieldsLayout === "column" ? (
                       <Stack spacing={0.5} sx={{ minWidth: 0, width: "100%", overflow: "hidden" }}>
                         {desktopFields.slice(0, config.desktopFieldsMax ?? 4).map((field, fieldIndex) => {
+                          const itemId = item.id || item.userPrincipalName;
+                          const editFieldName = field.editField || field.field;
                           const rawValue = getNestedValue(item, field.field || field);
                           const formattedValue =
                             typeof field.formatter === "function"
@@ -863,36 +915,108 @@ const CardView = ({
                           const value = formatFieldValue(formattedValue);
                           const hasValue = !!value;
                           const href = hasValue ? getFieldHref(field, value) : null;
+                          const editState = getEditState(itemId, editFieldName);
+                          const canEdit = field.editable && editApiUrl && !hasValue;
+
+                          // Editing mode for desktop fields
+                          if (editState.editing) {
+                            return (
+                              <ClickAwayListener key={fieldIndex} onClickAway={() => saveEdit(item, field, editState.value)}>
+                                <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, width: "100%", overflow: "hidden", minHeight: 18 }}>
+                                  {field.icon && (
+                                    <SvgIcon sx={{ fontSize: 12, color: "primary.main", flexShrink: 0 }}>
+                                      {field.icon}
+                                    </SvgIcon>
+                                  )}
+                                  <TextField
+                                    inputRef={editInputRef}
+                                    size="small"
+                                    variant="standard"
+                                    value={editState.value}
+                                    onChange={(e) => updateEditValue(itemId, editFieldName, e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        saveEdit(item, field, editState.value);
+                                      } else if (e.key === "Escape") {
+                                        cancelEditing(itemId, editFieldName);
+                                      }
+                                    }}
+                                    disabled={editState.saving}
+                                    placeholder={field.label || editFieldName}
+                                    sx={{ 
+                                      flex: 1,
+                                      "& .MuiInput-input": { 
+                                        fontSize: "0.7rem",
+                                        py: 0,
+                                      },
+                                    }}
+                                    InputProps={{
+                                      endAdornment: editState.saving ? (
+                                        <InputAdornment position="end">
+                                          <CircularProgress size={10} />
+                                        </InputAdornment>
+                                      ) : null,
+                                    }}
+                                  />
+                                </Stack>
+                              </ClickAwayListener>
+                            );
+                          }
 
                           return (
-                            <Stack key={fieldIndex} direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, width: "100%", overflow: "hidden", minHeight: 18 }}>
-                              {field.icon && (
-                                <SvgIcon sx={{ fontSize: 12, color: hasValue ? "text.disabled" : "info.main", opacity: hasValue ? 1 : 0.6, flexShrink: 0 }}>
-                                  {field.icon}
-                                </SvgIcon>
-                              )}
-                              <Typography
-                                variant="caption"
-                                title={value || undefined}
-                                component={href ? "a" : "span"}
-                                href={href || undefined}
-                                onClick={href ? (e) => e.stopPropagation() : undefined}
-                                sx={{
-                                  fontSize: "0.7rem",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  whiteSpace: "nowrap",
-                                  minWidth: 0,
-                                  flex: 1,
-                                  color: href ? "primary.main" : hasValue ? "text.secondary" : "info.main",
-                                  opacity: hasValue || href ? 1 : 0.6,
-                                  textDecoration: href ? "underline" : "none",
-                                  fontStyle: hasValue ? "normal" : "italic",
+                            <Tooltip 
+                              key={fieldIndex}
+                              title={canEdit ? "Click to add" : (value || "")} 
+                              placement="top"
+                              disableHoverListener={!value && !canEdit}
+                            >
+                              <Stack 
+                                direction="row" 
+                                spacing={0.5} 
+                                alignItems="center" 
+                                onClick={canEdit ? () => startEditing(itemId, editFieldName, "") : undefined}
+                                sx={{ 
+                                  minWidth: 0, 
+                                  width: "100%", 
+                                  overflow: "hidden", 
+                                  minHeight: 18,
+                                  cursor: canEdit ? "pointer" : "default",
+                                  borderRadius: 0.5,
+                                  px: canEdit ? 0.5 : 0,
+                                  mx: canEdit ? -0.5 : 0,
+                                  "&:hover": canEdit ? {
+                                    bgcolor: "action.hover",
+                                  } : {},
                                 }}
                               >
-                                {value || "—"}
-                              </Typography>
-                            </Stack>
+                                {field.icon && (
+                                  <SvgIcon sx={{ fontSize: 12, color: hasValue ? "text.disabled" : "info.main", opacity: hasValue ? 1 : 0.6, flexShrink: 0 }}>
+                                    {field.icon}
+                                  </SvgIcon>
+                                )}
+                                <Typography
+                                  variant="caption"
+                                  title={value || undefined}
+                                  component={href ? "a" : "span"}
+                                  href={href || undefined}
+                                  onClick={href ? (e) => e.stopPropagation() : undefined}
+                                  sx={{
+                                    fontSize: "0.7rem",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                    minWidth: 0,
+                                    flex: 1,
+                                    color: href ? "primary.main" : hasValue ? "text.secondary" : "info.main",
+                                    opacity: hasValue || href ? 1 : 0.6,
+                                    textDecoration: href ? "underline" : "none",
+                                    fontStyle: hasValue ? "normal" : "italic",
+                                  }}
+                                >
+                                  {value || "—"}
+                                </Typography>
+                              </Stack>
+                            </Tooltip>
                           );
                         })}
                       </Stack>
@@ -1512,71 +1636,127 @@ export const CippDataTable = (props) => {
     // Override enableRowActions when showRowActionsMenu is false
     enableRowActions: showRowActionsMenu && actions ? true : false,
     renderRowActionMenuItems: actions && showRowActionsMenu
-      ? ({ closeMenu, row }) => [
-          actions.map((action, index) => (
-            <MenuItem
-              sx={{ color: action.color }}
-              key={`actions-list-row-${index}`}
-              onClick={() => {
-                if (settings.currentTenant === "AllTenants" && row.original?.Tenant) {
-                  settings.handleUpdate({
-                    currentTenant: row.original.Tenant,
-                  });
-                }
+      ? ({ closeMenu, row }) => {
+          // Group actions by category
+          const groupedActions = actions.reduce((acc, action) => {
+            const category =
+              typeof action.category === "string" && action.category.trim().length > 0
+                ? action.category.trim()
+                : "Other";
+            if (!acc[category]) {
+              acc[category] = [];
+            }
+            acc[category].push(action);
+            return acc;
+          }, {});
+          
+          const categoryEntries = Object.entries(groupedActions);
+          
+          return [
+            ...categoryEntries.flatMap(([category, categoryActions], groupIndex) => {
+              const categoryColor = getCategoryColor(category);
+              const headerBgColor = categoryColor === "text.secondary" 
+                ? (theme) => alpha(theme.palette.grey[500], 0.08)
+                : (theme) => alpha(theme.palette[categoryColor].main, 0.08);
+              const headerTextColor = categoryColor === "text.secondary"
+                ? "text.secondary"
+                : `${categoryColor}.main`;
+              
+              return [
+                <ListSubheader
+                  key={`category-header-${category}`}
+                  disableSticky
+                  sx={{
+                    bgcolor: headerBgColor,
+                    color: headerTextColor,
+                    fontSize: "0.7rem",
+                    fontWeight: 600,
+                    lineHeight: "28px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    py: 0.5,
+                  }}
+                >
+                  {getCategoryIcon(category)}
+                  {getCategoryLabel(category)}
+                </ListSubheader>,
+                ...categoryActions.map((action, index) => {
+                  const actionColor = action.color || categoryColor;
+                  const iconSx =
+                    actionColor === "text.secondary"
+                      ? { minWidth: "30px", color: actionColor }
+                      : { minWidth: "30px", color: `${actionColor}.main` };
+                  
+                  return (
+                    <MenuItem
+                      key={`${category}-${index}`}
+                      onClick={() => {
+                        if (settings.currentTenant === "AllTenants" && row.original?.Tenant) {
+                          settings.handleUpdate({
+                            currentTenant: row.original.Tenant,
+                          });
+                        }
 
-                if (action.noConfirm && action.customFunction) {
-                  action.customFunction(row.original, action, {});
+                        if (action.noConfirm && action.customFunction) {
+                          action.customFunction(row.original, action, {});
+                          closeMenu();
+                          return;
+                        }
+
+                        // Handle custom component differently
+                        if (typeof action.customComponent === "function") {
+                          setCustomComponentData({ data: row.original, action: action });
+                          setCustomComponentVisible(true);
+                          closeMenu();
+                          return;
+                        }
+
+                        // Standard dialog flow
+                        setActionData({
+                          data: row.original,
+                          action: action,
+                          ready: true,
+                        });
+                        createDialog.handleOpen();
+                        closeMenu();
+                      }}
+                      disabled={handleActionDisabled(row.original, action)}
+                    >
+                      <SvgIcon fontSize="small" sx={iconSx}>
+                        {action.icon}
+                      </SvgIcon>
+                      <ListItemText>{action.label}</ListItemText>
+                    </MenuItem>
+                  );
+                }),
+              ];
+            }),
+            offCanvas && (
+              <MenuItem
+                key={`actions-list-row-more`}
+                onClick={() => {
                   closeMenu();
-                  return;
-                }
-
-                // Handle custom component differently
-                if (typeof action.customComponent === "function") {
-                  setCustomComponentData({ data: row.original, action: action });
-                  setCustomComponentVisible(true);
-                  closeMenu();
-                  return;
-                }
-
-                // Standard dialog flow
-                setActionData({
-                  data: row.original,
-                  action: action,
-                  ready: true,
-                });
-                createDialog.handleOpen();
-                closeMenu();
-              }}
-              disabled={handleActionDisabled(row.original, action)}
-            >
-              <SvgIcon fontSize="small" sx={{ minWidth: "30px" }}>
-                {action.icon}
-              </SvgIcon>
-              <ListItemText>{action.label}</ListItemText>
-            </MenuItem>
-          )),
-          offCanvas && (
-            <MenuItem
-              key={`actions-list-row-more`}
-              onClick={() => {
-                closeMenu();
-                setOffCanvasData(row.original);
-                // Find the index of this row in the filtered rows
-                const filteredRowsArray = table.getFilteredRowModel().rows;
-                const indexInFiltered = filteredRowsArray.findIndex(
-                  (r) => r.original === row.original
-                );
-                setOffCanvasRowIndex(indexInFiltered >= 0 ? indexInFiltered : 0);
-                setOffcanvasVisible(true);
-              }}
-            >
-              <SvgIcon fontSize="small" sx={{ minWidth: "30px" }}>
-                <MoreHoriz />
-              </SvgIcon>
-              More Info
-            </MenuItem>
-          ),
-        ]
+                  setOffCanvasData(row.original);
+                  // Find the index of this row in the filtered rows
+                  const filteredRowsArray = table.getFilteredRowModel().rows;
+                  const indexInFiltered = filteredRowsArray.findIndex(
+                    (r) => r.original === row.original
+                  );
+                  setOffCanvasRowIndex(indexInFiltered >= 0 ? indexInFiltered : 0);
+                  setOffcanvasVisible(true);
+                }}
+              >
+                <SvgIcon fontSize="small" sx={{ minWidth: "30px" }}>
+                  <MoreHoriz />
+                </SvgIcon>
+                More Info
+              </MenuItem>
+            ),
+          ];
+        }
       : offCanvas && (
           <MenuItem
             onClick={() => {
