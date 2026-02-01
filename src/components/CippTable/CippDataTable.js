@@ -318,7 +318,8 @@ const CardView = ({
     };
 
     if (badge.iconOnly && badgeConfig.icon && isValidElement(badgeConfig.icon)) {
-      const tooltipText = badge.tooltip || badgeConfig.label || getCippTranslation(badge.field);
+      // Prefer condition-specific tooltip/label over generic badge tooltip
+      const tooltipText = badgeConfig.tooltip || badgeConfig.label || badge.tooltip || getCippTranslation(badge.field);
       const color =
         badgeConfig.color === "success"
           ? "success.main"
@@ -347,8 +348,10 @@ const CardView = ({
     }
 
     if (badgeConfig.icon === "check") {
+      // Prefer condition-specific tooltip/label over generic badge tooltip
+      const tooltipText = badgeConfig.tooltip || badgeConfig.label || badge.tooltip || getCippTranslation(badge.field);
       const badgeElement = (
-        <Tooltip title={badge.tooltip || getCippTranslation(badge.field)}>
+        <Tooltip title={tooltipText}>
           <CheckCircle
             sx={{
               fontSize: isCompact ? 20 : 22,
@@ -360,8 +363,10 @@ const CardView = ({
       );
       return wrapWithClick(badgeElement);
     } else if (badgeConfig.icon === "cancel") {
+      // Prefer condition-specific tooltip/label over generic badge tooltip
+      const tooltipText = badgeConfig.tooltip || badgeConfig.label || badge.tooltip || getCippTranslation(badge.field);
       const badgeElement = (
-        <Tooltip title={badge.tooltip || getCippTranslation(badge.field)}>
+        <Tooltip title={tooltipText}>
           <Cancel
             sx={{
               fontSize: isCompact ? 20 : 22,

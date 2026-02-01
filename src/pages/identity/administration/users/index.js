@@ -175,21 +175,19 @@ const Page = () => {
     badges: [
       {
         field: "accountEnabled",
-        tooltip: "Account Status",
         conditions: {
-          true: { icon: "check", color: "success" },
-          false: { icon: "cancel", color: "error" },
-          Yes: { icon: "check", color: "success" },
-          No: { icon: "cancel", color: "error" },
+          true: { icon: "check", color: "success", label: "Account Enabled" },
+          false: { icon: "cancel", color: "error", label: "Account Disabled" },
+          Yes: { icon: "check", color: "success", label: "Account Enabled" },
+          No: { icon: "cancel", color: "error", label: "Account Disabled" },
         },
       },
       {
         field: "assignedLicenses",
-        tooltip: "License Status",
         iconOnly: true,
         conditions: {
-          licensed: { label: "Licensed", color: "primary", icon: <WorkspacePremium fontSize="small" /> },
-          unlicensed: { label: "Unlicensed", color: "error", icon: <WorkspacePremium fontSize="small" /> },
+          licensed: { label: "User has licenses assigned", color: "primary", icon: <WorkspacePremium fontSize="small" /> },
+          unlicensed: { label: "No licenses assigned", color: "error", icon: <WorkspacePremium fontSize="small" /> },
         },
         transform: (value) => (value && value.length > 0 ? "licensed" : "unlicensed"),
       },
