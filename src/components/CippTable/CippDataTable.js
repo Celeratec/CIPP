@@ -22,12 +22,14 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
+  CircularProgress,
+  ClickAwayListener,
 } from "@mui/material";
 import { ResourceUnavailable } from "../resource-unavailable";
 import { ResourceError } from "../resource-error";
 import { Scrollbar } from "../scrollbar";
-import { useEffect, useMemo, useState, useCallback, isValidElement } from "react";
-import { ApiGetCallWithPagination } from "../../api/ApiCall";
+import { useEffect, useMemo, useState, useCallback, isValidElement, useRef } from "react";
+import { ApiGetCallWithPagination, ApiPostCall } from "../../api/ApiCall";
 import { utilTableMode } from "./util-tablemode";
 import { utilColumnsFromAPI, resolveSimpleColumnVariables } from "./util-columnsFromAPI";
 import { CIPPTableToptoolbar } from "./CIPPTableToptoolbar";
@@ -136,9 +138,20 @@ const CardView = ({
   setOffCanvasRowIndex = null,
   setOffcanvasVisible = null,
   onCardClick = null,
+  editApiUrl = null,
+  queryKey = null,
 }) => {
   const theme = useTheme();
   const router = useRouter();
+  
+  // Inline editing state: { itemId: { fieldName: { editing: bool, value: string, saving: bool } } }
+  const [editingFields, setEditingFields] = useState({});
+  const editInputRef = useRef(null);
+  
+  // API mutation for inline edits
+  const editMutation = ApiPostCall({
+    relatedQueryKeys: queryKey ? [queryKey] : [],
+  });
 
   const formatFieldValue = (value) => {
     if (value === null || value === undefined) return "";
@@ -167,6 +180,82 @@ const CardView = ({
       return `tel:${getPrimaryFieldValue(value).replace(/[^+\d]/g, "")}`;
     }
     return null;
+  };
+
+  // Inline editing helpers
+  const startEditing = (itemId, fieldName, currentValue) => {
+    setEditingFields(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        [fieldName]: { editing: true, value: currentValue || "", saving: false }
+      }
+    }));
+    // Focus the input after state update
+    setTimeout(() => editInputRef.current?.focus(), 50);
+  };
+
+  const cancelEditing = (itemId, fieldName) => {
+    setEditingFields(prev => {
+      const newState = { ...prev };
+      if (newState[itemId]) {
+        delete newState[itemId][fieldName];
+        if (Object.keys(newState[itemId]).length === 0) {
+          delete newState[itemId];
+        }
+      }
+      return newState;
+    });
+  };
+
+  const updateEditValue = (itemId, fieldName, value) => {
+    setEditingFields(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        [fieldName]: { ...prev[itemId]?.[fieldName], value }
+      }
+    }));
+  };
+
+  const saveEdit = async (item, field, newValue) => {
+    const itemId = item.id || item.userPrincipalName;
+    const fieldName = field.editField || field.field;
+    
+    if (!editApiUrl || !fieldName) {
+      cancelEditing(itemId, fieldName);
+      return;
+    }
+
+    // Mark as saving
+    setEditingFields(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        [fieldName]: { ...prev[itemId]?.[fieldName], saving: true }
+      }
+    }));
+
+    try {
+      await editMutation.mutateAsync({
+        url: editApiUrl,
+        data: {
+          tenantFilter: tenant,
+          userPrincipalName: item.userPrincipalName,
+          [fieldName]: newValue,
+        },
+      });
+      // Update the item in local state (data is from parent, so this update is optimistic display only)
+      // The queryKey invalidation in ApiPostCall should refresh the data
+    } catch (error) {
+      console.error("Failed to save edit:", error);
+    } finally {
+      cancelEditing(itemId, fieldName);
+    }
+  };
+
+  const getEditState = (itemId, fieldName) => {
+    return editingFields[itemId]?.[fieldName] || { editing: false, value: "", saving: false };
   };
 
   const CARD_HEIGHT = "100%";
@@ -557,14 +646,10 @@ const CardView = ({
                 )}
                 {extraFields.length > 0 && (
                   <Stack spacing={0.25} sx={{ mb: 1, minWidth: 0, width: "100%", overflow: "hidden" }}>
-                    {extraFields.slice(0, config.extraFieldsMax ?? 2).map((field, fieldIndex) => {
-                      const rawValue = getNestedValue(item, field.field || field);
-                      const formattedValue =
-                        typeof field.formatter === "function"
-                          ? field.formatter(rawValue, item)
-                          : rawValue;
-                      const value = formatFieldValue(formattedValue);
-                      const hasValue = !!value;
+                    {extraFields.slice(0, config.extraFieldsMax ?? 2).map((fieldOrRow, fieldIndex) => {
+                      // Check if this is an array (paired fields in a row)
+                      const isPairedRow = Array.isArray(fieldOrRow);
+                      const fieldsInRow = isPairedRow ? fieldOrRow : [fieldOrRow];
                       
                       // Check if this is the first field (for inline custom content)
                       const isFirstField = fieldIndex === 0;
@@ -574,48 +659,148 @@ const CardView = ({
                         typeof config.customContent === "function" 
                           ? config.customContent(item) 
                           : null;
+
+                      // Render a single field
+                      const renderField = (field, isPaired = false, isLast = false) => {
+                        const itemId = item.id || item.userPrincipalName;
+                        const editFieldName = field.editField || field.field;
+                        const rawValue = getNestedValue(item, field.field || field);
+                        const formattedValue =
+                          typeof field.formatter === "function"
+                            ? field.formatter(rawValue, item)
+                            : rawValue;
+                        const value = formatFieldValue(formattedValue);
+                        const hasValue = !!value;
+                        const editState = getEditState(itemId, editFieldName);
+                        const canEdit = field.editable && editApiUrl && !hasValue;
+
+                        // Editing mode
+                        if (editState.editing) {
+                          return (
+                            <ClickAwayListener onClickAway={() => saveEdit(item, field, editState.value)}>
+                              <Stack 
+                                direction="row" 
+                                spacing={0.5} 
+                                alignItems="center" 
+                                sx={{ 
+                                  minWidth: 0, 
+                                  flex: isPaired ? 1 : undefined,
+                                  maxWidth: isPaired ? "50%" : "100%",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                {field.icon && (
+                                  <SvgIcon sx={{ fontSize: 14, color: "primary.main", flexShrink: 0 }}>
+                                    {field.icon}
+                                  </SvgIcon>
+                                )}
+                                <TextField
+                                  inputRef={editInputRef}
+                                  size="small"
+                                  variant="standard"
+                                  value={editState.value}
+                                  onChange={(e) => updateEditValue(itemId, editFieldName, e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      saveEdit(item, field, editState.value);
+                                    } else if (e.key === "Escape") {
+                                      cancelEditing(itemId, editFieldName);
+                                    }
+                                  }}
+                                  disabled={editState.saving}
+                                  placeholder={field.label || editFieldName}
+                                  sx={{ 
+                                    flex: 1,
+                                    "& .MuiInput-input": { 
+                                      fontSize: "0.75rem",
+                                      py: 0,
+                                    },
+                                  }}
+                                  InputProps={{
+                                    endAdornment: editState.saving ? (
+                                      <InputAdornment position="end">
+                                        <CircularProgress size={12} />
+                                      </InputAdornment>
+                                    ) : null,
+                                  }}
+                                />
+                              </Stack>
+                            </ClickAwayListener>
+                          );
+                        }
+
+                        // Display mode
+                        return (
+                          <Tooltip 
+                            title={canEdit ? "Click to add" : (value || "")} 
+                            placement="top"
+                            disableHoverListener={!value && !canEdit}
+                          >
+                            <Stack 
+                              direction="row" 
+                              spacing={0.5} 
+                              alignItems="center" 
+                              onClick={canEdit ? () => startEditing(itemId, editFieldName, "") : undefined}
+                              sx={{ 
+                                minWidth: 0, 
+                                flex: isPaired ? 1 : undefined,
+                                maxWidth: isPaired ? "50%" : "100%",
+                                overflow: "hidden",
+                                cursor: canEdit ? "pointer" : "default",
+                                borderRadius: 0.5,
+                                px: canEdit ? 0.5 : 0,
+                                mx: canEdit ? -0.5 : 0,
+                                "&:hover": canEdit ? {
+                                  bgcolor: "action.hover",
+                                } : {},
+                              }}
+                            >
+                              {field.icon && (
+                                <SvgIcon sx={{ fontSize: 14, color: hasValue ? "text.secondary" : "info.main", opacity: hasValue ? 1 : 0.6, flexShrink: 0 }}>
+                                  {field.icon}
+                                </SvgIcon>
+                              )}
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  maxWidth: "100%",
+                                  minWidth: 0,
+                                  flex: 1,
+                                  color: hasValue ? "text.secondary" : "info.main",
+                                  opacity: hasValue ? 1 : 0.6,
+                                  fontStyle: hasValue ? "normal" : "italic",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {value || "—"}
+                              </Typography>
+                            </Stack>
+                          </Tooltip>
+                        );
+                      };
                       
                       return (
                         <Stack 
                           key={fieldIndex} 
                           direction="row" 
-                          spacing={0.5} 
+                          spacing={isPairedRow ? 1 : 0.5}
                           alignItems="center"
                           justifyContent="space-between"
                           sx={{ minWidth: 0, width: "100%", overflow: "hidden", minHeight: 20 }}
                         >
-                          <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
-                            {field.icon && (
-                              <SvgIcon sx={{ fontSize: 14, color: hasValue ? "text.secondary" : "info.main", opacity: hasValue ? 1 : 0.6, flexShrink: 0 }}>
-                                {field.icon}
-                              </SvgIcon>
-                            )}
-                            <Typography
-                              variant="caption"
-                              title={value || undefined}
-                              sx={{
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                maxWidth: "100%",
-                                minWidth: 0,
-                                flex: 1,
-                                color: hasValue ? "text.secondary" : "info.main",
-                                opacity: hasValue ? 1 : 0.6,
-                                fontStyle: hasValue ? "normal" : "italic",
-                                ...(field.maxLines ? {
-                                  display: "-webkit-box",
-                                  WebkitLineClamp: field.maxLines,
-                                  WebkitBoxOrient: "vertical",
-                                  whiteSpace: "normal",
-                                  wordBreak: "break-word",
-                                } : {
-                                  whiteSpace: "nowrap",
-                                }),
-                              }}
-                            >
-                              {value || "—"}
-                            </Typography>
-                          </Stack>
+                          {isPairedRow ? (
+                            // Paired fields - each takes up to 50% width
+                            <>
+                              {fieldsInRow.map((f, i) => renderField(f, true, i === fieldsInRow.length - 1))}
+                            </>
+                          ) : (
+                            // Single field row
+                            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
+                              {renderField(fieldsInRow[0], false, true)}
+                            </Stack>
+                          )}
                           {inlineContent}
                         </Stack>
                       );
@@ -1690,6 +1875,8 @@ export const CippDataTable = (props) => {
               setOffCanvasRowIndex={setOffCanvasRowIndex}
               setOffcanvasVisible={setOffcanvasVisible}
               onCardClick={onCardClick}
+              editApiUrl={effectiveCardConfig?.editApiUrl}
+              queryKey={queryKey}
             />
           )}
         </Card>

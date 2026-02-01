@@ -43,6 +43,7 @@ import {
   Info as InfoIcon,
   VerifiedUser,
   Warning,
+  SupervisorAccount,
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import CippUserAvatar from "../../../../components/CippComponents/CippUserAvatar";
@@ -223,10 +224,14 @@ const Page = () => {
       },
     ],
     // Fields shown on both mobile and desktop
+    // Arrays within extraFields indicate fields that share a row (50% width each)
     extraFields: [
-      { field: "companyName", icon: <Badge /> },
-      { field: "jobTitle", icon: <Work /> },
-      { field: "department", icon: <Business /> },
+      { field: "companyName", icon: <Badge />, editable: true, editField: "companyName" },
+      { field: "jobTitle", icon: <Work />, editable: true, editField: "jobTitle" },
+      [
+        { field: "department", icon: <Business />, editable: true, editField: "department" },
+        { field: "manager.displayName", icon: <SupervisorAccount />, label: "Manager" },
+      ],
     ],
     // Additional fields shown only on desktop cards
     desktopFields: [
@@ -258,6 +263,8 @@ const Page = () => {
       md: 6,
       lg: 4,
     },
+    // API endpoint for inline field editing
+    editApiUrl: "/api/EditUser",
     // Render custom content inline with first extraField (companyName row)
     customContentInline: true,
     // Custom content to show legacy protocol warnings - now renders inline
