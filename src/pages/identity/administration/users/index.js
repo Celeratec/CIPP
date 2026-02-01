@@ -276,7 +276,9 @@ const Page = () => {
         <Tooltip title={`Insecure protocols enabled: ${protocols.join(" & ")}. These legacy protocols may bypass MFA protections. Click to view Exchange settings.`}>
           <Chip
             size="small"
-            icon={<Warning sx={{ fontSize: "12px !important" }} />}
+            color="warning"
+            variant="outlined"
+            icon={<Warning sx={{ fontSize: "12px !important", color: "warning.main" }} />}
             label={protocols.join(" & ")}
             onClick={(e) => {
               e.stopPropagation();
@@ -288,16 +290,17 @@ const Page = () => {
               fontWeight: 600,
               ml: 0.5,
               flexShrink: 0,
-              bgcolor: (theme) => alpha(theme.palette.warning.main, 0.2),
-              color: "warning.dark",
-              border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.5)}`,
+              backgroundColor: (theme) => `${alpha(theme.palette.warning.main, 0.15)} !important`,
+              borderColor: (theme) => `${alpha(theme.palette.warning.main, 0.5)} !important`,
               cursor: "pointer",
+              "& .MuiChip-label": {
+                color: "warning.dark",
+              },
               "& .MuiChip-icon": {
                 color: "warning.main",
-                ml: 0.25,
               },
               "&:hover": {
-                bgcolor: (theme) => alpha(theme.palette.warning.main, 0.35),
+                backgroundColor: (theme) => `${alpha(theme.palette.warning.main, 0.25)} !important`,
               },
             }}
           />
