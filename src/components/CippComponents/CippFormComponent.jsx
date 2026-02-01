@@ -16,6 +16,7 @@ import {
 import { CippAutoComplete } from "./CippAutocomplete";
 import { CippTextFieldWithVariables } from "./CippTextFieldWithVariables";
 import { Controller, useFormState } from "react-hook-form";
+import { formatPhoneE164, formatPhoneDisplay, validatePhoneNumber } from "../../utils/phone-formatting";
 import { DateTimePicker } from "@mui/x-date-pickers"; // Make sure to install @mui/x-date-pickers
 import CSVReader from "../CSVReader";
 import get from "lodash/get";
@@ -220,6 +221,71 @@ export const CippFormComponent = (props) => {
           {helperText && (
             <Typography variant="subtitle3" color="text.secondary">
               {helperText}
+            </Typography>
+          )}
+        </>
+      );
+    case "phone":
+      return (
+        <>
+          <Tooltip title={label || ""} placement="top" arrow>
+            <div>
+              <Controller
+                name={convertedName}
+                control={formControl.control}
+                defaultValue={defaultValue || ""}
+                rules={{
+                  ...validators,
+                  validate: {
+                    ...validators?.validate,
+                    phoneFormat: (value) => {
+                      if (!value) return true;
+                      const result = validatePhoneNumber(value, other.defaultCountry || "US");
+                      return result.valid || result.message;
+                    },
+                  },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...other}
+                    variant="filled"
+                    fullWidth
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    label={label}
+                    placeholder={other.placeholder || "+1 (555) 123-4567"}
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    onBlur={(e) => {
+                      field.onBlur();
+                      // Format phone number on blur
+                      if (e.target.value) {
+                        const formatted = formatPhoneE164(e.target.value, other.defaultCountry || "US");
+                        if (formatted && formatted !== e.target.value) {
+                          field.onChange(formatted);
+                        }
+                      }
+                    }}
+                    error={Boolean(get(errors, convertedName, {})?.message)}
+                    helperText={
+                      field.value
+                        ? formatPhoneDisplay(field.value, other.defaultCountry || "US")
+                        : "Enter phone with country code (e.g., +1 for US/Canada)"
+                    }
+                    inputProps={{
+                      ...other.inputProps,
+                      inputMode: "tel",
+                      autoComplete: "tel",
+                    }}
+                  />
+                )}
+              />
+            </div>
+          </Tooltip>
+          {get(errors, convertedName, {})?.message && (
+            <Typography variant="subtitle3" color="error">
+              {get(errors, convertedName, {})?.message}
             </Typography>
           )}
         </>

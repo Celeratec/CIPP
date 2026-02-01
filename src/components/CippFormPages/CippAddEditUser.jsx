@@ -559,20 +559,22 @@ const CippAddEditUser = (props) => {
         <Grid container spacing={2}>
           <Grid size={{ md: 6, xs: 12 }}>
             <CippFormComponent
-              type="textField"
+              type="phone"
               fullWidth
               label="Mobile Phone"
               name="mobilePhone"
               formControl={formControl}
+              defaultCountry="US"
             />
           </Grid>
           <Grid size={{ md: 6, xs: 12 }}>
             <CippFormComponent
-              type="textField"
+              type="phone"
               fullWidth
               label="Business Phone"
               name="businessPhones[0]"
               formControl={formControl}
+              defaultCountry="US"
             />
           </Grid>
           <Grid size={{ md: 6, xs: 12 }}>
