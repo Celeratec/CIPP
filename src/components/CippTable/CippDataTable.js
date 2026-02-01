@@ -169,7 +169,7 @@ const CardView = ({
     return null;
   };
 
-  const CARD_HEIGHT = "auto";
+  const CARD_HEIGHT = "100%";
 
   // Render badge based on config
   const renderBadge = (badge, item, badgeIndex, isCompact = false, router = null) => {
@@ -426,10 +426,11 @@ const CardView = ({
                 display: "flex", 
                 flexDirection: "column",
                 overflow: "hidden",
+                flex: 1,
               }}
             >
               {/* Header: Avatar + Name + Badges + Info Icon */}
-              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1, width: "100%", overflow: "hidden" }}>
                 {config.avatar?.photoField && tenant && item.id ? (
                   <CippUserAvatar
                     userId={item.id}
@@ -538,21 +539,13 @@ const CardView = ({
               {typeof config.customContent === "function" && !config.customContentInline && config.customContent(item)}
 
               {/* Info Section */}
-              <Box sx={{ overflow: "hidden", minWidth: 0 }}>
+              <Box sx={{ overflow: "hidden", minWidth: 0, width: "100%" }}>
                 {/* Extra fields (job title, department) */}
-                {/* Inline custom content row - renders even if no extraFields have values */}
-                {config.customContentInline && typeof config.customContent === "function" && (
+                {/* Inline custom content row - only renders when NO extraFields are defined */}
+                {config.customContentInline && typeof config.customContent === "function" && extraFields.length === 0 && (
                   (() => {
                     const inlineContent = config.customContent(item);
-                    // Find first extraField with a value to display alongside
-                    const firstFieldWithValue = extraFields.slice(0, config.extraFieldsMax ?? 2).find((field) => {
-                      const rawValue = getNestedValue(item, field.field || field);
-                      const formattedValue = typeof field.formatter === "function" ? field.formatter(rawValue, item) : rawValue;
-                      return formatFieldValue(formattedValue);
-                    });
-                    
-                    // If we have inline content but no field value, still show the content
-                    if (inlineContent && !firstFieldWithValue) {
+                    if (inlineContent) {
                       return (
                         <Box sx={{ mb: 1, display: "flex", justifyContent: "flex-end" }}>
                           {inlineContent}
@@ -563,7 +556,7 @@ const CardView = ({
                   })()
                 )}
                 {extraFields.length > 0 && (
-                  <Stack spacing={0.25} sx={{ mb: 1, minWidth: 0 }}>
+                  <Stack spacing={0.25} sx={{ mb: 1, minWidth: 0, width: "100%", overflow: "hidden" }}>
                     {extraFields.slice(0, config.extraFieldsMax ?? 2).map((field, fieldIndex) => {
                       const rawValue = getNestedValue(item, field.field || field);
                       const formattedValue =
@@ -571,16 +564,12 @@ const CardView = ({
                           ? field.formatter(rawValue, item)
                           : rawValue;
                       const value = formatFieldValue(formattedValue);
-                      if (!value) return null;
+                      const hasValue = !!value;
                       
-                      // Check if we should render inline custom content with this field (first field with value only)
-                      const isFirstFieldWithValue = extraFields.slice(0, config.extraFieldsMax ?? 2).findIndex((f) => {
-                        const rv = getNestedValue(item, f.field || f);
-                        const fv = typeof f.formatter === "function" ? f.formatter(rv, item) : rv;
-                        return formatFieldValue(fv);
-                      }) === fieldIndex;
+                      // Check if this is the first field (for inline custom content)
+                      const isFirstField = fieldIndex === 0;
                       
-                      const inlineContent = isFirstFieldWithValue && 
+                      const inlineContent = isFirstField && 
                         config.customContentInline && 
                         typeof config.customContent === "function" 
                           ? config.customContent(item) 
@@ -593,35 +582,37 @@ const CardView = ({
                           spacing={0.5} 
                           alignItems="center"
                           justifyContent="space-between"
-                          sx={{ minWidth: 0 }}
+                          sx={{ minWidth: 0, width: "100%", overflow: "hidden", minHeight: 20 }}
                         >
                           <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
                             {field.icon && (
-                              <SvgIcon sx={{ fontSize: 14, color: "text.secondary", flexShrink: 0 }}>
+                              <SvgIcon sx={{ fontSize: 14, color: hasValue ? "text.secondary" : "text.disabled", flexShrink: 0 }}>
                                 {field.icon}
                               </SvgIcon>
                             )}
                             <Typography
                               variant="caption"
-                              color="text.secondary"
-                              title={value}
+                              color={hasValue ? "text.secondary" : "text.disabled"}
+                              title={value || undefined}
                               sx={{
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 maxWidth: "100%",
                                 minWidth: 0,
-                                wordBreak: "break-word",
+                                flex: 1,
+                                fontStyle: hasValue ? "normal" : "italic",
                                 ...(field.maxLines ? {
                                   display: "-webkit-box",
                                   WebkitLineClamp: field.maxLines,
                                   WebkitBoxOrient: "vertical",
                                   whiteSpace: "normal",
+                                  wordBreak: "break-word",
                                 } : {
                                   whiteSpace: "nowrap",
                                 }),
                               }}
                             >
-                              {value}
+                              {value || "—"}
                             </Typography>
                           </Stack>
                           {inlineContent}
@@ -639,11 +630,12 @@ const CardView = ({
                       pt: 1, 
                       borderTop: `1px dashed ${theme.palette.divider}`,
                       minWidth: 0,
+                      width: "100%",
                       overflow: "hidden",
                     }}
                   >
                     {config.desktopFieldsLayout === "column" ? (
-                      <Stack spacing={0.5} sx={{ minWidth: 0 }}>
+                      <Stack spacing={0.5} sx={{ minWidth: 0, width: "100%", overflow: "hidden" }}>
                         {desktopFields.slice(0, config.desktopFieldsMax ?? 4).map((field, fieldIndex) => {
                           const rawValue = getNestedValue(item, field.field || field);
                           const formattedValue =
@@ -651,11 +643,11 @@ const CardView = ({
                               ? field.formatter(rawValue, item)
                               : rawValue;
                           const value = formatFieldValue(formattedValue);
-                          if (!value) return null;
-                          const href = getFieldHref(field, value);
+                          const hasValue = !!value;
+                          const href = hasValue ? getFieldHref(field, value) : null;
 
                           return (
-                            <Stack key={fieldIndex} direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, maxWidth: "100%" }}>
+                            <Stack key={fieldIndex} direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, width: "100%", overflow: "hidden", minHeight: 18 }}>
                               {field.icon && (
                                 <SvgIcon sx={{ fontSize: 12, color: "text.disabled", flexShrink: 0 }}>
                                   {field.icon}
@@ -663,8 +655,7 @@ const CardView = ({
                               )}
                               <Typography
                                 variant="caption"
-                                color="text.secondary"
-                                title={value}
+                                title={value || undefined}
                                 component={href ? "a" : "span"}
                                 href={href || undefined}
                                 onClick={href ? (e) => e.stopPropagation() : undefined}
@@ -674,28 +665,29 @@ const CardView = ({
                                   textOverflow: "ellipsis",
                                   whiteSpace: "nowrap",
                                   minWidth: 0,
-                                  maxWidth: "100%",
-                                  color: href ? "primary.main" : "text.secondary",
+                                  flex: 1,
+                                  color: href ? "primary.main" : hasValue ? "text.secondary" : "text.disabled",
                                   textDecoration: href ? "underline" : "none",
+                                  fontStyle: hasValue ? "normal" : "italic",
                                 }}
                               >
-                                {value}
+                                {value || "—"}
                               </Typography>
                             </Stack>
                           );
                         })}
                       </Stack>
                     ) : (
-                      <Grid container spacing={0.5} sx={{ minWidth: 0 }}>
+                      <Grid container spacing={0.5} sx={{ minWidth: 0, width: "100%" }}>
                         {desktopFields.slice(0, config.desktopFieldsMax ?? 4).map((field, fieldIndex) => {
                           const rawValue = getNestedValue(item, field.field || field);
                           const value = formatFieldValue(rawValue);
-                          if (!value) return null;
-                          const href = getFieldHref(field, value);
+                          const hasValue = !!value;
+                          const href = hasValue ? getFieldHref(field, value) : null;
                           
                           return (
                             <Grid item xs={6} key={fieldIndex} sx={{ minWidth: 0, overflow: "hidden" }}>
-                              <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, maxWidth: "100%" }}>
+                              <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, width: "100%", overflow: "hidden", minHeight: 18 }}>
                                 {field.icon && (
                                   <SvgIcon sx={{ fontSize: 12, color: "text.disabled", flexShrink: 0 }}>
                                     {field.icon}
@@ -703,8 +695,7 @@ const CardView = ({
                                 )}
                                 <Typography 
                                   variant="caption" 
-                                  color="text.secondary"
-                                  title={value}
+                                  title={value || undefined}
                                   component={href ? "a" : "span"}
                                   href={href || undefined}
                                   onClick={href ? (e) => e.stopPropagation() : undefined}
@@ -714,12 +705,13 @@ const CardView = ({
                                     textOverflow: "ellipsis",
                                     whiteSpace: "nowrap",
                                     minWidth: 0,
-                                    maxWidth: "100%",
-                                    color: href ? "primary.main" : "text.secondary",
+                                    flex: 1,
+                                    color: href ? "primary.main" : hasValue ? "text.secondary" : "text.disabled",
                                     textDecoration: href ? "underline" : "none",
+                                    fontStyle: hasValue ? "normal" : "italic",
                                   }}
                                 >
-                                  {value}
+                                  {value || "—"}
                                 </Typography>
                               </Stack>
                             </Grid>
