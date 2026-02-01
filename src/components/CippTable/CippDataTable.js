@@ -741,7 +741,7 @@ const CardView = ({
                           return (
                             <ClickAwayListener onClickAway={() => saveEdit(item, field, editState.value)}>
                               <Stack 
-                                direction={isRightAlignedEdit ? "row-reverse" : "row"}
+                                direction="row"
                                 spacing={0.5} 
                                 alignItems="center" 
                                 sx={{ 
@@ -823,7 +823,7 @@ const CardView = ({
                             disableHoverListener={!value && !isClickable}
                           >
                             <Stack 
-                              direction={isRightAligned ? "row-reverse" : "row"}
+                              direction="row"
                               spacing={0.5} 
                               alignItems="center" 
                               onClick={isClickable ? handleFieldClick : undefined}
@@ -859,7 +859,7 @@ const CardView = ({
                                   opacity: hasValue ? 1 : 0.6,
                                   fontStyle: hasValue ? "normal" : "italic",
                                   whiteSpace: "nowrap",
-                                  textAlign: isRightAligned ? "right" : "left",
+                                  textAlign: "left",
                                 }}
                               >
                                 {value || "—"}
