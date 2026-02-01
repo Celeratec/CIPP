@@ -111,16 +111,13 @@ export const CippExchangeInfoCard = (props) => {
   const theme = useTheme();
   const settings = useSettings();
   
-  // State for protocol toggle dialog
+  // State for protocol toggle dialog (supports single protocol or array for "disable both")
   const [protocolDialog, setProtocolDialog] = useState({
     open: false,
-    protocol: null,
+    protocol: null, // Can be string or array of strings
     currentlyEnabled: false,
   });
   const [isToggling, setIsToggling] = useState(false);
-  
-  // State for security recommendation collapse (collapsed by default)
-  const [securityRecommendationExpanded, setSecurityRecommendationExpanded] = useState(false);
   
   // State for GAL visibility dialog
   const [galDialog, setGalDialog] = useState(false);
@@ -148,11 +145,11 @@ export const CippExchangeInfoCard = (props) => {
     relatedQueryKeys: [`Mailbox-${exchangeData?.UserId}`],
   });
 
-  // Handle protocol chip click
+  // Handle protocol chip click (supports single protocol or array for "disable both")
   const handleProtocolClick = (protocol, isEnabled) => {
     setProtocolDialog({
       open: true,
-      protocol,
+      protocol, // Can be string or array
       currentlyEnabled: isEnabled,
     });
   };
@@ -172,12 +169,14 @@ export const CippExchangeInfoCard = (props) => {
     setIsToggling(true);
     
     try {
+      // Support both single protocol and multiple protocols
+      const isMultiple = Array.isArray(protocol);
       await toggleProtocol.mutateAsync({
         url: "/api/ExecSetCASMailbox",
         data: {
           user: userPrincipalName,
           tenantFilter: settings.currentTenant,
-          protocol: protocol,
+          ...(isMultiple ? { protocols: protocol.join(",") } : { protocol: protocol }),
           enable: !currentlyEnabled,
         },
       });
@@ -305,13 +304,18 @@ export const CippExchangeInfoCard = (props) => {
   // Track if any legacy protocol is enabled
   const anyLegacyEnabled = legacyProtocols.some(p => p.enabled);
   
+  // Track if both IMAP and POP are enabled (for "disable both" button)
+  const bothLegacyEnabled = legacyProtocols.every(p => p.enabled);
+  
   // State for legacy protocols section expansion
   const [legacyProtocolsExpanded, setLegacyProtocolsExpanded] = useState(anyLegacyEnabled);
   
-  // Auto-expand legacy section when any legacy protocol gets enabled
+  // Auto-expand/collapse legacy section based on protocol status
   useEffect(() => {
     if (anyLegacyEnabled) {
       setLegacyProtocolsExpanded(true);
+    } else {
+      setLegacyProtocolsExpanded(false);
     }
   }, [anyLegacyEnabled]);
 
@@ -734,17 +738,8 @@ export const CippExchangeInfoCard = (props) => {
                     fontWeight={600} 
                     sx={{ color: anyLegacyEnabled ? "error.main" : "text.secondary" }}
                   >
-                    Legacy Protocols {anyLegacyEnabled ? "(Security Risk)" : "(Disabled)"}
+                    Legacy Protocols {anyLegacyEnabled ? "(Security Risk)" : "(Secure)"}
                   </Typography>
-                  {anyLegacyEnabled && (
-                    <Chip 
-                      label="Not Recommended" 
-                      size="small" 
-                      color="error" 
-                      variant="outlined"
-                      sx={{ height: 18, fontSize: "0.65rem" }}
-                    />
-                  )}
                 </Stack>
                 {legacyProtocolsExpanded ? (
                   <ExpandLess fontSize="small" sx={{ color: anyLegacyEnabled ? "error.main" : "text.disabled" }} />
@@ -754,11 +749,12 @@ export const CippExchangeInfoCard = (props) => {
               </Box>
               <Collapse in={legacyProtocolsExpanded}>
                 <Box sx={{ px: 1.5, pb: 1.5 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5, lineHeight: 1.5 }}>
-                    These legacy protocols may bypass modern authentication and MFA protections. 
-                    Only enable if required for third-party email clients like Apple Mail or Thunderbird.
-                  </Typography>
-                  <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                  {anyLegacyEnabled && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, lineHeight: 1.4 }}>
+                      These protocols can bypass MFA. Disable unless needed for legacy email clients.
+                    </Typography>
+                  )}
+                  <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap alignItems="center">
                     {legacyProtocols.map((protocol) => (
                       <Tooltip 
                         key={protocol.name} 
@@ -792,58 +788,34 @@ export const CippExchangeInfoCard = (props) => {
                         />
                       </Tooltip>
                     ))}
+                    {/* Disable Both button - only show when both are enabled */}
+                    {bothLegacyEnabled && userPrincipalName && (
+                      <Tooltip title="Disable both IMAP and POP protocols">
+                        <Chip
+                          label="Disable Both"
+                          icon={<Block />}
+                          color="error"
+                          variant="outlined"
+                          size="small"
+                          onClick={() => handleProtocolClick(["IMAP", "POP"], true)}
+                          sx={{ 
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            ml: 0.5,
+                            borderStyle: "dashed",
+                            "&:hover": {
+                              bgcolor: alpha(theme.palette.error.main, 0.1),
+                              borderStyle: "solid",
+                            },
+                            transition: "all 0.15s ease-in-out",
+                          }}
+                        />
+                      </Tooltip>
+                    )}
                   </Stack>
                 </Box>
               </Collapse>
             </Paper>
-            
-            {/* Security Recommendations - Only show if IMAP or POP is enabled */}
-            {anyLegacyEnabled && (
-              <Paper 
-                variant="outlined" 
-                sx={{ 
-                  mt: 1.5,
-                  bgcolor: alpha(theme.palette.info.main, 0.04),
-                  borderColor: alpha(theme.palette.info.main, 0.3),
-                  overflow: "hidden",
-                }}
-              >
-                <Box
-                  onClick={() => setSecurityRecommendationExpanded(!securityRecommendationExpanded)}
-                  sx={{ 
-                    p: 1.5,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    "&:hover": {
-                      bgcolor: alpha(theme.palette.info.main, 0.08),
-                    },
-                  }}
-                >
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <InfoIcon fontSize="small" color="info" sx={{ flexShrink: 0 }} />
-                    <Typography variant="caption" fontWeight={600} color="info.main">
-                      Security Recommendation
-                    </Typography>
-                  </Stack>
-                  {securityRecommendationExpanded ? (
-                    <ExpandLess fontSize="small" color="info" />
-                  ) : (
-                    <ExpandMore fontSize="small" color="info" />
-                  )}
-                </Box>
-                <Collapse in={securityRecommendationExpanded}>
-                  <Box sx={{ px: 1.5, pb: 1.5 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.5 }}>
-                      For improved security, consider disabling <strong>POP</strong> and <strong>IMAP</strong> protocols as they are legacy protocols 
-                      that may use basic authentication. These should only be enabled if users require third-party email clients 
-                      like Apple Mail or Thunderbird. Modern clients like Outlook use MAPI or EWS which support modern authentication.
-                    </Typography>
-                  </Box>
-                </Collapse>
-              </Paper>
-            )}
           </InfoSection>
 
           <Divider sx={{ my: 2 }} />
@@ -896,112 +868,140 @@ export const CippExchangeInfoCard = (props) => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle sx={{ 
-          color: (!protocolDialog.currentlyEnabled && protocolInfo[protocolDialog.protocol]?.securityRisk === "high") 
-            ? "error.main" 
-            : "inherit" 
-        }}>
-          {protocolDialog.currentlyEnabled 
-            ? `Disable ${protocolDialog.protocol}?` 
-            : (protocolInfo[protocolDialog.protocol]?.securityRisk === "high" 
-                ? `⚠️ Enable ${protocolDialog.protocol}? (Not Recommended)` 
-                : `Enable ${protocolDialog.protocol}?`)
-          }
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText component="div">
-            {protocolDialog.protocol && protocolInfo[protocolDialog.protocol] && (
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                <strong>{protocolInfo[protocolDialog.protocol].fullName}</strong>
-              </Typography>
-            )}
-            
-            Are you sure you want to {protocolDialog.currentlyEnabled ? "disable" : "enable"}{" "}
-            <strong>{protocolDialog.protocol}</strong> for this mailbox?
-            
-            {protocolDialog.currentlyEnabled && protocolDialog.protocol && protocolInfo[protocolDialog.protocol] && (
-              <Alert severity="warning" sx={{ mt: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                  The following applications will no longer be able to access this mailbox:
-                </Typography>
-                <Typography variant="body2">
-                  {protocolInfo[protocolDialog.protocol].affectedApps}
-                </Typography>
-              </Alert>
-            )}
-            
-            {!protocolDialog.currentlyEnabled && protocolDialog.protocol && protocolInfo[protocolDialog.protocol] && (
-              <>
-                {protocolInfo[protocolDialog.protocol].securityRisk === "high" && (
-                  <Alert 
-                    severity="error" 
-                    sx={{ mt: 2 }}
-                  >
-                    <Typography variant="body2" sx={{ fontWeight: 700, mb: 1 }}>
-                      Security Warning - Not Recommended
+        {(() => {
+          const isMultiple = Array.isArray(protocolDialog.protocol);
+          const protocolDisplay = isMultiple 
+            ? protocolDialog.protocol.join(" & ") 
+            : protocolDialog.protocol;
+          const singleProtocol = isMultiple ? null : protocolDialog.protocol;
+          const protocolData = singleProtocol ? protocolInfo[singleProtocol] : null;
+          
+          return (
+            <>
+              <DialogTitle sx={{ 
+                color: (!protocolDialog.currentlyEnabled && protocolData?.securityRisk === "high") 
+                  ? "error.main" 
+                  : "inherit" 
+              }}>
+                {protocolDialog.currentlyEnabled 
+                  ? `Disable ${protocolDisplay}?` 
+                  : (protocolData?.securityRisk === "high" 
+                      ? `⚠️ Enable ${protocolDisplay}? (Not Recommended)` 
+                      : `Enable ${protocolDisplay}?`)
+                }
+              </DialogTitle>
+              <DialogContent>
+                <DialogContentText component="div">
+                  {!isMultiple && protocolData && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      <strong>{protocolData.fullName}</strong>
                     </Typography>
-                    <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>{protocolDialog.protocol}</strong> is a legacy protocol that may use basic authentication, 
-                      which transmits credentials in a less secure manner. Enabling this protocol:
-                    </Typography>
-                    <Typography variant="body2" component="div">
-                      <ul style={{ margin: 0, paddingLeft: 20 }}>
-                        <li>Decreases the overall security of the mailbox</li>
-                        <li>May bypass modern authentication and MFA protections</li>
-                        <li>Increases vulnerability to credential theft attacks</li>
-                        <li>Is not recommended by Microsoft security best practices</li>
-                      </ul>
-                    </Typography>
-                    <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
-                      Only enable if the user requires a third-party email client (like Apple Mail or Thunderbird) 
-                      that does not support modern authentication.
-                    </Typography>
+                  )}
+                  
+                  Are you sure you want to {protocolDialog.currentlyEnabled ? "disable" : "enable"}{" "}
+                  <strong>{protocolDisplay}</strong> for this mailbox?
+                  
+                  {/* Disable warning - single protocol */}
+                  {protocolDialog.currentlyEnabled && !isMultiple && protocolData && (
+                    <Alert severity="warning" sx={{ mt: 2 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                        The following applications will no longer be able to access this mailbox:
+                      </Typography>
+                      <Typography variant="body2">
+                        {protocolData.affectedApps}
+                      </Typography>
+                    </Alert>
+                  )}
+                  
+                  {/* Disable warning - multiple protocols (disable both) */}
+                  {protocolDialog.currentlyEnabled && isMultiple && (
+                    <Alert severity="success" sx={{ mt: 2 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                        Recommended Security Action
+                      </Typography>
+                      <Typography variant="body2">
+                        Disabling both IMAP and POP will improve mailbox security by preventing 
+                        legacy authentication methods that can bypass MFA.
+                      </Typography>
+                    </Alert>
+                  )}
+                  
+                  {/* Enable warning - single protocol */}
+                  {!protocolDialog.currentlyEnabled && !isMultiple && protocolData && (
+                    <>
+                      {protocolData.securityRisk === "high" && (
+                        <Alert 
+                          severity="error" 
+                          sx={{ mt: 2 }}
+                        >
+                          <Typography variant="body2" sx={{ fontWeight: 700, mb: 1 }}>
+                            Security Warning - Not Recommended
+                          </Typography>
+                          <Typography variant="body2" sx={{ mb: 1 }}>
+                            <strong>{protocolDisplay}</strong> is a legacy protocol that may use basic authentication, 
+                            which transmits credentials in a less secure manner. Enabling this protocol:
+                          </Typography>
+                          <Typography variant="body2" component="div">
+                            <ul style={{ margin: 0, paddingLeft: 20 }}>
+                              <li>Decreases the overall security of the mailbox</li>
+                              <li>May bypass modern authentication and MFA protections</li>
+                              <li>Increases vulnerability to credential theft attacks</li>
+                              <li>Is not recommended by Microsoft security best practices</li>
+                            </ul>
+                          </Typography>
+                          <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
+                            Only enable if the user requires a third-party email client (like Apple Mail or Thunderbird) 
+                            that does not support modern authentication.
+                          </Typography>
+                        </Alert>
+                      )}
+                      
+                      <Alert 
+                        severity={protocolData.securityRisk === "high" ? "warning" : "info"} 
+                        sx={{ mt: 2 }}
+                      >
+                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                          Enabling this protocol will allow access from:
+                        </Typography>
+                        <Typography variant="body2">
+                          {protocolData.affectedApps}
+                        </Typography>
+                      </Alert>
+                    </>
+                  )}
+                </DialogContentText>
+                {toggleProtocol.isError && (
+                  <Alert severity="error" sx={{ mt: 2 }}>
+                    {toggleProtocol.error?.message || "Failed to update protocol setting"}
                   </Alert>
                 )}
-                
-                <Alert 
-                  severity={protocolInfo[protocolDialog.protocol].securityRisk === "high" ? "warning" : "info"} 
-                  sx={{ mt: 2 }}
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleDialogClose} disabled={isToggling}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleProtocolToggle}
+                  color={
+                    protocolDialog.currentlyEnabled 
+                      ? (isMultiple ? "success" : "error")
+                      : (protocolData?.securityRisk === "high" ? "error" : "primary")
+                  }
+                  variant="contained"
+                  disabled={isToggling}
+                  startIcon={isToggling ? <CircularProgress size={16} color="inherit" /> : null}
                 >
-                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                    Enabling this protocol will allow access from:
-                  </Typography>
-                  <Typography variant="body2">
-                    {protocolInfo[protocolDialog.protocol].affectedApps}
-                  </Typography>
-                </Alert>
-              </>
-            )}
-          </DialogContentText>
-          {toggleProtocol.isError && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {toggleProtocol.error?.message || "Failed to update protocol setting"}
-            </Alert>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDialogClose} disabled={isToggling}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleProtocolToggle}
-            color={
-              protocolDialog.currentlyEnabled 
-                ? "error" 
-                : (protocolInfo[protocolDialog.protocol]?.securityRisk === "high" ? "error" : "primary")
-            }
-            variant="contained"
-            disabled={isToggling}
-            startIcon={isToggling ? <CircularProgress size={16} color="inherit" /> : null}
-          >
-            {isToggling 
-              ? "Updating..." 
-              : protocolDialog.currentlyEnabled 
-                ? "Disable" 
-                : (protocolInfo[protocolDialog.protocol]?.securityRisk === "high" ? "Enable Anyway" : "Enable")
-            }
-          </Button>
-        </DialogActions>
+                  {isToggling 
+                    ? "Updating..." 
+                    : protocolDialog.currentlyEnabled 
+                      ? (isMultiple ? "Disable Both" : "Disable")
+                      : (protocolData?.securityRisk === "high" ? "Enable Anyway" : "Enable")
+                  }
+                </Button>
+              </DialogActions>
+            </>
+          );
+        })()}
       </Dialog>
       
       {/* GAL Visibility Toggle Confirmation Dialog */}
