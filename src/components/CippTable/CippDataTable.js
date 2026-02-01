@@ -1317,10 +1317,13 @@ export const CippDataTable = (props) => {
   // Legacy alias for backward compatibility
   const showMobileCardView = isMobile && effectiveCardConfig;
 
+  // Compute effective query key - used consistently for fetching and cache invalidation
+  const effectiveQueryKey = queryKey ? queryKey : title;
+
   const getRequestData = ApiGetCallWithPagination({
     url: api.url,
     data: { ...api.data },
-    queryKey: queryKey ? queryKey : title,
+    queryKey: effectiveQueryKey,
     waiting: waitingBool,
     ...graphFilterData,
   });
@@ -2101,7 +2104,7 @@ export const CippDataTable = (props) => {
               setOffcanvasVisible={setOffcanvasVisible}
               onCardClick={onCardClick}
               editApiUrl={effectiveCardConfig?.editApiUrl}
-              queryKey={queryKey}
+              queryKey={effectiveQueryKey}
             />
           )}
         </Card>
