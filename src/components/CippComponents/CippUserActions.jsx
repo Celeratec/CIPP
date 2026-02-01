@@ -500,7 +500,7 @@ export const useCippUserActions = () => {
       data: { 
         user: "userPrincipalName",
         protocols: "!IMAP,POP",
-        enable: "!false",
+        enable: false,
       },
       confirmText: "Are you sure you want to disable IMAP and POP for [userPrincipalName]? This is recommended for security as these legacy protocols may bypass MFA protections.",
       multiPost: false,
@@ -515,7 +515,7 @@ export const useCippUserActions = () => {
       data: { 
         user: "userPrincipalName",
         protocol: "!IMAP",
-        enable: "!false",
+        enable: false,
       },
       confirmText: "Are you sure you want to disable IMAP for [userPrincipalName]? IMAP is a legacy protocol that may bypass MFA protections.",
       multiPost: false,
@@ -530,7 +530,7 @@ export const useCippUserActions = () => {
       data: { 
         user: "userPrincipalName",
         protocol: "!POP",
-        enable: "!false",
+        enable: false,
       },
       confirmText: "Are you sure you want to disable POP for [userPrincipalName]? POP is a legacy protocol that may bypass MFA protections.",
       multiPost: false,

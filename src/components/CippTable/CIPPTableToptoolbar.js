@@ -6,6 +6,7 @@ import {
   MenuItem,
   ListItemText,
   ListItemIcon,
+  ListSubheader,
   Divider,
   IconButton,
   Tooltip,
@@ -37,6 +38,12 @@ import {
   Fullscreen as FullscreenIcon,
   ViewModule as ViewModuleIcon,
   TableRows as TableRowsIcon,
+  Visibility,
+  Edit,
+  Security,
+  Settings,
+  Warning,
+  Circle,
 } from "@mui/icons-material";
 import { ExclamationCircleIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { styled, alpha } from "@mui/material/styles";
@@ -148,6 +155,46 @@ const ModernButton = styled(Button)(({ theme }) => ({
 
 const RefreshButton = styled(IconButton)(({ theme }) => ({}));
 
+// Helper functions for bulk action category grouping and styling
+const getCategoryIcon = (category) => {
+  switch (category.toLowerCase()) {
+    case "view":
+      return <Visibility sx={{ fontSize: 14 }} />;
+    case "edit":
+      return <Edit sx={{ fontSize: 14 }} />;
+    case "security":
+      return <Security sx={{ fontSize: 14 }} />;
+    case "manage":
+      return <Settings sx={{ fontSize: 14 }} />;
+    case "danger":
+      return <Warning sx={{ fontSize: 14 }} />;
+    default:
+      return <Circle sx={{ fontSize: 8 }} />;
+  }
+};
+
+const getCategoryColor = (category) => {
+  switch (category.toLowerCase()) {
+    case "view":
+      return "success";
+    case "edit":
+      return "info";
+    case "security":
+      return "warning";
+    case "manage":
+      return "secondary";
+    case "danger":
+      return "error";
+    default:
+      return "text.secondary";
+  }
+};
+
+const getCategoryLabel = (category) =>
+  category
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/^./, (match) => match.toUpperCase());
+
 export const CIPPTableToptoolbar = ({
   api,
   simpleColumns,
@@ -226,6 +273,22 @@ export const CIPPTableToptoolbar = ({
     showBulkExportAction && exportEnabled && selectedRows.length > 0;
   const customBulkActions = getBulkActions(actions, selectedRows);
   const showBulkActionsButton = hasSelection && customBulkActions.length > 0;
+
+  // Group bulk actions by category for the menu
+  const groupedBulkActions = React.useMemo(() => {
+    const grouped = customBulkActions.reduce((acc, action) => {
+      const category =
+        typeof action.category === "string" && action.category.trim().length > 0
+          ? action.category.trim()
+          : "Other";
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(action);
+      return acc;
+    }, {});
+    return Object.entries(grouped);
+  }, [customBulkActions]);
 
   const handleExportSelectedToCsv = () => {
     if (!selectedRows.length) {
@@ -1317,7 +1380,7 @@ export const CIPPTableToptoolbar = ({
         )}
       </Box>
 
-      {/* Bulk Actions Menu - now inline with toolbar */}
+      {/* Bulk Actions Menu - grouped with color coding */}
       <Menu
         anchorEl={popover.anchorRef.current}
         anchorOrigin={{
@@ -1336,51 +1399,96 @@ export const CIPPTableToptoolbar = ({
         }}
       >
         {actions &&
-          customBulkActions.map((action, index) => (
-            <MenuItem
-              key={index}
-              disabled={action.disabled}
-              onClick={() => {
-                if (action.disabled) {
-                  return;
-                }
+          groupedBulkActions.map(([category, categoryActions], groupIndex) => {
+            const categoryColor = getCategoryColor(category);
+            const headerBgColor = categoryColor === "text.secondary" 
+              ? (theme) => alpha(theme.palette.grey[500], 0.08)
+              : (theme) => alpha(theme.palette[categoryColor].main, 0.08);
+            const headerTextColor = categoryColor === "text.secondary"
+              ? "text.secondary"
+              : `${categoryColor}.main`;
 
-                const selectedRows = table?.getSelectedRowModel?.()?.rows || [];
-                const selectedData = selectedRows.map((row) => row.original);
+            return (
+              <Box key={category}>
+                <ListSubheader
+                  disableSticky
+                  sx={{
+                    textTransform: "uppercase",
+                    fontSize: "0.7rem",
+                    letterSpacing: "0.06em",
+                    fontWeight: 700,
+                    lineHeight: 1.8,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.75,
+                    bgcolor: headerBgColor,
+                    color: headerTextColor,
+                    borderRadius: 0.5,
+                    mx: 0.5,
+                    mt: groupIndex > 0 ? 0.5 : 0,
+                    py: 0.5,
+                  }}
+                >
+                  {getCategoryIcon(category)}
+                  {getCategoryLabel(category)}
+                </ListSubheader>
+                {categoryActions.map((action, index) => {
+                  const actionColor = action.color || categoryColor;
+                  const iconSx =
+                    actionColor === "text.secondary"
+                      ? { minWidth: "30px", color: actionColor }
+                      : { minWidth: "30px", color: (theme) => theme.palette[actionColor]?.main || actionColor };
 
-                if (typeof action.customBulkHandler === "function") {
-                  action.customBulkHandler({
-                    rows: selectedRows,
-                    data: selectedData,
-                    closeMenu: popover.handleClose,
-                    clearSelection: () => table?.toggleAllRowsSelected?.(false),
-                  });
-                  popover.handleClose();
-                  return;
-                }
+                  return (
+                    <MenuItem
+                      key={`${category}-${index}`}
+                      disabled={action.disabled}
+                      onClick={() => {
+                        if (action.disabled) {
+                          return;
+                        }
 
-                setActionData({
-                  data: selectedData,
-                  action: action,
-                  ready: true,
-                });
+                        const selectedRows = table?.getSelectedRowModel?.()?.rows || [];
+                        const selectedData = selectedRows.map((row) => row.original);
 
-                if (action?.noConfirm && action.customFunction) {
-                  selectedRows.map((row) =>
-                    action.customFunction(row.original.original, action, {})
+                        if (typeof action.customBulkHandler === "function") {
+                          action.customBulkHandler({
+                            rows: selectedRows,
+                            data: selectedData,
+                            closeMenu: popover.handleClose,
+                            clearSelection: () => table?.toggleAllRowsSelected?.(false),
+                          });
+                          popover.handleClose();
+                          return;
+                        }
+
+                        setActionData({
+                          data: selectedData,
+                          action: action,
+                          ready: true,
+                        });
+
+                        if (action?.noConfirm && action.customFunction) {
+                          selectedRows.map((row) =>
+                            action.customFunction(row.original.original, action, {})
+                          );
+                        } else {
+                          createDialog.handleOpen();
+                          popover.handleClose();
+                        }
+                      }}
+                    >
+                      <SvgIcon fontSize="small" sx={iconSx}>
+                        {action.icon}
+                      </SvgIcon>
+                      <ListItemText>{action.label}</ListItemText>
+                    </MenuItem>
                   );
-                } else {
-                  createDialog.handleOpen();
-                  popover.handleClose();
-                }
-              }}
-            >
-              <SvgIcon fontSize="small" sx={{ minWidth: "30px" }}>
-                {action.icon}
-              </SvgIcon>
-              <ListItemText>{action.label}</ListItemText>
-            </MenuItem>
-          ))}
+                })}
+                {groupIndex < groupedBulkActions.length - 1 && <Divider sx={{ my: 0.5 }} />}
+              </Box>
+            );
+          })}
       </Menu>
 
       {/* API Response Off-Canvas - only show when not in dialog mode */}

@@ -540,6 +540,28 @@ const CardView = ({
               {/* Info Section */}
               <Box sx={{ overflow: "hidden", minWidth: 0 }}>
                 {/* Extra fields (job title, department) */}
+                {/* Inline custom content row - renders even if no extraFields have values */}
+                {config.customContentInline && typeof config.customContent === "function" && (
+                  (() => {
+                    const inlineContent = config.customContent(item);
+                    // Find first extraField with a value to display alongside
+                    const firstFieldWithValue = extraFields.slice(0, config.extraFieldsMax ?? 2).find((field) => {
+                      const rawValue = getNestedValue(item, field.field || field);
+                      const formattedValue = typeof field.formatter === "function" ? field.formatter(rawValue, item) : rawValue;
+                      return formatFieldValue(formattedValue);
+                    });
+                    
+                    // If we have inline content but no field value, still show the content
+                    if (inlineContent && !firstFieldWithValue) {
+                      return (
+                        <Box sx={{ mb: 1, display: "flex", justifyContent: "flex-end" }}>
+                          {inlineContent}
+                        </Box>
+                      );
+                    }
+                    return null;
+                  })()
+                )}
                 {extraFields.length > 0 && (
                   <Stack spacing={0.25} sx={{ mb: 1, minWidth: 0 }}>
                     {extraFields.slice(0, config.extraFieldsMax ?? 2).map((field, fieldIndex) => {
@@ -551,8 +573,14 @@ const CardView = ({
                       const value = formatFieldValue(formattedValue);
                       if (!value) return null;
                       
-                      // Check if we should render inline custom content with this field (first field only)
-                      const inlineContent = fieldIndex === 0 && 
+                      // Check if we should render inline custom content with this field (first field with value only)
+                      const isFirstFieldWithValue = extraFields.slice(0, config.extraFieldsMax ?? 2).findIndex((f) => {
+                        const rv = getNestedValue(item, f.field || f);
+                        const fv = typeof f.formatter === "function" ? f.formatter(rv, item) : rv;
+                        return formatFieldValue(fv);
+                      }) === fieldIndex;
+                      
+                      const inlineContent = isFirstFieldWithValue && 
                         config.customContentInline && 
                         typeof config.customContent === "function" 
                           ? config.customContent(item) 
