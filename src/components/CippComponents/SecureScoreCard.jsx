@@ -56,8 +56,8 @@ export const SecureScoreCard = ({ data, isLoading }) => {
           </>
         ) : (
           <>
-            <Box sx={{ height: 250 }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <Box sx={{ height: 250, minWidth: 0 }}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 {(() => {
                   const sortedData = [...data].sort((a, b) => new Date(a.createdDateTime) - new Date(b.createdDateTime));
                   const chartData = sortedData.map((score) => ({
