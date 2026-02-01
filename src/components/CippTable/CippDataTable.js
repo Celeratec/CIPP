@@ -534,8 +534,8 @@ const CardView = ({
                 </Box>
               </Stack>
 
-              {/* Custom Content Section (e.g., risk badges) */}
-              {typeof config.customContent === "function" && config.customContent(item)}
+              {/* Custom Content Section - rendered as separate row if customContentInline is false */}
+              {typeof config.customContent === "function" && !config.customContentInline && config.customContent(item)}
 
               {/* Info Section */}
               <Box sx={{ overflow: "hidden", minWidth: 0 }}>
@@ -550,41 +550,53 @@ const CardView = ({
                           : rawValue;
                       const value = formatFieldValue(formattedValue);
                       if (!value) return null;
+                      
+                      // Check if we should render inline custom content with this field (first field only)
+                      const inlineContent = fieldIndex === 0 && 
+                        config.customContentInline && 
+                        typeof config.customContent === "function" 
+                          ? config.customContent(item) 
+                          : null;
+                      
                       return (
                         <Stack 
                           key={fieldIndex} 
                           direction="row" 
                           spacing={0.5} 
                           alignItems="center"
+                          justifyContent="space-between"
                           sx={{ minWidth: 0 }}
                         >
-                          {field.icon && (
-                            <SvgIcon sx={{ fontSize: 14, color: "text.secondary", flexShrink: 0 }}>
-                              {field.icon}
-                            </SvgIcon>
-                          )}
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            title={value}
-                            sx={{
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              maxWidth: "100%",
-                              minWidth: 0,
-                              wordBreak: "break-word",
-                              ...(field.maxLines ? {
-                                display: "-webkit-box",
-                                WebkitLineClamp: field.maxLines,
-                                WebkitBoxOrient: "vertical",
-                                whiteSpace: "normal",
-                              } : {
-                                whiteSpace: "nowrap",
-                              }),
-                            }}
-                          >
-                            {value}
-                          </Typography>
+                          <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
+                            {field.icon && (
+                              <SvgIcon sx={{ fontSize: 14, color: "text.secondary", flexShrink: 0 }}>
+                                {field.icon}
+                              </SvgIcon>
+                            )}
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              title={value}
+                              sx={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                maxWidth: "100%",
+                                minWidth: 0,
+                                wordBreak: "break-word",
+                                ...(field.maxLines ? {
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: field.maxLines,
+                                  WebkitBoxOrient: "vertical",
+                                  whiteSpace: "normal",
+                                } : {
+                                  whiteSpace: "nowrap",
+                                }),
+                              }}
+                            >
+                              {value}
+                            </Typography>
+                          </Stack>
+                          {inlineContent}
                         </Stack>
                       );
                     })}

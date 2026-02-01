@@ -259,7 +259,9 @@ const Page = () => {
       md: 6,
       lg: 4,
     },
-    // Custom content to show legacy protocol warnings
+    // Render custom content inline with first extraField (companyName row)
+    customContentInline: true,
+    // Custom content to show legacy protocol warnings - now renders inline
     customContent: (item) => {
       const legacyInfo = hasLegacyProtocols(item);
       if (!legacyInfo) return null;
@@ -271,35 +273,35 @@ const Page = () => {
       if (protocols.length === 0) return null;
       
       return (
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 0.5, mb: 0.5 }}>
-          <Tooltip title={`Insecure protocols enabled: ${protocols.join(" & ")}. These legacy protocols may bypass MFA protections. Click to view Exchange settings.`}>
-            <Chip
-              size="small"
-              icon={<Warning sx={{ fontSize: "14px !important" }} />}
-              label={protocols.join(" & ")}
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(`/identity/administration/users/user/exchange?userId=${item.id}`);
-              }}
-              sx={{
-                height: 22,
-                fontSize: "0.7rem",
-                fontWeight: 600,
-                bgcolor: (theme) => alpha(theme.palette.warning.main, 0.15),
-                color: "warning.dark",
-                border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.4)}`,
-                cursor: "pointer",
-                "& .MuiChip-icon": {
-                  color: "warning.main",
-                  ml: 0.5,
-                },
-                "&:hover": {
-                  bgcolor: (theme) => alpha(theme.palette.warning.main, 0.25),
-                },
-              }}
-            />
-          </Tooltip>
-        </Box>
+        <Tooltip title={`Insecure protocols enabled: ${protocols.join(" & ")}. These legacy protocols may bypass MFA protections. Click to view Exchange settings.`}>
+          <Chip
+            size="small"
+            icon={<Warning sx={{ fontSize: "12px !important" }} />}
+            label={protocols.join(" & ")}
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/identity/administration/users/user/exchange?userId=${item.id}`);
+            }}
+            sx={{
+              height: 20,
+              fontSize: "0.65rem",
+              fontWeight: 600,
+              ml: 0.5,
+              flexShrink: 0,
+              bgcolor: (theme) => alpha(theme.palette.warning.main, 0.2),
+              color: "warning.dark",
+              border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.5)}`,
+              cursor: "pointer",
+              "& .MuiChip-icon": {
+                color: "warning.main",
+                ml: 0.25,
+              },
+              "&:hover": {
+                bgcolor: (theme) => alpha(theme.palette.warning.main, 0.35),
+              },
+            }}
+          />
+        </Tooltip>
       );
     },
   };

@@ -1276,8 +1276,9 @@ const Page = () => {
       isFetching={graphUserRequest.isLoading}
     >
       <CippApiResults apiObject={userRequest} errorsOnly={true} />
-      {graphUserRequest.isLoading && <CippFormSkeleton layout={[2, 1, 2, 2]} />}
-      {graphUserRequest.isSuccess && (
+      {/* Show loading state when router is not ready, userId is missing, or API is loading */}
+      {(!router.isReady || !userId || graphUserRequest.isLoading) && <CippFormSkeleton layout={[2, 1, 2, 2]} />}
+      {router.isReady && userId && graphUserRequest.isSuccess && (
         <Box
           sx={{
             flexGrow: 1,
