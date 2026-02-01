@@ -48,6 +48,7 @@ const Page = () => {
       confirmText: `Are you sure you want to create a template based on "[displayName]"?`,
       icon: <MenuBook />,
       color: "info",
+      category: "edit",
     },
     {
       label: "Change Display Name",
@@ -60,6 +61,7 @@ const Page = () => {
       icon: <Edit />,
       color: "info",
       hideBulk: true,
+      category: "edit",
       fields: [
         {
           type: "textField",
@@ -87,6 +89,7 @@ const Page = () => {
       condition: (row) => row.state !== "enabled",
       icon: <Check />,
       color: "info",
+      category: "manage",
     },
     {
       label: "Disable policy",
@@ -100,6 +103,7 @@ const Page = () => {
       condition: (row) => row.state !== "disabled",
       icon: <Block />,
       color: "info",
+      category: "manage",
     },
     {
       label: "Set policy to report only",
@@ -113,6 +117,7 @@ const Page = () => {
       condition: (row) => row.state !== "enabledForReportingButNotEnforced",
       icon: <Visibility />,
       color: "info",
+      category: "manage",
     },
     {
       label: "Add service provider exception to policy",
@@ -124,6 +129,7 @@ const Page = () => {
       confirmText: `Are you sure you want to add the service provider exception to "[displayName]"?`,
       icon: <VerifiedUser />,
       color: "warning",
+      category: "security",
     },
     {
       label: "Delete policy",
@@ -135,6 +141,7 @@ const Page = () => {
       confirmText: `Are you sure you want to delete "[displayName]"?`,
       icon: <Delete />,
       color: "danger",
+      category: "danger",
     },
   ];
 

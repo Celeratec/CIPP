@@ -121,6 +121,7 @@ const Page = () => {
       confirmText: 'Are you sure you want to assign "[displayName]" to all users?',
       icon: <UserIcon />,
       color: "info",
+      category: "manage",
     },
     {
       label: "Assign to All Devices",
@@ -154,6 +155,7 @@ const Page = () => {
       confirmText: 'Are you sure you want to assign "[displayName]" to all devices?',
       icon: <LaptopMac />,
       color: "info",
+      category: "manage",
     },
     {
       label: "Assign Globally (All Users / All Devices)",
@@ -187,6 +189,7 @@ const Page = () => {
       confirmText: 'Are you sure you want to assign "[displayName]" to all users and devices?',
       icon: <GlobeAltIcon />,
       color: "info",
+      category: "manage",
     },
     {
       label: "Assign to Custom Group",
@@ -257,6 +260,7 @@ const Page = () => {
           AppType: getAppAssignmentSettingsType(row?.["@odata.type"]),
         };
       },
+      category: "manage",
     },
     {
       label: "Delete Application",
@@ -268,6 +272,7 @@ const Page = () => {
       confirmText: 'Are you sure you want to delete "[displayName]"?',
       icon: <TrashIcon />,
       color: "danger",
+      category: "danger",
     },
   ];
 

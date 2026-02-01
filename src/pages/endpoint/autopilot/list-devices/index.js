@@ -65,6 +65,7 @@ const Page = () => {
         },
       ],
       color: "info",
+      category: "edit",
     },
     {
       label: "Rename Device",
@@ -103,6 +104,7 @@ const Page = () => {
         },
       ],
       color: "secondary",
+      category: "edit",
     },
     {
       label: "Edit Group Tag",
@@ -128,6 +130,7 @@ const Page = () => {
         },
       ],
       color: "secondary",
+      category: "edit",
     },
     {
       label: "Delete Device",
@@ -137,6 +140,7 @@ const Page = () => {
       data: { ID: "id" },
       confirmText: "Are you sure you want to delete this device?",
       color: "danger",
+      category: "danger",
     },
   ];
 

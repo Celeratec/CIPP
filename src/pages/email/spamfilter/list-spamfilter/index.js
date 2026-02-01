@@ -42,6 +42,7 @@ const Page = () => {
         return { ...data };
       },
       confirmText: "Are you sure you want to create a template based on this rule?",
+      category: "edit",
     },
     {
       label: "Enable Rule",
@@ -54,6 +55,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to enable this rule?",
       condition: (row) => row.ruleState === "Disabled",
+      category: "manage",
     },
     {
       label: "Disable Rule",
@@ -66,6 +68,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to disable this rule?",
       condition: (row) => row.ruleState === "Enabled",
+      category: "manage",
     },
     {
       label: "Delete Rule",
@@ -77,6 +80,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to delete this rule?",
       color: "danger",
+      category: "danger",
     },
   ];
 

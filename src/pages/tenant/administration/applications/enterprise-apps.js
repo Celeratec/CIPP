@@ -55,6 +55,7 @@ const Page = () => {
       target: "_blank",
       multiPost: false,
       external: true,
+      category: "view",
     },
     {
       icon: <ContentCopy />,
@@ -71,6 +72,7 @@ const Page = () => {
       confirmText:
         "Create a deployment template from '[displayName]'? This will copy all permissions and create a reusable template.",
       condition: (row) => canWriteApplication && row?.signInAudience === "AzureADMultipleOrgs",
+      category: "edit",
     },
     {
       icon: <Key />,
@@ -107,6 +109,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to remove the selected password credentials?",
       condition: (row) => canWriteApplication && row?.passwordCredentials?.length > 0,
+      category: "security",
     },
     {
       icon: <Security />,
@@ -125,6 +128,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to remove the selected certificate credentials?",
       condition: (row) => canWriteApplication && row?.keyCredentials?.length > 0,
+      category: "security",
     },
     {
       icon: <Block />,
@@ -144,6 +148,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to disable this service principal? Users will not be able to sign in to this application.",
       condition: (row) => canWriteApplication && row?.accountEnabled === true,
+      category: "manage",
     },
     {
       icon: <CheckCircle />,
@@ -162,6 +167,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to enable this service principal?",
       condition: (row) => canWriteApplication && row?.accountEnabled === false,
+      category: "manage",
     },
     {
       icon: <Delete />,
@@ -178,6 +184,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to delete this service principal? This will remove the application from this tenant but will not affect the app registration.",
       condition: () => canWriteApplication,
+      category: "danger",
     },
   ];
 

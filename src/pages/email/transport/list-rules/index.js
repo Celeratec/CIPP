@@ -52,6 +52,7 @@ const Page = () => {
       postEntireRow: true,
       confirmText: "Are you sure you want to create a template based on this rule?",
       icon: <Book />,
+      category: "edit",
     },
     {
       label: "Enable Rule",
@@ -65,6 +66,7 @@ const Page = () => {
       condition: (row) => row.State === "Disabled",
       confirmText: "Are you sure you want to enable this rule?",
       icon: <Done />,
+      category: "manage",
     },
     {
       label: "Edit Rule",
@@ -80,6 +82,7 @@ const Page = () => {
       ),
       icon: <Edit />,
       multiPost: false,
+      category: "edit",
     },
     {
       label: "Disable Rule",
@@ -93,6 +96,7 @@ const Page = () => {
       condition: (row) => row.State === "Enabled",
       confirmText: "Are you sure you want to disable this rule?",
       icon: <DoDisturb />,
+      category: "manage",
     },
     {
       label: "Delete Rule",
@@ -104,6 +108,7 @@ const Page = () => {
       confirmText: "Are you sure you want to delete this rule?",
       color: "danger",
       icon: <TrashIcon />,
+      category: "danger",
     },
   ];
 

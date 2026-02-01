@@ -118,12 +118,14 @@ const Page = () => {
       noConfirm: true,
       customFunction: viewMessage,
       icon: <EyeIcon />,
+      category: "view",
     },
     {
       label: "View Message Trace",
       noConfirm: true,
       customFunction: viewMessageTrace,
       icon: <DocumentTextIcon />,
+      category: "view",
     },
     {
       label: "Release",
@@ -137,6 +139,7 @@ const Page = () => {
       confirmText: "Are you sure you want to release this message?",
       icon: <Done />,
       condition: (row) => row.ReleaseStatus !== "RELEASED",
+      category: "manage",
     },
     {
       label: "Deny",
@@ -149,6 +152,7 @@ const Page = () => {
       confirmText: "Are you sure you want to deny this message?",
       icon: <Block />,
       condition: (row) => row.ReleaseStatus !== "DENIED",
+      category: "security",
     },
     {
       label: "Release & Allow Sender",
@@ -163,6 +167,7 @@ const Page = () => {
         "Are you sure you want to release this email and add the sender to the whitelist?",
       icon: <DoneAll />,
       condition: (row) => row.ReleaseStatus !== "RELEASED",
+      category: "security",
     },
   ];
 

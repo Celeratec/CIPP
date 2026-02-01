@@ -76,6 +76,7 @@ const Page = () => {
         },
       ],
       multiPost: false,
+      category: "edit",
     },
     {
       label: "Remove Member",
@@ -89,6 +90,7 @@ const Page = () => {
         SharePointType: "rootWebTemplate",
       },
       confirmText: "Select the User to remove as a member.",
+      category: "edit",
       fields: [
         {
           type: "autoComplete",
@@ -155,6 +157,7 @@ const Page = () => {
         },
       ],
       multiPost: false,
+      category: "security",
     },
     {
       label: "Remove Site Admin",
@@ -194,6 +197,7 @@ const Page = () => {
         },
       ],
       multiPost: false,
+      category: "security",
     },
     {
       label: "Delete Site",
@@ -206,6 +210,7 @@ const Page = () => {
       confirmText: "Are you sure you want to delete this SharePoint site? This action cannot be undone.",
       color: "error",
       multiPost: false,
+      category: "danger",
     },
   ];
 
