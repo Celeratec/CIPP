@@ -51,6 +51,7 @@ export const CippBulkUserDrawer = ({
       usageLocation: initialState.usageLocation || "US",
       bulkUser: [],
       licenses: [],
+      disableLegacyProtocols: true,
     },
   });
 
@@ -104,6 +105,7 @@ export const CippBulkUserDrawer = ({
       usageLocation: initialState.usageLocation || "US",
       bulkUser: [],
       licenses: [],
+      disableLegacyProtocols: true,
     });
   };
 
@@ -174,6 +176,15 @@ export const CippBulkUserDrawer = ({
               fullWidth
               label="Assign License"
               name="licenses"
+              formControl={formControl}
+            />
+          </Grid>
+
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormComponent
+              type="switch"
+              label="Disable legacy protocols (IMAP & POP)"
+              name="disableLegacyProtocols"
               formControl={formControl}
             />
           </Grid>

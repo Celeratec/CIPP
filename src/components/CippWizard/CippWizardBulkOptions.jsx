@@ -13,7 +13,7 @@ import CippWizardStepButtons from "./CippWizardStepButtons";
 import CippFormComponent from "../CippComponents/CippFormComponent";
 import countryList from "../../data/countryList.json";
 import { CippFormLicenseSelector } from "../CippComponents/CippFormLicenseSelector";
-import { Tune, Public, CardMembership } from "@mui/icons-material";
+import { Tune, Public, CardMembership, Security } from "@mui/icons-material";
 
 export const CippWizardBulkOptions = (props) => {
   const { postUrl, formControl, onPreviousStep, onNextStep, currentStep } = props;
@@ -111,6 +111,37 @@ export const CippWizardBulkOptions = (props) => {
                 name="licenses"
                 formControl={formControl}
               />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 32,
+                    height: 32,
+                    borderRadius: 1,
+                    bgcolor: alpha(theme.palette.warning.main, 0.1),
+                    color: "warning.main",
+                  }}
+                >
+                  <Security fontSize="small" />
+                </Box>
+                <Typography variant="subtitle2" fontWeight={600}>
+                  Security Options
+                </Typography>
+              </Stack>
+              <CippFormComponent
+                type="switch"
+                label="Disable legacy protocols (IMAP & POP)"
+                name="disableLegacyProtocols"
+                formControl={formControl}
+                defaultValue={true}
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                Disabling IMAP and POP improves mailbox security by blocking insecure authentication methods
+              </Typography>
             </Grid>
           </Grid>
         </CardContent>

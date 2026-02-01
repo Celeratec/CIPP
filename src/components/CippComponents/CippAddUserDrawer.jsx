@@ -23,6 +23,7 @@ export const CippAddUserDrawer = ({
     defaultValues: {
       tenantFilter: userSettingsDefaults.currentTenant,
       usageLocation: userSettingsDefaults.usageLocation,
+      disableLegacyProtocols: true,
     },
   });
 
@@ -62,6 +63,7 @@ export const CippAddUserDrawer = ({
       formControl.reset({
         tenantFilter: userSettingsDefaults.currentTenant,
         usageLocation: userSettingsDefaults.usageLocation,
+        disableLegacyProtocols: true,
       });
     }
   }, [createUser.isSuccess]);
@@ -88,6 +90,7 @@ export const CippAddUserDrawer = ({
     formControl.reset({
       tenantFilter: userSettingsDefaults.currentTenant,
       usageLocation: userSettingsDefaults.usageLocation,
+      disableLegacyProtocols: true,
     });
   };
 

@@ -420,6 +420,17 @@ const CippAddEditUser = (props) => {
               formControl={formControl}
             />
           </Grid>
+          {formType === "add" && (
+            <Grid size={{ md: 6, xs: 12 }}>
+              <CippFormComponent
+                type="switch"
+                label="Disable legacy protocols (IMAP & POP)"
+                name="disableLegacyProtocols"
+                formControl={formControl}
+                defaultValue={true}
+              />
+            </Grid>
+          )}
         </Grid>
       </FormSection>
 
