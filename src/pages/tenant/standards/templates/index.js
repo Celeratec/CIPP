@@ -1,6 +1,5 @@
-import { Alert, Button } from "@mui/material";
-import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
-import { Layout as DashboardLayout } from "../../../../layouts/index.js"; // had to add an extra path here because I added an extra folder structure. We should switch to absolute pathing so we dont have to deal with relative.
+import { Alert, Button, Box, Container, Stack } from "@mui/material";
+import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { TabbedLayout } from "../../../../layouts/TabbedLayout";
 import Link from "next/link";
 import { CopyAll, Delete, PlayArrow, AddBox, Edit, GitHub, ContentCopy } from "@mui/icons-material";
@@ -12,6 +11,11 @@ import tabOptions from "../tabOptions.json";
 import { useSettings } from "../../../../hooks/use-settings.js";
 import { CippPolicyImportDrawer } from "../../../../components/CippComponents/CippPolicyImportDrawer.jsx";
 import { PermissionButton } from "../../../../utils/permissions.js";
+import { CippDataTable } from "../../../../components/CippTable/CippDataTable";
+import { CippRemovableTenantChips } from "../../../../components/CippComponents/CippRemovableTenantChips";
+import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
+import { getCippTranslation } from "../../../../utils/get-cipp-translation";
+import { CippPageCard } from "../../../../components/CippCards/CippPageCard";
 
 const Page = () => {
   const oldStandards = ApiGetCall({ url: "/api/ListStandards", queryKey: "ListStandards-legacy" });
@@ -147,6 +151,84 @@ const Page = () => {
       data: {},
     });
   };
+  const queryKey = "listStandardTemplates";
+
+  // Custom columns with removable tenant chips
+  const columns = [
+    {
+      header: getCippTranslation("templateName"),
+      id: "templateName",
+      accessorKey: "templateName",
+      Cell: ({ row }) => getCippFormatting(row.original.templateName, "templateName"),
+    },
+    {
+      header: getCippTranslation("type"),
+      id: "type",
+      accessorKey: "type",
+      Cell: ({ row }) => getCippFormatting(row.original.type, "type"),
+    },
+    {
+      header: "Included Tenants",
+      id: "tenantFilter",
+      accessorKey: "tenantFilter",
+      enableSorting: false,
+      Cell: ({ row }) => (
+        <CippRemovableTenantChips
+          tenants={row.original.tenantFilter}
+          templateId={row.original.GUID}
+          templateName={row.original.templateName}
+          templateData={row.original}
+          fieldName="tenantFilter"
+          queryKey={queryKey}
+          maxDisplay={3}
+          emptyMessage="No tenants"
+        />
+      ),
+    },
+    {
+      header: "Excluded Tenants",
+      id: "excludedTenants",
+      accessorKey: "excludedTenants",
+      enableSorting: false,
+      Cell: ({ row }) => (
+        <CippRemovableTenantChips
+          tenants={row.original.excludedTenants}
+          templateId={row.original.GUID}
+          templateName={row.original.templateName}
+          templateData={row.original}
+          fieldName="excludedTenants"
+          queryKey={queryKey}
+          maxDisplay={3}
+          emptyMessage="None"
+        />
+      ),
+    },
+    {
+      header: getCippTranslation("updatedAt"),
+      id: "updatedAt",
+      accessorKey: "updatedAt",
+      Cell: ({ row }) => getCippFormatting(row.original.updatedAt, "updatedAt"),
+    },
+    {
+      header: getCippTranslation("updatedBy"),
+      id: "updatedBy",
+      accessorKey: "updatedBy",
+      Cell: ({ row }) => getCippFormatting(row.original.updatedBy, "updatedBy"),
+    },
+    {
+      header: getCippTranslation("runManually"),
+      id: "runManually",
+      accessorKey: "runManually",
+      Cell: ({ row }) => getCippFormatting(row.original.runManually, "runManually"),
+    },
+    {
+      header: getCippTranslation("standards"),
+      id: "standards",
+      accessorKey: "standards",
+      Cell: ({ row }) => getCippFormatting(row.original.standards, "standards"),
+    },
+  ];
+
   const tableFilter = (
     <div>
       {oldStandards.isSuccess && oldStandards.data.length !== 0 && (
@@ -176,51 +258,59 @@ const Page = () => {
       )}
     </div>
   );
+
+  const cardButton = (
+    <>
+      <Button
+        component={Link}
+        href="/tenant/standards/templates/template"
+        startIcon={<AddBox />}
+        sx={{ mr: 1 }}
+      >
+        Add Template
+      </Button>
+      <Button
+        component={Link}
+        href="/tenant/standards/templates/template?type=drift"
+        startIcon={<AddBox />}
+        sx={{ mr: 1 }}
+      >
+        Create Drift Template
+      </Button>
+      <CippPolicyImportDrawer
+        buttonText="Browse Catalog"
+        requiredPermissions={cardButtonPermissions}
+        PermissionButton={PermissionButton}
+        mode="Standards"
+      />
+    </>
+  );
+
   return (
-    <CippTablePage
-      title={pageTitle}
-      apiUrl="/api/listStandardTemplates"
-      tenantInTitle={false}
-      cardButton={
-        <>
-          <Button
-            component={Link}
-            href="/tenant/standards/templates/template"
-            startIcon={<AddBox />}
-            sx={{ mr: 1 }}
-          >
-            Add Template
-          </Button>
-          <Button
-            component={Link}
-            href="/tenant/standards/templates/template?type=drift"
-            startIcon={<AddBox />}
-            sx={{ mr: 1 }}
-          >
-            Create Drift Template
-          </Button>
-          <CippPolicyImportDrawer
-            buttonText="Browse Catalog"
-            requiredPermissions={cardButtonPermissions}
-            PermissionButton={PermissionButton}
-            mode="Standards"
-          />
-        </>
-      }
-      actions={actions}
-      tableFilter={tableFilter}
-      simpleColumns={[
-        "templateName",
-        "type",
-        "tenantFilter",
-        "excludedTenants",
-        "updatedAt",
-        "updatedBy",
-        "runManually",
-        "standards",
-      ]}
-      queryKey="listStandardTemplates"
-    />
+    <Box
+      sx={{
+        flexGrow: 1,
+        py: 4,
+      }}
+    >
+      <Container maxWidth={false}>
+        <Stack spacing={4}>
+          {tableFilter}
+          <CippPageCard title={pageTitle} cardButton={cardButton}>
+            <CippDataTable
+              api={{
+                url: "/api/listStandardTemplates",
+                dataKey: "Results",
+              }}
+              columns={columns}
+              actions={actions}
+              queryKey={queryKey}
+              title={pageTitle}
+            />
+          </CippPageCard>
+        </Stack>
+      </Container>
+    </Box>
   );
 };
 

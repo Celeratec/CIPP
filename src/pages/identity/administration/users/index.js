@@ -26,6 +26,7 @@ import { useCallback, useMemo } from "react";
 import {
   Email,
   Phone,
+  Smartphone,
   Business,
   LocationOn,
   Badge,
@@ -230,7 +231,7 @@ const Page = () => {
     // Additional fields shown only on desktop cards
     desktopFields: [
       { field: "mail", label: "Email", icon: <Email />, linkType: "email" },
-      { field: "mobilePhone", label: "Mobile", icon: <Phone />, linkType: "tel" },
+      { field: "mobilePhone", label: "Mobile", icon: <Smartphone />, linkType: "tel" },
       { 
         field: "businessPhones", 
         label: "Work", 
