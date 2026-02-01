@@ -40,9 +40,10 @@ import {
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import { useCippUserActions } from "../../../../../components/CippComponents/CippUserActions";
+import { memo, useMemo, useCallback } from "react";
 
-// Device Card Component
-const DeviceCard = ({ device, tenant, theme }) => {
+// Device Card Component - Memoized to prevent unnecessary re-renders
+const DeviceCard = memo(({ device, tenant, theme }) => {
   const getOSIcon = (os) => {
     const osLower = String(os || "").toLowerCase();
     if (osLower.includes("windows")) return <Computer />;
@@ -212,7 +213,9 @@ const DeviceCard = ({ device, tenant, theme }) => {
       </CardContent>
     </Card>
   );
-};
+});
+
+DeviceCard.displayName = "DeviceCard";
 
 const Page = () => {
   const userSettingsDefaults = useSettings();
@@ -254,68 +257,75 @@ const Page = () => {
   // Set the title and subtitle for the layout
   const title = userRequest.isSuccess ? userRequest.data?.[0]?.displayName : "Loading...";
 
-  const subtitle = userRequest.isSuccess
-    ? [
-        {
-          icon: <Mail />,
-          text: <CippCopyToClipBoard type="chip" text={userRequest.data?.[0]?.userPrincipalName} />,
-        },
-        {
-          icon: <Fingerprint />,
-          text: <CippCopyToClipBoard type="chip" text={userRequest.data?.[0]?.id} />,
-        },
-        {
-          icon: <CalendarIcon />,
-          text: (
-            <>
-              Created: <CippTimeAgo data={userRequest.data?.[0]?.createdDateTime} />
-            </>
-          ),
-        },
-        {
-          icon: <Launch style={{ color: "#757575" }} />,
-          text: (
-            <Button
-              color="muted"
-              style={{ paddingLeft: 0 }}
-              size="small"
-              href={`https://entra.microsoft.com/${tenant}/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/${userId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View in Entra
-            </Button>
-          ),
-        },
-      ]
-    : [];
+  // Memoize subtitle to prevent recreation on every render
+  const subtitle = useMemo(() => {
+    if (!userRequest.isSuccess) return [];
+    const userData = userRequest.data?.[0];
+    return [
+      {
+        icon: <Mail />,
+        text: <CippCopyToClipBoard type="chip" text={userData?.userPrincipalName} />,
+      },
+      {
+        icon: <Fingerprint />,
+        text: <CippCopyToClipBoard type="chip" text={userData?.id} />,
+      },
+      {
+        icon: <CalendarIcon />,
+        text: (
+          <>
+            Created: <CippTimeAgo data={userData?.createdDateTime} />
+          </>
+        ),
+      },
+      {
+        icon: <Launch style={{ color: "#757575" }} />,
+        text: (
+          <Button
+            color="muted"
+            style={{ paddingLeft: 0 }}
+            size="small"
+            href={`https://entra.microsoft.com/${tenant}/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/${userId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View in Entra
+          </Button>
+        ),
+      },
+    ];
+  }, [userRequest.isSuccess, userRequest.data, tenant, userId]);
 
-  // Combine and deduplicate devices
-  const registeredDevicesList = registeredDevices.data?.Results || [];
-  const ownedDevicesList = ownedDevices.data?.Results || [];
-  
-  // Create a map to deduplicate by device ID
-  const deviceMap = new Map();
-  registeredDevicesList.forEach(device => {
-    deviceMap.set(device.id, { ...device, relationship: "Registered" });
-  });
-  ownedDevicesList.forEach(device => {
-    if (deviceMap.has(device.id)) {
-      deviceMap.set(device.id, { ...deviceMap.get(device.id), relationship: "Registered & Owned" });
-    } else {
-      deviceMap.set(device.id, { ...device, relationship: "Owned" });
-    }
-  });
-  
-  const allDevices = Array.from(deviceMap.values());
+  // Combine and deduplicate devices - memoized for performance
+  const allDevices = useMemo(() => {
+    const registeredDevicesList = registeredDevices.data?.Results || [];
+    const ownedDevicesList = ownedDevices.data?.Results || [];
+    
+    // Create a map to deduplicate by device ID
+    const deviceMap = new Map();
+    registeredDevicesList.forEach(device => {
+      deviceMap.set(device.id, { ...device, relationship: "Registered" });
+    });
+    ownedDevicesList.forEach(device => {
+      if (deviceMap.has(device.id)) {
+        deviceMap.set(device.id, { ...deviceMap.get(device.id), relationship: "Registered & Owned" });
+      } else {
+        deviceMap.set(device.id, { ...device, relationship: "Owned" });
+      }
+    });
+    
+    return Array.from(deviceMap.values());
+  }, [registeredDevices.data?.Results, ownedDevices.data?.Results]);
 
   const isLoading = userRequest.isLoading || registeredDevices.isLoading || ownedDevices.isLoading;
 
-  // Calculate stats
-  const totalDevices = allDevices.length;
-  const compliantDevices = allDevices.filter(d => d.isCompliant === true).length;
-  const nonCompliantDevices = allDevices.filter(d => d.isCompliant === false).length;
-  const managedDevices = allDevices.filter(d => d.isManaged === true).length;
+  // Calculate stats - memoized for performance
+  const { totalDevices, compliantDevices, nonCompliantDevices, managedDevices } = useMemo(() => ({
+    totalDevices: allDevices.length,
+    compliantDevices: allDevices.filter(d => d.isCompliant === true).length,
+    nonCompliantDevices: allDevices.filter(d => d.isCompliant === false).length,
+    managedDevices: allDevices.filter(d => d.isManaged === true).length,
+  }), [allDevices]);
 
   return (
     <HeaderedTabbedLayout

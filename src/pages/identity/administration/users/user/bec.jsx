@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo, useMemo, useCallback } from "react";
 import { Layout as DashboardLayout } from "../../../../../layouts/index.js";
 import { useSettings } from "../../../../../hooks/use-settings";
 import { useRouter } from "next/router";
@@ -27,8 +27,8 @@ import { PropertyListItem } from "../../../../../components/property-list-item";
 import { CippHead } from "../../../../../components/CippComponents/CippHead";
 import { useCippUserActions } from "../../../../../components/CippComponents/CippUserActions";
 
-// Reusable BEC Check Card Component
-const BecCheckCard = ({ 
+// Reusable BEC Check Card Component - Memoized to prevent unnecessary re-renders
+const BecCheckCard = memo(({ 
   title, 
   items, 
   itemsFound,
@@ -90,7 +90,9 @@ const BecCheckCard = ({
       )}
     </CippButtonCard>
   );
-};
+});
+
+BecCheckCard.displayName = "BecCheckCard";
 
 const Page = () => {
   const userSettingsDefaults = useSettings();

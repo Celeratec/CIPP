@@ -29,7 +29,7 @@ import { Box, Stack } from "@mui/system";
 import { Grid } from "@mui/system";
 import { CippBannerListCard } from "../../../../../components/CippCards/CippBannerListCard";
 import { CippExchangeInfoCard } from "../../../../../components/CippCards/CippExchangeInfoCard";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import CippExchangeSettingsForm from "../../../../../components/CippFormPages/CippExchangeSettingsForm";
 import { useForm } from "react-hook-form";
 import { Alert, Button, Collapse, CircularProgress, Typography, Divider } from "@mui/material";
@@ -129,7 +129,8 @@ const Page = () => {
     queryKey: `MailEnabledSecurityGroups-${userSettingsDefaults.currentTenant}`,
   });
 
-  const getPermissionInfo = (userIdentifier, groupsList) => {
+  // Memoized permission info resolver - avoids recreation on every render
+  const getPermissionInfo = useCallback((userIdentifier, groupsListData) => {
     // Handle undefined/null cases first
     if (!userIdentifier) {
       return {
@@ -139,37 +140,38 @@ const Page = () => {
     }
 
     // Handle arrays by joining them
-    if (Array.isArray(userIdentifier)) {
-      userIdentifier = userIdentifier.join(", ");
+    let identifier = userIdentifier;
+    if (Array.isArray(identifier)) {
+      identifier = identifier.join(", ");
     }
 
-    // Ensure userIdentifier is a string
-    if (typeof userIdentifier !== "string") {
-      userIdentifier = String(userIdentifier);
+    // Ensure identifier is a string
+    if (typeof identifier !== "string") {
+      identifier = String(identifier);
     }
 
     // Handle special built-in cases
-    if (userIdentifier === "Default" || userIdentifier === "Anonymous") {
+    if (identifier === "Default" || identifier === "Anonymous") {
       return {
         type: "System",
-        displayName: userIdentifier,
+        displayName: identifier,
       };
     }
 
     // Check if it's a group - handle Exchange's different naming patterns
-    const matchingGroup = groupsList?.data?.Results?.find((group) => {
+    const matchingGroup = groupsListData?.data?.Results?.find((group) => {
       // Ensure group properties exist before comparison
       if (!group) return false;
 
       return (
         // Exact match on mail address
-        (group.mail && group.mail === userIdentifier) ||
+        (group.mail && group.mail === identifier) ||
         // Exact match on display name
-        (group.displayName && group.displayName === userIdentifier) ||
+        (group.displayName && group.displayName === identifier) ||
         // Partial match - permission identifier starts with group display name (handles timestamps)
         (group.displayName &&
-          typeof userIdentifier === "string" &&
-          userIdentifier.startsWith(group.displayName))
+          typeof identifier === "string" &&
+          identifier.startsWith(group.displayName))
       );
     });
 
@@ -183,9 +185,9 @@ const Page = () => {
     // If not a system entity or group, assume it's a user
     return {
       type: "User",
-      displayName: userIdentifier, // Keep original for users
+      displayName: identifier, // Keep original for users
     };
-  };
+  }, []);
 
   // Define API configurations for the dialogs
   const aliasApiConfig = {
@@ -486,43 +488,46 @@ const Page = () => {
 
   const isUserGroupLoading = usersList.isFetching || groupsList.isFetching;
 
-  const subtitle = graphUserRequest.isSuccess
-    ? [
-        {
-          icon: <Mail />,
-          text: (
-            <CippCopyToClipBoard type="chip" text={graphUserRequest.data?.[0]?.userPrincipalName} />
-          ),
-        },
-        {
-          icon: <Fingerprint />,
-          text: <CippCopyToClipBoard type="chip" text={graphUserRequest.data?.[0]?.id} />,
-        },
-        {
-          icon: <CalendarIcon />,
-          text: (
-            <>
-              Created: <CippTimeAgo data={graphUserRequest.data?.[0]?.createdDateTime} />
-            </>
-          ),
-        },
-        {
-          icon: <Launch style={{ color: "#757575" }} />,
-          text: (
-            <Button
-              color="muted"
-              style={{ paddingLeft: 0 }}
-              size="small"
-              href={`https://entra.microsoft.com/${userSettingsDefaults.currentTenant}/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/${userId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View in Entra
-            </Button>
-          ),
-        },
-      ]
-    : [];
+  // Memoize subtitle to prevent recreation on every render
+  const subtitle = useMemo(() => {
+    if (!graphUserRequest.isSuccess) return [];
+    const userData = graphUserRequest.data?.[0];
+    return [
+      {
+        icon: <Mail />,
+        text: (
+          <CippCopyToClipBoard type="chip" text={userData?.userPrincipalName} />
+        ),
+      },
+      {
+        icon: <Fingerprint />,
+        text: <CippCopyToClipBoard type="chip" text={userData?.id} />,
+      },
+      {
+        icon: <CalendarIcon />,
+        text: (
+          <>
+            Created: <CippTimeAgo data={userData?.createdDateTime} />
+          </>
+        ),
+      },
+      {
+        icon: <Launch style={{ color: "#757575" }} />,
+        text: (
+          <Button
+            color="muted"
+            style={{ paddingLeft: 0 }}
+            size="small"
+            href={`https://entra.microsoft.com/${userSettingsDefaults.currentTenant}/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/${userId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View in Entra
+          </Button>
+        ),
+      },
+    ];
+  }, [graphUserRequest.isSuccess, graphUserRequest.data, userSettingsDefaults.currentTenant, userId]);
 
   const data = userRequest.data?.[0];
 

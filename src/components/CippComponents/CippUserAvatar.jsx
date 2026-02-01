@@ -33,6 +33,26 @@ const stringToColor = (string) => {
 // In-memory cache for photo URLs and failed lookups
 const photoCache = new Map();
 const failedPhotos = new Set();
+const MAX_CACHE_SIZE = 500; // Limit cache to prevent memory issues
+
+// Helper to manage cache size
+const addToCache = (key, url) => {
+  // If cache is at max size, remove oldest entries
+  if (photoCache.size >= MAX_CACHE_SIZE) {
+    // Remove first 100 entries (oldest)
+    const keysToRemove = Array.from(photoCache.keys()).slice(0, 100);
+    keysToRemove.forEach((k) => {
+      const oldUrl = photoCache.get(k);
+      try {
+        URL.revokeObjectURL(oldUrl);
+      } catch (e) {
+        // Ignore errors
+      }
+      photoCache.delete(k);
+    });
+  }
+  photoCache.set(key, url);
+};
 
 /**
  * CippUserAvatar - A lazy-loading avatar component with caching
@@ -132,7 +152,7 @@ const CippUserAvatar = memo(({
       }
 
       const objectUrl = URL.createObjectURL(blob);
-      photoCache.set(cacheKey, objectUrl);
+      addToCache(cacheKey, objectUrl);
       setPhotoUrl(objectUrl);
       
     } catch (error) {
