@@ -148,7 +148,8 @@ export const CippUserInfoCard = (props) => {
       if (availableUnits <= 0) return false;
       
       // Exclude trial licenses (check TermInfo for IsTrial or license name contains "Trial")
-      const isTrial = lic.TermInfo?.some((term) => term.IsTrial === true) ||
+      const termInfoArray = Array.isArray(lic.TermInfo) ? lic.TermInfo : [];
+      const isTrial = termInfoArray.some((term) => term.IsTrial === true) ||
                       (lic.License || "").toLowerCase().includes("trial");
       if (isTrial) return false;
       

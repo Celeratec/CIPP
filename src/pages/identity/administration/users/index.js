@@ -57,14 +57,14 @@ const Page = () => {
   const userActions = useCippUserActions();
 
   const mailboxRequest = ApiGetCall({
-    url: "/api/ListMailboxes",
+    url: `/api/ListMailboxes?tenantFilter=${tenant}`,
     queryKey: `ListMailboxes-${tenant}`,
     waiting: !!tenant && tenant !== "AllTenants",
   });
 
   // Get CAS mailbox settings to detect legacy protocols (IMAP/POP)
   const casMailboxRequest = ApiGetCall({
-    url: "/api/ListCASMailboxes",
+    url: `/api/ListCASMailboxes?tenantFilter=${tenant}`,
     queryKey: `ListCASMailboxes-${tenant}`,
     waiting: !!tenant && tenant !== "AllTenants",
   });
