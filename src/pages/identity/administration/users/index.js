@@ -282,7 +282,45 @@ const Page = () => {
       { field: "jobTitle", icon: <Work />, editable: true, editField: "jobTitle" },
       [
         { field: "department", icon: <Business />, editable: true, editField: "department" },
-        { field: "manager.displayName", icon: <SupervisorAccount />, label: "Manager" },
+        { 
+          field: "manager.displayName", 
+          icon: <SupervisorAccount />, 
+          label: "Manager",
+          // Custom action to open manager picker when empty
+          emptyAction: {
+            label: "Set Manager",
+            type: "POST",
+            url: "/api/ExecSetManager",
+            data: {
+              userPrincipalName: "userPrincipalName",
+            },
+            fields: [
+              {
+                type: "autoComplete",
+                name: "managerId",
+                label: "Select Manager",
+                multiple: false,
+                creatable: false,
+                api: {
+                  url: "/api/ListGraphRequest",
+                  data: {
+                    Endpoint: "users",
+                    $select: "id,displayName,userPrincipalName",
+                    $top: 999,
+                    $count: true,
+                  },
+                  queryKey: "ListUsersAutoComplete",
+                  dataKey: "Results",
+                  labelField: (user) => `${user.displayName} (${user.userPrincipalName})`,
+                  valueField: "id",
+                  showRefresh: true,
+                },
+              },
+            ],
+            confirmText: "Set manager for this user?",
+            relatedQueryKeys: ["ListUsers"],
+          },
+        },
       ],
     ],
     // Additional fields shown only on desktop cards

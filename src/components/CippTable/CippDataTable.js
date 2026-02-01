@@ -148,6 +148,10 @@ const CardView = ({
   const [editingFields, setEditingFields] = useState({});
   const editInputRef = useRef(null);
   
+  // State for emptyAction dialog (e.g., manager picker)
+  const [emptyActionData, setEmptyActionData] = useState({ item: null, action: null, ready: false });
+  const emptyActionDialog = useDialog();
+  
   // API mutation for inline edits
   const editMutation = ApiPostCall({
     relatedQueryKeys: queryKey ? [queryKey] : [],
@@ -678,6 +682,8 @@ const CardView = ({
                         const hasValue = !!value;
                         const editState = getEditState(itemId, editFieldName);
                         const canEdit = field.editable && editApiUrl && !hasValue;
+                        // Check for emptyAction (e.g., manager picker)
+                        const hasEmptyAction = field.emptyAction && !hasValue;
 
                         // Editing mode
                         if (editState.editing) {
@@ -735,27 +741,48 @@ const CardView = ({
                         }
 
                         // Display mode
+                        const isClickable = canEdit || hasEmptyAction;
+                        const tooltipText = hasEmptyAction 
+                          ? `Click to ${field.emptyAction.label?.toLowerCase() || 'set value'}`
+                          : canEdit 
+                            ? "Click to add" 
+                            : (value || "");
+                        
+                        const handleFieldClick = () => {
+                          if (hasEmptyAction) {
+                            // Open emptyAction dialog (e.g., manager picker)
+                            setEmptyActionData({
+                              item: item,
+                              action: field.emptyAction,
+                              ready: true,
+                            });
+                            emptyActionDialog.handleOpen();
+                          } else if (canEdit) {
+                            startEditing(itemId, editFieldName, "");
+                          }
+                        };
+                        
                         return (
                           <Tooltip 
-                            title={canEdit ? "Click to add" : (value || "")} 
+                            title={tooltipText} 
                             placement="top"
-                            disableHoverListener={!value && !canEdit}
+                            disableHoverListener={!value && !isClickable}
                           >
                             <Stack 
                               direction="row" 
                               spacing={0.5} 
                               alignItems="center" 
-                              onClick={canEdit ? () => startEditing(itemId, editFieldName, "") : undefined}
+                              onClick={isClickable ? handleFieldClick : undefined}
                               sx={{ 
                                 minWidth: 0, 
                                 flex: isPaired ? 1 : undefined,
                                 maxWidth: isPaired ? "50%" : "100%",
                                 overflow: "hidden",
-                                cursor: canEdit ? "pointer" : "default",
+                                cursor: isClickable ? "pointer" : "default",
                                 borderRadius: 0.5,
-                                px: canEdit ? 0.5 : 0,
-                                mx: canEdit ? -0.5 : 0,
-                                "&:hover": canEdit ? {
+                                px: isClickable ? 0.5 : 0,
+                                mx: isClickable ? -0.5 : 0,
+                                "&:hover": isClickable ? {
                                   bgcolor: "action.hover",
                                 } : {},
                               }}
@@ -957,6 +984,7 @@ const CardView = ({
     setOffCanvasData,
     setOffCanvasRowIndex,
     setOffcanvasVisible,
+    emptyActionDialog,
   ]);
 
   // Fixed card height for uniform appearance
@@ -1036,6 +1064,18 @@ const CardView = ({
           </Box>
         )}
       </Box>
+      
+      {/* EmptyAction Dialog (e.g., manager picker) */}
+      {emptyActionData.ready && (
+        <CippApiDialog
+          createDialog={emptyActionDialog}
+          title={emptyActionData.action?.label || "Select Value"}
+          fields={emptyActionData.action?.fields}
+          api={emptyActionData.action}
+          row={emptyActionData.item}
+          relatedQueryKeys={emptyActionData.action?.relatedQueryKeys}
+        />
+      )}
     </Box>
   );
 };

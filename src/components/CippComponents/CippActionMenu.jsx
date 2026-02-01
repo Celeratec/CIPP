@@ -36,30 +36,30 @@ import { useDialog } from "../../hooks/use-dialog";
 import { CippApiDialog } from "./CippApiDialog";
 import { useSettings } from "../../hooks/use-settings";
 
-// Default category icons and colors
+// Default category icons and colors - matches bulk actions menu styling
 const categoryConfig = {
   view: {
     icon: <Visibility />,
     label: "View",
-    color: "info",
+    color: "success",
     order: 1,
   },
   edit: {
     icon: <Edit />,
     label: "Edit & Manage",
-    color: "warning",
+    color: "info",
     order: 2,
   },
   security: {
     icon: <Security />,
     label: "Security",
-    color: "secondary",
+    color: "warning",
     order: 3,
   },
   manage: {
     icon: <Settings />,
     label: "Settings",
-    color: "primary",
+    color: "secondary",
     order: 4,
   },
   danger: {
