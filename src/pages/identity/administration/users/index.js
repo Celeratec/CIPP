@@ -271,34 +271,35 @@ const Page = () => {
       if (protocols.length === 0) return null;
       
       return (
-        <Tooltip title={`Insecure protocols enabled: ${protocols.join(" & ")}. These legacy protocols may bypass MFA protections. Click to view Exchange settings.`}>
-          <Box
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/identity/administration/users/user/exchange?userId=${item.id}`);
-            }}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 0.5,
-              mt: 1,
-              px: 1,
-              py: 0.5,
-              borderRadius: 1,
-              bgcolor: (theme) => alpha(theme.palette.warning.main, 0.1),
-              border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.3)}`,
-              cursor: "pointer",
-              "&:hover": {
-                bgcolor: (theme) => alpha(theme.palette.warning.main, 0.2),
-              },
-            }}
-          >
-            <Warning sx={{ fontSize: 14, color: "warning.main" }} />
-            <Typography variant="caption" sx={{ color: "warning.dark", fontWeight: 500 }}>
-              {protocols.join(" & ")} enabled
-            </Typography>
-          </Box>
-        </Tooltip>
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 0.5, mb: 0.5 }}>
+          <Tooltip title={`Insecure protocols enabled: ${protocols.join(" & ")}. These legacy protocols may bypass MFA protections. Click to view Exchange settings.`}>
+            <Chip
+              size="small"
+              icon={<Warning sx={{ fontSize: "14px !important" }} />}
+              label={protocols.join(" & ")}
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/identity/administration/users/user/exchange?userId=${item.id}`);
+              }}
+              sx={{
+                height: 22,
+                fontSize: "0.7rem",
+                fontWeight: 600,
+                bgcolor: (theme) => alpha(theme.palette.warning.main, 0.15),
+                color: "warning.dark",
+                border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.4)}`,
+                cursor: "pointer",
+                "& .MuiChip-icon": {
+                  color: "warning.main",
+                  ml: 0.5,
+                },
+                "&:hover": {
+                  bgcolor: (theme) => alpha(theme.palette.warning.main, 0.25),
+                },
+              }}
+            />
+          </Tooltip>
+        </Box>
       );
     },
   };
