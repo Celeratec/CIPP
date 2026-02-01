@@ -15,7 +15,7 @@ import { CippDataTable } from "../../../../components/CippTable/CippDataTable";
 import { CippRemovableTenantChips } from "../../../../components/CippComponents/CippRemovableTenantChips";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import { getCippTranslation } from "../../../../utils/get-cipp-translation";
-import { CippPageCard } from "../../../../components/CippCards/CippPageCard";
+import CippPageCard from "../../../../components/CippCards/CippPageCard";
 
 const Page = () => {
   const oldStandards = ApiGetCall({ url: "/api/ListStandards", queryKey: "ListStandards-legacy" });
