@@ -239,7 +239,6 @@ const Page = () => {
         linkType: "tel",
         formatter: (value) => Array.isArray(value) && value.length > 0 ? value[0] : value,
       },
-      { field: "officeLocation", label: "Office", icon: <LocationOn /> },
     ],
     extraFieldsMax: 3,
     desktopFieldsLayout: "column",

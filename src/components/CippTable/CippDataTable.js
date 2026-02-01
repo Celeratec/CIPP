@@ -586,13 +586,12 @@ const CardView = ({
                         >
                           <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
                             {field.icon && (
-                              <SvgIcon sx={{ fontSize: 14, color: hasValue ? "text.secondary" : "text.disabled", flexShrink: 0 }}>
+                              <SvgIcon sx={{ fontSize: 14, color: hasValue ? "text.secondary" : "info.main", opacity: hasValue ? 1 : 0.6, flexShrink: 0 }}>
                                 {field.icon}
                               </SvgIcon>
                             )}
                             <Typography
                               variant="caption"
-                              color={hasValue ? "text.secondary" : "text.disabled"}
                               title={value || undefined}
                               sx={{
                                 overflow: "hidden",
@@ -600,6 +599,8 @@ const CardView = ({
                                 maxWidth: "100%",
                                 minWidth: 0,
                                 flex: 1,
+                                color: hasValue ? "text.secondary" : "info.main",
+                                opacity: hasValue ? 1 : 0.6,
                                 fontStyle: hasValue ? "normal" : "italic",
                                 ...(field.maxLines ? {
                                   display: "-webkit-box",
@@ -649,7 +650,7 @@ const CardView = ({
                           return (
                             <Stack key={fieldIndex} direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, width: "100%", overflow: "hidden", minHeight: 18 }}>
                               {field.icon && (
-                                <SvgIcon sx={{ fontSize: 12, color: "text.disabled", flexShrink: 0 }}>
+                                <SvgIcon sx={{ fontSize: 12, color: hasValue ? "text.disabled" : "info.main", opacity: hasValue ? 1 : 0.6, flexShrink: 0 }}>
                                   {field.icon}
                                 </SvgIcon>
                               )}
@@ -666,7 +667,8 @@ const CardView = ({
                                   whiteSpace: "nowrap",
                                   minWidth: 0,
                                   flex: 1,
-                                  color: href ? "primary.main" : hasValue ? "text.secondary" : "text.disabled",
+                                  color: href ? "primary.main" : hasValue ? "text.secondary" : "info.main",
+                                  opacity: hasValue || href ? 1 : 0.6,
                                   textDecoration: href ? "underline" : "none",
                                   fontStyle: hasValue ? "normal" : "italic",
                                 }}
@@ -689,7 +691,7 @@ const CardView = ({
                             <Grid item xs={6} key={fieldIndex} sx={{ minWidth: 0, overflow: "hidden" }}>
                               <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, width: "100%", overflow: "hidden", minHeight: 18 }}>
                                 {field.icon && (
-                                  <SvgIcon sx={{ fontSize: 12, color: "text.disabled", flexShrink: 0 }}>
+                                  <SvgIcon sx={{ fontSize: 12, color: hasValue ? "text.disabled" : "info.main", opacity: hasValue ? 1 : 0.6, flexShrink: 0 }}>
                                     {field.icon}
                                   </SvgIcon>
                                 )}
@@ -706,7 +708,8 @@ const CardView = ({
                                     whiteSpace: "nowrap",
                                     minWidth: 0,
                                     flex: 1,
-                                    color: href ? "primary.main" : hasValue ? "text.secondary" : "text.disabled",
+                                    color: href ? "primary.main" : hasValue ? "text.secondary" : "info.main",
+                                    opacity: hasValue || href ? 1 : 0.6,
                                     textDecoration: href ? "underline" : "none",
                                     fontStyle: hasValue ? "normal" : "italic",
                                   }}
