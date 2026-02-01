@@ -1,7 +1,7 @@
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
 import { Button } from "@mui/material";
-import { Delete, GroupAdd } from "@mui/icons-material";
+import { Delete, GroupAdd, Public, PublicOff, Description, Fingerprint } from "@mui/icons-material";
 import Link from "next/link";
 import { Edit } from "@mui/icons-material";
 
@@ -18,19 +18,18 @@ const Page = () => {
     badges: [
       {
         field: "visibility",
-        tooltip: "Team Visibility",
         conditions: {
-          Public: { label: "Public", color: "success" },
-          Private: { label: "Private", color: "warning" },
+          Public: { label: "Public Team - Anyone in org can join", color: "success", icon: <Public fontSize="small" /> },
+          Private: { label: "Private Team - Invite only", color: "warning", icon: <PublicOff fontSize="small" /> },
         },
       },
     ],
     extraFields: [
-      { field: "description", maxLines: 2 },
+      { field: "description", icon: <Description />, maxLines: 2 },
     ],
     // Additional fields shown only on desktop cards
     desktopFields: [
-      { field: "id", label: "Team ID" },
+      { field: "id", label: "Team ID", icon: <Fingerprint /> },
     ],
     // Grid sizing for consistent card widths
     cardGridProps: {
@@ -48,6 +47,7 @@ const Page = () => {
       multiPost: false,
       color: "warning",
       icon: <Edit />,
+      category: "edit",
     },
     {
       label: "Delete Team",
@@ -61,6 +61,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to delete this team?",
       multiPost: false,
+      category: "danger",
     },
   ];
 

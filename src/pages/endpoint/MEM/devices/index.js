@@ -58,25 +58,24 @@ const Page = () => {
     badges: [
       {
         field: "complianceState",
-        tooltip: "Compliance State",
         conditions: {
-          compliant: { icon: "check", color: "success" },
-          noncompliant: { icon: "cancel", color: "error" },
-          unknown: { label: "Unknown", color: "default" },
-          inGracePeriod: { label: "Grace", color: "warning" },
+          compliant: { icon: "check", color: "success", label: "Device is Compliant" },
+          noncompliant: { icon: "cancel", color: "error", label: "Device is Non-Compliant" },
+          unknown: { label: "Compliance Status Unknown", color: "default", icon: <Help fontSize="small" /> },
+          inGracePeriod: { label: "In Grace Period - Compliance pending", color: "warning" },
         },
       },
     ],
     extraFields: [
-      { field: "operatingSystem", maxLines: 1 },
-      { field: "model", maxLines: 1 },
+      { field: "operatingSystem", icon: <Computer />, maxLines: 1 },
+      { field: "model", icon: <PhoneAndroid />, maxLines: 1 },
     ],
     // Additional fields shown only on desktop cards
     desktopFields: [
-      { field: "manufacturer", label: "Manufacturer" },
+      { field: "manufacturer", label: "Manufacturer", icon: <Business /> },
       { field: "osVersion", label: "OS Version" },
-      { field: "enrolledDateTime", label: "Enrolled" },
-      { field: "managedDeviceOwnerType", label: "Owner Type" },
+      { field: "enrolledDateTime", label: "Enrolled", icon: <CalendarToday /> },
+      { field: "managedDeviceOwnerType", label: "Owner Type", icon: <Person /> },
     ],
     // Grid sizing for consistent card widths
     cardGridProps: {
@@ -96,6 +95,7 @@ const Page = () => {
       target: "_blank",
       multiPost: false,
       external: true,
+      category: "view",
     },
     {
       label: "Change Primary User",
@@ -133,6 +133,7 @@ const Page = () => {
         },
       ],
       confirmText: "Select the User to set as the primary user for [deviceName]",
+      category: "edit",
     },
     {
       label: "Rename Device",
@@ -152,6 +153,7 @@ const Page = () => {
           required: true,
         },
       ],
+      category: "edit",
     },
     {
       label: "Sync Device",
@@ -163,6 +165,7 @@ const Page = () => {
         Action: "syncDevice",
       },
       confirmText: "Are you sure you want to sync [deviceName]?",
+      category: "manage",
     },
     {
       label: "Reboot Device",
@@ -174,6 +177,7 @@ const Page = () => {
         Action: "rebootNow",
       },
       confirmText: "Are you sure you want to reboot [deviceName]?",
+      category: "manage",
     },
     {
       label: "Locate Device",
@@ -185,6 +189,7 @@ const Page = () => {
         Action: "locateDevice",
       },
       confirmText: "Are you sure you want to locate [deviceName]?",
+      category: "manage",
     },
     {
       label: "Retrieve LAPS password",
@@ -196,6 +201,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to retrieve the local admin password for [deviceName]?",
+      category: "security",
     },
     {
       label: "Rotate Local Admin Password",
@@ -208,6 +214,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to rotate the password for [deviceName]?",
+      category: "security",
     },
     {
       label: "Retrieve BitLocker Keys",
@@ -220,6 +227,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to retrieve the BitLocker keys for [deviceName]?",
+      category: "security",
     },
     {
       label: "Retrieve FileVault Key",
@@ -232,10 +240,12 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "macOS",
       confirmText: "Are you sure you want to retrieve the FileVault key for [deviceName]?",
+      category: "security",
     },
     {
       label: "Reset Passcode",
       type: "POST",
+      category: "security",
       icon: <PasswordOutlined />,
       url: "/api/ExecDevicePasscodeAction",
       data: {

@@ -63,40 +63,37 @@ const Page = () => {
     badges: [
       {
         field: "calculatedGroupType",
-        tooltip: "Group Type",
         conditions: {
           // Microsoft 365 groups
-          m365: { label: "M365", color: "primary", icon: <GroupSharp fontSize="small" /> },
-          M365: { label: "M365", color: "primary", icon: <GroupSharp fontSize="small" /> },
+          m365: { label: "Microsoft 365 Group", color: "primary", icon: <GroupSharp fontSize="small" /> },
+          M365: { label: "Microsoft 365 Group", color: "primary", icon: <GroupSharp fontSize="small" /> },
           // Regular Security groups (no mail)
-          generic: { label: "Security", color: "warning", icon: <Security fontSize="small" /> },
-          Generic: { label: "Security", color: "warning", icon: <Security fontSize="small" /> },
+          generic: { label: "Security Group", color: "warning", icon: <Security fontSize="small" /> },
+          Generic: { label: "Security Group", color: "warning", icon: <Security fontSize="small" /> },
           // Mail-Enabled Security groups
-          security: { label: "Mail Security", color: "warning", icon: <Security fontSize="small" /> },
-          Security: { label: "Mail Security", color: "warning", icon: <Security fontSize="small" /> },
+          security: { label: "Mail-Enabled Security Group", color: "warning", icon: <Security fontSize="small" /> },
+          Security: { label: "Mail-Enabled Security Group", color: "warning", icon: <Security fontSize="small" /> },
           // Distribution Lists
-          distributionList: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
-          DistributionList: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
-          distribution: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
-          Distribution: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
+          distributionList: { label: "Distribution List", color: "default", icon: <Email fontSize="small" /> },
+          DistributionList: { label: "Distribution List", color: "default", icon: <Email fontSize="small" /> },
+          distribution: { label: "Distribution List", color: "default", icon: <Email fontSize="small" /> },
+          Distribution: { label: "Distribution List", color: "default", icon: <Email fontSize="small" /> },
         },
       },
       {
         field: "dynamicGroupBool",
-        tooltip: "Dynamic Membership",
         conditions: {
-          true: { label: "Dynamic", color: "info", icon: <DynamicFeed fontSize="small" /> },
+          true: { label: "Dynamic Membership - Members auto-assigned by rules", color: "info", icon: <DynamicFeed fontSize="small" /> },
         },
       },
       {
         field: "visibility",
-        tooltip: "Visibility",
         iconOnly: true,
         conditions: {
-          Public: { icon: <Public fontSize="small" sx={{ display: "block" }} />, color: "success" },
-          public: { icon: <Public fontSize="small" sx={{ display: "block" }} />, color: "success" },
-          Private: { icon: <PublicOff fontSize="small" sx={{ display: "block" }} />, color: "warning" },
-          private: { icon: <PublicOff fontSize="small" sx={{ display: "block" }} />, color: "warning" },
+          Public: { label: "Public - Anyone can join", icon: <Public fontSize="small" sx={{ display: "block" }} />, color: "success" },
+          public: { label: "Public - Anyone can join", icon: <Public fontSize="small" sx={{ display: "block" }} />, color: "success" },
+          Private: { label: "Private - Invite only", icon: <PublicOff fontSize="small" sx={{ display: "block" }} />, color: "warning" },
+          private: { label: "Private - Invite only", icon: <PublicOff fontSize="small" sx={{ display: "block" }} />, color: "warning" },
         },
       },
     ],
@@ -138,6 +135,7 @@ const Page = () => {
       icon: <People />,
       color: "info",
       quickAction: true,
+      category: "view",
     },
     {
       label: "Edit Group",
@@ -146,6 +144,7 @@ const Page = () => {
       icon: <Edit />,
       color: "success",
       quickAction: true,
+      category: "edit",
     },
     {
       label: "Set Global Address List Visibility",
@@ -172,6 +171,7 @@ const Page = () => {
         "Are you sure you want to hide this group from the global address list? Remember this will not work if the group is AD Synched.",
       multiPost: false,
       quickAction: true,
+      category: "edit",
     },
     {
       label: "Only allow messages from people inside the organisation",
@@ -187,6 +187,7 @@ const Page = () => {
         "Are you sure you want to only allow messages from people inside the organisation? Remember this will not work if the group is AD Synched.",
       multiPost: false,
       quickAction: true,
+      category: "security",
     },
     {
       label: "Allow messages from people inside and outside the organisation",
@@ -202,6 +203,7 @@ const Page = () => {
         "Are you sure you want to allow messages from people inside and outside the organisation? Remember this will not work if the group is AD Synched.",
       multiPost: false,
       quickAction: true,
+      category: "security",
     },
     {
       label: "Set Source of Authority",
@@ -228,6 +230,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to change the source of authority for '[displayName]'? Setting it to On-Premises Managed will take until the next sync cycle to show the change.",
       multiPost: false,
+      category: "manage",
     },
     {
       label: "Create template based on group",
@@ -245,6 +248,7 @@ const Page = () => {
       confirmText: "Are you sure you want to create a template based on this group?",
       multiPost: false,
       quickAction: true,
+      category: "edit",
     },
     {
       label: "Create Team from Group",
@@ -380,6 +384,7 @@ const Page = () => {
         },
       ],
       condition: (row) => row?.calculatedGroupType === "m365",
+      category: "edit",
     },
     {
       label: "Delete Group",
@@ -395,6 +400,7 @@ const Page = () => {
       multiPost: false,
       quickAction: true,
       color: "error",
+      category: "danger",
     },
   ];
   // Helper function to get group type info for styling

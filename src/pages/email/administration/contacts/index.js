@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
-import { CloudSync, Edit } from "@mui/icons-material";
+import { CloudSync, Edit, Business, Work, Badge } from "@mui/icons-material";
 import TrashIcon from "@heroicons/react/24/outline/TrashIcon";
 import { CippAddContactDrawer } from "../../../../components/CippComponents/CippAddContactDrawer";
 import { CippDeployContactTemplateDrawer } from "../../../../components/CippComponents/CippDeployContactTemplateDrawer";
@@ -20,20 +20,19 @@ const Page = () => {
     badges: [
       {
         field: "IsDirSynced",
-        tooltip: "Sync Status",
         conditions: {
-          true: { label: "Synced", color: "info" },
-          false: { label: "Cloud", color: "default" },
+          true: { label: "Synced from On-Premises", color: "info", icon: <CloudSync fontSize="small" /> },
+          false: { label: "Cloud-Only Contact", color: "default" },
         },
       },
     ],
     extraFields: [
-      { field: "Company", maxLines: 1 },
-      { field: "Title", maxLines: 1 },
+      { field: "Company", icon: <Business />, maxLines: 1 },
+      { field: "Title", icon: <Work />, maxLines: 1 },
     ],
     // Additional fields shown only on desktop cards
     desktopFields: [
-      { field: "Department", label: "Department" },
+      { field: "Department", label: "Department", icon: <Badge /> },
     ],
     // Grid sizing for consistent card widths
     cardGridProps: {
@@ -54,6 +53,7 @@ const Page = () => {
         icon: <Edit />,
         color: "warning",
         condition: (row) => !row.IsDirSynced,
+        category: "edit",
       },
       {
         label: "Set Source of Authority",
@@ -80,6 +80,7 @@ const Page = () => {
         confirmText:
           "Are you sure you want to change the source of authority for '[DisplayName]'? Setting it to On-Premises Managed will take until the next sync cycle to show the change.",
         multiPost: false,
+        category: "manage",
       },
       {
         label: "Remove Contact",
@@ -94,6 +95,7 @@ const Page = () => {
         color: "danger",
         icon: <TrashIcon />,
         condition: (row) => !row.IsDirSynced,
+        category: "danger",
       },
     ],
     []

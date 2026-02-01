@@ -38,22 +38,21 @@ const Page = () => {
     badges: [
       {
         field: "recipientTypeDetails",
-        tooltip: "Mailbox Type",
         conditions: {
-          UserMailbox: { label: "User", color: "primary" },
-          SharedMailbox: { label: "Shared", color: "info", icon: <Group fontSize="small" /> },
-          RoomMailbox: { label: "Room", color: "warning" },
-          EquipmentMailbox: { label: "Equip", color: "default" },
+          UserMailbox: { label: "User Mailbox", color: "primary", icon: <Person fontSize="small" /> },
+          SharedMailbox: { label: "Shared Mailbox - Multiple users can access", color: "info", icon: <Group fontSize="small" /> },
+          RoomMailbox: { label: "Room Mailbox - Bookable meeting room", color: "warning", icon: <MeetingRoom fontSize="small" /> },
+          EquipmentMailbox: { label: "Equipment Mailbox - Bookable equipment", color: "default", icon: <Devices fontSize="small" /> },
         },
       },
     ],
     extraFields: [
-      { field: "UPN", maxLines: 1 },
+      { field: "UPN", icon: <Person />, maxLines: 1 },
     ],
     // Additional fields shown only on desktop cards
     desktopFields: [
-      { field: "recipientType", label: "Type" },
-      { field: "AdditionalEmailAddresses", label: "Aliases" },
+      { field: "recipientType", label: "Type", icon: <Inbox /> },
+      { field: "AdditionalEmailAddresses", label: "Aliases", icon: <AlternateEmail /> },
     ],
     // Grid sizing for consistent card widths
     cardGridProps: {

@@ -1,7 +1,18 @@
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
-import { Layout as DashboardLayout } from "../../../../layouts/index.js"; // had to add an extra path here because I added an extra folder structure. We should switch to absolute pathing so we dont have to deal with relative.
+import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { useSettings } from "../../../../hooks/use-settings";
-import { Visibility, CheckCircleOutline, Block, VpnKey, DeleteForever } from "@mui/icons-material";
+import { 
+  Visibility, 
+  CheckCircleOutline, 
+  Block, 
+  VpnKey, 
+  DeleteForever,
+  Business,
+  Devices,
+  Schedule,
+  VerifiedUser,
+  Person,
+} from "@mui/icons-material";
 
 const Page = () => {
   const pageTitle = "Devices";
@@ -17,23 +28,22 @@ const Page = () => {
     badges: [
       {
         field: "accountEnabled",
-        tooltip: "Device Status",
         conditions: {
-          true: { icon: "check", color: "success" },
-          false: { icon: "cancel", color: "error" },
+          true: { icon: "check", color: "success", label: "Device Enabled" },
+          false: { icon: "cancel", color: "error", label: "Device Disabled" },
         },
       },
     ],
     extraFields: [
-      { field: "manufacturer", maxLines: 1 },
-      { field: "model", maxLines: 1 },
+      { field: "manufacturer", icon: <Business />, maxLines: 1 },
+      { field: "model", icon: <Devices />, maxLines: 1 },
     ],
     // Additional fields shown only on desktop cards
     desktopFields: [
       { field: "operatingSystemVersion", label: "OS Version" },
-      { field: "trustType", label: "Trust Type" },
-      { field: "approximateLastSignInDateTime", label: "Last Sign-In" },
-      { field: "profileType", label: "Profile" },
+      { field: "trustType", label: "Trust Type", icon: <VerifiedUser /> },
+      { field: "approximateLastSignInDateTime", label: "Last Sign-In", icon: <Schedule /> },
+      { field: "profileType", label: "Profile", icon: <Person /> },
     ],
     // Grid sizing for consistent card widths
     cardGridProps: {
@@ -53,6 +63,7 @@ const Page = () => {
       target: "_blank",
       multiPost: false,
       external: true,
+      category: "view",
     },
     {
       label: "Enable Device",
@@ -66,6 +77,7 @@ const Page = () => {
       multiPost: false,
       condition: (row) => !row.accountEnabled,
       icon: <CheckCircleOutline />,
+      category: "edit",
     },
     {
       label: "Disable Device",
@@ -79,6 +91,7 @@ const Page = () => {
       multiPost: false,
       condition: (row) => row.accountEnabled,
       icon: <Block />,
+      category: "edit",
     },
     {
       label: "Retrieve BitLocker Keys",
@@ -90,6 +103,7 @@ const Page = () => {
       confirmText: "Are you sure you want to retrieve the BitLocker keys?",
       multiPost: false,
       icon: <VpnKey />,
+      category: "security",
     },
     {
       label: "Delete Device",
@@ -102,6 +116,7 @@ const Page = () => {
       confirmText: "Are you sure you want to delete this device?",
       multiPost: false,
       icon: <DeleteForever />,
+      category: "danger",
     },
   ];
 
