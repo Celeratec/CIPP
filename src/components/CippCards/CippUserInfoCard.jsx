@@ -19,6 +19,11 @@ import {
   DialogActions,
   Button,
   Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Link,
 } from "@mui/material";
 import { 
   AccountCircle, 
@@ -39,6 +44,7 @@ import {
   Close,
   ContentCopy,
   Check as CheckIcon,
+  Add,
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 import { getCippLicenseTranslation } from "../../utils/get-cipp-license-translation";
@@ -102,6 +108,12 @@ export const CippUserInfoCard = (props) => {
   const [licenseError, setLicenseError] = useState(null);
   const [copiedLicenseId, setCopiedLicenseId] = useState(null);
   
+  // License add state
+  const [addLicenseDialogOpen, setAddLicenseDialogOpen] = useState(false);
+  const [selectedLicenseToAdd, setSelectedLicenseToAdd] = useState("");
+  const [isAddingLicense, setIsAddingLicense] = useState(false);
+  const [addLicenseError, setAddLicenseError] = useState(null);
+  
   // Fetch tenant's subscribed SKUs for license name mapping
   const licensesRequest = ApiGetCall({
     url: `/api/ListLicenses?tenantFilter=${tenant}`,
@@ -123,8 +135,38 @@ export const CippUserInfoCard = (props) => {
     return map;
   }, [licensesRequest.data]);
   
+  // Get available licenses for adding (non-trial, with available units, not already assigned)
+  const availableLicenses = useMemo(() => {
+    const licenses = licensesRequest.data || [];
+    const assignedSkuIds = new Set(
+      (user?.assignedLicenses || []).map((lic) => lic.skuId?.toLowerCase())
+    );
+    
+    return licenses.filter((lic) => {
+      // Must have available units
+      const availableUnits = parseInt(lic.availableUnits, 10) || 0;
+      if (availableUnits <= 0) return false;
+      
+      // Exclude trial licenses (check TermInfo for IsTrial or license name contains "Trial")
+      const isTrial = lic.TermInfo?.some((term) => term.IsTrial === true) ||
+                      (lic.License || "").toLowerCase().includes("trial");
+      if (isTrial) return false;
+      
+      // Exclude already assigned licenses
+      if (assignedSkuIds.has(lic.skuId?.toLowerCase())) return false;
+      
+      return true;
+    }).sort((a, b) => (a.License || "").localeCompare(b.License || ""));
+  }, [licensesRequest.data, user?.assignedLicenses]);
+  
   // License removal API
   const removeLicenseMutation = ApiPostCall({
+    urlFromData: true,
+    relatedQueryKeys: [`ListUsers-${user?.id}`],
+  });
+  
+  // License add API
+  const addLicenseMutation = ApiPostCall({
     urlFromData: true,
     relatedQueryKeys: [`ListUsers-${user?.id}`],
   });
@@ -189,6 +231,63 @@ export const CippUserInfoCard = (props) => {
       setCopiedLicenseId(licenseId);
       setTimeout(() => setCopiedLicenseId(null), 2000);
     });
+  };
+  
+  // Handle add license dialog open
+  const handleAddLicenseOpen = () => {
+    setAddLicenseDialogOpen(true);
+    setSelectedLicenseToAdd("");
+    setAddLicenseError(null);
+  };
+  
+  // Handle add license dialog close
+  const handleAddLicenseClose = () => {
+    setAddLicenseDialogOpen(false);
+    setSelectedLicenseToAdd("");
+    setAddLicenseError(null);
+  };
+  
+  // Handle adding a license
+  const handleAddLicense = async () => {
+    if (!selectedLicenseToAdd) return;
+    
+    setIsAddingLicense(true);
+    setAddLicenseError(null);
+    
+    try {
+      await addLicenseMutation.mutateAsync({
+        url: "/api/ExecBulkLicense",
+        data: [{
+          tenantFilter: tenant,
+          userIds: user.id,
+          LicenseOperation: "Add",
+          Licenses: [{ value: selectedLicenseToAdd }],
+        }],
+      });
+      
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: [`ListUsers-${user?.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`Licenses-${tenant}`] });
+      
+      // Call onRefresh if provided
+      if (onRefresh) {
+        onRefresh();
+      }
+      
+      handleAddLicenseClose();
+    } catch (error) {
+      console.error("Failed to add license:", error);
+      setAddLicenseError(error.message || "Failed to add license");
+    } finally {
+      setIsAddingLicense(false);
+    }
+  };
+  
+  // Get display name for selected license to add
+  const getSelectedLicenseDisplayName = () => {
+    if (!selectedLicenseToAdd) return "";
+    const license = availableLicenses.find((lic) => lic.skuId === selectedLicenseToAdd);
+    return license?.License || "";
   };
   
   // Get translated license names with skuId preserved
@@ -603,7 +702,26 @@ export const CippUserInfoCard = (props) => {
         {/* Content Sections */}
         <Box sx={{ p: 2.5 }}>
           {/* Licenses Section */}
-          <InfoSection icon={Badge} title="Licenses">
+          <Box sx={{ mb: 2.5 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Badge fontSize="small" color="primary" />
+                <Typography variant="subtitle2" fontWeight={600}>
+                  Licenses
+                </Typography>
+              </Stack>
+              {availableLicenses.length > 0 && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<Add />}
+                  onClick={handleAddLicenseOpen}
+                  sx={{ textTransform: "none" }}
+                >
+                  Add License
+                </Button>
+              )}
+            </Stack>
             {!user?.assignedLicenses || user?.assignedLicenses.length === 0 ? (
               <Paper 
                 variant="outlined" 
@@ -622,7 +740,7 @@ export const CippUserInfoCard = (props) => {
                 {getLicenseChips()}
               </Stack>
             )}
-          </InfoSection>
+          </Box>
 
           <Divider sx={{ my: 2 }} />
 
@@ -766,6 +884,94 @@ export const CippUserInfoCard = (props) => {
             startIcon={isRemovingLicense ? <CircularProgress size={16} color="inherit" /> : <Delete />}
           >
             {isRemovingLicense ? "Removing..." : "Remove License"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Add License Dialog */}
+      <Dialog
+        open={addLicenseDialogOpen}
+        onClose={handleAddLicenseClose}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Add License
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText component="div" sx={{ mb: 2 }}>
+            Select a license to assign to <strong>{user?.displayName}</strong>.
+          </DialogContentText>
+          
+          <FormControl fullWidth variant="outlined" sx={{ mt: 1 }}>
+            <InputLabel id="add-license-select-label">Select License</InputLabel>
+            <Select
+              labelId="add-license-select-label"
+              id="add-license-select"
+              value={selectedLicenseToAdd}
+              onChange={(e) => setSelectedLicenseToAdd(e.target.value)}
+              label="Select License"
+              disabled={isAddingLicense}
+            >
+              {availableLicenses.map((license) => (
+                <MenuItem key={license.skuId} value={license.skuId}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: "100%" }}>
+                    <Typography variant="body2" sx={{ mr: 2 }}>
+                      {license.License}
+                    </Typography>
+                    <Chip
+                      size="small"
+                      label={`${license.availableUnits} available`}
+                      color="success"
+                      variant="outlined"
+                    />
+                  </Stack>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          {selectedLicenseToAdd && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                <strong>{getSelectedLicenseDisplayName()}</strong> will be assigned to this user.
+              </Typography>
+            </Alert>
+          )}
+          
+          <Alert severity="warning" icon={false} sx={{ mt: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              If you do not see the license you need, you will need to add it to the tenant first through the{" "}
+              <Link
+                href="https://Exchange.Celeratec.com/admin"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ fontWeight: 600 }}
+              >
+                Microsoft 365 Admin Center
+              </Link>
+              .
+            </Typography>
+          </Alert>
+          
+          {addLicenseError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {addLicenseError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleAddLicenseClose} disabled={isAddingLicense}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddLicense}
+            color="primary"
+            variant="contained"
+            disabled={isAddingLicense || !selectedLicenseToAdd}
+            startIcon={isAddingLicense ? <CircularProgress size={16} color="inherit" /> : <Add />}
+          >
+            {isAddingLicense ? "Adding..." : "Add License"}
           </Button>
         </DialogActions>
       </Dialog>
