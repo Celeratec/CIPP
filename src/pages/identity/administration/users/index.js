@@ -43,7 +43,7 @@ import {
   Info as InfoIcon,
   VerifiedUser,
   Warning,
-  SupervisorAccount,
+  AccountTree,
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import CippUserAvatar from "../../../../components/CippComponents/CippUserAvatar";
@@ -284,8 +284,9 @@ const Page = () => {
         { field: "department", icon: <Business />, editable: true, editField: "department" },
         { 
           field: "manager.displayName", 
-          icon: <SupervisorAccount />, 
-          label: "Manager",
+          icon: <AccountTree />, 
+          label: "Reports To",
+          align: "right",
           // Custom action to open manager picker when empty
           emptyAction: {
             label: "Set Manager",

@@ -737,10 +737,11 @@ const CardView = ({
 
                         // Editing mode
                         if (editState.editing) {
+                          const isRightAlignedEdit = field.align === "right";
                           return (
                             <ClickAwayListener onClickAway={() => saveEdit(item, field, editState.value)}>
                               <Stack 
-                                direction="row" 
+                                direction={isRightAlignedEdit ? "row-reverse" : "row"}
                                 spacing={0.5} 
                                 alignItems="center" 
                                 sx={{ 
@@ -748,6 +749,7 @@ const CardView = ({
                                   flex: isPaired ? 1 : undefined,
                                   maxWidth: isPaired ? "50%" : "100%",
                                   overflow: "hidden",
+                                  justifyContent: isRightAlignedEdit ? "flex-end" : "flex-start",
                                 }}
                               >
                                 {field.icon && (
@@ -812,6 +814,8 @@ const CardView = ({
                           }
                         };
                         
+                        const isRightAligned = field.align === "right";
+                        
                         return (
                           <Tooltip 
                             title={tooltipText} 
@@ -819,7 +823,7 @@ const CardView = ({
                             disableHoverListener={!value && !isClickable}
                           >
                             <Stack 
-                              direction="row" 
+                              direction={isRightAligned ? "row-reverse" : "row"}
                               spacing={0.5} 
                               alignItems="center" 
                               onClick={isClickable ? handleFieldClick : undefined}
@@ -832,6 +836,7 @@ const CardView = ({
                                 borderRadius: 0.5,
                                 px: isClickable ? 0.5 : 0,
                                 mx: isClickable ? -0.5 : 0,
+                                justifyContent: isRightAligned ? "flex-end" : "flex-start",
                                 "&:hover": isClickable ? {
                                   bgcolor: "action.hover",
                                 } : {},
@@ -849,11 +854,12 @@ const CardView = ({
                                   textOverflow: "ellipsis",
                                   maxWidth: "100%",
                                   minWidth: 0,
-                                  flex: 1,
+                                  flex: isRightAligned ? undefined : 1,
                                   color: hasValue ? "text.secondary" : "info.main",
                                   opacity: hasValue ? 1 : 0.6,
                                   fontStyle: hasValue ? "normal" : "italic",
                                   whiteSpace: "nowrap",
+                                  textAlign: isRightAligned ? "right" : "left",
                                 }}
                               >
                                 {value || "—"}
