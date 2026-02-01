@@ -41,6 +41,7 @@ import {
   CalendarToday,
   Info as InfoIcon,
   VerifiedUser,
+  Warning,
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import CippUserAvatar from "../../../../components/CippComponents/CippUserAvatar";
@@ -57,6 +58,13 @@ const Page = () => {
   const mailboxRequest = ApiGetCall({
     url: "/api/ListMailboxes",
     queryKey: `ListMailboxes-${tenant}`,
+    waiting: !!tenant && tenant !== "AllTenants",
+  });
+
+  // Get CAS mailbox settings to detect legacy protocols (IMAP/POP)
+  const casMailboxRequest = ApiGetCall({
+    url: "/api/ListCASMailboxes",
+    queryKey: `ListCASMailboxes-${tenant}`,
     waiting: !!tenant && tenant !== "AllTenants",
   });
 
@@ -93,6 +101,38 @@ const Page = () => {
     [sharedMailboxSet]
   );
 
+  // Create a map of users with legacy protocols (IMAP/POP) enabled
+  const legacyProtocolsMap = useMemo(() => {
+    const raw =
+      casMailboxRequest.data?.Results ||
+      casMailboxRequest.data?.results ||
+      casMailboxRequest.data?.value ||
+      casMailboxRequest.data ||
+      [];
+    const list = Array.isArray(raw) ? raw : [];
+    const map = new Map();
+    list.forEach((item) => {
+      if (item?.LegacyProtocolsEnabled) {
+        const key = (item?.userPrincipalName || "").toLowerCase();
+        if (key) {
+          map.set(key, {
+            imap: item?.ImapEnabled,
+            pop: item?.PopEnabled,
+          });
+        }
+      }
+    });
+    return map;
+  }, [casMailboxRequest.data]);
+
+  const hasLegacyProtocols = useCallback(
+    (item) => {
+      if (!legacyProtocolsMap.size) return null;
+      const key = (item?.userPrincipalName || item?.mail || "").toLowerCase();
+      return key ? legacyProtocolsMap.get(key) : null;
+    },
+    [legacyProtocolsMap]
+  );
 
   // Custom sort: Licensed users first (alphabetically by surname), then unlicensed (alphabetically by surname)
   const userSortFn = (a, b) => {
@@ -210,6 +250,48 @@ const Page = () => {
     cardGridProps: {
       md: 6,
       lg: 4,
+    },
+    // Custom content to show legacy protocol warnings
+    customContent: (item) => {
+      const legacyInfo = hasLegacyProtocols(item);
+      if (!legacyInfo) return null;
+      
+      const protocols = [];
+      if (legacyInfo.imap) protocols.push("IMAP");
+      if (legacyInfo.pop) protocols.push("POP");
+      
+      if (protocols.length === 0) return null;
+      
+      return (
+        <Tooltip title={`Insecure protocols enabled: ${protocols.join(" & ")}. These legacy protocols may bypass MFA protections. Click to view Exchange settings.`}>
+          <Box
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/identity/administration/users/user/exchange?userId=${item.id}`);
+            }}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+              mt: 1,
+              px: 1,
+              py: 0.5,
+              borderRadius: 1,
+              bgcolor: (theme) => alpha(theme.palette.warning.main, 0.1),
+              border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.3)}`,
+              cursor: "pointer",
+              "&:hover": {
+                bgcolor: (theme) => alpha(theme.palette.warning.main, 0.2),
+              },
+            }}
+          >
+            <Warning sx={{ fontSize: 14, color: "warning.main" }} />
+            <Typography variant="caption" sx={{ color: "warning.dark", fontWeight: 500 }}>
+              {protocols.join(" & ")} enabled
+            </Typography>
+          </Box>
+        </Tooltip>
+      );
     },
   };
 
