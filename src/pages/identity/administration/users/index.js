@@ -231,11 +231,18 @@ const Page = () => {
     desktopFields: [
       { field: "mail", label: "Email", icon: <Email />, linkType: "email" },
       { field: "mobilePhone", label: "Mobile", icon: <Phone />, linkType: "tel" },
+      { 
+        field: "businessPhones", 
+        label: "Work", 
+        icon: <Phone />, 
+        linkType: "tel",
+        formatter: (value) => Array.isArray(value) && value.length > 0 ? value[0] : value,
+      },
       { field: "officeLocation", label: "Office", icon: <LocationOn /> },
     ],
     extraFieldsMax: 3,
     desktopFieldsLayout: "column",
-    desktopFieldsMax: 4,
+    desktopFieldsMax: 5,
     // Mobile quick actions: 7 buttons
     mobileQuickActions: [
       "Reset Password",

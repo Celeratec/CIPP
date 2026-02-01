@@ -5,7 +5,7 @@ import { useSettings } from "../../../../../hooks/use-settings";
 import CippAddEditUser from "../../../../../components/CippFormPages/CippAddEditUser";
 import { useRouter } from "next/router";
 import { ApiGetCall } from "../../../../../api/ApiCall";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import CippFormSkeleton from "../../../../../components/CippFormPages/CippFormSkeleton";
 import { getCippLicenseTranslation } from "../../../../../utils/get-cipp-license-translation";
 import CalendarIcon from "@heroicons/react/24/outline/CalendarIcon";
@@ -32,6 +32,38 @@ const Page = () => {
     queryKey: `ListUsers-${userId}-${tenant}`,
     waiting: queryReady,
   });
+
+  // Fetch tenant's subscribed SKUs for license name mapping
+  const licensesRequest = ApiGetCall({
+    url: `/api/ListLicenses?tenantFilter=${tenant}`,
+    queryKey: `Licenses-${tenant}`,
+    waiting: !!tenant && tenant !== "AllTenants",
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+
+  // Build a map from skuId to license display name
+  const licenseNameMap = useMemo(() => {
+    const map = new Map();
+    const licenses = licensesRequest.data || [];
+    licenses.forEach((lic) => {
+      if (lic.skuId && lic.License) {
+        map.set(lic.skuId.toLowerCase(), lic.License);
+      }
+    });
+    return map;
+  }, [licensesRequest.data]);
+
+  // Helper function to get license display name
+  const getLicenseDisplayName = (license) => {
+    // First try the tenant's subscribed SKUs
+    if (license.skuId && licenseNameMap.size > 0) {
+      const name = licenseNameMap.get(license.skuId.toLowerCase());
+      if (name) return name;
+    }
+    // Fall back to static translation
+    const translated = getCippLicenseTranslation([license]);
+    return Array.isArray(translated) ? translated[0] : translated;
+  };
 
   // Trigger refetch when query conditions become ready
   useEffect(() => {
@@ -67,13 +99,13 @@ const Page = () => {
         defaultAttributes: defaultAttributes,
         tenantFilter: tenant,
         licenses: (user.assignedLicenses || []).map((license) => ({
-          label: getCippLicenseTranslation([license]),
+          label: getLicenseDisplayName(license),
           value: license.skuId,
         })),
       });
       formControl.trigger();
     }
-  }, [userRequest.isSuccess, userRequest.data, userRequest.isLoading]);
+  }, [userRequest.isSuccess, userRequest.data, userRequest.isLoading, licenseNameMap]);
 
   // Set the title and subtitle for the layout
   const title = userRequest.isSuccess ? userRequest.data?.[0]?.displayName : "Loading...";

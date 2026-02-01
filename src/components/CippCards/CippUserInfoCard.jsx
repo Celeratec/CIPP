@@ -43,8 +43,8 @@ import {
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 import { getCippLicenseTranslation } from "../../utils/get-cipp-license-translation";
 import { Stack, Grid, Box } from "@mui/system";
-import { useState, useRef } from "react";
-import { ApiPostCall } from "../../api/ApiCall";
+import { useState, useRef, useMemo } from "react";
+import { ApiGetCall, ApiPostCall } from "../../api/ApiCall";
 import { alpha, useTheme } from "@mui/material/styles";
 import { useRouter } from "next/router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -101,6 +101,27 @@ export const CippUserInfoCard = (props) => {
   const [isRemovingLicense, setIsRemovingLicense] = useState(false);
   const [licenseError, setLicenseError] = useState(null);
   const [copiedLicenseId, setCopiedLicenseId] = useState(null);
+  
+  // Fetch tenant's subscribed SKUs for license name mapping
+  const licensesRequest = ApiGetCall({
+    url: `/api/ListLicenses?tenantFilter=${tenant}`,
+    queryKey: `Licenses-${tenant}`,
+    waiting: !!tenant && tenant !== "AllTenants",
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+  
+  // Build a map from skuId to license display name
+  const licenseNameMap = useMemo(() => {
+    const map = new Map();
+    const licenses = licensesRequest.data || [];
+    licenses.forEach((lic) => {
+      if (lic.skuId && lic.License) {
+        // License field contains the display name from backend
+        map.set(lic.skuId.toLowerCase(), lic.License);
+      }
+    });
+    return map;
+  }, [licensesRequest.data]);
   
   // License removal API
   const removeLicenseMutation = ApiPostCall({
@@ -177,10 +198,20 @@ export const CippUserInfoCard = (props) => {
     }
     
     return user.assignedLicenses.map((license, index) => {
-      // Get the translated name for this single license
-      const translatedNames = getCippLicenseTranslation([license]);
-      const displayName = Array.isArray(translatedNames) ? translatedNames[0] : translatedNames;
       const licenseId = license.skuId || index;
+      
+      // First, try to get the name from the tenant's subscribed SKUs (most accurate)
+      let displayName = null;
+      if (license.skuId && licenseNameMap.size > 0) {
+        displayName = licenseNameMap.get(license.skuId.toLowerCase());
+      }
+      
+      // Fall back to static translation if not found in tenant SKUs
+      if (!displayName) {
+        const translatedNames = getCippLicenseTranslation([license]);
+        displayName = Array.isArray(translatedNames) ? translatedNames[0] : translatedNames;
+      }
+      
       const isCopied = copiedLicenseId === licenseId;
       
       return (

@@ -24,8 +24,12 @@ export const CippFormLicenseSelector = ({
         addedField: addedField,
         tenantFilter: userSettingsDefaults.currentTenant ?? undefined,
         url: "/api/ListLicenses",
-        labelField: (option) =>
-          `${getCippLicenseTranslation([option])} (${option?.availableUnits} available)`,
+        labelField: (option) => {
+          // Use License field from API response (already translated by backend)
+          // Fall back to static translation if License field is missing
+          const licenseName = option?.License || getCippLicenseTranslation([option])?.[0] || option?.skuPartNumber || "Unknown License";
+          return `${licenseName} (${option?.availableUnits ?? 0} available)`;
+        },
         valueField: "skuId",
         queryKey: `ListLicenses-${userSettingsDefaults?.currentTenant ?? undefined}`,
         data: {
