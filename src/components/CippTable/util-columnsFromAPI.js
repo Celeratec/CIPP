@@ -2,7 +2,7 @@ import { getCippFilterVariant } from "../../utils/get-cipp-filter-variant";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 import { getCippTranslation } from "../../utils/get-cipp-translation";
 
-const skipRecursion = ["location", "ScheduledBackupValues", "Tenant"];
+const skipRecursion = ["location", "ScheduledBackupValues", "Tenant", "standards", "Standard", "LogData"];
 
 // Variable replacement patterns - maps variable names to property patterns
 const variableReplacements = {
