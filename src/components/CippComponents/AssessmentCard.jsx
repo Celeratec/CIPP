@@ -33,23 +33,23 @@ export const AssessmentCard = ({ data, isLoading }) => {
     <Card sx={{ height: "100%" }}>
       <CardHeader
         title={
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <SecurityIcon sx={{ fontSize: 20 }} />
-            <Typography variant="subtitle1">Assessment</Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+            <SecurityIcon sx={{ fontSize: 18 }} />
+            <Typography variant="subtitle2" fontWeight={600}>Assessment</Typography>
           </Box>
         }
-        sx={{ pb: 1.5 }}
+        sx={{ py: 1, px: 1.5 }}
       />
-      <CardContent>
-        <Box sx={{ display: "flex", gap: 3 }}>
-          <Box sx={{ flex: 1 }}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="caption" color="text.secondary">
+      <CardContent sx={{ pt: 0, px: 1.5, pb: 1.5, "&:last-child": { pb: 1.5 } }}>
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Box sx={{ mb: 0.75 }}>
+              <Typography variant="caption" color="text.secondary" fontSize="0.65rem">
                 Identity
               </Typography>
-              <Typography variant="h5" fontWeight="bold">
+              <Typography variant="subtitle1" fontWeight="bold" fontSize="0.95rem" lineHeight={1.2}>
                 {isLoading ? (
-                  <Skeleton width={80} />
+                  <Skeleton width={60} />
                 ) : (
                   <>
                     {identityPassed}/{identityTotal}
@@ -57,7 +57,8 @@ export const AssessmentCard = ({ data, isLoading }) => {
                       component="span"
                       variant="caption"
                       color="text.secondary"
-                      sx={{ ml: 1 }}
+                      sx={{ ml: 0.5 }}
+                      fontSize="0.65rem"
                     >
                       tests
                     </Typography>
@@ -66,13 +67,13 @@ export const AssessmentCard = ({ data, isLoading }) => {
               </Typography>
             </Box>
             {hasDeviceTests && (
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="caption" color="text.secondary">
+              <Box sx={{ mb: 0.75 }}>
+                <Typography variant="caption" color="text.secondary" fontSize="0.65rem">
                   Devices
                 </Typography>
-                <Typography variant="h5" fontWeight="bold">
+                <Typography variant="subtitle1" fontWeight="bold" fontSize="0.95rem" lineHeight={1.2}>
                   {isLoading ? (
-                    <Skeleton width={80} />
+                    <Skeleton width={60} />
                   ) : (
                     <>
                       {devicesPassed}/{devicesTotal}
@@ -80,7 +81,8 @@ export const AssessmentCard = ({ data, isLoading }) => {
                         component="span"
                         variant="caption"
                         color="text.secondary"
-                        sx={{ ml: 1 }}
+                        sx={{ ml: 0.5 }}
+                        fontSize="0.65rem"
                       >
                         tests
                       </Typography>
@@ -90,12 +92,12 @@ export const AssessmentCard = ({ data, isLoading }) => {
               </Box>
             )}
             <Box>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" color="text.secondary" fontSize="0.65rem">
                 Last Data Collection
               </Typography>
-              <Typography variant="body2" fontSize="0.75rem">
+              <Typography variant="body2" fontSize="0.7rem" lineHeight={1.3}>
                 {isLoading ? (
-                  <Skeleton width={100} />
+                  <Skeleton width={80} />
                 ) : data?.ExecutedAt ? (
                   <CippTimeAgo data={data?.ExecutedAt} />
                 ) : (
@@ -106,16 +108,14 @@ export const AssessmentCard = ({ data, isLoading }) => {
           </Box>
           <Box
             sx={{
-              width: "40%",
-              maxWidth: 120,
-              aspectRatio: 1,
-              minWidth: 80,
-              minHeight: 80,
+              width: 70,
+              height: 70,
+              flexShrink: 0,
               display: "flex",
             }}
           >
             {isLoading ? (
-              <Skeleton variant="circular" width="100%" height="100%" />
+              <Skeleton variant="circular" width={70} height={70} />
             ) : (
               <Box sx={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0 }}>
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
