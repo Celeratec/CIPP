@@ -187,39 +187,45 @@ const Page = () => {
       id: "templateName",
       accessorKey: "templateName",
       size: 200,
-      Cell: ({ row }) => (
-        <Tooltip title={row.original.templateName} arrow>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <DocumentTextIcon style={{ width: 16, height: 16, opacity: 0.6, flexShrink: 0 }} />
-            <Typography
-              variant="body2"
-              fontWeight={500}
-              sx={{
-                maxWidth: 170,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {row.original.templateName}
-            </Typography>
-          </Stack>
-        </Tooltip>
-      ),
+      Cell: ({ row }) => {
+        const name = row?.original?.templateName || "Unknown";
+        return (
+          <Tooltip title={name} arrow>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <DocumentTextIcon style={{ width: 16, height: 16, opacity: 0.6, flexShrink: 0 }} />
+              <Typography
+                variant="body2"
+                fontWeight={500}
+                sx={{
+                  maxWidth: 170,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {name}
+              </Typography>
+            </Stack>
+          </Tooltip>
+        );
+      },
     },
     {
       header: "Type",
       id: "type",
       accessorKey: "type",
       size: 100,
-      Cell: ({ row }) => (
-        <Chip
-          label={row.original.type || "Standard"}
-          size="small"
-          color={row.original.type === "drift" ? "warning" : "primary"}
-          variant="outlined"
-        />
-      ),
+      Cell: ({ row }) => {
+        const type = row?.original?.type;
+        return (
+          <Chip
+            label={type || "Standard"}
+            size="small"
+            color={type === "drift" ? "warning" : "primary"}
+            variant="outlined"
+          />
+        );
+      },
     },
     {
       header: "Included",
@@ -227,18 +233,21 @@ const Page = () => {
       accessorKey: "tenantFilter",
       enableSorting: false,
       size: 180,
-      Cell: ({ row }) => (
-        <CippRemovableTenantChips
-          tenants={row.original.tenantFilter}
-          templateId={row.original.GUID}
-          templateName={row.original.templateName}
-          templateData={row.original}
-          fieldName="tenantFilter"
-          queryKey={queryKey}
-          maxDisplay={2}
-          emptyMessage="No tenants"
-        />
-      ),
+      Cell: ({ row }) => {
+        if (!row?.original) return null;
+        return (
+          <CippRemovableTenantChips
+            tenants={row.original.tenantFilter}
+            templateId={row.original.GUID}
+            templateName={row.original.templateName}
+            templateData={row.original}
+            fieldName="tenantFilter"
+            queryKey={queryKey}
+            maxDisplay={2}
+            emptyMessage="No tenants"
+          />
+        );
+      },
     },
     {
       header: "Excluded",
@@ -246,18 +255,21 @@ const Page = () => {
       accessorKey: "excludedTenants",
       enableSorting: false,
       size: 180,
-      Cell: ({ row }) => (
-        <CippRemovableTenantChips
-          tenants={row.original.excludedTenants}
-          templateId={row.original.GUID}
-          templateName={row.original.templateName}
-          templateData={row.original}
-          fieldName="excludedTenants"
-          queryKey={queryKey}
-          maxDisplay={2}
-          emptyMessage="None"
-        />
-      ),
+      Cell: ({ row }) => {
+        if (!row?.original) return null;
+        return (
+          <CippRemovableTenantChips
+            tenants={row.original.excludedTenants}
+            templateId={row.original.GUID}
+            templateName={row.original.templateName}
+            templateData={row.original}
+            fieldName="excludedTenants"
+            queryKey={queryKey}
+            maxDisplay={2}
+            emptyMessage="None"
+          />
+        );
+      },
     },
     {
       header: "Standards",
@@ -265,7 +277,7 @@ const Page = () => {
       accessorKey: "standards",
       size: 120,
       Cell: ({ row }) => {
-        const { count, list } = formatStandardsSummary(row.original.standards);
+        const { count, list } = formatStandardsSummary(row?.original?.standards);
         return (
           <Tooltip
             title={
@@ -287,7 +299,7 @@ const Page = () => {
               label={`${count} standard${count !== 1 ? "s" : ""}`}
               size="small"
               color={count > 0 ? "success" : "default"}
-              variant={count > 0 ? "outlined" : "outlined"}
+              variant="outlined"
             />
           </Tooltip>
         );
@@ -302,7 +314,7 @@ const Page = () => {
         <Stack direction="row" spacing={0.5} alignItems="center">
           <ClockIcon style={{ width: 14, height: 14, opacity: 0.6 }} />
           <Typography variant="body2" fontSize="0.8rem">
-            {getCippFormatting(row.original.updatedAt, "updatedAt")}
+            {getCippFormatting(row?.original?.updatedAt, "updatedAt")}
           </Typography>
         </Stack>
       ),
@@ -312,42 +324,48 @@ const Page = () => {
       id: "updatedBy",
       accessorKey: "updatedBy",
       size: 150,
-      Cell: ({ row }) => (
-        <Tooltip title={row.original.updatedBy || "Unknown"} arrow>
-          <Stack direction="row" spacing={0.5} alignItems="center">
-            <UserIcon style={{ width: 14, height: 14, opacity: 0.6 }} />
-            <Typography
-              variant="body2"
-              fontSize="0.8rem"
-              sx={{
-                maxWidth: 120,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {row.original.updatedBy || "Unknown"}
-            </Typography>
-          </Stack>
-        </Tooltip>
-      ),
+      Cell: ({ row }) => {
+        const updatedBy = row?.original?.updatedBy || "Unknown";
+        return (
+          <Tooltip title={updatedBy} arrow>
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <UserIcon style={{ width: 14, height: 14, opacity: 0.6 }} />
+              <Typography
+                variant="body2"
+                fontSize="0.8rem"
+                sx={{
+                  maxWidth: 120,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {updatedBy}
+              </Typography>
+            </Stack>
+          </Tooltip>
+        );
+      },
     },
     {
       header: "Manual",
       id: "runManually",
       accessorKey: "runManually",
       size: 90,
-      Cell: ({ row }) => (
-        <Tooltip title={row.original.runManually ? "Run manually only" : "Scheduled"} arrow>
-          <Chip
-            icon={<PlayCircleIcon style={{ width: 14, height: 14 }} />}
-            label={row.original.runManually ? "Yes" : "No"}
-            size="small"
-            color={row.original.runManually ? "warning" : "success"}
-            variant="outlined"
-          />
-        </Tooltip>
-      ),
+      Cell: ({ row }) => {
+        const runManually = row?.original?.runManually;
+        return (
+          <Tooltip title={runManually ? "Run manually only" : "Scheduled"} arrow>
+            <Chip
+              icon={<PlayCircleIcon style={{ width: 14, height: 14 }} />}
+              label={runManually ? "Yes" : "No"}
+              size="small"
+              color={runManually ? "warning" : "success"}
+              variant="outlined"
+            />
+          </Tooltip>
+        );
+      },
     },
   ];
 
