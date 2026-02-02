@@ -1,21 +1,20 @@
-import { Alert, Button, Box, Container, Stack } from "@mui/material";
+import { Alert, Button } from "@mui/material";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { TabbedLayout } from "../../../../layouts/TabbedLayout";
 import Link from "next/link";
 import { CopyAll, Delete, PlayArrow, AddBox, Edit, GitHub, ContentCopy } from "@mui/icons-material";
 import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall";
-import { Grid } from "@mui/system";
+import { Grid, Stack } from "@mui/system";
 import { CippApiResults } from "../../../../components/CippComponents/CippApiResults";
 import { EyeIcon } from "@heroicons/react/24/outline";
 import tabOptions from "../tabOptions.json";
 import { useSettings } from "../../../../hooks/use-settings.js";
 import { CippPolicyImportDrawer } from "../../../../components/CippComponents/CippPolicyImportDrawer.jsx";
 import { PermissionButton } from "../../../../utils/permissions.js";
-import { CippDataTable } from "../../../../components/CippTable/CippDataTable";
 import { CippRemovableTenantChips } from "../../../../components/CippComponents/CippRemovableTenantChips";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import { getCippTranslation } from "../../../../utils/get-cipp-translation";
-import CippPageCard from "../../../../components/CippCards/CippPageCard";
+import { CippTablePage } from "../../../../components/CippComponents/CippTablePage";
 
 const Page = () => {
   const oldStandards = ApiGetCall({ url: "/api/ListStandards", queryKey: "ListStandards-legacy" });
@@ -229,43 +228,40 @@ const Page = () => {
     },
   ];
 
-  const tableFilter = (
-    <div>
-      {oldStandards.isSuccess && oldStandards.data.length !== 0 && (
-        <Grid container spacing={2}>
-          <Grid container spacing={2}>
-            <Alert
-              severity="warning"
-              style={{ display: "flex", alignItems: "center", width: "100%" }}
-            >
-              <Grid size={12}>
-                You have legacy standards available. Press the button to convert these standards to
-                the new format. This will create a new template for each standard you had, but will
-                disable the schedule. After conversion, please check the new templates to ensure
-                they are correct and re-enable the schedule.
-              </Grid>
-              <Grid size={2}>
-                <Button onClick={() => handleConversion()} variant={"contained"}>
-                  Convert Legacy Standards
-                </Button>
-              </Grid>
-            </Alert>
-          </Grid>
-          <Grid size={8}>
-            <CippApiResults apiObject={conversionApi} />
-          </Grid>
+  const tableFilter = oldStandards.isSuccess && oldStandards.data.length !== 0 && (
+    <Grid container spacing={2}>
+      <Grid size={12}>
+        <Alert
+          severity="warning"
+          sx={{ display: "flex", alignItems: "center" }}
+        >
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center" sx={{ width: "100%" }}>
+            <span>
+              You have legacy standards available. Press the button to convert these standards to
+              the new format. This will create a new template for each standard you had, but will
+              disable the schedule. After conversion, please check the new templates to ensure
+              they are correct and re-enable the schedule.
+            </span>
+            <Button onClick={() => handleConversion()} variant="contained" sx={{ flexShrink: 0 }}>
+              Convert Legacy Standards
+            </Button>
+          </Stack>
+        </Alert>
+      </Grid>
+      {conversionApi.isSuccess && (
+        <Grid size={12}>
+          <CippApiResults apiObject={conversionApi} />
         </Grid>
       )}
-    </div>
+    </Grid>
   );
 
   const cardButton = (
-    <>
+    <Stack direction="row" spacing={1}>
       <Button
         component={Link}
         href="/tenant/standards/templates/template"
         startIcon={<AddBox />}
-        sx={{ mr: 1 }}
       >
         Add Template
       </Button>
@@ -273,7 +269,6 @@ const Page = () => {
         component={Link}
         href="/tenant/standards/templates/template?type=drift"
         startIcon={<AddBox />}
-        sx={{ mr: 1 }}
       >
         Create Drift Template
       </Button>
@@ -283,34 +278,21 @@ const Page = () => {
         PermissionButton={PermissionButton}
         mode="Standards"
       />
-    </>
+    </Stack>
   );
 
   return (
-    <Box
-      sx={{
-        flexGrow: 1,
-        py: 4,
-      }}
-    >
-      <Container maxWidth={false}>
-        <Stack spacing={4}>
-          {tableFilter}
-          <CippPageCard title={pageTitle} cardButton={cardButton}>
-            <CippDataTable
-              api={{
-                url: "/api/listStandardTemplates",
-                dataKey: "Results",
-              }}
-              columns={columns}
-              actions={actions}
-              queryKey={queryKey}
-              title={pageTitle}
-            />
-          </CippPageCard>
-        </Stack>
-      </Container>
-    </Box>
+    <CippTablePage
+      title={pageTitle}
+      apiUrl="/api/listStandardTemplates"
+      apiDataKey="Results"
+      cardButton={cardButton}
+      columns={columns}
+      actions={actions}
+      queryKey={queryKey}
+      tableFilter={tableFilter}
+      tenantInTitle={false}
+    />
   );
 };
 
