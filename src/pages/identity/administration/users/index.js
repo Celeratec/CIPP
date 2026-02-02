@@ -377,6 +377,16 @@ const Page = () => {
       type: "column",
     },
     {
+      filterName: "Licensed Users",
+      value: [{ id: "assignedLicenses", value: "licensed" }],
+      type: "column",
+    },
+    {
+      filterName: "Unlicensed Users",
+      value: [{ id: "assignedLicenses", value: "unlicensed" }],
+      type: "column",
+    },
+    {
       filterName: "Guest Accounts",
       value: [{ id: "userType", value: "Guest" }],
       type: "column",
