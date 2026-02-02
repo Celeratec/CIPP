@@ -24,11 +24,11 @@ export const TabbedLayout = (props) => {
     <Box
       sx={{
         flexGrow: 1,
-        pb: smDown ? 2 : 4,
+        pb: smDown ? 2 : 3,
         mt: -1,
       }}
     >
-      <Stack spacing={smDown ? 1 : 2}>
+      <Stack spacing={smDown ? 0.5 : 1}>
         <Box sx={{ ml: smDown ? 1 : 3 }}>
           <Tabs
             onChange={handleTabsChange}

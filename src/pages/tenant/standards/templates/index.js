@@ -292,6 +292,7 @@ const Page = () => {
       queryKey={queryKey}
       tableFilter={tableFilter}
       tenantInTitle={false}
+      spacing={1}
     />
   );
 };

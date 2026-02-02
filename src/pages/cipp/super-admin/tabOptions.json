@@ -12,6 +12,10 @@
     "path": "/cipp/super-admin/time-settings"
   },
   {
+    "label": "JIT Admin",
+    "path": "/cipp/super-admin/jit-admin-settings"
+  },
+  {
     "label": "CIPP Roles",
     "path": "/cipp/super-admin/cipp-roles"
   },
