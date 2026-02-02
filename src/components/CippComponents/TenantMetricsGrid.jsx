@@ -55,7 +55,7 @@ export const TenantMetricsGrid = ({ data, isLoading }) => {
   ];
 
   return (
-    <Grid container spacing={2}>
+    <Grid container spacing={1}>
       {metrics.map((metric) => {
         const IconComponent = metric.icon;
         return (
@@ -65,8 +65,8 @@ export const TenantMetricsGrid = ({ data, isLoading }) => {
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 1.5,
-                  p: 2,
+                  gap: 1,
+                  p: 1.25,
                   border: 1,
                   borderColor: "divider",
                   borderRadius: 1,
@@ -76,18 +76,18 @@ export const TenantMetricsGrid = ({ data, isLoading }) => {
                   sx={{
                     bgcolor: `${metric.color}.main`,
                     color: `${metric.color}.contrastText`,
-                    width: 34,
-                    height: 34,
+                    width: 28,
+                    height: 28,
                   }}
                 >
-                  <IconComponent sx={{ fontSize: 24, color: "inherit" }} />
+                  <IconComponent sx={{ fontSize: 18, color: "inherit" }} />
                 </Avatar>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontSize="0.7rem">
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="caption" color="text.secondary" fontSize="0.65rem" noWrap>
                     {metric.label}
                   </Typography>
-                  <Typography variant="h6" fontSize="1.125rem">
-                    {isLoading ? <Skeleton width={50} /> : formatNumber(metric.value)}
+                  <Typography variant="subtitle1" fontWeight={600} fontSize="0.95rem" lineHeight={1.2}>
+                    {isLoading ? <Skeleton width={40} /> : formatNumber(metric.value)}
                   </Typography>
                 </Box>
               </Box>

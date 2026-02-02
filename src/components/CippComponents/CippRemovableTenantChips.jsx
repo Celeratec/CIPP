@@ -72,6 +72,21 @@ export const CippRemovableTenantChips = ({
     setError(null);
   };
 
+  // Helper to filter out corrupted/invalid tenant entries
+  const cleanTenantArray = (tenants, tenantToRemove) => {
+    if (!tenants) return [];
+    const arr = Array.isArray(tenants) ? tenants : [tenants];
+    return arr.filter((t) => {
+      // Filter out the tenant being removed
+      if (t === tenantToRemove || t?.value === tenantToRemove) return false;
+      // Filter out corrupted data (field names stored as values)
+      if (t === "excludedTenants" || t === "tenantFilter") return false;
+      // Filter out empty/null values
+      if (!t) return false;
+      return true;
+    });
+  };
+
   const handleRemoveTenant = async () => {
     const { tenant } = removeDialog;
     setIsRemoving(true);
@@ -82,24 +97,14 @@ export const CippRemovableTenantChips = ({
       const updatedTemplate = { ...templateData };
 
       if (fieldName === "tenantFilter") {
-        // For tenantFilter, if it's a single value, we need to handle it differently
-        if (Array.isArray(updatedTemplate.tenantFilter)) {
-          updatedTemplate.tenantFilter = updatedTemplate.tenantFilter.filter(
-            (t) => t !== tenant && t?.value !== tenant
-          );
-        } else {
-          // If it's a single tenant being removed, we can't remove it (at least one is required)
-          // But we'll let the backend handle validation
-          updatedTemplate.tenantFilter = [];
-        }
+        updatedTemplate.tenantFilter = cleanTenantArray(updatedTemplate.tenantFilter, tenant);
       } else if (fieldName === "excludedTenants") {
-        // For excludedTenants, filter out the removed tenant
-        const currentExcluded = Array.isArray(updatedTemplate.excludedTenants)
-          ? updatedTemplate.excludedTenants
-          : [];
-        updatedTemplate.excludedTenants = currentExcluded.filter(
-          (t) => t !== tenant && t?.value !== tenant
-        );
+        updatedTemplate.excludedTenants = cleanTenantArray(updatedTemplate.excludedTenants, tenant);
+      }
+
+      // Also clean the other field to remove any corrupted data
+      if (updatedTemplate.excludedTenants) {
+        updatedTemplate.excludedTenants = cleanTenantArray(updatedTemplate.excludedTenants, null);
       }
 
       await updateTemplateMutation.mutateAsync({

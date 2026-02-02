@@ -90,7 +90,7 @@ export const AuthMethodCard = ({ data, isLoading }) => {
 
     if (passkeyCount > 0)
       links.push({ source: "Phish resistant", target: "Passkey", value: passkeyCount });
-    if (whfbCount > 0) links.push({ source: "Phish resistant", target: "WHfB", value: whfbCount });
+    if (whfbCount > 0) links.push({ source: "Phish resistant", target: "Windows Hello", value: whfbCount });
 
     const description = `${mfaPercentage}% of enabled users have MFA configured. ${phishResistantPercentage}% use phish-resistant authentication methods.`;
 
@@ -104,7 +104,7 @@ export const AuthMethodCard = ({ data, isLoading }) => {
         { id: "Authenticator", nodeColor: "hsl(39, 100%, 55%)" },
         { id: "Phish resistant", nodeColor: "hsl(99, 70%, 50%)" },
         { id: "Passkey", nodeColor: "hsl(140, 70%, 50%)" },
-        { id: "WHfB", nodeColor: "hsl(160, 70%, 50%)" },
+        { id: "Windows Hello", nodeColor: "hsl(160, 70%, 50%)" },
       ],
       links,
       description,

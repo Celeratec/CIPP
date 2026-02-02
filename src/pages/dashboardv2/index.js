@@ -221,9 +221,9 @@ const Page = () => {
   };
 
   return (
-    <Container maxWidth={false} sx={{ mt: 12, mb: 6 }}>
+    <Container maxWidth={false} sx={{ mt: 12, mb: 4 }}>
       <Box sx={{ width: "100%", mx: "auto" }}>
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={1.5} sx={{ mb: 2 }}>
           <Grid size={{ xs: 12, md: 5 }}>
             <Card sx={{ height: "100%" }}>
               <CardContent 
@@ -360,7 +360,7 @@ const Page = () => {
         </Grid>
 
         {/* Tenant Overview Section - 3 Column Layout */}
-        <Grid container spacing={3} sx={{ mb: 6 }}>
+        <Grid container spacing={1.5} sx={{ mb: 3 }}>
           {/* Column 1: Tenant Information */}
           <Grid size={{ xs: 12, lg: 4 }}>
             <TenantInfoCard data={organization.data} isLoading={organization.isFetching} />
@@ -381,11 +381,11 @@ const Page = () => {
         </Grid>
 
         {/* Identity Section - 2 Column Grid */}
-        <Box sx={{ mt: 6, mb: 3 }}>
-          <Grid container spacing={3}>
+        <Box sx={{ mt: 3, mb: 2 }}>
+          <Grid container spacing={1.5}>
             {/* Left Column */}
             <Grid size={{ xs: 12, lg: 6 }}>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 3, height: "100%" }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, height: "100%" }}>
                 <Box sx={{ height: 450 }}>
                   <SecureScoreCard
                     data={testsApi.data?.SecureScore}
@@ -405,7 +405,7 @@ const Page = () => {
 
             {/* Right Column */}
             <Grid size={{ xs: 12, lg: 6 }}>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 3, height: "100%" }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, height: "100%" }}>
                 <Box sx={{ height: 450 }}>
                   <MFACard
                     data={testsApi.data?.MFAState}

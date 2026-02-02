@@ -15,10 +15,14 @@ import {
   ToggleButtonGroup,
   Divider,
   Alert,
+  MenuItem,
+  FormControl,
+  Select,
+  Tooltip,
 } from "@mui/material";
 import { Grid, Stack } from "@mui/system";
 import extensions from "../../../data/Extensions";
-import { Sync, Search, CheckCircle, Cancel, Settings } from "@mui/icons-material";
+import { Sync, Search, CheckCircle, Cancel, Settings, Category } from "@mui/icons-material";
 import { useSettings } from "../../../hooks/use-settings";
 import { ApiGetCall } from "../../../api/ApiCall";
 import Link from "next/link";
@@ -76,9 +80,18 @@ const Page = () => {
     return cats.sort();
   }, []);
 
-  // Filter extensions
+  // Get status for an extension
+  const getExtensionStatus = (ext) => {
+    const config = integrations.data?.[ext.id];
+    const isEnabled = config?.Enabled || ext.id === "cippapi";
+    if (config && isEnabled) return "enabled";
+    if (config && !isEnabled) return "disabled";
+    return "unconfigured";
+  };
+
+  // Filter and sort extensions - enabled first
   const filteredExtensions = useMemo(() => {
-    return extensions.filter((ext) => {
+    let filtered = extensions.filter((ext) => {
       // Search filter
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
@@ -96,32 +109,50 @@ const Page = () => {
 
       // Status filter
       if (filterStatus !== "all" && integrations.isSuccess) {
-        const config = integrations.data?.[ext.id];
-        const isEnabled = config?.Enabled || ext.id === "cippapi";
-        const status =
-          config && isEnabled ? "enabled" : config && !isEnabled ? "disabled" : "unconfigured";
+        const status = getExtensionStatus(ext);
         if (filterStatus !== status) return false;
       }
 
       return true;
     });
+
+    // Sort: enabled first, then by name
+    if (integrations.isSuccess) {
+      filtered.sort((a, b) => {
+        const statusA = getExtensionStatus(a);
+        const statusB = getExtensionStatus(b);
+        
+        // Enabled first
+        if (statusA === "enabled" && statusB !== "enabled") return -1;
+        if (statusA !== "enabled" && statusB === "enabled") return 1;
+        
+        // Then disabled
+        if (statusA === "disabled" && statusB === "unconfigured") return -1;
+        if (statusA === "unconfigured" && statusB === "disabled") return 1;
+        
+        // Then alphabetically
+        return a.name.localeCompare(b.name);
+      });
+    }
+
+    return filtered;
   }, [searchTerm, filterCategory, filterStatus, integrations.isSuccess, integrations.data]);
 
-  // Group extensions by category
-  const groupedExtensions = useMemo(() => {
-    const groups = {};
-    filteredExtensions.forEach((ext) => {
-      if (!groups[ext.cat]) {
-        groups[ext.cat] = [];
-      }
-      groups[ext.cat].push(ext);
-    });
-    return groups;
-  }, [filteredExtensions]);
+  // Separate enabled from others for display
+  const { enabledExtensions, otherExtensions } = useMemo(() => {
+    if (!integrations.isSuccess) {
+      return { enabledExtensions: [], otherExtensions: filteredExtensions };
+    }
+    
+    const enabled = filteredExtensions.filter((ext) => getExtensionStatus(ext) === "enabled");
+    const others = filteredExtensions.filter((ext) => getExtensionStatus(ext) !== "enabled");
+    
+    return { enabledExtensions: enabled, otherExtensions: others };
+  }, [filteredExtensions, integrations.isSuccess, integrations.data]);
 
   const infoBarData = [
     {
-      name: "Total Integrations",
+      name: "Total",
       data: stats.total,
       icon: <LinkIcon />,
       color: "primary",
@@ -147,15 +178,130 @@ const Page = () => {
   ];
 
   const getStatusInfo = (extension) => {
-    const config = integrations.data?.[extension.id];
-    const isEnabled = config?.Enabled || extension.id === "cippapi";
-
-    if (config && isEnabled) {
-      return { status: "Enabled", color: "success", icon: <CheckCircle fontSize="small" /> };
-    } else if (config && !isEnabled) {
-      return { status: "Disabled", color: "warning", icon: <Cancel fontSize="small" /> };
+    const status = getExtensionStatus(extension);
+    if (status === "enabled") {
+      return { status: "Enabled", color: "success", icon: <CheckCircle sx={{ fontSize: 14 }} /> };
+    } else if (status === "disabled") {
+      return { status: "Disabled", color: "warning", icon: <Cancel sx={{ fontSize: 14 }} /> };
     }
-    return { status: "Not Configured", color: "default", icon: <Settings fontSize="small" /> };
+    return { status: "Not Configured", color: "default", icon: <Settings sx={{ fontSize: 14 }} /> };
+  };
+
+  // Compact integration card component
+  const IntegrationCard = ({ extension }) => {
+    let logo = extension.logo;
+    if (preferredTheme === "dark" && extension?.logoDark) {
+      logo = extension.logoDark;
+    }
+
+    const statusInfo = integrations.isSuccess
+      ? getStatusInfo(extension)
+      : { status: "Loading", color: "default", icon: null };
+
+    const isEnabled = statusInfo.status === "Enabled";
+
+    return (
+      <CardActionArea
+        component={Link}
+        href={`/cipp/integrations/configure?id=${extension.id}`}
+        sx={{ height: "100%" }}
+      >
+        <Card
+          variant="outlined"
+          sx={{
+            height: "100%",
+            transition: "all 0.2s",
+            borderColor: isEnabled ? "success.main" : "divider",
+            borderWidth: isEnabled ? 2 : 1,
+            bgcolor: isEnabled ? "success.50" : "background.paper",
+            "&:hover": {
+              borderColor: "primary.main",
+              boxShadow: 2,
+              transform: "translateY(-2px)",
+            },
+          }}
+        >
+          <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              {/* Logo - smaller */}
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 1,
+                  bgcolor: "background.default",
+                  overflow: "hidden",
+                }}
+              >
+                {extension?.logo ? (
+                  <Box
+                    component="img"
+                    src={logo}
+                    alt={extension.name}
+                    sx={{
+                      maxWidth: "100%",
+                      maxHeight: "100%",
+                      objectFit: "contain",
+                    }}
+                  />
+                ) : (
+                  <Typography variant="caption" fontWeight={600}>
+                    {extension.name.substring(0, 2).toUpperCase()}
+                  </Typography>
+                )}
+              </Box>
+
+              {/* Content */}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Typography
+                    variant="subtitle2"
+                    fontWeight={600}
+                    noWrap
+                    sx={{ flex: 1 }}
+                  >
+                    {extension.name}
+                  </Typography>
+                  {integrations.isSuccess ? (
+                    <Chip
+                      label={statusInfo.status}
+                      size="small"
+                      color={statusInfo.color}
+                      variant={isEnabled ? "filled" : "outlined"}
+                      sx={{ 
+                        height: 20, 
+                        fontSize: "0.7rem",
+                        "& .MuiChip-label": { px: 0.75 }
+                      }}
+                    />
+                  ) : (
+                    <Skeleton variant="rounded" width={60} height={20} />
+                  )}
+                </Stack>
+                <Tooltip title={extension.description} arrow enterDelay={500}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      display: "-webkit-box",
+                      WebkitLineClamp: 1,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {extension.description}
+                  </Typography>
+                </Tooltip>
+              </Box>
+            </Stack>
+          </CardContent>
+        </Card>
+      </CardActionArea>
+    );
   };
 
   return (
@@ -185,20 +331,21 @@ const Page = () => {
         {/* Status Summary */}
         <CippInfoBar data={infoBarData} isFetching={integrations.isFetching} />
 
-        {/* Filters */}
+        {/* Filters - Compact */}
         <Card variant="outlined">
-          <CardContent sx={{ py: 2 }}>
+          <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
             <Stack
-              direction={{ xs: "column", md: "row" }}
+              direction={{ xs: "column", sm: "row" }}
               spacing={2}
-              alignItems={{ xs: "stretch", md: "center" }}
+              alignItems={{ xs: "stretch", sm: "center" }}
             >
+              {/* Search */}
               <TextField
                 size="small"
                 placeholder="Search integrations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                sx={{ minWidth: 250 }}
+                sx={{ minWidth: 200, flex: { xs: 1, sm: "none" } }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -208,46 +355,43 @@ const Page = () => {
                 }}
               />
 
-              <Divider orientation="vertical" flexItem sx={{ display: { xs: "none", md: "block" } }} />
+              {/* Status Filter */}
+              <ToggleButtonGroup
+                size="small"
+                value={filterStatus}
+                exclusive
+                onChange={(e, value) => value && setFilterStatus(value)}
+              >
+                <ToggleButton value="all">All</ToggleButton>
+                <ToggleButton value="enabled">
+                  <CheckCircle sx={{ fontSize: 16, mr: 0.5 }} />
+                  Enabled
+                </ToggleButton>
+                <ToggleButton value="disabled">Disabled</ToggleButton>
+                <ToggleButton value="unconfigured">Not Configured</ToggleButton>
+              </ToggleButtonGroup>
 
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
-                  Status:
-                </Typography>
-                <ToggleButtonGroup
-                  size="small"
-                  value={filterStatus}
-                  exclusive
-                  onChange={(e, value) => value && setFilterStatus(value)}
-                >
-                  <ToggleButton value="all">All</ToggleButton>
-                  <ToggleButton value="enabled">Enabled</ToggleButton>
-                  <ToggleButton value="disabled">Disabled</ToggleButton>
-                  <ToggleButton value="unconfigured">Not Configured</ToggleButton>
-                </ToggleButtonGroup>
-              </Stack>
-
-              <Divider orientation="vertical" flexItem sx={{ display: { xs: "none", md: "block" } }} />
-
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
-                  Category:
-                </Typography>
-                <ToggleButtonGroup
-                  size="small"
+              {/* Category Dropdown */}
+              <FormControl size="small" sx={{ minWidth: 180 }}>
+                <Select
                   value={filterCategory}
-                  exclusive
-                  onChange={(e, value) => value && setFilterCategory(value)}
-                  sx={{ flexWrap: "wrap" }}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  displayEmpty
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <Category fontSize="small" sx={{ ml: 1 }} />
+                    </InputAdornment>
+                  }
                 >
-                  <ToggleButton value="all">All</ToggleButton>
+                  <MenuItem value="all">All Categories</MenuItem>
+                  <Divider />
                   {categories.map((cat) => (
-                    <ToggleButton key={cat} value={cat}>
+                    <MenuItem key={cat} value={cat}>
                       {cat}
-                    </ToggleButton>
+                    </MenuItem>
                   ))}
-                </ToggleButtonGroup>
-              </Stack>
+                </Select>
+              </FormControl>
             </Stack>
           </CardContent>
         </Card>
@@ -259,135 +403,50 @@ const Page = () => {
           </Alert>
         )}
 
-        {/* Integration Cards by Category */}
-        {Object.entries(groupedExtensions)
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([category, categoryExtensions]) => (
-            <Box key={category}>
-              <Typography variant="h6" sx={{ mb: 2, mt: 1 }}>
-                {category}
-                <Chip
-                  label={categoryExtensions.length}
-                  size="small"
-                  sx={{ ml: 1 }}
-                  color="default"
-                />
+        {/* Enabled Integrations Section */}
+        {enabledExtensions.length > 0 && (
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <CheckCircleIcon style={{ width: 20, height: 20, color: "var(--mui-palette-success-main)" }} />
+              <Typography variant="subtitle1" fontWeight={600}>
+                Enabled Integrations
               </Typography>
-              <Grid container spacing={2}>
-                {categoryExtensions.map((extension) => {
-                  let logo = extension.logo;
-                  if (preferredTheme === "dark" && extension?.logoDark) {
-                    logo = extension.logoDark;
-                  }
+              <Chip label={enabledExtensions.length} size="small" color="success" />
+            </Stack>
+            <Grid container spacing={1.5}>
+              {enabledExtensions.map((extension) => (
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={extension.id}>
+                  <IntegrationCard extension={extension} />
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        )}
 
-                  const statusInfo = integrations.isSuccess
-                    ? getStatusInfo(extension)
-                    : { status: "Loading", color: "default", icon: null };
+        {/* Divider between sections */}
+        {enabledExtensions.length > 0 && otherExtensions.length > 0 && (
+          <Divider sx={{ my: 1 }} />
+        )}
 
-                  return (
-                    <Grid size={{ xs: 12, sm: 6, md: 4, xl: 3 }} key={extension.id}>
-                      <CardActionArea
-                        component={Link}
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          height: "100%",
-                        }}
-                        href={`/cipp/integrations/configure?id=${extension.id}`}
-                      >
-                        <Card
-                          variant="outlined"
-                          sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            height: "100%",
-                            width: "100%",
-                            transition: "all 0.2s",
-                            borderColor:
-                              statusInfo.status === "Enabled" ? "success.main" : "divider",
-                            borderWidth: statusInfo.status === "Enabled" ? 2 : 1,
-                            "&:hover": {
-                              borderColor: "primary.main",
-                              boxShadow: 2,
-                            },
-                          }}
-                        >
-                          <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                            {/* Logo */}
-                            <Box
-                              sx={{
-                                display: "flex",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                height: 80,
-                                mb: 2,
-                              }}
-                            >
-                              {extension?.logo ? (
-                                <Box
-                                  component="img"
-                                  src={logo}
-                                  alt={extension.name}
-                                  sx={{
-                                    maxWidth: "100%",
-                                    maxHeight: "100%",
-                                    objectFit: "contain",
-                                  }}
-                                />
-                              ) : (
-                                <Typography variant="h5" color="text.secondary">
-                                  {extension.name}
-                                </Typography>
-                              )}
-                            </Box>
-
-                            {/* Description */}
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{
-                                flex: 1,
-                                display: "-webkit-box",
-                                WebkitLineClamp: 3,
-                                WebkitBoxOrient: "vertical",
-                                overflow: "hidden",
-                              }}
-                            >
-                              {extension.description}
-                            </Typography>
-
-                            {/* Status */}
-                            <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: "divider" }}>
-                              <Stack
-                                direction="row"
-                                justifyContent="space-between"
-                                alignItems="center"
-                              >
-                                {integrations.isSuccess ? (
-                                  <Chip
-                                    label={statusInfo.status}
-                                    size="small"
-                                    color={statusInfo.color}
-                                    variant={statusInfo.status === "Enabled" ? "filled" : "outlined"}
-                                    icon={statusInfo.icon}
-                                  />
-                                ) : (
-                                  <Skeleton variant="rounded" width={80} height={24} />
-                                )}
-                                <Typography variant="caption" color="text.secondary">
-                                  {extension.cat}
-                                </Typography>
-                              </Stack>
-                            </Box>
-                          </CardContent>
-                        </Card>
-                      </CardActionArea>
-                    </Grid>
-                  );
-                })}
-              </Grid>
-            </Box>
-          ))}
+        {/* Other Integrations Section */}
+        {otherExtensions.length > 0 && (
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+              <CogIcon style={{ width: 20, height: 20, opacity: 0.6 }} />
+              <Typography variant="subtitle1" fontWeight={600} color="text.secondary">
+                {enabledExtensions.length > 0 ? "Available Integrations" : "All Integrations"}
+              </Typography>
+              <Chip label={otherExtensions.length} size="small" variant="outlined" />
+            </Stack>
+            <Grid container spacing={1.5}>
+              {otherExtensions.map((extension) => (
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={extension.id}>
+                  <IntegrationCard extension={extension} />
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        )}
       </Stack>
     </Container>
   );

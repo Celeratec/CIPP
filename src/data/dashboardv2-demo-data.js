@@ -48,7 +48,7 @@ export const dashboardDemoData = {
         { source: "Phishable", target: "Phone", value: 8 },
         { source: "Phishable", target: "Authenticator", value: 20 },
         { source: "Phish resistant", target: "Passkey", value: 12 },
-        { source: "Phish resistant", target: "WHfB", value: 3 },
+        { source: "Phish resistant", target: "Windows Hello", value: 3 },
       ],
     },
     OverviewAuthMethodsAllUsers: {
@@ -60,7 +60,7 @@ export const dashboardDemoData = {
         { source: "Phishable", target: "Phone", value: 180 },
         { source: "Phishable", target: "Authenticator", value: 400 },
         { source: "Phish resistant", target: "Passkey", value: 450 },
-        { source: "Phish resistant", target: "WHfB", value: 100 },
+        { source: "Phish resistant", target: "Windows Hello", value: 100 },
       ],
     },
     DeviceOverview: {
