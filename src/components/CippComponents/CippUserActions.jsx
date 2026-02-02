@@ -353,6 +353,21 @@ export const useCippUserActions = () => {
       quickAction: true, // Show on card
     },
     {
+      label: "Expire Password",
+      type: "POST",
+      icon: <Password />,
+      url: "/api/ExecExpirePassword",
+      data: {
+        ID: "userPrincipalName",
+        displayName: "displayName",
+      },
+      confirmText:
+        "This will mark the password as expired for [userPrincipalName]. The user will be required to change their password on their next sign-in. Their current password remains valid until they log in. Use 'Revoke all user sessions' to force immediate re-authentication.",
+      multiPost: false,
+      condition: () => canWriteUser,
+      category: "security",
+    },
+    {
       label: "Create Temporary Access Password",
       type: "POST",
       icon: <Password />,

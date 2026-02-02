@@ -9,6 +9,7 @@ import {
   Clear,
   Error as ErrorIcon,
   Info as InfoIcon,
+  Key,
   Password,
   PhonelinkSetup,
   PersonOff,
@@ -194,6 +195,18 @@ const Page = () => {
       multiPost: false,
       category: "security",
       quickAction: true,
+      color: "warning",
+    },
+    {
+      label: "Expire Password",
+      type: "POST",
+      icon: <Key />,
+      url: "/api/ExecExpirePassword",
+      data: { ID: "userPrincipalName", displayName: "userDisplayName" },
+      confirmText:
+        "This will mark the password as expired for [userPrincipalName]. The user will be required to change their password on their next sign-in. Their current password remains valid until they log in. Use 'Revoke all user sessions' to force immediate re-authentication.",
+      multiPost: false,
+      category: "security",
       color: "warning",
     },
     {
