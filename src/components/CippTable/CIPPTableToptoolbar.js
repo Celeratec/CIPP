@@ -267,12 +267,15 @@ export const CIPPTableToptoolbar = ({
 
   // Handle null table (card view mode)
   const selectedRows = table?.getSelectedRowModel?.()?.rows || [];
-  const hasSelection = table ? (table.getIsSomeRowsSelected() || table.getIsAllRowsSelected()) : false;
+  // Use selectedRows.length directly instead of getIsSomeRowsSelected() which can be unreliable
+  // when rows are selected individually without using "select all"
+  const hasSelection = selectedRows.length > 0;
   // Built-in export actions should only appear when the page opts in and rows are selected.
   const builtInBulkExportAvailable =
     showBulkExportAction && exportEnabled && selectedRows.length > 0;
   const customBulkActions = getBulkActions(actions, selectedRows);
-  const showBulkActionsButton = hasSelection && customBulkActions.length > 0;
+  // Show bulk actions button when 2 or more rows are selected and there are bulk actions available
+  const showBulkActionsButton = selectedRows.length >= 2 && customBulkActions.length > 0;
 
   // Group bulk actions by category for the menu
   const groupedBulkActions = React.useMemo(() => {
