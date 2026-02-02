@@ -166,15 +166,12 @@ const Page = () => {
       },
       {
         header: "Members",
-        id: "Members",
-        accessorKey: "Members",
+        id: "memberCount",
+        // Use accessorFn to return member count for proper sorting
+        accessorFn: (row) => row.Members?.length || 0,
         size: 200,
         enableSorting: true,
-        sortingFn: (a, b) => {
-          const aMemberCount = a.original.Members?.length || 0;
-          const bMemberCount = b.original.Members?.length || 0;
-          return bMemberCount - aMemberCount;
-        },
+        sortingFn: "basic",
         Cell: ({ row }) => {
           const members = row.original.Members || [];
           const memberCount = members.length;
@@ -222,26 +219,25 @@ const Page = () => {
         header: "Description",
         id: "Description",
         accessorKey: "Description",
-        size: 350,
+        size: 200,
+        maxSize: 300,
+        enableGlobalFilter: true,
         Cell: ({ row }) => {
           const description = row.original.Description || "";
-          const maxLength = 80;
-          const isTruncated = description.length > maxLength;
 
           return (
-            <Tooltip title={isTruncated ? description : ""} arrow enterDelay={500}>
+            <Tooltip title={description} arrow enterDelay={300}>
               <Typography
                 variant="body2"
                 color="text.secondary"
+                noWrap
                 sx={{
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
+                  maxWidth: 280,
                   overflow: "hidden",
-                  lineHeight: 1.4,
+                  textOverflow: "ellipsis",
                 }}
               >
-                {description || "No description available"}
+                {description || "No description"}
               </Typography>
             </Tooltip>
           );
@@ -477,9 +473,10 @@ const Page = () => {
     [theme]
   );
 
-  // Off-canvas configuration
+  // Off-canvas configuration - extendedInfoFields required to enable flyout trigger
   const offCanvas = useMemo(
     () => ({
+      extendedInfoFields: [], // Empty array - we use children for custom content
       title: "Role Details",
       size: "md",
       children: offCanvasChildren,
@@ -487,11 +484,11 @@ const Page = () => {
     [offCanvasChildren]
   );
 
-  // Default sorting - roles with members first
+  // Default sorting - roles with members first (by member count descending)
   const defaultSorting = useMemo(
     () => [
       {
-        id: "Members",
+        id: "memberCount",
         desc: true,
       },
     ],
@@ -504,6 +501,7 @@ const Page = () => {
         title={pageTitle}
         apiUrl="/api/ListRoles"
         columns={columns}
+        columnsFromApi={false}
         offCanvas={offCanvas}
         queryKey="ListRoles"
         defaultSorting={defaultSorting}
