@@ -657,24 +657,27 @@ const CardView = ({
 
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Stack direction="row" alignItems="center" spacing={0.5} sx={{ width: "100%" }}>
-                    <Typography
-                      variant="subtitle2"
-                      onClick={onCardClick ? () => onCardClick(item) : undefined}
-                      sx={{
-                        fontWeight: 600,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        flex: 1,
-                        cursor: onCardClick ? "pointer" : "default",
-                        "&:hover": onCardClick ? {
-                          textDecoration: "underline",
-                          color: "primary.main",
-                        } : {},
-                      }}
-                    >
-                      {titleValue}
-                    </Typography>
+                    <Tooltip title={titleValue || ""} arrow enterDelay={500} placement="top">
+                      <Typography
+                        variant="subtitle2"
+                        onClick={onCardClick ? () => onCardClick(item) : undefined}
+                        sx={{
+                          fontWeight: 600,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          flex: 1,
+                          minWidth: 0,
+                          cursor: onCardClick ? "pointer" : "default",
+                          "&:hover": onCardClick ? {
+                            textDecoration: "underline",
+                            color: "primary.main",
+                          } : {},
+                        }}
+                      >
+                        {titleValue}
+                      </Typography>
+                    </Tooltip>
                     {/* Compact badges */}
                     {config.badges?.length > 0 && (
                       <Box sx={{ display: "flex", gap: 0.5, ml: "auto", flexShrink: 0 }}>
