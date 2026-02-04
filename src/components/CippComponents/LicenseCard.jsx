@@ -44,12 +44,11 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
     .sort((a, b) => getTotalLicenses(b) - getTotalLicenses(a))
     .map((license) => {
       const name = getLicenseName(license);
-      const shortName = name.length > 28 ? name.substring(0, 25) + "..." : name;
       const total = getTotalLicenses(license);
       const assigned = parseInt(license?.CountUsed || 0) || 0;
       const available = parseInt(license?.CountAvailable || 0) || 0;
       const percentage = total > 0 ? Math.round((assigned / total) * 100) : 0;
-      return { name, shortName, total, assigned, available, percentage };
+      return { name, total, assigned, available, percentage };
     });
 
   const filteredStats = paidLicenses.reduce(
@@ -65,9 +64,9 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
     ? Math.round((filteredStats.assigned / filteredStats.total) * 100) 
     : 0;
 
-  // Consistent pastel blue for all bars - no usage-based coloring
-  // since high usage is good (efficient) and low usage indicates licenses to potentially remove
+  // Pastel blue for assigned licenses, pastel red for available (over-provisioned)
   const barColor = "hsl(210, 55%, 72%)";
+  const barBackgroundColor = "hsl(0, 50%, 85%)"; // Pastel red for unused/available licenses
 
   return (
     <Card sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column" }}>
@@ -173,9 +172,9 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
                   <Box sx={{ flexShrink: 0 }}>
                     <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.25 }}>
                       <Typography variant="caption" noWrap sx={{ flex: 1, mr: 1, fontSize: compact ? "0.7rem" : "0.75rem" }}>
-                        {license.shortName}
+                        {license.name}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: compact ? "0.7rem" : "0.75rem" }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: compact ? "0.7rem" : "0.75rem", flexShrink: 0 }}>
                         {license.assigned}/{license.total}
                       </Typography>
                     </Box>
@@ -185,7 +184,7 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
                       sx={{
                         height: compact ? 5 : 6,
                         borderRadius: 1,
-                        backgroundColor: "hsl(0, 0%, 90%)",
+                        backgroundColor: barBackgroundColor,
                         "& .MuiLinearProgress-bar": {
                           backgroundColor: barColor,
                           borderRadius: 1,
