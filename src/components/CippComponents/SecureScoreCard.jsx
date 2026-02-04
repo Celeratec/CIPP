@@ -1,11 +1,10 @@
 import { Box, Card, CardHeader, CardContent, Typography, Divider, Skeleton } from "@mui/material";
-import { Security as SecurityIcon } from "@mui/icons-material";
+import { Security as SecurityIcon, TrendingUp, TrendingDown, TrendingFlat } from "@mui/icons-material";
 import {
-  LineChart,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
+  RadialBarChart,
+  RadialBar,
+  AreaChart,
+  Area,
   ResponsiveContainer,
   Tooltip as RechartsTooltip,
 } from "recharts";
@@ -14,12 +13,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
   const chartContainerRef = useRef(null);
   const [containerReady, setContainerReady] = useState(false);
-  const chartHeight = compact ? 190 : 250;
   const titleVariant = compact ? "subtitle1" : "h6";
-  const statVariant = compact ? "subtitle1" : "h6";
   const descriptionVariant = compact ? "caption" : "body2";
 
-  // Check if container has valid dimensions - used both in effect and during render
   const hasValidDimensions = useCallback(() => {
     if (!chartContainerRef.current) return false;
     const { width, height } = chartContainerRef.current.getBoundingClientRect();
@@ -34,25 +30,73 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
         setContainerReady(false);
       }
     };
-    
+
     checkContainer();
     const timer = setTimeout(checkContainer, 100);
-    
+
     const resizeObserver = new ResizeObserver(checkContainer);
     if (chartContainerRef.current) {
       resizeObserver.observe(chartContainerRef.current);
     }
-    
+
     return () => {
       clearTimeout(timer);
       resizeObserver.disconnect();
     };
   }, [isLoading, hasValidDimensions]);
 
-  // Synchronous check during render - if state says ready but dimensions are invalid, don't render chart
   const canRenderChart = containerReady && hasValidDimensions();
+
+  // Process data for charts
+  const processedData = data && Array.isArray(data) && data.length > 0 ? (() => {
+    const sortedData = [...data].sort(
+      (a, b) => new Date(a.createdDateTime) - new Date(b.createdDateTime)
+    );
+    const latest = sortedData[sortedData.length - 1];
+    const previous = sortedData.length > 1 ? sortedData[sortedData.length - 2] : null;
+    
+    const currentPercentage = Math.round((latest.currentScore / latest.maxScore) * 100);
+    const previousPercentage = previous 
+      ? Math.round((previous.currentScore / previous.maxScore) * 100)
+      : currentPercentage;
+    
+    const trend = currentPercentage - previousPercentage;
+    
+    const sparklineData = sortedData.map((score) => ({
+      date: new Date(score.createdDateTime).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      percentage: Math.round((score.currentScore / score.maxScore) * 100),
+    }));
+
+    return {
+      currentPercentage,
+      currentScore: latest.currentScore,
+      maxScore: latest.maxScore,
+      trend,
+      sparklineData,
+      gaugeData: [{ name: "Score", value: currentPercentage, fill: "hsl(140, 50%, 65%)" }],
+    };
+  })() : null;
+
+  const getTrendIcon = (trend) => {
+    if (trend > 0) return <TrendingUp sx={{ fontSize: 16, color: "hsl(140, 50%, 50%)" }} />;
+    if (trend < 0) return <TrendingDown sx={{ fontSize: 16, color: "hsl(0, 55%, 60%)" }} />;
+    return <TrendingFlat sx={{ fontSize: 16, color: "text.secondary" }} />;
+  };
+
+  const getTrendColor = (trend) => {
+    if (trend > 0) return "hsl(140, 50%, 50%)";
+    if (trend < 0) return "hsl(0, 55%, 60%)";
+    return "text.secondary";
+  };
+
+  const gaugeHeight = compact ? 140 : 180;
+  const sparklineHeight = compact ? 50 : 60;
+
   return (
-    <Card sx={{ flex: 1, height: "100%" }}>
+    <Card sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
         title={
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -60,180 +104,152 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
             <Typography variant={titleVariant}>Secure Score</Typography>
           </Box>
         }
-        sx={{ pb: compact ? 0.5 : 1 }}
+        sx={{ pb: compact ? 0.5 : 1, flexShrink: 0 }}
       />
-      <CardContent sx={{ pt: compact ? 1.5 : 2, pb: compact ? 1.5 : 2 }}>
+      <CardContent
+        sx={{
+          pt: compact ? 1 : 1.5,
+          pb: compact ? 1 : 1.5,
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}
+      >
         {isLoading ? (
-          <>
-            <Box sx={{ height: chartHeight }}>
-              <Box
-                sx={{ display: "flex", flexDirection: "column", gap: compact ? 1.5 : 2, p: 2 }}
-              >
-                <Skeleton variant="rectangular" width="100%" height={chartHeight - 50} />
-              </Box>
-            </Box>
-            <Typography variant={descriptionVariant} color="text.secondary" sx={{ mt: 1.5 }}>
-              The Secure Score measures your security posture across your tenant.
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            <Skeleton variant="circular" width={gaugeHeight} height={gaugeHeight} />
+            <Skeleton variant="rectangular" width="80%" height={sparklineHeight} />
+          </Box>
+        ) : !processedData ? (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+            }}
+          >
+            <Typography variant={descriptionVariant} color="text.secondary">
+              No secure score data available
             </Typography>
-          </>
-        ) : !data || !Array.isArray(data) || data.length === 0 ? (
-          <>
-            <Box sx={{ height: chartHeight }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "100%",
-                }}
-              >
-                <Typography variant={descriptionVariant} color="text.secondary">
-                  No secure score data available
-                </Typography>
-              </Box>
-            </Box>
-            <Typography variant={descriptionVariant} color="text.secondary" sx={{ mt: 1.5 }}>
-              The Secure Score measures your security posture across your tenant.
-            </Typography>
-          </>
+          </Box>
         ) : (
-          <>
-            <Box ref={chartContainerRef} sx={{ height: chartHeight, minWidth: 0 }}>
-              {canRenderChart ? (
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                  minWidth={0}
-                  minHeight={0}
-                  debounce={50}
-                >
-                  {(() => {
-                    const sortedData = [...data].sort(
-                      (a, b) => new Date(a.createdDateTime) - new Date(b.createdDateTime)
-                    );
-                    const chartData = sortedData.map((score) => ({
-                      date: new Date(score.createdDateTime).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      }),
-                      score: score.currentScore,
-                      percentage: Math.round((score.currentScore / score.maxScore) * 100),
-                    }));
-                    const ticks = chartData.map((d) => d.date);
-                    const maxScore = Math.max(...sortedData.map((score) => score.maxScore || 0), 0);
-                    return (
-                      <LineChart
-                        data={chartData}
-                        margin={{ left: 12, right: 12, top: 10, bottom: 10 }}
+          <Box ref={chartContainerRef} sx={{ minWidth: 0 }}>
+            {canRenderChart && (
+              <>
+                {/* Gauge Chart with percentage in center */}
+                <Box sx={{ position: "relative", height: gaugeHeight }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadialBarChart
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="70%"
+                      outerRadius="90%"
+                      startAngle={90}
+                      endAngle={-270}
+                      data={processedData.gaugeData}
+                      barSize={compact ? 12 : 16}
+                    >
+                      <RadialBar
+                        background={{ fill: "hsl(0, 0%, 90%)" }}
+                        dataKey="value"
+                        cornerRadius={10}
+                      />
+                    </RadialBarChart>
+                  </ResponsiveContainer>
+                  {/* Center text overlay */}
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      textAlign: "center",
+                    }}
+                  >
+                    <Typography
+                      variant={compact ? "h4" : "h3"}
+                      fontWeight="bold"
+                      sx={{ lineHeight: 1 }}
+                    >
+                      {processedData.currentPercentage}%
+                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5, mt: 0.5 }}>
+                      {getTrendIcon(processedData.trend)}
+                      <Typography
+                        variant="caption"
+                        sx={{ color: getTrendColor(processedData.trend) }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                        <XAxis
-                          dataKey="date"
-                          tick={{ fontSize: 11 }}
-                          tickMargin={6}
-                          ticks={ticks}
-                          interval={compact ? 1 : 0}
-                          height={compact ? 40 : 50}
-                          tickFormatter={(value) => value.replace(" ", "\n")}
-                        />
-                        <YAxis
-                          tick={{ fontSize: 12 }}
-                          tickMargin={8}
-                          domain={[0, maxScore]}
-                          tickFormatter={(value) => Math.round(value)}
-                        />
-                        <RechartsTooltip
-                          contentStyle={{
-                            backgroundColor: "rgba(255,255,255,0.85)",
-                            color: "inherit",
-                            border: "1px solid #bbb",
-                            borderRadius: "4px",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                            backdropFilter: "blur(2px)",
-                          }}
-                          labelStyle={{
-                            color: "#000000",
-                          }}
-                          formatter={(value, name) => {
-                            if (name === "score") return [value.toFixed(2), "Score"];
-                            if (name === "percentage") return [value + "%", "Percentage"];
-                            return value;
-                          }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="score"
-                          stroke="hsl(140, 50%, 65%)"
-                          strokeWidth={2}
-                          dot={{ fill: "hsl(140, 50%, 65%)", r: 4 }}
-                          activeDot={{ r: 6 }}
-                        />
-                      </LineChart>
-                    );
-                  })()}
-                </ResponsiveContainer>
-              ) : (
-                <Skeleton variant="rectangular" width="100%" height={250} />
-              )}
-            </Box>
-            <Typography variant={descriptionVariant} color="text.secondary" sx={{ mt: 1.5 }}>
-              The Secure Score measures your security posture across your tenant.
-            </Typography>
-          </>
+                        {processedData.trend > 0 ? "+" : ""}
+                        {processedData.trend}%
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+
+                {/* Sparkline for trend */}
+                <Box sx={{ height: sparklineHeight, mt: 1 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={processedData.sparklineData}
+                      margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+                    >
+                      <defs>
+                        <linearGradient id="sparklineGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(140, 50%, 65%)" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(140, 50%, 65%)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <RechartsTooltip
+                        contentStyle={{
+                          backgroundColor: "rgba(255,255,255,0.95)",
+                          border: "1px solid #ddd",
+                          borderRadius: "4px",
+                          fontSize: "12px",
+                        }}
+                        formatter={(value) => [`${value}%`, "Score"]}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="percentage"
+                        stroke="hsl(140, 50%, 65%)"
+                        strokeWidth={2}
+                        fill="url(#sparklineGradient)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
+
+                <Typography
+                  variant={descriptionVariant}
+                  color="text.secondary"
+                  sx={{ mt: 1, textAlign: "center" }}
+                >
+                  {processedData.currentScore.toFixed(1)} / {processedData.maxScore.toFixed(1)} points
+                </Typography>
+              </>
+            )}
+            {!canRenderChart && (
+              <Skeleton variant="rectangular" width="100%" height={gaugeHeight + sparklineHeight} />
+            )}
+          </Box>
         )}
       </CardContent>
-      <Divider />
-      <CardContent sx={{ pt: compact ? 1.5 : 2, pb: compact ? 1.5 : 2 }}>
+      <Divider sx={{ flexShrink: 0 }} />
+      <CardContent sx={{ pt: compact ? 1 : 1.5, pb: compact ? 1.5 : 2, flexShrink: 0 }}>
         {isLoading ? (
-          <Box sx={{ display: "flex", gap: compact ? 1.5 : 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <Skeleton width={80} height={60} />
-            </Box>
-            <Divider orientation="vertical" flexItem />
-            <Box sx={{ flex: 1 }}>
-              <Skeleton width={80} height={60} />
-            </Box>
-            <Divider orientation="vertical" flexItem />
-            <Box sx={{ flex: 1 }}>
-              <Skeleton width={80} height={60} />
-            </Box>
-          </Box>
-        ) : !data || !Array.isArray(data) || data.length === 0 ? (
-          <Typography variant={descriptionVariant} color="text.secondary">
+          <Typography variant={descriptionVariant} color="text.secondary" sx={{ textAlign: "center" }}>
+            Loading secure score data...
+          </Typography>
+        ) : !processedData ? (
+          <Typography variant={descriptionVariant} color="text.secondary" sx={{ textAlign: "center" }}>
             Enable secure score monitoring in your tenant
           </Typography>
         ) : (
-          <Box sx={{ display: "flex", gap: compact ? 1.5 : 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Latest %
-              </Typography>
-              <Typography variant={statVariant} fontWeight="bold">
-                {Math.round(
-                  (data[data.length - 1].currentScore / data[data.length - 1].maxScore) * 100
-                )}
-                %
-              </Typography>
-            </Box>
-            <Divider orientation="vertical" flexItem />
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Current Score
-              </Typography>
-              <Typography variant={statVariant} fontWeight="bold">
-                {data[data.length - 1].currentScore.toFixed(2)}
-              </Typography>
-            </Box>
-            <Divider orientation="vertical" flexItem />
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Max Score
-              </Typography>
-              <Typography variant={statVariant} fontWeight="bold">
-                {data[data.length - 1].maxScore.toFixed(2)}
-              </Typography>
-            </Box>
-          </Box>
+          <Typography variant={descriptionVariant} color="text.secondary" sx={{ textAlign: "center" }}>
+            Secure Score measures your security posture across your tenant
+          </Typography>
         )}
       </CardContent>
     </Card>

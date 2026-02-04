@@ -438,24 +438,20 @@ const Page = () => {
               </Box>
             </Grid>
           </Grid>
-          <Grid container spacing={1.5}>
-            <Grid size={{ xs: 12, lg: 6 }}>
-              <Box sx={{ height: compactWideCardHeight }}>
-                <AuthMethodCard
-                  data={testsApi.data?.MFAState}
-                  isLoading={testsApi.isFetching}
-                  compact
-                />
-              </Box>
+          <Grid container spacing={1.5} sx={{ alignItems: "stretch" }}>
+            <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex" }}>
+              <AuthMethodCard
+                data={testsApi.data?.MFAState}
+                isLoading={testsApi.isFetching}
+                compact
+              />
             </Grid>
-            <Grid size={{ xs: 12, lg: 6 }}>
-              <Box sx={{ minHeight: compactWideCardHeight }}>
-                <LicenseCard
-                  data={testsApi.data?.LicenseData}
-                  isLoading={testsApi.isFetching}
-                  compact
-                />
-              </Box>
+            <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex" }}>
+              <LicenseCard
+                data={testsApi.data?.LicenseData}
+                isLoading={testsApi.isFetching}
+                compact
+              />
             </Grid>
           </Grid>
         </Box>

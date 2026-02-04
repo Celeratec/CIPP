@@ -196,7 +196,7 @@ export const AuthMethodCard = ({ data, isLoading, compact = false }) => {
   };
 
   return (
-    <Card sx={{ flex: 1, height: "100%" }}>
+    <Card sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
         title={
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -204,10 +204,10 @@ export const AuthMethodCard = ({ data, isLoading, compact = false }) => {
             <Typography variant={titleVariant}>All users auth methods</Typography>
           </Box>
         }
-        sx={{ pb: compact ? 0.5 : 1 }}
+        sx={{ pb: compact ? 0.5 : 1, flexShrink: 0 }}
       />
-      <CardContent sx={{ pb: compact ? 1.5 : 2, pt: compact ? 1.5 : 2 }}>
-        <Box sx={{ height: chartHeight }}>
+      <CardContent sx={{ pb: compact ? 1.5 : 2, pt: compact ? 1.5 : 2, flex: 1, display: "flex", flexDirection: "column" }}>
+        <Box sx={{ flex: 1, minHeight: chartHeight }}>
           {isLoading ? (
             <Skeleton variant="rectangular" width="100%" height={chartHeight} />
           ) : processedData ? (
@@ -234,7 +234,7 @@ export const AuthMethodCard = ({ data, isLoading, compact = false }) => {
         </Box>
       </CardContent>
       {!isLoading && processedData?.description && (
-        <CardContent sx={{ pt: compact ? 1 : 2, pb: compact ? 1.5 : 2 }}>
+        <CardContent sx={{ pt: compact ? 1 : 2, pb: compact ? 1.5 : 2, flexShrink: 0 }}>
           <Typography variant={descriptionVariant} color="text.secondary">
             {processedData.description}
           </Typography>

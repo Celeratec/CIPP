@@ -1,12 +1,11 @@
-import { Box, Card, CardHeader, CardContent, Typography, Divider, Skeleton } from "@mui/material";
+import { Box, Card, CardHeader, CardContent, Typography, Divider, Skeleton, LinearProgress, Tooltip } from "@mui/material";
 import { CardMembership as CardMembershipIcon } from "@mui/icons-material";
-import { CippSankey } from "./CippSankey";
 
 export const LicenseCard = ({ data, isLoading, compact = false }) => {
-  const chartHeight = compact ? 160 : 300;
   const titleVariant = compact ? "subtitle1" : "h6";
   const listTextVariant = compact ? "caption" : "body2";
   const listTitleVariant = compact ? "subtitle2" : "subtitle1";
+  const statValueVariant = compact ? "h5" : "h4";
 
   const getLicenseName = (license) =>
     license?.License || license?.skuPartNumber || license?.SkuPartNumber || "Unknown License";
@@ -21,81 +20,26 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
     const isFree = nameLower.includes("free");
     return isTrial || isFree;
   };
-  const processData = () => {
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      return null;
-    }
 
-    const topLicenses = data
-      .filter(
-        (license) =>
-          license &&
-          getTotalLicenses(license) > 0 &&
-          !isTrialOrFreeLicense(license)
-      )
-      .sort((a, b) => getTotalLicenses(b) - getTotalLicenses(a))
-      .slice(0, 5);
-
-    if (topLicenses.length === 0) {
-      return null;
-    }
-
-    const nodes = [];
-    const links = [];
-
-    topLicenses.forEach((license, index) => {
-      if (license) {
-        const licenseName = getLicenseName(license);
-        const shortName =
-          licenseName.length > 30 ? licenseName.substring(0, 27) + "..." : licenseName;
-
-        const assigned = parseInt(license?.CountUsed || 0) || 0;
-        const available = parseInt(license?.CountAvailable || 0) || 0;
-
-        nodes.push({
-          id: shortName,
-          nodeColor: `hsl(${210 + index * 25}, 55%, 75%)`,
-        });
-
-        const assignedId = `${shortName} - Assigned`;
-        const availableId = `${shortName} - Available`;
-
-        if (assigned > 0) {
-          nodes.push({
-            id: assignedId,
-            nodeColor: "hsl(140, 50%, 72%)",
-          });
-
-          links.push({
-            source: shortName,
-            target: assignedId,
-            value: assigned,
-          });
-        }
-
-        if (available > 0) {
-          nodes.push({
-            id: availableId,
-            nodeColor: "hsl(35, 60%, 75%)",
-          });
-
-          links.push({
-            source: shortName,
-            target: availableId,
-            value: available,
-          });
-        }
-      }
+  // Get top licenses for the bar chart
+  const topLicenses = (data || [])
+    .filter(
+      (license) =>
+        license &&
+        getTotalLicenses(license) > 0 &&
+        !isTrialOrFreeLicense(license)
+    )
+    .sort((a, b) => getTotalLicenses(b) - getTotalLicenses(a))
+    .slice(0, 5)
+    .map((license) => {
+      const name = getLicenseName(license);
+      const shortName = name.length > 25 ? name.substring(0, 22) + "..." : name;
+      const total = getTotalLicenses(license);
+      const assigned = parseInt(license?.CountUsed || 0) || 0;
+      const available = parseInt(license?.CountAvailable || 0) || 0;
+      const percentage = total > 0 ? Math.round((assigned / total) * 100) : 0;
+      return { name, shortName, total, assigned, available, percentage };
     });
-
-    if (nodes.length === 0 || links.length === 0) {
-      return null;
-    }
-
-    return { nodes, links };
-  };
-
-  const processedData = processData();
 
   const trialFreeLicenses = (data || [])
     .filter((license) => license && getTotalLicenses(license) > 0 && isTrialOrFreeLicense(license))
@@ -125,8 +69,18 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
       { total: 0, assigned: 0, available: 0 }
     );
 
+  const overallPercentage = filteredStats.total > 0 
+    ? Math.round((filteredStats.assigned / filteredStats.total) * 100) 
+    : 0;
+
+  const getUsageColor = (percentage) => {
+    if (percentage >= 90) return "hsl(0, 55%, 65%)"; // Red - critical
+    if (percentage >= 75) return "hsl(35, 65%, 60%)"; // Orange - warning
+    return "hsl(210, 55%, 65%)"; // Blue - normal
+  };
+
   return (
-    <Card sx={{ flex: 1, height: "100%" }}>
+    <Card sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
         title={
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -134,76 +88,97 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
             <Typography variant={titleVariant}>License Overview</Typography>
           </Box>
         }
-        sx={{ pb: compact ? 0.5 : 1 }}
+        sx={{ pb: compact ? 0.5 : 1, flexShrink: 0 }}
       />
-      <CardContent sx={{ pb: compact ? 1 : 2, pt: compact ? 1 : 2 }}>
-        <Box sx={{ height: chartHeight }}>
-          {isLoading ? (
-            <Skeleton variant="rectangular" width="100%" height={chartHeight} />
-          ) : processedData ? (
-            <CippSankey data={{ nodes: processedData.nodes, links: processedData.links }} />
-          ) : (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: "100%",
-              }}
-            >
-              <Typography variant="body2" color="text.secondary">
-                No license data available
-              </Typography>
-            </Box>
-          )}
-        </Box>
-      </CardContent>
-      <Divider />
-      <CardContent sx={{ pt: compact ? 1 : 2, pb: compact ? 1 : 2 }}>
+      <CardContent sx={{ pb: compact ? 1 : 2, pt: compact ? 1 : 2, flex: 1, display: "flex", flexDirection: "column" }}>
         {isLoading ? (
-          <Box sx={{ display: "flex", gap: compact ? 1.5 : 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <Skeleton width={80} height={20} sx={{ mb: 1 }} />
-              <Skeleton width={60} height={32} />
+          <Box sx={{ display: "flex", gap: 3, flex: 1 }}>
+            <Box sx={{ width: "35%" }}>
+              <Skeleton variant="rectangular" height={100} />
             </Box>
-            <Divider orientation="vertical" flexItem />
             <Box sx={{ flex: 1 }}>
-              <Skeleton width={80} height={20} sx={{ mb: 1 }} />
-              <Skeleton width={60} height={32} />
-            </Box>
-            <Divider orientation="vertical" flexItem />
-            <Box sx={{ flex: 1 }}>
-              <Skeleton width={80} height={20} sx={{ mb: 1 }} />
-              <Skeleton width={60} height={32} />
+              <Skeleton height={24} sx={{ mb: 1 }} />
+              <Skeleton height={24} sx={{ mb: 1 }} />
+              <Skeleton height={24} sx={{ mb: 1 }} />
+              <Skeleton height={24} sx={{ mb: 1 }} />
+              <Skeleton height={24} />
             </Box>
           </Box>
-        ) : data && Array.isArray(data) && data.length > 0 ? (
-          <Box sx={{ display: "flex", gap: compact ? 1.5 : 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Total Licenses
-              </Typography>
-              <Typography variant={listTitleVariant} fontWeight="bold">
-                {filteredStats.total.toLocaleString()}
-              </Typography>
+        ) : data && Array.isArray(data) && data.length > 0 && topLicenses.length > 0 ? (
+          <Box sx={{ display: "flex", gap: compact ? 2 : 3, flex: 1 }}>
+            {/* Left side - Stats summary */}
+            <Box sx={{ 
+              width: compact ? "30%" : "35%", 
+              display: "flex", 
+              flexDirection: "column", 
+              justifyContent: "center",
+              pr: 2,
+              borderRight: 1,
+              borderColor: "divider"
+            }}>
+              <Box sx={{ textAlign: "center", mb: 2 }}>
+                <Typography variant={statValueVariant} fontWeight="bold" sx={{ lineHeight: 1 }}>
+                  {overallPercentage}%
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Overall Usage
+                </Typography>
+              </Box>
+              
+              <Box sx={{ mb: 1.5 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">Total</Typography>
+                  <Typography variant="caption" fontWeight="bold">{filteredStats.total.toLocaleString()}</Typography>
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">Assigned</Typography>
+                  <Typography variant="caption" fontWeight="bold" sx={{ color: "hsl(210, 55%, 55%)" }}>
+                    {filteredStats.assigned.toLocaleString()}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="caption" color="text.secondary">Available</Typography>
+                  <Typography variant="caption" fontWeight="bold" sx={{ color: "hsl(140, 50%, 45%)" }}>
+                    {filteredStats.available.toLocaleString()}
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
-            <Divider orientation="vertical" flexItem />
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Assigned
-              </Typography>
-              <Typography variant={listTitleVariant} fontWeight="bold">
-                {filteredStats.assigned.toLocaleString()}
-              </Typography>
-            </Box>
-            <Divider orientation="vertical" flexItem />
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Available
-              </Typography>
-              <Typography variant={listTitleVariant} fontWeight="bold">
-                {filteredStats.available.toLocaleString()}
-              </Typography>
+
+            {/* Right side - License bars */}
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: compact ? 1 : 1.5 }}>
+              {topLicenses.map((license) => (
+                <Tooltip 
+                  key={license.name}
+                  title={`${license.name}: ${license.assigned.toLocaleString()} / ${license.total.toLocaleString()} (${license.percentage}% used)`}
+                  arrow
+                  placement="top"
+                >
+                  <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.25 }}>
+                      <Typography variant="caption" noWrap sx={{ flex: 1, mr: 1 }}>
+                        {license.shortName}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {license.percentage}%
+                      </Typography>
+                    </Box>
+                    <LinearProgress
+                      variant="determinate"
+                      value={license.percentage}
+                      sx={{
+                        height: compact ? 6 : 8,
+                        borderRadius: 1,
+                        backgroundColor: "hsl(0, 0%, 90%)",
+                        "& .MuiLinearProgress-bar": {
+                          backgroundColor: getUsageColor(license.percentage),
+                          borderRadius: 1,
+                        },
+                      }}
+                    />
+                  </Box>
+                </Tooltip>
+              ))}
             </Box>
           </Box>
         ) : (
@@ -212,28 +187,27 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              py: 2,
+              flex: 1,
             }}
           >
             <Typography variant="body2" color="text.secondary">
-              No license statistics available
+              No license data available
             </Typography>
           </Box>
         )}
       </CardContent>
 
-      <Divider />
-      <CardContent sx={{ pt: compact ? 1 : 2, pb: compact ? 1.5 : 2 }}>
-        <Typography variant={listTitleVariant}>Trial / Free licenses</Typography>
+      <Divider sx={{ flexShrink: 0 }} />
+      <CardContent sx={{ pt: compact ? 1 : 1.5, pb: compact ? 1.5 : 2, flexShrink: 0 }}>
+        <Typography variant={listTitleVariant} sx={{ mb: compact ? 0.5 : 1 }}>Trial / Free licenses</Typography>
         {isLoading ? (
-          <Box sx={{ mt: compact ? 0.5 : 1 }}>
-            <Skeleton height={18} sx={{ mb: 0.5 }} />
+          <Box>
             <Skeleton height={18} sx={{ mb: 0.5 }} />
             <Skeleton height={18} />
           </Box>
         ) : trialFreeLicenses.length > 0 ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: compact ? 0.25 : 0.5, mt: compact ? 0.5 : 1 }}>
-            {trialFreeLicenses.map((license) => (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+            {trialFreeLicenses.slice(0, 3).map((license) => (
               <Box
                 key={`${license.name}-${license.typeLabel}`}
                 sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}
@@ -246,9 +220,14 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
                 </Typography>
               </Box>
             ))}
+            {trialFreeLicenses.length > 3 && (
+              <Typography variant="caption" color="text.secondary">
+                +{trialFreeLicenses.length - 3} more
+              </Typography>
+            )}
           </Box>
         ) : (
-          <Typography variant={listTextVariant} color="text.secondary" sx={{ mt: compact ? 0.5 : 1 }}>
+          <Typography variant={listTextVariant} color="text.secondary">
             No trial or free licenses found
           </Typography>
         )}
