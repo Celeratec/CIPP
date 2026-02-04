@@ -19,6 +19,7 @@ import { LicenseCard } from "../../components/CippComponents/LicenseCard";
 import { TenantInfoCard } from "../../components/CippComponents/TenantInfoCard";
 import { TenantMetricsGrid } from "../../components/CippComponents/TenantMetricsGrid";
 import { AssessmentCard } from "../../components/CippComponents/AssessmentCard";
+import { CippChartCard } from "../../components/CippCards/CippChartCard";
 import { CippApiDialog } from "../../components/CippComponents/CippApiDialog";
 import { CippAddTestReportDrawer } from "../../components/CippComponents/CippAddTestReportDrawer";
 import CippFormComponent from "../../components/CippComponents/CippFormComponent";
@@ -95,6 +96,12 @@ const Page = () => {
   const organization = ApiGetCall({
     url: "/api/ListOrg",
     queryKey: `${currentTenant}-ListOrg`,
+    data: { tenantFilter: currentTenant },
+  });
+
+  const sharepoint = ApiGetCall({
+    url: "/api/ListSharepointQuota",
+    queryKey: `${currentTenant}-ListSharepointQuota`,
     data: { tenantFilter: currentTenant },
   });
 
@@ -219,6 +226,17 @@ const Page = () => {
     }
     return num.toLocaleString();
   };
+
+  const formatStorageSize = (sizeInMB) => {
+    if (!sizeInMB && sizeInMB !== 0) return "0MB";
+    if (sizeInMB >= 1024) {
+      return `${(sizeInMB / 1024).toFixed(2)}GB`;
+    }
+    return `${sizeInMB}MB`;
+  };
+
+  const compactCardHeight = smDown ? "auto" : 360;
+  const compactWideCardHeight = smDown ? "auto" : 340;
 
   return (
     <Container maxWidth={false} sx={{ mt: 12, mb: 4 }}>
@@ -382,44 +400,54 @@ const Page = () => {
 
         {/* Identity Section - 2 Column Grid */}
         <Box sx={{ mt: 3, mb: 2 }}>
-          <Grid container spacing={1.5}>
-            {/* Left Column */}
-            <Grid size={{ xs: 12, lg: 6 }}>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, height: "100%" }}>
-                <Box sx={{ height: 450 }}>
-                  <SecureScoreCard
-                    data={testsApi.data?.SecureScore}
-                    isLoading={testsApi.isFetching}
-                    sx={{ height: "100%" }}
-                  />
-                </Box>
-                <Box sx={{ height: 450 }}>
-                  <AuthMethodCard
-                    data={testsApi.data?.MFAState}
-                    isLoading={testsApi.isFetching}
-                    sx={{ height: "100%" }}
-                  />
-                </Box>
+          <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
+            <Grid size={{ xs: 12, lg: 4 }}>
+              <Box sx={{ height: compactCardHeight }}>
+                <SecureScoreCard data={testsApi.data?.SecureScore} isLoading={testsApi.isFetching} compact />
               </Box>
             </Grid>
-
-            {/* Right Column */}
+            <Grid size={{ xs: 12, lg: 4 }}>
+              <Box sx={{ height: compactCardHeight }}>
+                <CippChartCard
+                  title="SharePoint Quota"
+                  isFetching={sharepoint.isFetching}
+                  chartType="donut"
+                  chartSeries={[
+                    Number(sharepoint.data?.TenantStorageMB - sharepoint.data?.GeoUsedStorageMB) || 0,
+                    Number(sharepoint.data?.GeoUsedStorageMB) || 0,
+                  ]}
+                  labels={[
+                    `Free (${formatStorageSize(
+                      sharepoint.data?.TenantStorageMB - sharepoint.data?.GeoUsedStorageMB
+                    )})`,
+                    `Used (${formatStorageSize(sharepoint.data?.GeoUsedStorageMB)})`,
+                  ]}
+                />
+              </Box>
+            </Grid>
+            <Grid size={{ xs: 12, lg: 4 }}>
+              <Box sx={{ height: compactCardHeight }}>
+                <MFACard data={testsApi.data?.MFAState} isLoading={testsApi.isFetching} compact />
+              </Box>
+            </Grid>
+          </Grid>
+          <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, lg: 6 }}>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, height: "100%" }}>
-                <Box sx={{ height: 450 }}>
-                  <MFACard
-                    data={testsApi.data?.MFAState}
-                    isLoading={testsApi.isFetching}
-                    sx={{ height: "100%" }}
-                  />
-                </Box>
-                <Box sx={{ height: 450 }}>
-                  <LicenseCard
-                    data={testsApi.data?.LicenseData}
-                    isLoading={testsApi.isFetching}
-                    sx={{ height: "100%" }}
-                  />
-                </Box>
+              <Box sx={{ height: compactWideCardHeight }}>
+                <AuthMethodCard
+                  data={testsApi.data?.MFAState}
+                  isLoading={testsApi.isFetching}
+                  compact
+                />
+              </Box>
+            </Grid>
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Box sx={{ height: compactWideCardHeight }}>
+                <LicenseCard
+                  data={testsApi.data?.LicenseData}
+                  isLoading={testsApi.isFetching}
+                  compact
+                />
               </Box>
             </Grid>
           </Grid>

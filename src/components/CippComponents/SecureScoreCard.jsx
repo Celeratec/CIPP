@@ -11,9 +11,13 @@ import {
 } from "recharts";
 import { useState, useEffect, useRef, useCallback } from "react";
 
-export const SecureScoreCard = ({ data, isLoading }) => {
+export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
   const chartContainerRef = useRef(null);
   const [containerReady, setContainerReady] = useState(false);
+  const chartHeight = compact ? 190 : 250;
+  const titleVariant = compact ? "subtitle1" : "h6";
+  const statVariant = compact ? "subtitle1" : "h6";
+  const descriptionVariant = compact ? "caption" : "body2";
 
   // Check if container has valid dimensions - used both in effect and during render
   const hasValidDimensions = useCallback(() => {
@@ -48,31 +52,33 @@ export const SecureScoreCard = ({ data, isLoading }) => {
   // Synchronous check during render - if state says ready but dimensions are invalid, don't render chart
   const canRenderChart = containerReady && hasValidDimensions();
   return (
-    <Card sx={{ flex: 1, height: '100%' }}>
+    <Card sx={{ flex: 1, height: "100%" }}>
       <CardHeader
         title={
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <SecurityIcon sx={{ fontSize: 24 }} />
-            <Typography variant="h6">Secure Score</Typography>
+            <SecurityIcon sx={{ fontSize: compact ? 20 : 24 }} />
+            <Typography variant={titleVariant}>Secure Score</Typography>
           </Box>
         }
-        sx={{ pb: 1 }}
+        sx={{ pb: compact ? 0.5 : 1 }}
       />
-      <CardContent>
+      <CardContent sx={{ pt: compact ? 1.5 : 2 }}>
         {isLoading ? (
           <>
-            <Box sx={{ height: 250 }}>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2, p: 2 }}>
-                <Skeleton variant="rectangular" width="100%" height={200} />
+            <Box sx={{ height: chartHeight }}>
+              <Box
+                sx={{ display: "flex", flexDirection: "column", gap: compact ? 1.5 : 2, p: 2 }}
+              >
+                <Skeleton variant="rectangular" width="100%" height={chartHeight - 50} />
               </Box>
             </Box>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            <Typography variant={descriptionVariant} color="text.secondary" sx={{ mt: 1.5 }}>
               The Secure Score measures your security posture across your tenant.
             </Typography>
           </>
         ) : !data || !Array.isArray(data) || data.length === 0 ? (
           <>
-            <Box sx={{ height: 250 }}>
+            <Box sx={{ height: chartHeight }}>
               <Box
                 sx={{
                   display: "flex",
@@ -81,20 +87,26 @@ export const SecureScoreCard = ({ data, isLoading }) => {
                   height: "100%",
                 }}
               >
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant={descriptionVariant} color="text.secondary">
                   No secure score data available
                 </Typography>
               </Box>
             </Box>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            <Typography variant={descriptionVariant} color="text.secondary" sx={{ mt: 1.5 }}>
               The Secure Score measures your security posture across your tenant.
             </Typography>
           </>
         ) : (
           <>
-            <Box ref={chartContainerRef} sx={{ height: 250, minWidth: 0 }}>
+            <Box ref={chartContainerRef} sx={{ height: chartHeight, minWidth: 0 }}>
               {canRenderChart ? (
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  minWidth={0}
+                  minHeight={0}
+                  debounce={50}
+                >
                   {(() => {
                     const sortedData = [...data].sort((a, b) => new Date(a.createdDateTime) - new Date(b.createdDateTime));
                     const chartData = sortedData.map((score) => ({
@@ -159,16 +171,16 @@ export const SecureScoreCard = ({ data, isLoading }) => {
                 <Skeleton variant="rectangular" width="100%" height={250} />
               )}
             </Box>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            <Typography variant={descriptionVariant} color="text.secondary" sx={{ mt: 1.5 }}>
               The Secure Score measures your security posture across your tenant.
             </Typography>
           </>
         )}
       </CardContent>
       <Divider />
-      <CardContent sx={{ pt: 2 }}>
+      <CardContent sx={{ pt: compact ? 1.5 : 2 }}>
         {isLoading ? (
-          <Box sx={{ display: "flex", gap: 2 }}>
+          <Box sx={{ display: "flex", gap: compact ? 1.5 : 2 }}>
             <Box sx={{ flex: 1 }}>
               <Skeleton width={80} height={60} />
             </Box>
@@ -182,16 +194,16 @@ export const SecureScoreCard = ({ data, isLoading }) => {
             </Box>
           </Box>
         ) : !data || !Array.isArray(data) || data.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant={descriptionVariant} color="text.secondary">
             Enable secure score monitoring in your tenant
           </Typography>
         ) : (
-          <Box sx={{ display: "flex", gap: 2 }}>
+          <Box sx={{ display: "flex", gap: compact ? 1.5 : 2 }}>
             <Box sx={{ flex: 1 }}>
               <Typography variant="caption" color="text.secondary">
                 Latest %
               </Typography>
-              <Typography variant="h6" fontWeight="bold">
+              <Typography variant={statVariant} fontWeight="bold">
                 {Math.round(
                   (data[data.length - 1].currentScore / data[data.length - 1].maxScore) * 100
                 )}
@@ -203,7 +215,7 @@ export const SecureScoreCard = ({ data, isLoading }) => {
               <Typography variant="caption" color="text.secondary">
                 Current Score
               </Typography>
-              <Typography variant="h6" fontWeight="bold">
+              <Typography variant={statVariant} fontWeight="bold">
                 {data[data.length - 1].currentScore.toFixed(2)}
               </Typography>
             </Box>
@@ -212,7 +224,7 @@ export const SecureScoreCard = ({ data, isLoading }) => {
               <Typography variant="caption" color="text.secondary">
                 Max Score
               </Typography>
-              <Typography variant="h6" fontWeight="bold">
+              <Typography variant={statVariant} fontWeight="bold">
                 {data[data.length - 1].maxScore.toFixed(2)}
               </Typography>
             </Box>

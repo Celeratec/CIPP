@@ -3,8 +3,11 @@ import { People as UsersIcon } from "@mui/icons-material";
 import { CippSankey } from "./CippSankey";
 import { useRouter } from "next/router";
 
-export const AuthMethodCard = ({ data, isLoading }) => {
+export const AuthMethodCard = ({ data, isLoading, compact = false }) => {
   const router = useRouter();
+  const chartHeight = compact ? 220 : 300;
+  const titleVariant = compact ? "subtitle1" : "h6";
+  const descriptionVariant = compact ? "caption" : "body2";
 
   const processData = () => {
     if (!data || !Array.isArray(data) || data.length === 0) {
@@ -197,16 +200,16 @@ export const AuthMethodCard = ({ data, isLoading }) => {
       <CardHeader
         title={
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <UsersIcon sx={{ fontSize: 24 }} />
-            <Typography variant="h6">All users auth methods</Typography>
+            <UsersIcon sx={{ fontSize: compact ? 20 : 24 }} />
+            <Typography variant={titleVariant}>All users auth methods</Typography>
           </Box>
         }
-        sx={{ pb: 1 }}
+        sx={{ pb: compact ? 0.5 : 1 }}
       />
-      <CardContent sx={{ pb: 0 }}>
-        <Box sx={{ height: 300 }}>
+      <CardContent sx={{ pb: compact ? 0.5 : 0, pt: compact ? 1.5 : 2 }}>
+        <Box sx={{ height: chartHeight }}>
           {isLoading ? (
-            <Skeleton variant="rectangular" width="100%" height={300} />
+            <Skeleton variant="rectangular" width="100%" height={chartHeight} />
           ) : processedData ? (
             <CippSankey
               data={{ nodes: processedData.nodes, links: processedData.links }}
@@ -223,7 +226,7 @@ export const AuthMethodCard = ({ data, isLoading }) => {
                 width: "100%",
               }}
             >
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant={descriptionVariant} color="text.secondary">
                 No authentication method data available
               </Typography>
             </Box>
@@ -231,8 +234,8 @@ export const AuthMethodCard = ({ data, isLoading }) => {
         </Box>
       </CardContent>
       {!isLoading && processedData?.description && (
-        <CardContent sx={{ pt: 2 }}>
-          <Typography variant="body2" color="text.secondary">
+        <CardContent sx={{ pt: compact ? 1 : 2 }}>
+          <Typography variant={descriptionVariant} color="text.secondary">
             {processedData.description}
           </Typography>
         </CardContent>
