@@ -1,14 +1,24 @@
-import { Box, Card, CardHeader, CardContent, Typography, Skeleton, LinearProgress, Tooltip } from "@mui/material";
-import { CardMembership as CardMembershipIcon } from "@mui/icons-material";
+import { Box, Card, CardHeader, CardContent, Typography, Skeleton, LinearProgress, Tooltip, Divider } from "@mui/material";
+import { CardMembership as CardMembershipIcon, CheckCircle, Cancel } from "@mui/icons-material";
 
 export const LicenseCard = ({ data, isLoading, compact = false }) => {
   const titleVariant = compact ? "subtitle1" : "h6";
-  const statValueVariant = compact ? "h5" : "h4";
+  const statValueVariant = compact ? "h4" : "h3";
 
   const getLicenseName = (license) =>
     license?.License || license?.skuPartNumber || license?.SkuPartNumber || "Unknown License";
 
   const getTotalLicenses = (license) => parseInt(license?.TotalLicenses || 0) || 0;
+
+  // Tenant-level licenses that shouldn't be counted in user assignment metrics
+  const isTenantLevelLicense = (name) => {
+    const nameLower = name.toLowerCase();
+    return (
+      nameLower.includes("entra id p2") ||
+      nameLower.includes("azure ad premium p2") ||
+      nameLower.includes("aad_premium_p2")
+    );
+  };
 
   // Filter out trial, free, and developer licenses - we only want paid licenses
   const isPaidLicense = (license) => {
@@ -33,13 +43,20 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
     return !isTrial && !isFreeOrDev;
   };
 
-  // Get all paid licenses sorted by total count
+  // Check if tenant has Entra ID P2 license
+  const hasEntraP2 = (data || []).some((license) => {
+    const name = getLicenseName(license);
+    return isTenantLevelLicense(name) && getTotalLicenses(license) > 0;
+  });
+
+  // Get all paid licenses sorted by total count (excluding tenant-level licenses)
   const paidLicenses = (data || [])
     .filter(
       (license) =>
         license &&
         getTotalLicenses(license) > 0 &&
-        isPaidLicense(license)
+        isPaidLicense(license) &&
+        !isTenantLevelLicense(getLicenseName(license))
     )
     .sort((a, b) => getTotalLicenses(b) - getTotalLicenses(a))
     .map((license) => {
@@ -66,7 +83,7 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
 
   // Pastel blue for assigned licenses, pastel red for available (over-provisioned)
   const barColor = "hsl(210, 55%, 72%)";
-  const barBackgroundColor = "hsl(0, 50%, 85%)"; // Pastel red for unused/available licenses
+  const barBackgroundColor = "hsl(0, 50%, 85%)";
 
   return (
     <Card sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column" }}>
@@ -97,7 +114,7 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
           <Box sx={{ display: "flex", gap: compact ? 2 : 3, flex: 1, minHeight: 0 }}>
             {/* Left side - Stats summary */}
             <Box sx={{ 
-              width: compact ? "28%" : "30%", 
+              width: compact ? "30%" : "32%", 
               display: "flex", 
               flexDirection: "column", 
               justifyContent: "center",
@@ -106,35 +123,76 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
               borderColor: "divider",
               flexShrink: 0
             }}>
-              <Box sx={{ textAlign: "center", mb: 2 }}>
-                <Typography variant={statValueVariant} fontWeight="bold" sx={{ lineHeight: 1 }}>
+              {/* Overall Usage Gauge */}
+              <Box sx={{ textAlign: "center", mb: 1.5 }}>
+                <Typography variant={statValueVariant} fontWeight="bold" sx={{ lineHeight: 1, color: "hsl(210, 55%, 50%)" }}>
                   {overallPercentage}%
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Overall Usage
+                  Utilization
                 </Typography>
               </Box>
+
+              <Divider sx={{ my: 1 }} />
               
-              <Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+              {/* License Stats */}
+              <Box sx={{ mb: 1.5 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
                   <Typography variant="caption" color="text.secondary">Total</Typography>
-                  <Typography variant="caption" fontWeight="bold">{filteredStats.total.toLocaleString()}</Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    {filteredStats.total.toLocaleString()}
+                  </Typography>
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
                   <Typography variant="caption" color="text.secondary">Assigned</Typography>
-                  <Typography variant="caption" fontWeight="bold" sx={{ color: "hsl(210, 55%, 58%)" }}>
+                  <Typography variant="body2" fontWeight="bold" sx={{ color: "hsl(210, 55%, 50%)" }}>
                     {filteredStats.assigned.toLocaleString()}
                   </Typography>
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <Typography variant="caption" color="text.secondary">Available</Typography>
-                  <Typography variant="caption" fontWeight="bold" sx={{ color: "hsl(140, 50%, 55%)" }}>
+                  <Typography variant="body2" fontWeight="bold" sx={{ color: "hsl(0, 50%, 60%)" }}>
                     {filteredStats.available.toLocaleString()}
                   </Typography>
                 </Box>
               </Box>
 
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 2, textAlign: "center" }}>
+              <Divider sx={{ my: 1 }} />
+
+              {/* Entra ID P2 Status */}
+              <Tooltip 
+                title={hasEntraP2 
+                  ? "Microsoft Entra ID P2 is enabled for this tenant" 
+                  : "Microsoft Entra ID P2 is not detected in this tenant"
+                }
+                arrow
+              >
+                <Box sx={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center",
+                  gap: 0.75,
+                  py: 0.5,
+                  px: 1,
+                  borderRadius: 1,
+                  backgroundColor: hasEntraP2 ? "hsl(140, 40%, 95%)" : "hsl(0, 40%, 95%)",
+                }}>
+                  {hasEntraP2 ? (
+                    <CheckCircle sx={{ fontSize: 16, color: "hsl(140, 50%, 45%)" }} />
+                  ) : (
+                    <Cancel sx={{ fontSize: 16, color: "hsl(0, 50%, 55%)" }} />
+                  )}
+                  <Typography variant="caption" sx={{ 
+                    fontWeight: 500,
+                    color: hasEntraP2 ? "hsl(140, 50%, 35%)" : "hsl(0, 50%, 45%)",
+                  }}>
+                    Entra P2
+                  </Typography>
+                </Box>
+              </Tooltip>
+
+              {/* License Count */}
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, textAlign: "center" }}>
                 {paidLicenses.length} license{paidLicenses.length !== 1 ? "s" : ""}
               </Typography>
             </Box>
