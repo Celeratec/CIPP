@@ -108,7 +108,9 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
                   debounce={50}
                 >
                   {(() => {
-                    const sortedData = [...data].sort((a, b) => new Date(a.createdDateTime) - new Date(b.createdDateTime));
+                    const sortedData = [...data].sort(
+                      (a, b) => new Date(a.createdDateTime) - new Date(b.createdDateTime)
+                    );
                     const chartData = sortedData.map((score) => ({
                       date: new Date(score.createdDateTime).toLocaleDateString("en-US", {
                         month: "short",
@@ -118,6 +120,7 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
                       percentage: Math.round((score.currentScore / score.maxScore) * 100),
                     }));
                     const ticks = chartData.map((d) => d.date);
+                    const maxScore = Math.max(...sortedData.map((score) => score.maxScore || 0), 0);
                     return (
                       <LineChart
                         data={chartData}
@@ -134,7 +137,7 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
                         <YAxis
                           tick={{ fontSize: 12 }}
                           tickMargin={8}
-                          domain={[0, "dataMax + 20"]}
+                          domain={[0, maxScore]}
                           tickFormatter={(value) => Math.round(value)}
                         />
                         <RechartsTooltip
