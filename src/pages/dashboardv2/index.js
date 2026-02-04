@@ -428,6 +428,7 @@ const Page = () => {
                   ]}
                   labels={["Free", "Used"]}
                   formatValue={formatStorageSize}
+                  colors={["hsl(140, 50%, 72%)", "hsl(210, 55%, 58%)"]}
                 />
               </Box>
             </Grid>

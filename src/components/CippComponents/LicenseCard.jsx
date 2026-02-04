@@ -54,7 +54,7 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
 
         nodes.push({
           id: shortName,
-          nodeColor: `hsl(${210 + index * 30}, 70%, 50%)`,
+          nodeColor: `hsl(${210 + index * 25}, 55%, 75%)`,
         });
 
         const assignedId = `${shortName} - Assigned`;
@@ -63,7 +63,7 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
         if (assigned > 0) {
           nodes.push({
             id: assignedId,
-            nodeColor: "hsl(99, 70%, 50%)",
+            nodeColor: "hsl(140, 50%, 72%)",
           });
 
           links.push({
@@ -76,7 +76,7 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
         if (available > 0) {
           nodes.push({
             id: availableId,
-            nodeColor: "hsl(28, 100%, 53%)",
+            nodeColor: "hsl(35, 60%, 75%)",
           });
 
           links.push({

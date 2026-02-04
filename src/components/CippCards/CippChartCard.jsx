@@ -14,8 +14,15 @@ import { useTheme } from "@mui/material/styles";
 import { ActionsMenu } from "../actions-menu";
 import { Chart } from "../chart";
 
-const useChartOptions = (labels, chartType) => {
+const useChartOptions = (labels, chartType, customColors = null) => {
   const theme = useTheme();
+
+  const defaultColors = [
+    theme.palette.success.main,
+    theme.palette.warning.main,
+    theme.palette.error.main,
+    "#F472B6",
+  ];
 
   return {
     chart: {
@@ -33,12 +40,7 @@ const useChartOptions = (labels, chartType) => {
         },
       },
     },
-    colors: [
-      theme.palette.success.main,
-      theme.palette.warning.main,
-      theme.palette.error.main,
-      "#F472B6",
-    ],
+    colors: customColors || defaultColors,
     dataLabels: {
       enabled: false,
     },
@@ -101,12 +103,13 @@ export const CippChartCard = ({
   headerIcon = null,
   horizontalLayout = false,
   formatValue = null,
+  colors = null,
 }) => {
   const theme = useTheme();
   const smDown = useMediaQuery(theme.breakpoints.down("sm"));
   const [range, setRange] = useState("Last 7 days");
   const [barSeries, setBarSeries] = useState([]);
-  const chartOptions = useChartOptions(labels, chartType);
+  const chartOptions = useChartOptions(labels, chartType, colors);
   chartSeries = chartSeries.filter((item) => item !== null);
   const calculatedTotal = chartSeries.reduce((acc, value) => acc + value, 0);
   const total = customTotal !== undefined ? customTotal : calculatedTotal;

@@ -96,13 +96,13 @@ export const MFACard = ({ data, isLoading, compact = false }) => {
 
     return {
       nodes: [
-        { id: "Enabled users", nodeColor: "hsl(28, 100%, 53%)" },
-        { id: "MFA registered", nodeColor: "hsl(99, 70%, 50%)" },
-        { id: "Not registered", nodeColor: "hsl(39, 100%, 50%)" },
-        { id: "CA policy", nodeColor: "hsl(99, 70%, 50%)" },
-        { id: "Security defaults", nodeColor: "hsl(140, 70%, 50%)" },
-        { id: "Per-user MFA", nodeColor: "hsl(200, 70%, 50%)" },
-        { id: "No enforcement", nodeColor: "hsl(0, 100%, 50%)" },
+        { id: "Enabled users", nodeColor: "hsl(220, 60%, 75%)" },
+        { id: "MFA registered", nodeColor: "hsl(140, 50%, 72%)" },
+        { id: "Not registered", nodeColor: "hsl(35, 65%, 75%)" },
+        { id: "CA policy", nodeColor: "hsl(140, 50%, 72%)" },
+        { id: "Security defaults", nodeColor: "hsl(160, 50%, 72%)" },
+        { id: "Per-user MFA", nodeColor: "hsl(200, 55%, 72%)" },
+        { id: "No enforcement", nodeColor: "hsl(0, 55%, 72%)" },
       ],
       links,
       description,

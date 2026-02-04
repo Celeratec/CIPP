@@ -163,9 +163,9 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
                         <Line
                           type="monotone"
                           dataKey="score"
-                          stroke="#22c55e"
+                          stroke="hsl(140, 50%, 65%)"
                           strokeWidth={2}
-                          dot={{ fill: "#22c55e", r: 4 }}
+                          dot={{ fill: "hsl(140, 50%, 65%)", r: 4 }}
                           activeDot={{ r: 6 }}
                         />
                       </LineChart>
