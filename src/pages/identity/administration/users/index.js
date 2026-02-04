@@ -278,10 +278,10 @@ const Page = () => {
     // Fields shown on both mobile and desktop
     // Arrays within extraFields indicate fields that share a row (50% width each)
     extraFields: [
-      { field: "companyName", icon: <Badge />, editable: true, editField: "companyName" },
-      { field: "jobTitle", icon: <Work />, editable: true, editField: "jobTitle" },
+      { field: "companyName", icon: <Business />, editable: true, editField: "companyName" },
+      { field: "jobTitle", icon: <Badge />, editable: true, editField: "jobTitle" },
       [
-        { field: "department", icon: <Business />, editable: true, editField: "department" },
+        { field: "department", icon: <Work />, editable: true, editField: "department" },
         { 
           field: "manager.displayName", 
           icon: <AccountTree />, 
