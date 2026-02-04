@@ -3,7 +3,7 @@ import { CardMembership as CardMembershipIcon } from "@mui/icons-material";
 import { CippSankey } from "./CippSankey";
 
 export const LicenseCard = ({ data, isLoading, compact = false }) => {
-  const chartHeight = compact ? 220 : 300;
+  const chartHeight = compact ? 160 : 300;
   const titleVariant = compact ? "subtitle1" : "h6";
   const listTextVariant = compact ? "caption" : "body2";
   const listTitleVariant = compact ? "subtitle2" : "subtitle1";
@@ -136,7 +136,7 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
         }
         sx={{ pb: compact ? 0.5 : 1 }}
       />
-      <CardContent sx={{ pb: compact ? 1.5 : 2, pt: compact ? 1.5 : 2 }}>
+      <CardContent sx={{ pb: compact ? 1 : 2, pt: compact ? 1 : 2 }}>
         <Box sx={{ height: chartHeight }}>
           {isLoading ? (
             <Skeleton variant="rectangular" width="100%" height={chartHeight} />
@@ -159,7 +159,7 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
         </Box>
       </CardContent>
       <Divider />
-      <CardContent sx={{ pt: compact ? 1.5 : 2, pb: compact ? 1.5 : 2 }}>
+      <CardContent sx={{ pt: compact ? 1 : 2, pb: compact ? 1 : 2 }}>
         {isLoading ? (
           <Box sx={{ display: "flex", gap: compact ? 1.5 : 2 }}>
             <Box sx={{ flex: 1 }}>
@@ -223,22 +223,22 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
       </CardContent>
 
       <Divider />
-      <CardContent sx={{ pt: compact ? 1.5 : 2, pb: compact ? 1.5 : 2 }}>
+      <CardContent sx={{ pt: compact ? 1 : 2, pb: compact ? 1.5 : 2 }}>
         <Typography variant={listTitleVariant}>Trial / Free licenses</Typography>
         {isLoading ? (
-          <Box sx={{ mt: 1 }}>
-            <Skeleton height={18} sx={{ mb: 1 }} />
-            <Skeleton height={18} sx={{ mb: 1 }} />
+          <Box sx={{ mt: compact ? 0.5 : 1 }}>
+            <Skeleton height={18} sx={{ mb: 0.5 }} />
+            <Skeleton height={18} sx={{ mb: 0.5 }} />
             <Skeleton height={18} />
           </Box>
         ) : trialFreeLicenses.length > 0 ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: compact ? 0.25 : 0.5, mt: compact ? 0.5 : 1 }}>
             {trialFreeLicenses.map((license) => (
               <Box
                 key={`${license.name}-${license.typeLabel}`}
                 sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}
               >
-                <Typography variant={listTextVariant} color="text.secondary">
+                <Typography variant={listTextVariant} color="text.secondary" noWrap sx={{ flex: 1, minWidth: 0 }}>
                   {license.name} ({license.typeLabel})
                 </Typography>
                 <Typography variant={listTextVariant} fontWeight="bold">
@@ -248,7 +248,7 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
             ))}
           </Box>
         ) : (
-          <Typography variant={listTextVariant} color="text.secondary" sx={{ mt: 1 }}>
+          <Typography variant={listTextVariant} color="text.secondary" sx={{ mt: compact ? 0.5 : 1 }}>
             No trial or free licenses found
           </Typography>
         )}

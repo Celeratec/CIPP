@@ -8,6 +8,7 @@ import {
   Skeleton,
   Stack,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { ActionsMenu } from "../actions-menu";
@@ -97,7 +98,12 @@ export const CippChartCard = ({
   customTotal,
   compact = false,
   showHeaderDivider = true,
+  headerIcon = null,
+  horizontalLayout = false,
+  formatValue = null,
 }) => {
+  const theme = useTheme();
+  const smDown = useMediaQuery(theme.breakpoints.down("sm"));
   const [range, setRange] = useState("Last 7 days");
   const [barSeries, setBarSeries] = useState([]);
   const chartOptions = useChartOptions(labels, chartType);
@@ -109,6 +115,15 @@ export const CippChartCard = ({
   const rowPadding = compact ? 0.5 : 1;
   const labelVariant = compact ? "caption" : "body2";
   const totalVariant = compact ? "subtitle1" : "h5";
+  const titleVariant = compact ? "subtitle1" : "h6";
+
+  // Helper to format display values
+  const displayValue = (value) => (formatValue ? formatValue(value) : value);
+
+  // For horizontal layout, use smaller chart height to fit side by side
+  const horizontalChartHeight = compact ? 180 : 240;
+  const useHorizontal = horizontalLayout && !smDown;
+
   useEffect(() => {
     if (chartType === "bar") {
       setBarSeries(
@@ -118,6 +133,62 @@ export const CippChartCard = ({
       );
     }
   }, [chartType, chartSeries.length, labels]);
+
+  const renderLegend = () => (
+    <Stack spacing={compact ? 0.5 : 1}>
+      {isFetching ? (
+        <Skeleton height={30} />
+      ) : (
+        <>
+          {labels.length > 0 &&
+            chartSeries.map((item, index) => (
+              <Stack
+                alignItems="center"
+                direction="row"
+                justifyContent="space-between"
+                key={labels[index]}
+                spacing={1}
+                sx={{ py: rowPadding }}
+              >
+                <Stack alignItems="center" direction="row" spacing={1} sx={{ flexGrow: 1 }}>
+                  <Box
+                    sx={{
+                      backgroundColor: chartOptions.colors[index],
+                      borderRadius: "50%",
+                      height: 8,
+                      width: 8,
+                    }}
+                  />
+                  <Typography color="text.secondary" variant={labelVariant}>
+                    {labels[index]}
+                  </Typography>
+                </Stack>
+                <Typography color="text.secondary" variant={labelVariant}>
+                  {displayValue(item)}
+                </Typography>
+              </Stack>
+            ))}
+        </>
+      )}
+    </Stack>
+  );
+
+  const renderTotal = () => (
+    <Stack
+      alignItems="center"
+      direction="row"
+      justifyContent="space-between"
+      spacing={1}
+      sx={{ py: rowPadding }}
+    >
+      {labels.length > 0 && (
+        <>
+          <Typography variant={totalVariant}>{totalLabel}</Typography>
+          <Typography variant={totalVariant}>{isFetching ? "0" : displayValue(total)}</Typography>
+        </>
+      )}
+    </Stack>
+  );
 
   return (
     <Card 
@@ -144,76 +215,57 @@ export const CippChartCard = ({
             />
           ) : null
         }
-        title={title}
-      />
-      {showHeaderDivider && <Divider />}
-      <CardContent sx={{ pt: contentPadding, pb: contentPadding }}>
-        {
-          //if the chartType is not defined, or if the data is fetching, or if the data is empty, show a skeleton
-          chartType === undefined || isFetching || chartSeries.length === 0 ? (
-            <Skeleton variant="rounded" sx={{ height: chartHeight }} />
+        title={
+          headerIcon ? (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              {headerIcon}
+              <Typography variant={titleVariant}>{title}</Typography>
+            </Box>
           ) : (
-            <Chart
-              height={chartHeight}
-              options={chartOptions}
-              series={barSeries && chartType === "bar" ? barSeries : chartSeries}
-              type={chartType}
-            />
+            title
           )
         }
-        <Stack
-          alignItems="center"
-          direction="row"
-          justifyContent="space-between"
-          spacing={1}
-          sx={{ py: rowPadding }}
-        >
-          {labels.length > 0 && (
-            <>
-              <Typography variant={totalVariant}>{totalLabel}</Typography>
-              <Typography variant={totalVariant}>{isFetching ? "0" : total}</Typography>
-            </>
-          )}
-        </Stack>
-        <Stack spacing={compact ? 0.5 : 1}>
-          {isFetching ? (
-            <Skeleton height={30} />
-          ) : (
-            <>
-              {
-                //only show the labels if there are labels
-                labels.length > 0 &&
-                  chartSeries.map((item, index) => (
-                    <Stack
-                      alignItems="center"
-                      direction="row"
-                      justifyContent="space-between"
-                      key={labels[index]}
-                      spacing={1}
-                      sx={{ py: rowPadding }}
-                    >
-                      <Stack alignItems="center" direction="row" spacing={1} sx={{ flexGrow: 1 }}>
-                        <Box
-                          sx={{
-                            backgroundColor: chartOptions.colors[index],
-                            borderRadius: "50%",
-                            height: 8,
-                            width: 8,
-                          }}
-                        />
-                        <Typography color="text.secondary" variant={labelVariant}>
-                          {labels[index]}
-                        </Typography>
-                      </Stack>
-                      <Typography color="text.secondary" variant={labelVariant}>
-                        {item}
-                      </Typography>
-                    </Stack>
-                  ))
-              }
-            </>
-          )}
-        </Stack>
+        sx={headerIcon ? { pb: compact ? 0.5 : 1 } : undefined}
+      />
+      {showHeaderDivider && <Divider />}
+      <CardContent sx={{ pt: contentPadding, pb: contentPadding + 0.5, height: useHorizontal ? "calc(100% - 60px)" : "auto" }}>
+        {useHorizontal ? (
+          // Horizontal layout: chart on left, legend on right
+          <Box sx={{ display: "flex", height: "100%", alignItems: "center", gap: 2 }}>
+            <Box sx={{ flex: "0 0 55%", minWidth: 0 }}>
+              {chartType === undefined || isFetching || chartSeries.length === 0 ? (
+                <Skeleton variant="rounded" sx={{ height: horizontalChartHeight }} />
+              ) : (
+                <Chart
+                  height={horizontalChartHeight}
+                  options={chartOptions}
+                  series={barSeries && chartType === "bar" ? barSeries : chartSeries}
+                  type={chartType}
+                />
+              )}
+            </Box>
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              {renderTotal()}
+              {renderLegend()}
+            </Box>
+          </Box>
+        ) : (
+          // Vertical layout (default): chart on top, legend below
+          <>
+            {chartType === undefined || isFetching || chartSeries.length === 0 ? (
+              <Skeleton variant="rounded" sx={{ height: chartHeight }} />
+            ) : (
+              <Chart
+                height={chartHeight}
+                options={chartOptions}
+                series={barSeries && chartType === "bar" ? barSeries : chartSeries}
+                type={chartType}
+              />
+            )}
+            {renderTotal()}
+            {renderLegend()}
+          </>
+        )}
       </CardContent>
     </Card>
   );

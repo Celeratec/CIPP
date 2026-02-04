@@ -29,6 +29,7 @@ import {
   Work as BriefcaseIcon,
   Assessment as AssessmentIcon,
   Refresh as RefreshIcon,
+  Cloud as CloudIcon,
 } from "@mui/icons-material";
 
 const Page = () => {
@@ -228,11 +229,16 @@ const Page = () => {
   };
 
   const formatStorageSize = (sizeInMB) => {
-    if (!sizeInMB && sizeInMB !== 0) return "0MB";
-    if (sizeInMB >= 1024) {
-      return `${(sizeInMB / 1024).toFixed(2)}GB`;
+    if (!sizeInMB && sizeInMB !== 0) return "0 MB";
+    const sizeInGB = sizeInMB / 1024;
+    const sizeInTB = sizeInGB / 1024;
+    if (sizeInTB >= 1) {
+      return `${sizeInTB.toFixed(2)} TB`;
     }
-    return `${sizeInMB}MB`;
+    if (sizeInGB >= 1) {
+      return `${sizeInGB.toFixed(2)} GB`;
+    }
+    return `${sizeInMB.toFixed(0)} MB`;
   };
 
   const compactCardHeight = smDown ? "auto" : 360;
@@ -410,20 +416,18 @@ const Page = () => {
               <Box sx={{ height: compactCardHeight }}>
                 <CippChartCard
                   title="SharePoint Quota"
+                  headerIcon={<CloudIcon sx={{ fontSize: 20 }} />}
                   isFetching={sharepoint.isFetching}
                   chartType="donut"
                   compact
                   showHeaderDivider={false}
+                  horizontalLayout
                   chartSeries={[
                     Number(sharepoint.data?.TenantStorageMB - sharepoint.data?.GeoUsedStorageMB) || 0,
                     Number(sharepoint.data?.GeoUsedStorageMB) || 0,
                   ]}
-                  labels={[
-                    `Free (${formatStorageSize(
-                      sharepoint.data?.TenantStorageMB - sharepoint.data?.GeoUsedStorageMB
-                    )})`,
-                    `Used (${formatStorageSize(sharepoint.data?.GeoUsedStorageMB)})`,
-                  ]}
+                  labels={["Free", "Used"]}
+                  formatValue={formatStorageSize}
                 />
               </Box>
             </Grid>
@@ -444,7 +448,7 @@ const Page = () => {
               </Box>
             </Grid>
             <Grid size={{ xs: 12, lg: 6 }}>
-              <Box sx={{ height: compactWideCardHeight }}>
+              <Box sx={{ minHeight: compactWideCardHeight }}>
                 <LicenseCard
                   data={testsApi.data?.LicenseData}
                   isLoading={testsApi.isFetching}
