@@ -9,19 +9,25 @@ import {
   ResponsiveContainer,
   Tooltip as RechartsTooltip,
 } from "recharts";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 export const SecureScoreCard = ({ data, isLoading }) => {
   const chartContainerRef = useRef(null);
   const [containerReady, setContainerReady] = useState(false);
 
+  // Check if container has valid dimensions - used both in effect and during render
+  const hasValidDimensions = useCallback(() => {
+    if (!chartContainerRef.current) return false;
+    const { width, height } = chartContainerRef.current.getBoundingClientRect();
+    return width > 0 && height > 0;
+  }, []);
+
   useEffect(() => {
     const checkContainer = () => {
-      if (chartContainerRef.current) {
-        const { width, height } = chartContainerRef.current.getBoundingClientRect();
-        if (width > 0 && height > 0) {
-          setContainerReady(true);
-        }
+      if (hasValidDimensions()) {
+        setContainerReady(true);
+      } else {
+        setContainerReady(false);
       }
     };
     
@@ -37,7 +43,10 @@ export const SecureScoreCard = ({ data, isLoading }) => {
       clearTimeout(timer);
       resizeObserver.disconnect();
     };
-  }, [isLoading]);
+  }, [isLoading, hasValidDimensions]);
+
+  // Synchronous check during render - if state says ready but dimensions are invalid, don't render chart
+  const canRenderChart = containerReady && hasValidDimensions();
   return (
     <Card sx={{ flex: 1, height: '100%' }}>
       <CardHeader
@@ -84,7 +93,7 @@ export const SecureScoreCard = ({ data, isLoading }) => {
         ) : (
           <>
             <Box ref={chartContainerRef} sx={{ height: 250, minWidth: 0 }}>
-              {containerReady ? (
+              {canRenderChart ? (
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
                   {(() => {
                     const sortedData = [...data].sort((a, b) => new Date(a.createdDateTime) - new Date(b.createdDateTime));

@@ -2,19 +2,25 @@ import { Card, CardHeader, CardContent, Box, Typography, Skeleton } from "@mui/m
 import { Security as SecurityIcon } from "@mui/icons-material";
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from "recharts";
 import { CippTimeAgo } from "../CippComponents/CippTimeAgo";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 export const AssessmentCard = ({ data, isLoading }) => {
   const chartContainerRef = useRef(null);
   const [containerReady, setContainerReady] = useState(false);
 
+  // Check if container has valid dimensions - used both in effect and during render
+  const hasValidDimensions = useCallback(() => {
+    if (!chartContainerRef.current) return false;
+    const { width, height } = chartContainerRef.current.getBoundingClientRect();
+    return width > 0 && height > 0;
+  }, []);
+
   useEffect(() => {
     const checkContainer = () => {
-      if (chartContainerRef.current) {
-        const { width, height } = chartContainerRef.current.getBoundingClientRect();
-        if (width > 0 && height > 0) {
-          setContainerReady(true);
-        }
+      if (hasValidDimensions()) {
+        setContainerReady(true);
+      } else {
+        setContainerReady(false);
       }
     };
     
@@ -32,7 +38,10 @@ export const AssessmentCard = ({ data, isLoading }) => {
       clearTimeout(timer);
       resizeObserver.disconnect();
     };
-  }, [isLoading]);
+  }, [isLoading, hasValidDimensions]);
+
+  // Synchronous check during render - if state says ready but dimensions are invalid, don't render chart
+  const canRenderChart = containerReady && hasValidDimensions();
   // Extract data with null safety
   const identityPassed = data?.TestResultSummary?.IdentityPassed || 0;
   const identityTotal = data?.TestResultSummary?.IdentityTotal || 1;
@@ -146,7 +155,7 @@ export const AssessmentCard = ({ data, isLoading }) => {
           >
             {isLoading ? (
               <Skeleton variant="circular" width={70} height={70} />
-            ) : containerReady ? (
+            ) : canRenderChart ? (
               <Box sx={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0 }}>
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
                   <RadialBarChart

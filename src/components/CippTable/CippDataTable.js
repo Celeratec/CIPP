@@ -162,7 +162,8 @@ const stringToColor = (string) => {
 };
 
 // Default cards per page for pagination
-const CARDS_PER_PAGE = 50;
+const DEFAULT_CARDS_PER_PAGE = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50, "All"];
 
 // Unified Card View Component (works for both mobile and desktop)
 const CardView = ({
@@ -185,13 +186,13 @@ const CardView = ({
   onCardClick = null,
   editApiUrl = null,
   queryKey = null,
-  cardsPerPage = CARDS_PER_PAGE,
 }) => {
   const theme = useTheme();
   const router = useRouter();
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(DEFAULT_CARDS_PER_PAGE);
   
   // Inline editing state: { itemId: { fieldName: { editing: bool, value: string, saving: bool } } }
   const [editingFields, setEditingFields] = useState({});
@@ -505,15 +506,17 @@ const CardView = ({
 
   // Calculate pagination values
   const totalItems = filteredData?.length || 0;
-  const totalPages = Math.ceil(totalItems / cardsPerPage);
-  const startIndex = currentPage * cardsPerPage;
-  const endIndex = Math.min(startIndex + cardsPerPage, totalItems);
+  const effectivePageSize = pageSize === "All" ? totalItems : pageSize;
+  const totalPages = effectivePageSize > 0 ? Math.ceil(totalItems / effectivePageSize) : 1;
+  const startIndex = currentPage * effectivePageSize;
+  const endIndex = pageSize === "All" ? totalItems : Math.min(startIndex + effectivePageSize, totalItems);
   
-  // Get paginated data - only render cards for the current page
+  // Get paginated data - only render cards for the current page (or all if "All" selected)
   const paginatedData = useMemo(() => {
     if (!filteredData) return [];
+    if (pageSize === "All") return filteredData;
     return filteredData.slice(startIndex, endIndex);
-  }, [filteredData, startIndex, endIndex]);
+  }, [filteredData, startIndex, endIndex, pageSize]);
 
   // Pagination handlers
   const handlePreviousPage = useCallback(() => {
@@ -527,6 +530,11 @@ const CardView = ({
   const handlePageChange = useCallback((newPage) => {
     setCurrentPage(Math.max(0, Math.min(totalPages - 1, newPage)));
   }, [totalPages]);
+
+  const handlePageSizeChange = useCallback((newSize) => {
+    setPageSize(newSize);
+    setCurrentPage(0); // Reset to first page when changing page size
+  }, []);
 
   // Filter actions for mobile - use mobileQuickActions if defined, otherwise first 4
   const cardActions = useMemo(() => {
@@ -615,8 +623,9 @@ const CardView = ({
               }}
             >
               {/* Header: Avatar + Name + Badges + Info Icon */}
+              {/* Only load photos when showing 10 or 25 items to optimize performance */}
               <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1, width: "100%", overflow: "hidden" }}>
-                {config.avatar?.photoField && tenant && item.id ? (
+                {config.avatar?.photoField && tenant && item.id && (pageSize === 10 || pageSize === 25) ? (
                   <CippUserAvatar
                     userId={item.id}
                     tenantFilter={tenant}
@@ -1142,6 +1151,7 @@ const CardView = ({
     });
   }, [
     paginatedData,
+    pageSize,
     config,
     isMobile,
     tenant,
@@ -1210,10 +1220,36 @@ const CardView = ({
                 <Refresh />
               </IconButton>
             )}
+            {/* Page size selector */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mr: 0.5 }}>
+                Show:
+              </Typography>
+              {PAGE_SIZE_OPTIONS.map((option) => (
+                <Chip
+                  key={option}
+                  label={option}
+                  size="small"
+                  onClick={() => handlePageSizeChange(option)}
+                  variant={pageSize === option ? "filled" : "outlined"}
+                  color={pageSize === option ? "primary" : "default"}
+                  sx={{ 
+                    minWidth: option === "All" ? 40 : 32,
+                    height: 24,
+                    fontSize: "0.75rem",
+                    cursor: "pointer",
+                    "& .MuiChip-label": { px: 1 },
+                  }}
+                />
+              ))}
+            </Box>
+            <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
             <Typography variant="body2" color="text.secondary">
-              {totalItems > cardsPerPage 
-                ? `${startIndex + 1}-${endIndex} of ${totalItems}`
-                : `${totalItems} ${totalItems === 1 ? "result" : "results"}`
+              {pageSize === "All" 
+                ? `${totalItems} ${totalItems === 1 ? "result" : "results"}`
+                : totalItems > effectivePageSize 
+                  ? `${startIndex + 1}-${endIndex} of ${totalItems}`
+                  : `${totalItems} ${totalItems === 1 ? "result" : "results"}`
               }
             </Typography>
           </Box>
@@ -1234,8 +1270,8 @@ const CardView = ({
           </Box>
         )}
 
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
+        {/* Pagination Controls - hidden when "All" is selected */}
+        {pageSize !== "All" && totalPages > 1 && (
           <Box 
             sx={{ 
               display: "flex", 
