@@ -132,7 +132,7 @@ const CippUserAvatar = memo(({
     setIsLoading(true);
     
     try {
-      const url = `/api/ListUserPhoto?TenantFilter=${encodeURIComponent(tenantFilter)}&UserId=${encodeURIComponent(userId)}`;
+      const url = `/api/ListUserPhoto?tenantFilter=${encodeURIComponent(tenantFilter)}&UserID=${encodeURIComponent(userId)}`;
       
       const response = await fetch(url);
       

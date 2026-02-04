@@ -412,7 +412,7 @@ export const CippUserInfoCard = (props) => {
   // Handle image URL with timestamp for cache busting
   const imageUrl =
     user?.id && tenant
-      ? `/api/ListUserPhoto?TenantFilter=${tenant}&UserId=${user.id}&t=${photoTimestamp}`
+      ? `/api/ListUserPhoto?tenantFilter=${tenant}&UserID=${user.id}&t=${photoTimestamp}`
       : undefined;
 
   const handleFileSelect = async (event) => {
@@ -421,6 +421,15 @@ export const CippUserInfoCard = (props) => {
     setSuccessMessage(null);
 
     if (!file) return;
+    
+    // Guard: Ensure user data is available before attempting upload
+    if (!user?.id || !tenant) {
+      setUploadError("Unable to upload photo - user data not available. Please refresh the page.");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
 
     // Validate file type
     const validTypes = ["image/jpeg", "image/jpg", "image/png"];
@@ -472,6 +481,12 @@ export const CippUserInfoCard = (props) => {
   const handleRemovePhoto = async () => {
     setUploadError(null);
     setSuccessMessage(null);
+
+    // Guard: Ensure user data is available before attempting removal
+    if (!user?.id || !tenant) {
+      setUploadError("Unable to remove photo - user data not available. Please refresh the page.");
+      return;
+    }
 
     try {
       await removePhotoMutation.mutateAsync({
@@ -584,37 +599,41 @@ export const CippUserInfoCard = (props) => {
                   accept="image/jpeg,image/jpg,image/png"
                   onChange={handleFileSelect}
                 />
-                <Tooltip title="Change Photo">
-                  <IconButton
-                    size="small"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isLoading}
-                    sx={{
-                      bgcolor: "background.paper",
-                      boxShadow: 1,
-                      width: 28,
-                      height: 28,
-                      "&:hover": { bgcolor: "action.hover" },
-                    }}
-                  >
-                    <PhotoCamera sx={{ fontSize: 14 }} />
-                  </IconButton>
+                <Tooltip title={!user?.id || !tenant ? "User data not available" : "Change Photo"}>
+                  <span>
+                    <IconButton
+                      size="small"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isLoading || !user?.id || !tenant}
+                      sx={{
+                        bgcolor: "background.paper",
+                        boxShadow: 1,
+                        width: 28,
+                        height: 28,
+                        "&:hover": { bgcolor: "action.hover" },
+                      }}
+                    >
+                      <PhotoCamera sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </span>
                 </Tooltip>
-                <Tooltip title="Remove Photo">
-                  <IconButton
-                    size="small"
-                    onClick={handleRemovePhoto}
-                    disabled={isLoading}
-                    sx={{
-                      bgcolor: "background.paper",
-                      boxShadow: 1,
-                      width: 28,
-                      height: 28,
-                      "&:hover": { bgcolor: "error.light", color: "error.contrastText" },
-                    }}
-                  >
-                    <Delete sx={{ fontSize: 14 }} />
-                  </IconButton>
+                <Tooltip title={!user?.id || !tenant ? "User data not available" : "Remove Photo"}>
+                  <span>
+                    <IconButton
+                      size="small"
+                      onClick={handleRemovePhoto}
+                      disabled={isLoading || !user?.id || !tenant}
+                      sx={{
+                        bgcolor: "background.paper",
+                        boxShadow: 1,
+                        width: 28,
+                        height: 28,
+                        "&:hover": { bgcolor: "error.light", color: "error.contrastText" },
+                      }}
+                    >
+                      <Delete sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </span>
                 </Tooltip>
               </Stack>
             </Box>

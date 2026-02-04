@@ -57,7 +57,7 @@ export const AccountPopover = (props) => {
   // Cache user photo with user-specific key
   const userPhoto = ApiGetCall({
     url: "/api/ListUserPhoto",
-    data: { UserID: userDetails, TenantFilter: userHomeTenant },
+    data: { UserID: userDetails, tenantFilter: userHomeTenant },
     queryKey: `userPhoto-${userHomeTenant || "unknown"}-${userDetails || "unknown"}`,
     waiting: !!userDetails && !!userHomeTenant,
     staleTime: Infinity,
