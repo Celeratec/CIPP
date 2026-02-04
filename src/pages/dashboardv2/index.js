@@ -441,8 +441,8 @@ const Page = () => {
           <Grid container spacing={1.5} sx={{ alignItems: "stretch" }}>
             <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex" }}>
               <LicenseCard
-                data={testsApi.data?.LicenseData}
-                isLoading={testsApi.isFetching}
+                data={testsApi.isFetching ? undefined : testsApi.data?.LicenseData}
+                isLoading={testsApi.isFetching || !testsApi.isSuccess}
                 compact
               />
             </Grid>

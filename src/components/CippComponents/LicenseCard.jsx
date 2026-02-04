@@ -8,7 +8,13 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
   const getLicenseName = (license) =>
     license?.License || license?.skuPartNumber || license?.SkuPartNumber || "Unknown License";
 
-  const getTotalLicenses = (license) => parseInt(license?.TotalLicenses || 0) || 0;
+  const getTotalLicenses = (license) => {
+    const total = license?.TotalLicenses;
+    // Handle various formats: number, string, null, undefined
+    if (total === null || total === undefined || total === "" || total === "0") return 0;
+    const parsed = parseInt(total, 10);
+    return isNaN(parsed) ? 0 : parsed;
+  };
 
   // Tenant-level licenses that shouldn't be counted in user assignment metrics
   const isTenantLevelLicense = (name) => {
@@ -51,13 +57,15 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
 
   // Get all paid licenses sorted by total count (excluding tenant-level licenses)
   const paidLicenses = (data || [])
-    .filter(
-      (license) =>
-        license &&
-        getTotalLicenses(license) > 0 &&
-        isPaidLicense(license) &&
-        !isTenantLevelLicense(getLicenseName(license))
-    )
+    .filter((license) => {
+      if (!license) return false;
+      const total = getTotalLicenses(license);
+      // Only include licenses with at least 1 total license
+      if (total < 1) return false;
+      if (!isPaidLicense(license)) return false;
+      if (isTenantLevelLicense(getLicenseName(license))) return false;
+      return true;
+    })
     .sort((a, b) => getTotalLicenses(b) - getTotalLicenses(a))
     .map((license) => {
       const name = getLicenseName(license);
@@ -81,9 +89,16 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
     ? Math.round((filteredStats.assigned / filteredStats.total) * 100) 
     : 0;
 
-  // Pastel blue for assigned licenses, pastel red for available (over-provisioned)
+  // Color for utilization percentage based on efficiency
+  const getUtilizationColor = (percentage) => {
+    if (percentage >= 90) return "hsl(140, 50%, 45%)"; // Green - excellent utilization
+    if (percentage >= 75) return "hsl(45, 80%, 45%)"; // Yellow - moderate utilization
+    return "hsl(0, 55%, 50%)"; // Red - poor utilization (over-provisioned)
+  };
+
+  // Pastel blue for assigned licenses, more visible red for available (over-provisioned)
   const barColor = "hsl(210, 55%, 72%)";
-  const barBackgroundColor = "hsl(0, 50%, 85%)";
+  const barBackgroundColor = "hsl(0, 55%, 72%)";
 
   return (
     <Card sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column" }}>
@@ -125,7 +140,7 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
             }}>
               {/* Overall Usage Gauge */}
               <Box sx={{ textAlign: "center", mb: 1.5 }}>
-                <Typography variant={statValueVariant} fontWeight="bold" sx={{ lineHeight: 1, color: "hsl(210, 55%, 50%)" }}>
+                <Typography variant={statValueVariant} fontWeight="bold" sx={{ lineHeight: 1, color: getUtilizationColor(overallPercentage) }}>
                   {overallPercentage}%
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -193,7 +208,7 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
 
               {/* License Count */}
               <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, textAlign: "center" }}>
-                {paidLicenses.length} license{paidLicenses.length !== 1 ? "s" : ""}
+                {paidLicenses.length} license type{paidLicenses.length !== 1 ? "s" : ""}
               </Typography>
             </Box>
 
