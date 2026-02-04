@@ -10,6 +10,36 @@ import {
 } from "recharts";
 import { useState, useEffect, useRef, useCallback } from "react";
 
+// Custom tooltip component with dark background
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <Box
+        sx={{
+          backgroundColor: "rgba(30, 30, 30, 0.95)",
+          color: "#fff",
+          borderRadius: "6px",
+          padding: "8px 12px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          fontSize: "12px",
+        }}
+      >
+        <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)", display: "block", mb: 0.5 }}>
+          {data.date}
+        </Typography>
+        <Typography variant="body2" sx={{ fontWeight: "bold", color: "#fff" }}>
+          {data.score.toFixed(1)} / {data.maxScore.toFixed(1)} pts
+        </Typography>
+        <Typography variant="caption" sx={{ color: "hsl(140, 50%, 70%)" }}>
+          {data.percentage}%
+        </Typography>
+      </Box>
+    );
+  }
+  return null;
+};
+
 export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
   const chartContainerRef = useRef(null);
   const [containerReady, setContainerReady] = useState(false);
@@ -67,6 +97,8 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
         month: "short",
         day: "numeric",
       }),
+      score: score.currentScore,
+      maxScore: score.maxScore,
       percentage: Math.round((score.currentScore / score.maxScore) * 100),
     }));
 
@@ -81,19 +113,19 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
   })() : null;
 
   const getTrendIcon = (trend) => {
-    if (trend > 0) return <TrendingUp sx={{ fontSize: 16, color: "hsl(140, 50%, 50%)" }} />;
-    if (trend < 0) return <TrendingDown sx={{ fontSize: 16, color: "hsl(0, 55%, 60%)" }} />;
-    return <TrendingFlat sx={{ fontSize: 16, color: "text.secondary" }} />;
+    if (trend > 0) return <TrendingUp sx={{ fontSize: 14, color: "hsl(140, 50%, 55%)" }} />;
+    if (trend < 0) return <TrendingDown sx={{ fontSize: 14, color: "hsl(0, 55%, 65%)" }} />;
+    return <TrendingFlat sx={{ fontSize: 14, color: "text.secondary" }} />;
   };
 
   const getTrendColor = (trend) => {
-    if (trend > 0) return "hsl(140, 50%, 50%)";
-    if (trend < 0) return "hsl(0, 55%, 60%)";
+    if (trend > 0) return "hsl(140, 50%, 55%)";
+    if (trend < 0) return "hsl(0, 55%, 65%)";
     return "text.secondary";
   };
 
-  const gaugeHeight = compact ? 140 : 180;
-  const sparklineHeight = compact ? 50 : 60;
+  const gaugeSize = compact ? 140 : 160;
+  const sparklineHeight = compact ? 100 : 120;
 
   return (
     <Card sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column" }}>
@@ -117,9 +149,9 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
         }}
       >
         {isLoading ? (
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-            <Skeleton variant="circular" width={gaugeHeight} height={gaugeHeight} />
-            <Skeleton variant="rectangular" width="80%" height={sparklineHeight} />
+          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <Skeleton variant="circular" width={gaugeSize} height={gaugeSize} />
+            <Skeleton variant="rectangular" sx={{ flex: 1 }} height={sparklineHeight} />
           </Box>
         ) : !processedData ? (
           <Box
@@ -137,9 +169,9 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
         ) : (
           <Box ref={chartContainerRef} sx={{ minWidth: 0 }}>
             {canRenderChart && (
-              <>
-                {/* Gauge Chart with percentage in center */}
-                <Box sx={{ position: "relative", height: gaugeHeight }}>
+              <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                {/* Left side - Gauge Chart with percentage in center */}
+                <Box sx={{ position: "relative", width: gaugeSize, height: gaugeSize, flexShrink: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <RadialBarChart
                       cx="50%"
@@ -149,7 +181,7 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
                       startAngle={90}
                       endAngle={-270}
                       data={processedData.gaugeData}
-                      barSize={compact ? 12 : 16}
+                      barSize={compact ? 10 : 12}
                     >
                       <RadialBar
                         background={{ fill: "hsl(0, 0%, 90%)" }}
@@ -169,17 +201,17 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
                     }}
                   >
                     <Typography
-                      variant={compact ? "h4" : "h3"}
+                      variant={compact ? "h5" : "h4"}
                       fontWeight="bold"
                       sx={{ lineHeight: 1 }}
                     >
                       {processedData.currentPercentage}%
                     </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5, mt: 0.5 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.25, mt: 0.25 }}>
                       {getTrendIcon(processedData.trend)}
                       <Typography
                         variant="caption"
-                        sx={{ color: getTrendColor(processedData.trend) }}
+                        sx={{ color: getTrendColor(processedData.trend), fontSize: "0.7rem" }}
                       >
                         {processedData.trend > 0 ? "+" : ""}
                         {processedData.trend}%
@@ -188,50 +220,36 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
                   </Box>
                 </Box>
 
-                {/* Sparkline for trend */}
-                <Box sx={{ height: sparklineHeight, mt: 1 }}>
+                {/* Right side - Area chart for trend */}
+                <Box sx={{ flex: 1, height: sparklineHeight, minWidth: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                       data={processedData.sparklineData}
-                      margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
                     >
                       <defs>
-                        <linearGradient id="sparklineGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(140, 50%, 65%)" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="hsl(140, 50%, 65%)" stopOpacity={0} />
+                        <linearGradient id="secureScoreGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(140, 50%, 65%)" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="hsl(140, 50%, 65%)" stopOpacity={0.05} />
                         </linearGradient>
                       </defs>
-                      <RechartsTooltip
-                        contentStyle={{
-                          backgroundColor: "rgba(255,255,255,0.95)",
-                          border: "1px solid #ddd",
-                          borderRadius: "4px",
-                          fontSize: "12px",
-                        }}
-                        formatter={(value) => [`${value}%`, "Score"]}
-                      />
+                      <RechartsTooltip content={<CustomTooltip />} />
                       <Area
                         type="monotone"
                         dataKey="percentage"
                         stroke="hsl(140, 50%, 65%)"
                         strokeWidth={2}
-                        fill="url(#sparklineGradient)"
+                        fill="url(#secureScoreGradient)"
+                        dot={{ fill: "hsl(140, 50%, 65%)", r: 3, strokeWidth: 0 }}
+                        activeDot={{ fill: "hsl(140, 50%, 55%)", r: 5, strokeWidth: 0 }}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
                 </Box>
-
-                <Typography
-                  variant={descriptionVariant}
-                  color="text.secondary"
-                  sx={{ mt: 1, textAlign: "center" }}
-                >
-                  {processedData.currentScore.toFixed(1)} / {processedData.maxScore.toFixed(1)} points
-                </Typography>
-              </>
+              </Box>
             )}
             {!canRenderChart && (
-              <Skeleton variant="rectangular" width="100%" height={gaugeHeight + sparklineHeight} />
+              <Skeleton variant="rectangular" width="100%" height={gaugeSize} />
             )}
           </Box>
         )}
@@ -247,9 +265,14 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
             Enable secure score monitoring in your tenant
           </Typography>
         ) : (
-          <Typography variant={descriptionVariant} color="text.secondary" sx={{ textAlign: "center" }}>
-            Secure Score measures your security posture across your tenant
-          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 1 }}>
+            <Typography variant={descriptionVariant} color="text.secondary">
+              Current:
+            </Typography>
+            <Typography variant={descriptionVariant} fontWeight="bold">
+              {processedData.currentScore.toFixed(1)} / {processedData.maxScore.toFixed(1)} pts
+            </Typography>
+          </Box>
         )}
       </CardContent>
     </Card>
