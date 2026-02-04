@@ -20,10 +20,8 @@ import {
   Button,
   Alert,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
-  Link,
 } from "@mui/material";
 import { 
   AccountCircle, 
@@ -45,6 +43,7 @@ import {
   ContentCopy,
   Check as CheckIcon,
   Add,
+  Lightbulb,
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 import { getCippLicenseTranslation } from "../../utils/get-cipp-license-translation";
@@ -904,16 +903,25 @@ export const CippUserInfoCard = (props) => {
             Select a license to assign to <strong>{user?.displayName}</strong>.
           </DialogContentText>
           
-          <FormControl fullWidth variant="outlined" sx={{ mt: 1 }}>
-            <InputLabel id="add-license-select-label">Select License</InputLabel>
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+              Select License
+            </Typography>
             <Select
-              labelId="add-license-select-label"
               id="add-license-select"
               value={selectedLicenseToAdd}
               onChange={(e) => setSelectedLicenseToAdd(e.target.value)}
-              label="Select License"
+              displayEmpty
               disabled={isAddingLicense}
+              sx={{
+                '& .MuiSelect-select': {
+                  py: 1.5,
+                },
+              }}
             >
+              <MenuItem value="" disabled>
+                <Typography color="text.secondary">Choose a license...</Typography>
+              </MenuItem>
               {availableLicenses.map((license) => (
                 <MenuItem key={license.skuId} value={license.skuId}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: "100%" }}>
@@ -940,9 +948,19 @@ export const CippUserInfoCard = (props) => {
             </Alert>
           )}
           
-          <Alert severity="warning" icon={false} sx={{ mt: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              If you do not see the license you need, you will need to add it to the tenant first.
+          <Alert 
+            severity="info" 
+            icon={<Lightbulb fontSize="small" />}
+            sx={{ 
+              mt: 2,
+              backgroundColor: (theme) => alpha(theme.palette.info.main, 0.08),
+              '& .MuiAlert-icon': {
+                color: 'info.main',
+              },
+            }}
+          >
+            <Typography variant="body2">
+              <strong>Tip:</strong> If you do not see the license you need, you will need to add it to the tenant first.
             </Typography>
           </Alert>
           
