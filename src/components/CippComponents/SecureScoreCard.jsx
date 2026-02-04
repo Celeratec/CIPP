@@ -62,7 +62,7 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
         }
         sx={{ pb: compact ? 0.5 : 1 }}
       />
-      <CardContent sx={{ pt: compact ? 1.5 : 2 }}>
+      <CardContent sx={{ pt: compact ? 1.5 : 2, pb: compact ? 1.5 : 2 }}>
         {isLoading ? (
           <>
             <Box sx={{ height: chartHeight }}>
@@ -129,10 +129,12 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
                         <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                         <XAxis
                           dataKey="date"
-                          tick={{ fontSize: 12 }}
-                          tickMargin={8}
+                          tick={{ fontSize: 11 }}
+                          tickMargin={6}
                           ticks={ticks}
-                          interval={0}
+                          interval={compact ? 1 : 0}
+                          height={compact ? 40 : 50}
+                          tickFormatter={(value) => value.replace(" ", "\n")}
                         />
                         <YAxis
                           tick={{ fontSize: 12 }}
@@ -181,7 +183,7 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
         )}
       </CardContent>
       <Divider />
-      <CardContent sx={{ pt: compact ? 1.5 : 2 }}>
+      <CardContent sx={{ pt: compact ? 1.5 : 2, pb: compact ? 1.5 : 2 }}>
         {isLoading ? (
           <Box sx={{ display: "flex", gap: compact ? 1.5 : 2 }}>
             <Box sx={{ flex: 1 }}>

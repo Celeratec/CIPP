@@ -147,7 +147,7 @@ export const CippChartCard = ({
         title={title}
       />
       {showHeaderDivider && <Divider />}
-      <CardContent sx={{ pt: contentPadding }}>
+      <CardContent sx={{ pt: contentPadding, pb: contentPadding }}>
         {
           //if the chartType is not defined, or if the data is fetching, or if the data is empty, show a skeleton
           chartType === undefined || isFetching || chartSeries.length === 0 ? (

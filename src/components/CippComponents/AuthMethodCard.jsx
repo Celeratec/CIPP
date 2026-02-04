@@ -206,7 +206,7 @@ export const AuthMethodCard = ({ data, isLoading, compact = false }) => {
         }
         sx={{ pb: compact ? 0.5 : 1 }}
       />
-      <CardContent sx={{ pb: compact ? 0.5 : 0, pt: compact ? 1.5 : 2 }}>
+      <CardContent sx={{ pb: compact ? 1.5 : 2, pt: compact ? 1.5 : 2 }}>
         <Box sx={{ height: chartHeight }}>
           {isLoading ? (
             <Skeleton variant="rectangular" width="100%" height={chartHeight} />
@@ -234,7 +234,7 @@ export const AuthMethodCard = ({ data, isLoading, compact = false }) => {
         </Box>
       </CardContent>
       {!isLoading && processedData?.description && (
-        <CardContent sx={{ pt: compact ? 1 : 2 }}>
+        <CardContent sx={{ pt: compact ? 1 : 2, pb: compact ? 1.5 : 2 }}>
           <Typography variant={descriptionVariant} color="text.secondary">
             {processedData.description}
           </Typography>
