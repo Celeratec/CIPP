@@ -8,8 +8,35 @@ import {
   ResponsiveContainer,
   Tooltip as RechartsTooltip,
 } from "recharts";
+import { useState, useEffect, useRef } from "react";
 
 export const SecureScoreChart = ({ data, isLoading }) => {
+  const chartContainerRef = useRef(null);
+  const [containerReady, setContainerReady] = useState(false);
+
+  useEffect(() => {
+    const checkContainer = () => {
+      if (chartContainerRef.current) {
+        const { width, height } = chartContainerRef.current.getBoundingClientRect();
+        if (width > 0 && height > 0) {
+          setContainerReady(true);
+        }
+      }
+    };
+    
+    checkContainer();
+    const timer = setTimeout(checkContainer, 100);
+    
+    const resizeObserver = new ResizeObserver(checkContainer);
+    if (chartContainerRef.current) {
+      resizeObserver.observe(chartContainerRef.current);
+    }
+    
+    return () => {
+      clearTimeout(timer);
+      resizeObserver.disconnect();
+    };
+  }, [isLoading]);
   if (isLoading) {
     return (
       <>
@@ -87,34 +114,38 @@ export const SecureScoreChart = ({ data, isLoading }) => {
 
   return (
     <>
-      <Box sx={{ height: 250, minHeight: 250, minWidth: 0 }}>
-        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-          <LineChart data={chartData} margin={{ left: 12, right: 12, top: 10, bottom: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-            <XAxis dataKey="date" tick={{ fontSize: 12 }} tickMargin={8} />
-            <YAxis tick={{ fontSize: 12 }} tickMargin={8} domain={[0, "dataMax + 20"]} />
-            <RechartsTooltip
-              contentStyle={{
-                backgroundColor: "rgba(255, 255, 255, 0.95)",
-                border: "1px solid #ccc",
-                borderRadius: "4px",
-              }}
-              formatter={(value, name) => {
-                if (name === "score") return [value.toFixed(2), "Score"];
-                if (name === "percentage") return [value + "%", "Percentage"];
-                return value;
-              }}
-            />
-            <Line
-              type="monotone"
-              dataKey="score"
-              stroke="#22c55e"
-              strokeWidth={2}
-              dot={{ fill: "#22c55e", r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+      <Box ref={chartContainerRef} sx={{ height: 250, minHeight: 250, minWidth: 0 }}>
+        {containerReady ? (
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+            <LineChart data={chartData} margin={{ left: 12, right: 12, top: 10, bottom: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+              <XAxis dataKey="date" tick={{ fontSize: 12 }} tickMargin={8} />
+              <YAxis tick={{ fontSize: 12 }} tickMargin={8} domain={[0, "dataMax + 20"]} />
+              <RechartsTooltip
+                contentStyle={{
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                }}
+                formatter={(value, name) => {
+                  if (name === "score") return [value.toFixed(2), "Score"];
+                  if (name === "percentage") return [value + "%", "Percentage"];
+                  return value;
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="score"
+                stroke="#22c55e"
+                strokeWidth={2}
+                dot={{ fill: "#22c55e", r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <Skeleton variant="rectangular" width="100%" height={250} />
+        )}
       </Box>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
         The Secure Score measures your security posture across your tenant.

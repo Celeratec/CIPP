@@ -2,8 +2,37 @@ import { Card, CardHeader, CardContent, Box, Typography, Skeleton } from "@mui/m
 import { Security as SecurityIcon } from "@mui/icons-material";
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from "recharts";
 import { CippTimeAgo } from "../CippComponents/CippTimeAgo";
+import { useState, useEffect, useRef } from "react";
 
 export const AssessmentCard = ({ data, isLoading }) => {
+  const chartContainerRef = useRef(null);
+  const [containerReady, setContainerReady] = useState(false);
+
+  useEffect(() => {
+    const checkContainer = () => {
+      if (chartContainerRef.current) {
+        const { width, height } = chartContainerRef.current.getBoundingClientRect();
+        if (width > 0 && height > 0) {
+          setContainerReady(true);
+        }
+      }
+    };
+    
+    // Check immediately and after a short delay to handle layout timing
+    checkContainer();
+    const timer = setTimeout(checkContainer, 100);
+    
+    // Also observe resize changes
+    const resizeObserver = new ResizeObserver(checkContainer);
+    if (chartContainerRef.current) {
+      resizeObserver.observe(chartContainerRef.current);
+    }
+    
+    return () => {
+      clearTimeout(timer);
+      resizeObserver.disconnect();
+    };
+  }, [isLoading]);
   // Extract data with null safety
   const identityPassed = data?.TestResultSummary?.IdentityPassed || 0;
   const identityTotal = data?.TestResultSummary?.IdentityTotal || 1;
@@ -107,6 +136,7 @@ export const AssessmentCard = ({ data, isLoading }) => {
             </Box>
           </Box>
           <Box
+            ref={chartContainerRef}
             sx={{
               width: 70,
               height: 70,
@@ -116,9 +146,9 @@ export const AssessmentCard = ({ data, isLoading }) => {
           >
             {isLoading ? (
               <Skeleton variant="circular" width={70} height={70} />
-            ) : (
+            ) : containerReady ? (
               <Box sx={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
                   <RadialBarChart
                     innerRadius="20%"
                     outerRadius="100%"
@@ -131,6 +161,8 @@ export const AssessmentCard = ({ data, isLoading }) => {
                   </RadialBarChart>
                 </ResponsiveContainer>
               </Box>
+            ) : (
+              <Skeleton variant="circular" width={70} height={70} />
             )}
           </Box>
         </Box>
