@@ -856,6 +856,7 @@ export const CippUserInfoCard = (props) => {
         onClose={handleLicenseDialogClose}
         maxWidth="sm"
         fullWidth
+        disableRestoreFocus
       >
         <DialogTitle>
           Remove License?
@@ -913,6 +914,7 @@ export const CippUserInfoCard = (props) => {
         onClose={handleAddLicenseClose}
         maxWidth="sm"
         fullWidth
+        disableRestoreFocus
       >
         <DialogTitle>
           Add License

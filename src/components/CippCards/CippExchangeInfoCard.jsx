@@ -867,6 +867,7 @@ export const CippExchangeInfoCard = (props) => {
         onClose={handleDialogClose}
         maxWidth="sm"
         fullWidth
+        disableRestoreFocus
       >
         {(() => {
           const isMultiple = Array.isArray(protocolDialog.protocol);
@@ -1010,6 +1011,7 @@ export const CippExchangeInfoCard = (props) => {
         onClose={() => setGalDialog(false)}
         maxWidth="sm"
         fullWidth
+        disableRestoreFocus
       >
         <DialogTitle>
           {exchangeData?.HiddenFromAddressLists ? "Show in" : "Hide from"} Global Address List?
@@ -1078,6 +1080,7 @@ export const CippExchangeInfoCard = (props) => {
         onClose={() => setSpamDialog(false)}
         maxWidth="sm"
         fullWidth
+        disableRestoreFocus
       >
         <DialogTitle>
           Clear Spam Block?

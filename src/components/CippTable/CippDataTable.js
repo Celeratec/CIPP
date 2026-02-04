@@ -8,6 +8,7 @@ import {
   ListItemText,
   ListSubheader,
   MenuItem,
+  Menu,
   SvgIcon,
   useMediaQuery,
   useTheme,
@@ -25,6 +26,8 @@ import {
   Tooltip,
   CircularProgress,
   ClickAwayListener,
+  Checkbox,
+  Button,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { ResourceUnavailable } from "../resource-unavailable";
@@ -35,7 +38,8 @@ import { ApiGetCallWithPagination, ApiPostCall } from "../../api/ApiCall";
 import { utilTableMode } from "./util-tablemode";
 import { utilColumnsFromAPI, resolveSimpleColumnVariables } from "./util-columnsFromAPI";
 import { CIPPTableToptoolbar } from "./CIPPTableToptoolbar";
-import { Info, More, MoreHoriz, Search, CheckCircle, Cancel, Refresh, ViewModule, TableChart, Email, Phone, Business, CalendarToday, Badge, Visibility, Edit, Security, Settings, Warning, Circle } from "@mui/icons-material";
+import { Info, More, MoreHoriz, Search, CheckCircle, Cancel, Refresh, ViewModule, TableChart, Email, Phone, Business, CalendarToday, Badge, Visibility, Edit, Security, Settings, Warning, Circle, CheckBox, CheckBoxOutlineBlank, IndeterminateCheckBox } from "@mui/icons-material";
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { CippOffCanvas } from "../CippComponents/CippOffCanvas";
 import { useDialog } from "../../hooks/use-dialog";
 import { CippApiDialog } from "../CippComponents/CippApiDialog";
@@ -195,6 +199,10 @@ const CardView = ({
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_CARDS_PER_PAGE);
   
+  // Selection state for bulk actions
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [bulkActionAnchor, setBulkActionAnchor] = useState(null);
+  
   // Inline editing state: { itemId: { fieldName: { editing: bool, value: string, saving: bool } } }
   const [editingFields, setEditingFields] = useState({});
   const editInputRef = useRef(null);
@@ -203,10 +211,49 @@ const CardView = ({
   const [emptyActionData, setEmptyActionData] = useState({ item: null, action: null, ready: false });
   const emptyActionDialog = useDialog();
   
+  // State for bulk action dialog
+  const [bulkActionData, setBulkActionData] = useState({ data: [], action: null, ready: false });
+  const bulkActionDialog = useDialog();
+  
   // API mutation for inline edits
   const editMutation = ApiPostCall({
     relatedQueryKeys: queryKey ? [queryKey] : [],
   });
+
+  // Selection helpers for bulk actions - basic helpers that don't depend on paginatedData
+  const getItemId = useCallback((item) => item.id || item.userPrincipalName || item.RowKey || JSON.stringify(item), []);
+  
+  const toggleItemSelection = useCallback((item) => {
+    const itemId = getItemId(item);
+    setSelectedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  }, [getItemId]);
+  
+  const clearSelection = useCallback(() => {
+    setSelectedItems(new Set());
+  }, []);
+  
+  const isItemSelected = useCallback((item) => {
+    return selectedItems.has(getItemId(item));
+  }, [selectedItems, getItemId]);
+  
+  // Get bulk actions (actions that support bulk operations)
+  const bulkActions = useMemo(() => {
+    return actions?.filter((action) => !action.link && !action?.hideBulk) || [];
+  }, [actions]);
+  
+  // Get selected items data
+  const selectedItemsData = useMemo(() => {
+    if (!data || selectedItems.size === 0) return [];
+    return data.filter(item => selectedItems.has(getItemId(item)));
+  }, [data, selectedItems, getItemId]);
 
   const formatFieldValue = (value) => {
     if (value === null || value === undefined) return "";
@@ -552,6 +599,11 @@ const CardView = ({
   useEffect(() => {
     setCurrentPage(0);
   }, [searchTerm, data?.length, columnFilters]);
+  
+  // Clear selection when data changes (e.g., tenant switch, filter change)
+  useEffect(() => {
+    setSelectedItems(new Set());
+  }, [data]);
 
   // Calculate pagination values
   const totalItems = filteredData?.length || 0;
@@ -566,6 +618,46 @@ const CardView = ({
     if (pageSize === "All") return filteredData;
     return filteredData.slice(startIndex, endIndex);
   }, [filteredData, startIndex, endIndex, pageSize]);
+
+  // Selection helpers that depend on paginatedData
+  const selectAllVisible = useCallback(() => {
+    if (!paginatedData) return;
+    const newSet = new Set(selectedItems);
+    paginatedData.forEach(item => newSet.add(getItemId(item)));
+    setSelectedItems(newSet);
+  }, [paginatedData, getItemId, selectedItems]);
+  
+  const allVisibleSelected = useMemo(() => {
+    if (!paginatedData || paginatedData.length === 0) return false;
+    return paginatedData.every(item => selectedItems.has(getItemId(item)));
+  }, [paginatedData, selectedItems, getItemId]);
+  
+  // Handle bulk action click
+  const handleBulkAction = useCallback((action) => {
+    setBulkActionAnchor(null);
+    
+    if (typeof action.customBulkHandler === "function") {
+      action.customBulkHandler({
+        rows: selectedItemsData.map(item => ({ original: item })),
+        data: selectedItemsData,
+        closeMenu: () => setBulkActionAnchor(null),
+        clearSelection: clearSelection,
+      });
+      return;
+    }
+    
+    setBulkActionData({
+      data: selectedItemsData,
+      action: action,
+      ready: true,
+    });
+    
+    if (action?.noConfirm && action.customFunction) {
+      selectedItemsData.forEach(item => action.customFunction(item, action, {}));
+    } else {
+      bulkActionDialog.handleOpen();
+    }
+  }, [selectedItemsData, clearSelection, bulkActionDialog]);
 
   // Pagination handlers
   const handlePreviousPage = useCallback(() => {
@@ -650,10 +742,15 @@ const CardView = ({
               display: "flex",
               flexDirection: "column",
               border: `1px solid ${theme.palette.divider}`,
+              // Highlight selected cards
+              ...(isItemSelected(item) && {
+                borderColor: theme.palette.primary.main,
+                bgcolor: alpha(theme.palette.primary.main, 0.04),
+              }),
               // Default border, can be overridden by cardSx
               borderLeft: config.cardSx 
                 ? undefined 
-                : `4px solid ${isLicensed ? theme.palette.primary.main : theme.palette.grey[400]}`,
+                : `4px solid ${isItemSelected(item) ? theme.palette.primary.main : (isLicensed ? theme.palette.primary.main : theme.palette.grey[400])}`,
               "&:hover": {
                 boxShadow: theme.shadows[4],
               },
@@ -669,8 +766,36 @@ const CardView = ({
                 flexDirection: "column",
                 overflow: "hidden",
                 flex: 1,
+                position: "relative",
               }}
             >
+              {/* Selection checkbox - shown when bulk actions are available */}
+              {bulkActions.length > 0 && (
+                <Checkbox
+                  size="small"
+                  checked={isItemSelected(item)}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    toggleItemSelection(item);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  sx={{
+                    position: "absolute",
+                    top: 4,
+                    right: 4,
+                    p: 0.25,
+                    zIndex: 1,
+                    bgcolor: "background.paper",
+                    borderRadius: 0.5,
+                    opacity: isItemSelected(item) ? 1 : 0.6,
+                    "&:hover": {
+                      opacity: 1,
+                      bgcolor: "background.paper",
+                    },
+                  }}
+                />
+              )}
+              
               {/* Header: Avatar + Name + Badges + Info Icon */}
               {/* Only load photos when showing 10 or 25 items to optimize performance */}
               <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1, width: "100%", overflow: "hidden" }}>
@@ -1214,6 +1339,9 @@ const CardView = ({
     setOffCanvasRowIndex,
     setOffcanvasVisible,
     emptyActionDialog,
+    bulkActions,
+    isItemSelected,
+    toggleItemSelection,
   ]);
 
   // Fixed card height for uniform appearance
@@ -1252,6 +1380,31 @@ const CardView = ({
       {/* Search and Refresh Bar */}
       {showSearch && (
         <Box sx={{ px: 2, py: 1.5, display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+          {/* Selection checkbox for visible items */}
+          {bulkActions.length > 0 && paginatedData?.length > 0 && (
+            <Tooltip title={allVisibleSelected ? "Deselect all visible" : "Select all visible"}>
+              <Checkbox
+                size="small"
+                checked={allVisibleSelected}
+                indeterminate={selectedItems.size > 0 && !allVisibleSelected}
+                onChange={() => {
+                  if (allVisibleSelected) {
+                    // Deselect all visible items
+                    const visibleIds = new Set(paginatedData.map(item => getItemId(item)));
+                    setSelectedItems(prev => {
+                      const newSet = new Set(prev);
+                      visibleIds.forEach(id => newSet.delete(id));
+                      return newSet;
+                    });
+                  } else {
+                    selectAllVisible();
+                  }
+                }}
+                sx={{ p: 0.5 }}
+              />
+            </Tooltip>
+          )}
+          
           <TextField
             size="small"
             placeholder={`Search ${title || "items"}...`}
@@ -1266,6 +1419,49 @@ const CardView = ({
               ),
             }}
           />
+          
+          {/* Selection indicator and bulk actions */}
+          {selectedItems.size > 0 && (
+            <>
+              <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+                {selectedItems.size} selected
+              </Typography>
+              {bulkActions.length > 0 && selectedItems.size >= 2 && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={(e) => setBulkActionAnchor(e.currentTarget)}
+                  startIcon={
+                    <SvgIcon fontSize="small">
+                      <ChevronDownIcon />
+                    </SvgIcon>
+                  }
+                  sx={{ 
+                    height: 32,
+                    textTransform: "none",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Bulk Actions
+                </Button>
+              )}
+              <Button
+                size="small"
+                variant="text"
+                onClick={clearSelection}
+                sx={{ 
+                  height: 32,
+                  textTransform: "none",
+                  minWidth: "auto",
+                  px: 1,
+                }}
+              >
+                Clear
+              </Button>
+            </>
+          )}
+          
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, ml: "auto" }}>
             {onRefresh && (
               <IconButton onClick={onRefresh} size="small" title="Refresh">
@@ -1412,6 +1608,66 @@ const CardView = ({
           api={emptyActionData.action}
           row={emptyActionData.item}
           relatedQueryKeys={emptyActionData.action?.relatedQueryKeys}
+        />
+      )}
+      
+      {/* Bulk Actions Menu */}
+      <Menu
+        anchorEl={bulkActionAnchor}
+        open={Boolean(bulkActionAnchor)}
+        onClose={() => setBulkActionAnchor(null)}
+        anchorOrigin={{
+          horizontal: "right",
+          vertical: "bottom",
+        }}
+        transformOrigin={{
+          horizontal: "right",
+          vertical: "top",
+        }}
+        PaperProps={{
+          sx: {
+            mt: 1,
+            borderRadius: 2,
+            minWidth: 200,
+          },
+        }}
+      >
+        {bulkActions.map((action, index) => {
+          // Check if action is disabled based on condition
+          const isDisabled = action.condition
+            ? !selectedItemsData.every((item) => action.condition({ original: item }))
+            : false;
+          
+          return (
+            <MenuItem
+              key={index}
+              disabled={isDisabled}
+              onClick={() => handleBulkAction(action)}
+            >
+              {action.icon && (
+                <ListItemIcon>
+                  <SvgIcon fontSize="small">{action.icon}</SvgIcon>
+                </ListItemIcon>
+              )}
+              <ListItemText>{action.label}</ListItemText>
+            </MenuItem>
+          );
+        })}
+      </Menu>
+      
+      {/* Bulk Action Dialog */}
+      {bulkActionData.ready && (
+        <CippApiDialog
+          createDialog={bulkActionDialog}
+          title="Confirmation"
+          fields={bulkActionData.action?.fields}
+          api={bulkActionData.action}
+          row={bulkActionData.data}
+          relatedQueryKeys={queryKey ? [queryKey] : []}
+          onClose={() => {
+            setBulkActionData({ data: [], action: null, ready: false });
+            clearSelection();
+          }}
         />
       )}
     </Box>

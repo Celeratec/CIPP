@@ -243,6 +243,7 @@ export const CippRemovableTenantChips = ({
         onClose={handleDialogClose}
         maxWidth="sm"
         fullWidth
+        disableRestoreFocus
         onClick={(e) => e.stopPropagation()}
       >
         <DialogTitle>

@@ -339,7 +339,7 @@ export const CippApiDialog = (props) => {
   return (
     <>
       {!api?.link && (
-        <Dialog fullWidth maxWidth="sm" onClose={handleClose} open={createDialog.open} {...other}>
+        <Dialog fullWidth maxWidth="sm" onClose={handleClose} open={createDialog.open} disableRestoreFocus {...other}>
           <form onSubmit={formHook.handleSubmit(onSubmit)}>
             <DialogTitle>{title}</DialogTitle>
             <DialogContent>
