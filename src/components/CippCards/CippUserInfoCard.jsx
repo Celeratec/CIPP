@@ -942,16 +942,7 @@ export const CippUserInfoCard = (props) => {
           
           <Alert severity="warning" icon={false} sx={{ mt: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              If you do not see the license you need, you will need to add it to the tenant first through the{" "}
-              <Link
-                href="https://Exchange.Celeratec.com/admin"
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{ fontWeight: 600 }}
-              >
-                Microsoft 365 Admin Center
-              </Link>
-              .
+              If you do not see the license you need, you will need to add it to the tenant first.
             </Typography>
           </Alert>
           

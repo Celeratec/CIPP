@@ -462,14 +462,17 @@ export const CippAutoComplete = (props) => {
         }}
         sx={sx}
         renderInput={(params) => (
-          <Stack direction="row" spacing={1}>
-            <MemoTextField
-              params={params}
-              label={label}
-              placeholder={placeholder}
-              required={required}
-              {...other}
-            />
+          <Stack direction="row" spacing={1} sx={{ width: "100%", alignItems: "flex-start" }}>
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <MemoTextField
+                params={params}
+                label={label}
+                placeholder={placeholder}
+                required={required}
+                fullWidth
+                {...other}
+              />
+            </Box>
             {api?.url && api?.showRefresh && (
               <Tooltip title="Refresh">
                 <IconButton
