@@ -55,14 +55,38 @@ export const getCippFilterVariant = (providedColumnKeys, arg) => {
         sortingFn: "alphanumeric",
         filterFn: (row, columnId, filterValue) => {
           const userLicenses = row.original.assignedLicenses;
-          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) {
-            return true;
+          const hasLicenses = userLicenses && Array.isArray(userLicenses) && userLicenses.length > 0;
+          
+          // Handle special "licensed"/"unlicensed" filter values (from preset filters)
+          if (filterValue === "licensed") {
+            return hasLicenses;
           }
-          if (!userLicenses || !Array.isArray(userLicenses) || userLicenses.length === 0) {
-            return false;
+          if (filterValue === "unlicensed") {
+            return !hasLicenses;
           }
-          const userSkuIds = userLicenses.map((license) => license.skuId).filter(Boolean);
-          return filterValue.some((selectedSkuId) => userSkuIds.includes(selectedSkuId));
+          
+          // Handle array of filter values (could be skuIds or special values)
+          if (Array.isArray(filterValue)) {
+            if (filterValue.length === 0) {
+              return true;
+            }
+            // Check for special string values first
+            if (filterValue.includes("licensed")) {
+              return hasLicenses;
+            }
+            if (filterValue.includes("unlicensed")) {
+              return !hasLicenses;
+            }
+            // Otherwise filter by skuId
+            if (!hasLicenses) {
+              return false;
+            }
+            const userSkuIds = userLicenses.map((license) => license.skuId).filter(Boolean);
+            return filterValue.some((selectedSkuId) => userSkuIds.includes(selectedSkuId));
+          }
+          
+          // No filter or unrecognized format - show all
+          return true;
         },
         filterSelectOptions: filterSelectOptions,
       };
@@ -70,7 +94,34 @@ export const getCippFilterVariant = (providedColumnKeys, arg) => {
       return {
         filterVariant: "select",
         sortingFn: "alphanumeric",
-        filterFn: "equals",
+        filterFn: (row, columnId, filterValue) => {
+          const rawValue = row.original.accountEnabled;
+          const isEnabled = rawValue === true || rawValue === "true" || rawValue === "Yes";
+          
+          // Handle "Yes"/"No" filter values (from preset filters or column filter dropdown)
+          if (filterValue === "Yes" || filterValue === true) {
+            return isEnabled;
+          }
+          if (filterValue === "No" || filterValue === false) {
+            return !isEnabled;
+          }
+          
+          // Handle array of filter values
+          if (Array.isArray(filterValue)) {
+            if (filterValue.length === 0) {
+              return true;
+            }
+            if (filterValue.includes("Yes") || filterValue.includes(true)) {
+              return isEnabled;
+            }
+            if (filterValue.includes("No") || filterValue.includes(false)) {
+              return !isEnabled;
+            }
+          }
+          
+          // No filter or empty - show all
+          return true;
+        },
       };
     case "primDomain":
       return {

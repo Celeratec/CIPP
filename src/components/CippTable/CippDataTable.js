@@ -186,6 +186,7 @@ const CardView = ({
   onCardClick = null,
   editApiUrl = null,
   queryKey = null,
+  columnFilters = [],
 }) => {
   const theme = useTheme();
   const router = useRouter();
@@ -459,9 +460,57 @@ const CardView = ({
     return wrapWithClick(badgeElement);
   };
 
-  // Filter and sort data based on search term and custom sorting
+  // Filter and sort data based on search term, column filters, and custom sorting
   const filteredData = useMemo(() => {
     let result = data;
+    
+    // Apply column filters first
+    if (columnFilters && columnFilters.length > 0 && result) {
+      result = result.filter((item) => {
+        // Each active filter must match
+        return columnFilters.every((filter) => {
+          // Handle filters that have nested value array (from filter definitions)
+          // e.g., { filterName: "...", value: [{ id: "field", value: "val" }] }
+          if (filter.value && Array.isArray(filter.value) && filter.value[0]?.id) {
+            return filter.value.every((condition) => {
+              const fieldValue = getNestedValue(item, condition.id);
+              // Handle special cases for different field types
+              if (condition.id === "assignedLicenses") {
+                const hasLicenses = Array.isArray(fieldValue) && fieldValue.length > 0;
+                return condition.value === "licensed" ? hasLicenses : !hasLicenses;
+              }
+              if (condition.id === "accountEnabled") {
+                const isEnabled = fieldValue === true || fieldValue === "Yes";
+                return condition.value === "Yes" ? isEnabled : !isEnabled;
+              }
+              // Default string comparison
+              return String(fieldValue).toLowerCase() === String(condition.value).toLowerCase();
+            });
+          }
+          // Handle simple {id, value} format (from MRT state)
+          if (filter.id) {
+            const fieldValue = getNestedValue(item, filter.id);
+            // Handle special cases
+            if (filter.id === "assignedLicenses") {
+              const hasLicenses = Array.isArray(fieldValue) && fieldValue.length > 0;
+              return filter.value === "licensed" ? hasLicenses : !hasLicenses;
+            }
+            if (filter.id === "accountEnabled") {
+              const isEnabled = fieldValue === true || fieldValue === "Yes";
+              return filter.value === "Yes" ? isEnabled : !isEnabled;
+            }
+            // Default: check if value matches or contains
+            if (Array.isArray(filter.value)) {
+              return filter.value.some(v => 
+                String(fieldValue).toLowerCase().includes(String(v).toLowerCase())
+              );
+            }
+            return String(fieldValue).toLowerCase().includes(String(filter.value).toLowerCase());
+          }
+          return true;
+        });
+      });
+    }
     
     // Apply search filter - search across all relevant fields
     if (searchTerm && result) {
@@ -497,12 +546,12 @@ const CardView = ({
     }
     
     return result;
-  }, [data, searchTerm, config]);
+  }, [data, searchTerm, config, columnFilters]);
 
-  // Reset to first page when search term or data changes
+  // Reset to first page when search term, filters, or data changes
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchTerm, data?.length]);
+  }, [searchTerm, data?.length, columnFilters]);
 
   // Calculate pagination values
   const totalItems = filteredData?.length || 0;
@@ -1493,11 +1542,9 @@ export const CippDataTable = (props) => {
     ...graphFilterData,
   });
 
-  useEffect(() => {
-    if (filters && Array.isArray(filters) && filters.length > 0) {
-      setColumnFilters(filters);
-    }
-  }, [filters]);
+  // Note: The `filters` prop contains filter OPTIONS for the dropdown menu, not active filters.
+  // Active filters are applied via setTableFilter in CIPPTableToptoolbar when user selects a filter.
+  // Do NOT auto-apply filters here as it breaks filtering functionality.
 
   useEffect(() => {
     if (Array.isArray(data) && !api?.url) {
@@ -2136,20 +2183,8 @@ export const CippDataTable = (props) => {
     },
   });
 
-  useEffect(() => {
-    if (filters && Array.isArray(filters) && filters.length > 0 && memoizedColumns.length > 0) {
-      // Make sure the table and columns are ready
-      setTimeout(() => {
-        if (table && typeof table.setColumnFilters === "function") {
-          const formattedFilters = filters.map((filter) => ({
-            id: filter.id || filter.columnId,
-            value: filter.value,
-          }));
-          table.setColumnFilters(formattedFilters);
-        }
-      });
-    }
-  }, [filters, memoizedColumns, table]);
+  // Note: Filter application is handled by setTableFilter in CIPPTableToptoolbar when user selects a filter.
+  // The `filters` prop contains filter OPTIONS for the dropdown menu, not active filters to apply.
 
   // Keep table global filter in sync with the shared search value
   useEffect(() => {
@@ -2270,6 +2305,7 @@ export const CippDataTable = (props) => {
               onCardClick={onCardClick}
               editApiUrl={effectiveCardConfig?.editApiUrl}
               queryKey={effectiveQueryKey}
+              columnFilters={columnFilters}
             />
           )}
         </Card>
