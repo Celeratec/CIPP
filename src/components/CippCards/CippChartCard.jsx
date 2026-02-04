@@ -95,6 +95,8 @@ export const CippChartCard = ({
   onClick,
   totalLabel = "Total",
   customTotal,
+  compact = false,
+  showHeaderDivider = true,
 }) => {
   const [range, setRange] = useState("Last 7 days");
   const [barSeries, setBarSeries] = useState([]);
@@ -102,6 +104,11 @@ export const CippChartCard = ({
   chartSeries = chartSeries.filter((item) => item !== null);
   const calculatedTotal = chartSeries.reduce((acc, value) => acc + value, 0);
   const total = customTotal !== undefined ? customTotal : calculatedTotal;
+  const chartHeight = compact ? 200 : 280;
+  const contentPadding = compact ? 1.5 : 2;
+  const rowPadding = compact ? 0.5 : 1;
+  const labelVariant = compact ? "caption" : "body2";
+  const totalVariant = compact ? "subtitle1" : "h5";
   useEffect(() => {
     if (chartType === "bar") {
       setBarSeries(
@@ -139,15 +146,15 @@ export const CippChartCard = ({
         }
         title={title}
       />
-      <Divider />
-      <CardContent>
+      {showHeaderDivider && <Divider />}
+      <CardContent sx={{ pt: contentPadding }}>
         {
           //if the chartType is not defined, or if the data is fetching, or if the data is empty, show a skeleton
           chartType === undefined || isFetching || chartSeries.length === 0 ? (
-            <Skeleton variant="rounded" sx={{ height: 280 }} />
+            <Skeleton variant="rounded" sx={{ height: chartHeight }} />
           ) : (
             <Chart
-              height={280}
+              height={chartHeight}
               options={chartOptions}
               series={barSeries && chartType === "bar" ? barSeries : chartSeries}
               type={chartType}
@@ -159,16 +166,16 @@ export const CippChartCard = ({
           direction="row"
           justifyContent="space-between"
           spacing={1}
-          sx={{ py: 1 }}
+          sx={{ py: rowPadding }}
         >
           {labels.length > 0 && (
             <>
-              <Typography variant="h5">{totalLabel}</Typography>
-              <Typography variant="h5">{isFetching ? "0" : total}</Typography>
+              <Typography variant={totalVariant}>{totalLabel}</Typography>
+              <Typography variant={totalVariant}>{isFetching ? "0" : total}</Typography>
             </>
           )}
         </Stack>
-        <Stack spacing={1}>
+        <Stack spacing={compact ? 0.5 : 1}>
           {isFetching ? (
             <Skeleton height={30} />
           ) : (
@@ -183,7 +190,7 @@ export const CippChartCard = ({
                       justifyContent="space-between"
                       key={labels[index]}
                       spacing={1}
-                      sx={{ py: 1 }}
+                      sx={{ py: rowPadding }}
                     >
                       <Stack alignItems="center" direction="row" spacing={1} sx={{ flexGrow: 1 }}>
                         <Box
@@ -194,11 +201,11 @@ export const CippChartCard = ({
                             width: 8,
                           }}
                         />
-                        <Typography color="text.secondary" variant="body2">
+                        <Typography color="text.secondary" variant={labelVariant}>
                           {labels[index]}
                         </Typography>
                       </Stack>
-                      <Typography color="text.secondary" variant="body2">
+                      <Typography color="text.secondary" variant={labelVariant}>
                         {item}
                       </Typography>
                     </Stack>

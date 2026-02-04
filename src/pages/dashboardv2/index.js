@@ -412,6 +412,8 @@ const Page = () => {
                   title="SharePoint Quota"
                   isFetching={sharepoint.isFetching}
                   chartType="donut"
+                  compact
+                  showHeaderDivider={false}
                   chartSeries={[
                     Number(sharepoint.data?.TenantStorageMB - sharepoint.data?.GeoUsedStorageMB) || 0,
                     Number(sharepoint.data?.GeoUsedStorageMB) || 0,
