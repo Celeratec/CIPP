@@ -161,6 +161,9 @@ const stringToColor = (string) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
+// Default cards per page for pagination
+const CARDS_PER_PAGE = 50;
+
 // Unified Card View Component (works for both mobile and desktop)
 const CardView = ({
   data,
@@ -182,9 +185,13 @@ const CardView = ({
   onCardClick = null,
   editApiUrl = null,
   queryKey = null,
+  cardsPerPage = CARDS_PER_PAGE,
 }) => {
   const theme = useTheme();
   const router = useRouter();
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
   
   // Inline editing state: { itemId: { fieldName: { editing: bool, value: string, saving: bool } } }
   const [editingFields, setEditingFields] = useState({});
@@ -491,6 +498,36 @@ const CardView = ({
     return result;
   }, [data, searchTerm, config]);
 
+  // Reset to first page when search term or data changes
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchTerm, data?.length]);
+
+  // Calculate pagination values
+  const totalItems = filteredData?.length || 0;
+  const totalPages = Math.ceil(totalItems / cardsPerPage);
+  const startIndex = currentPage * cardsPerPage;
+  const endIndex = Math.min(startIndex + cardsPerPage, totalItems);
+  
+  // Get paginated data - only render cards for the current page
+  const paginatedData = useMemo(() => {
+    if (!filteredData) return [];
+    return filteredData.slice(startIndex, endIndex);
+  }, [filteredData, startIndex, endIndex]);
+
+  // Pagination handlers
+  const handlePreviousPage = useCallback(() => {
+    setCurrentPage((prev) => Math.max(0, prev - 1));
+  }, []);
+
+  const handleNextPage = useCallback(() => {
+    setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
+  }, [totalPages]);
+
+  const handlePageChange = useCallback((newPage) => {
+    setCurrentPage(Math.max(0, Math.min(totalPages - 1, newPage)));
+  }, [totalPages]);
+
   // Filter actions for mobile - use mobileQuickActions if defined, otherwise first 4
   const cardActions = useMemo(() => {
     if (!actions || actions.length === 0) return [];
@@ -507,7 +544,7 @@ const CardView = ({
   }, [actions, isMobile, config.mobileQuickActions]);
 
   const renderedCards = useMemo(() => {
-    return filteredData?.map((item, index) => {
+    return paginatedData?.map((item, index) => {
       const titleValue = getNestedValue(item, config.title) || "Unknown";
       const subtitleValue = config.subtitle ? getNestedValue(item, config.subtitle) : null;
       const avatarField = config.avatar?.field
@@ -1104,7 +1141,7 @@ const CardView = ({
       );
     });
   }, [
-    filteredData,
+    paginatedData,
     config,
     isMobile,
     tenant,
@@ -1174,7 +1211,10 @@ const CardView = ({
               </IconButton>
             )}
             <Typography variant="body2" color="text.secondary">
-              {filteredData?.length || 0} {filteredData?.length === 1 ? "result" : "results"}
+              {totalItems > cardsPerPage 
+                ? `${startIndex + 1}-${endIndex} of ${totalItems}`
+                : `${totalItems} ${totalItems === 1 ? "result" : "results"}`
+              }
             </Typography>
           </Box>
         </Box>
@@ -1191,6 +1231,86 @@ const CardView = ({
             <Typography variant="body1">
               {searchTerm ? `No results found for "${searchTerm}"` : "No data available"}
             </Typography>
+          </Box>
+        )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <Box 
+            sx={{ 
+              display: "flex", 
+              justifyContent: "center", 
+              alignItems: "center", 
+              gap: 2, 
+              mt: 3,
+              pb: 1,
+            }}
+          >
+            <IconButton 
+              onClick={handlePreviousPage} 
+              disabled={currentPage === 0}
+              size="small"
+              sx={{ 
+                border: 1, 
+                borderColor: "divider",
+                "&:disabled": { opacity: 0.5 },
+              }}
+            >
+              <Typography variant="body2">←</Typography>
+            </IconButton>
+            
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              {/* Show page numbers with ellipsis for large page counts */}
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 7) {
+                  pageNum = i;
+                } else if (currentPage < 4) {
+                  pageNum = i < 5 ? i : (i === 5 ? -1 : totalPages - 1);
+                } else if (currentPage > totalPages - 5) {
+                  pageNum = i === 0 ? 0 : (i === 1 ? -1 : totalPages - 6 + i);
+                } else {
+                  pageNum = i === 0 ? 0 : (i === 1 ? -1 : (i === 5 ? -1 : (i === 6 ? totalPages - 1 : currentPage - 2 + i)));
+                }
+                
+                if (pageNum === -1) {
+                  return <Typography key={`ellipsis-${i}`} variant="body2" color="text.secondary">...</Typography>;
+                }
+                
+                return (
+                  <IconButton
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    size="small"
+                    sx={{
+                      minWidth: 32,
+                      height: 32,
+                      borderRadius: 1,
+                      bgcolor: currentPage === pageNum ? "primary.main" : "transparent",
+                      color: currentPage === pageNum ? "primary.contrastText" : "text.primary",
+                      "&:hover": {
+                        bgcolor: currentPage === pageNum ? "primary.dark" : "action.hover",
+                      },
+                    }}
+                  >
+                    <Typography variant="body2">{pageNum + 1}</Typography>
+                  </IconButton>
+                );
+              })}
+            </Stack>
+            
+            <IconButton 
+              onClick={handleNextPage} 
+              disabled={currentPage >= totalPages - 1}
+              size="small"
+              sx={{ 
+                border: 1, 
+                borderColor: "divider",
+                "&:disabled": { opacity: 0.5 },
+              }}
+            >
+              <Typography variant="body2">→</Typography>
+            </IconButton>
           </Box>
         )}
       </Box>
