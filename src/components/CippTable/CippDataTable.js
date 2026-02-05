@@ -1824,16 +1824,23 @@ export const CippDataTable = (props) => {
     if (getRequestData.isSuccess) {
       const allPages = getRequestData.data.pages;
 
-      const combinedResults = allPages.flatMap((page) => {
+      let combinedResults = allPages.flatMap((page) => {
         const nestedData = getNestedValue(page, api.dataKey);
         return nestedData !== undefined ? nestedData : [];
       });
+
+      // Apply dataFilter if provided in api config
+      if (api.dataFilter && typeof api.dataFilter === "function") {
+        combinedResults = api.dataFilter(combinedResults);
+      }
+
       setUsedData(combinedResults);
     }
   }, [
     getRequestData.isSuccess,
     getRequestData.data,
     api.dataKey,
+    api.dataFilter,
     getRequestData.isFetching,
     queryKey,
   ]);

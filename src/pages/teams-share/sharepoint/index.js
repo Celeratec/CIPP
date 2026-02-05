@@ -207,6 +207,14 @@ const Page = () => {
                 `${item.fields?.Title || "Unknown"} (${item.fields?.EMail || "No email"})`,
               valueField: (item) => item.fields?.EMail || item.fields?.UserName,
               showRefresh: true,
+              dataFilter: (data) =>
+                data.filter((item) => {
+                  const email = item.fields?.EMail;
+                  const title = (item.fields?.Title || "").toLowerCase();
+                  const excludedTitles = ["system account", "sharepoint app", "nt service", "everyone"];
+                  const isSystemAccount = excludedTitles.some((ex) => title.includes(ex) || title.startsWith("nt "));
+                  return email && !isSystemAccount;
+                }),
             },
           },
         ],
@@ -284,6 +292,14 @@ const Page = () => {
                 `${item.fields?.Title || "Unknown"} (${item.fields?.EMail || "No email"})`,
               valueField: (item) => item.fields?.EMail || item.fields?.UserName,
               showRefresh: true,
+              dataFilter: (data) =>
+                data.filter((item) => {
+                  const email = item.fields?.EMail;
+                  const title = (item.fields?.Title || "").toLowerCase();
+                  const excludedTitles = ["system account", "sharepoint app", "nt service", "everyone"];
+                  const isSystemAccount = excludedTitles.some((ex) => title.includes(ex) || title.startsWith("nt "));
+                  return email && !isSystemAccount;
+                }),
             },
           },
         ],
