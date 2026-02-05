@@ -1,11 +1,21 @@
 import { Layout as DashboardLayout } from "../../../layouts/index.js";
 import "@mui/material";
-import { Alert, Collapse, Divider, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Collapse,
+  Divider,
+  IconButton,
+  Paper,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import { Grid } from "@mui/system";
 import { useForm, useWatch } from "react-hook-form";
 import CippFormComponent from "../../../components/CippComponents/CippFormComponent";
 import CippFormPage from "../../../components/CippFormPages/CippFormPage";
 import { useSettings } from "../../../hooks/use-settings";
+import { Info as InfoIcon, Help as HelpIcon } from "@mui/icons-material";
 
 // Common SharePoint languages
 const languageOptions = [
@@ -50,6 +60,30 @@ const timeZoneOptions = [
   { label: "(UTC+12:00) Auckland, Wellington", value: 17 },
 ];
 
+// Helper component for section headers with optional help tooltip
+const SectionHeader = ({ title, helpText, children }) => (
+  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, mt: 2 }}>
+    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+      {title}
+    </Typography>
+    {helpText && (
+      <Tooltip title={helpText} arrow placement="right">
+        <IconButton size="small" sx={{ p: 0.5 }}>
+          <HelpIcon fontSize="small" color="action" />
+        </IconButton>
+      </Tooltip>
+    )}
+    {children}
+  </Box>
+);
+
+// Info box component for contextual help
+const InfoBox = ({ children, severity = "info" }) => (
+  <Alert severity={severity} sx={{ mb: 2 }} icon={<InfoIcon fontSize="small" />}>
+    <Typography variant="body2">{children}</Typography>
+  </Alert>
+);
+
 const AddSiteForm = () => {
   const userSettingsDefaults = useSettings();
   const formControl = useForm({
@@ -78,11 +112,25 @@ const AddSiteForm = () => {
       backButtonTitle="Back to Sites"
     >
       <Grid container spacing={2} sx={{ mb: 2 }}>
+        {/* Intro guidance */}
+        <Grid size={{ xs: 12 }}>
+          <Paper sx={{ p: 2, mb: 2, bgcolor: "background.default" }}>
+            <Typography variant="body2" color="text.secondary">
+              Create a new SharePoint site for your organization. Choose between a{" "}
+              <strong>Communication site</strong> for broadcasting information to a broad audience,
+              or a <strong>Team site</strong> for collaboration within a specific group. Not sure
+              which to choose? Communication sites are best for company news, policies, and
+              announcements. Team sites are better for project collaboration and document sharing.
+            </Typography>
+          </Paper>
+        </Grid>
+
         {/* Basic Information Section */}
         <Grid size={{ xs: 12 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-            Basic Information
-          </Typography>
+          <SectionHeader
+            title="Basic Information"
+            helpText="Enter the core details for your new SharePoint site"
+          />
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
@@ -91,7 +139,8 @@ const AddSiteForm = () => {
             label="Site Name"
             formControl={formControl}
             required
-            placeholder="Enter site name"
+            placeholder="e.g., Marketing Team, Company Intranet"
+            helperText="This will be displayed as the site title and used to create the site URL. Keep it short and descriptive."
           />
         </Grid>
 
@@ -120,6 +169,7 @@ const AddSiteForm = () => {
                 id: "id",
               },
             }}
+            helperText="The owner has full control over the site and can manage permissions, settings, and content."
             validators={{
               validate: (value) => {
                 if (!value) {
@@ -139,15 +189,17 @@ const AddSiteForm = () => {
             required
             multiline
             rows={2}
-            placeholder="Describe the purpose of this site"
+            placeholder="e.g., Central hub for marketing team resources, campaigns, and collaboration"
+            helperText="A clear description helps users understand the site's purpose and improves searchability."
           />
         </Grid>
 
         <Grid size={{ xs: 12 }}>
           <Divider sx={{ my: 1 }} />
-          <Typography variant="subtitle2" sx={{ mb: 1, mt: 2, fontWeight: 600 }}>
-            Site Template & Design
-          </Typography>
+          <SectionHeader
+            title="Site Template & Design"
+            helpText="Choose the type of site and its visual design. This affects the default layout and available features."
+          />
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
@@ -162,6 +214,7 @@ const AddSiteForm = () => {
               { label: "Communication", value: "Communication" },
               { label: "Team Site (No M365 Group)", value: "Team" },
             ]}
+            helperText="Communication = broadcast content to many viewers. Team = collaborate with a specific group."
             validators={{
               validate: (value) => {
                 if (!value) {
@@ -173,8 +226,18 @@ const AddSiteForm = () => {
           />
         </Grid>
 
+        {/* Template-specific guidance */}
         <Collapse in={isCommunicationSite} sx={{ width: "100%" }}>
           <Grid container spacing={2} sx={{ pl: 0, pt: 2 }}>
+            <Grid size={{ xs: 12 }}>
+              <InfoBox>
+                <strong>Communication Site:</strong> Ideal for company intranets, department
+                portals, news sites, and showcasing content to a broad audience. Features include
+                modern page layouts, news web parts, and easy customization. Visitors typically
+                read content rather than edit it.
+              </InfoBox>
+            </Grid>
+
             <Grid size={{ xs: 12, md: 6 }}>
               <CippFormComponent
                 name="siteDesign"
@@ -183,11 +246,12 @@ const AddSiteForm = () => {
                 type="autoComplete"
                 multiple={false}
                 options={[
-                  { label: "Blank", value: "Blank" },
-                  { label: "Topic - News, events, and content", value: "Topic" },
-                  { label: "Showcase - Photos and images", value: "Showcase" },
-                  { label: "Custom Site Design", value: "Custom" },
+                  { label: "Blank - Start from scratch", value: "Blank" },
+                  { label: "Topic - News, events, and highlighted content", value: "Topic" },
+                  { label: "Showcase - Visual focus with large images", value: "Showcase" },
+                  { label: "Custom - Use a tenant site design", value: "Custom" },
                 ]}
+                helperText="Each design provides a different starting layout. You can always customize later."
               />
             </Grid>
 
@@ -214,6 +278,7 @@ const AddSiteForm = () => {
                       valueField: "id",
                     }}
                     placeholder="Select a custom site design from your tenant"
+                    helperText="Custom site designs are created by your organization's SharePoint administrators and can include branding, web parts, and custom configurations."
                   />
                 </Grid>
               </Grid>
@@ -221,22 +286,26 @@ const AddSiteForm = () => {
           </Grid>
         </Collapse>
 
-        <Collapse in={!isCommunicationSite} sx={{ width: "100%" }}>
+        <Collapse in={!isCommunicationSite && templateName?.value === "Team"} sx={{ width: "100%" }}>
           <Grid container spacing={2} sx={{ pt: 2 }}>
             <Grid size={{ xs: 12 }}>
-              <Alert severity="info" sx={{ mb: 1 }}>
-                Team sites without M365 Groups use a standard template. Site designs are only
-                available for Communication sites.
-              </Alert>
+              <InfoBox>
+                <strong>Team Site (without M365 Group):</strong> Best for project workspaces, team
+                collaboration, and document management. Includes document libraries, lists, and
+                pages. This creates a standalone site without creating a Microsoft 365 Group or
+                Teams integration. Choose this when you need a simple collaboration space without
+                the overhead of a full M365 Group.
+              </InfoBox>
             </Grid>
           </Grid>
         </Collapse>
 
         <Grid size={{ xs: 12 }}>
           <Divider sx={{ my: 1 }} />
-          <Typography variant="subtitle2" sx={{ mb: 1, mt: 2, fontWeight: 600 }}>
-            Regional Settings
-          </Typography>
+          <SectionHeader
+            title="Regional Settings"
+            helpText="Configure language and time zone for the site. These affect how dates, times, and content are displayed."
+          />
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
@@ -247,6 +316,7 @@ const AddSiteForm = () => {
             type="autoComplete"
             multiple={false}
             options={languageOptions}
+            helperText="Sets the default language for site navigation, menus, and system text. Users can still view content in other languages."
           />
         </Grid>
 
@@ -259,13 +329,19 @@ const AddSiteForm = () => {
             multiple={false}
             options={timeZoneOptions}
             placeholder="Use tenant default"
+            helperText="Affects how dates and times are displayed throughout the site. Choose the time zone where most users are located."
           />
         </Grid>
 
         <Grid size={{ xs: 12 }}>
           <Divider sx={{ my: 1 }} />
-          <Typography variant="subtitle2" sx={{ mb: 1, mt: 2, fontWeight: 600 }}>
-            Advanced Options
+          <SectionHeader
+            title="Advanced Options"
+            helpText="Optional settings for security, organization, and storage. Skip these to use tenant defaults."
+          />
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            These settings are optional. Leave them blank to use your organization&apos;s default
+            policies.
           </Typography>
         </Grid>
 
@@ -289,6 +365,7 @@ const AddSiteForm = () => {
               valueField: "id",
             }}
             placeholder="None (use tenant default)"
+            helperText="Apply a Microsoft Purview sensitivity label to classify and protect site content. Labels can enforce encryption, access controls, and data loss prevention policies."
           />
         </Grid>
 
@@ -310,6 +387,7 @@ const AddSiteForm = () => {
               valueField: "SiteId",
             }}
             placeholder="None"
+            helperText="Hub sites group related sites together with shared navigation and branding. Associating with a hub makes this site discoverable alongside other related sites."
           />
         </Grid>
 
@@ -320,6 +398,7 @@ const AddSiteForm = () => {
             formControl={formControl}
             type="number"
             placeholder="Use tenant default"
+            helperText="Maximum storage space for this site in megabytes. Leave blank to use the tenant's default allocation. 1 GB = 1024 MB."
           />
         </Grid>
 
@@ -329,7 +408,19 @@ const AddSiteForm = () => {
             label="Allow external sharing by email"
             formControl={formControl}
             type="switch"
+            helperText="When enabled, site owners can invite external users (outside your organization) to access content by sending email invitations. This setting is subject to tenant-level sharing policies."
           />
+        </Grid>
+
+        {/* Final guidance */}
+        <Grid size={{ xs: 12 }}>
+          <Alert severity="info" sx={{ mt: 2 }}>
+            <Typography variant="body2">
+              <strong>What happens next?</strong> After clicking submit, the site will begin
+              provisioning. This typically takes 1-2 minutes. The site owner will receive full
+              access and can then customize the site, add content, and invite additional members.
+            </Typography>
+          </Alert>
         </Grid>
       </Grid>
     </CippFormPage>
