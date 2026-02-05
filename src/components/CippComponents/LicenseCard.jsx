@@ -165,11 +165,29 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography variant="caption" color="text.secondary">Available</Typography>
+                  <Typography variant="caption" color="text.secondary">Unassigned</Typography>
                   <Typography variant="body2" fontWeight="bold" sx={{ color: "hsl(0, 50%, 60%)" }}>
                     {filteredStats.available.toLocaleString()}
                   </Typography>
                 </Box>
+                {filteredStats.available > 0 && (
+                  <Tooltip title="Consider reducing licenses in tenant to reduce cost for client" arrow>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        mt: 0.5, 
+                        display: "block",
+                        color: "hsl(30, 80%, 45%)",
+                        fontStyle: "italic",
+                        fontSize: "0.65rem",
+                        lineHeight: 1.2,
+                        cursor: "help"
+                      }}
+                    >
+                      Consider reducing licenses
+                    </Typography>
+                  </Tooltip>
+                )}
               </Box>
 
               <Divider sx={{ my: 1 }} />
@@ -238,7 +256,7 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
               {paidLicenses.map((license) => (
                 <Tooltip 
                   key={license.name}
-                  title={`${license.name}: ${license.assigned.toLocaleString()} / ${license.total.toLocaleString()} (${license.percentage}% used, ${license.available.toLocaleString()} available)`}
+                  title={`${license.name}: ${license.assigned.toLocaleString()} / ${license.total.toLocaleString()} (${license.percentage}% used, ${license.available.toLocaleString()} unassigned)`}
                   arrow
                   placement="top"
                 >

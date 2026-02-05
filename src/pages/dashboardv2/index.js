@@ -21,8 +21,7 @@ import { TenantMetricsGrid } from "../../components/CippComponents/TenantMetrics
 import { AssessmentCard } from "../../components/CippComponents/AssessmentCard";
 import { CippChartCard } from "../../components/CippCards/CippChartCard";
 import { CippApiDialog } from "../../components/CippComponents/CippApiDialog";
-import { CippAddTestReportDrawer } from "../../components/CippComponents/CippAddTestReportDrawer";
-import CippFormComponent from "../../components/CippComponents/CippFormComponent";
+import { CippUniversalSearch } from "../../components/CippCards/CippUniversalSearch";
 import {
   Devices as DevicesIcon,
   CheckCircle as CheckCircleIcon,
@@ -290,94 +289,8 @@ const Page = () => {
           </Grid>
           <Grid size={{ xs: 12, md: 7 }}>
             <Card sx={{ height: "100%" }}>
-              <CardContent 
-                sx={{ 
-                  display: "flex", 
-                  flexDirection: smDown ? "column" : "row",
-                  gap: smDown ? 2 : 1.5, 
-                  alignItems: smDown ? "stretch" : "center", 
-                  p: smDown ? 1.5 : 2 
-                }}
-              >
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <CippFormComponent
-                    name="reportId"
-                    label="Select a report"
-                    type="autoComplete"
-                    multiple={false}
-                    formControl={formControl}
-                    options={reports.map((r) => ({
-                      label: r.name,
-                      value: r.id,
-                      description: r.description,
-                    }))}
-                    placeholder="Choose a report"
-                  />
-                </Box>
-                <Box 
-                  sx={{ 
-                    display: "flex", 
-                    flexWrap: "wrap",
-                    gap: 1, 
-                    justifyContent: smDown ? "stretch" : "flex-end",
-                    "& > *": smDown ? { flex: "1 1 calc(50% - 4px)", minWidth: "120px" } : {}
-                  }}
-                >
-                  <CippAddTestReportDrawer buttonText={smDown ? "Create" : "Create custom report"} />
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    sx={{
-                      minWidth: "auto",
-                      fontWeight: "bold",
-                      textTransform: "none",
-                      borderRadius: 2,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                      transition: "all 0.2s ease-in-out",
-                      px: smDown ? 1.5 : 2,
-                    }}
-                    onClick={() => {
-                      setRefreshDialog({
-                        open: true,
-                        title: "Refresh Test Data",
-                        message: `Are you sure you want to refresh the test data for ${currentTenant}? This might take up to 2 hours to update.`,
-                        api: {
-                          url: "/api/ExecTestRun",
-                          data: { tenantFilter: currentTenant },
-                          method: "POST",
-                        },
-                        handleClose: () => setRefreshDialog({ open: false }),
-                      });
-                    }}
-                    startIcon={<RefreshIcon />}
-                  >
-                    {smDown ? "Update" : "Update Report"}
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    sx={{
-                      fontWeight: "bold",
-                      textTransform: "none",
-                      borderRadius: 2,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                      transition: "all 0.2s ease-in-out",
-                      px: smDown ? 1.5 : 2,
-                    }}
-                    onClick={() => {
-                      const report = reports.find((r) => r.id === selectedReport);
-                      if (report && report.source !== "file") {
-                        setDeleteDialog({
-                          open: true,
-                          handleClose: () => setDeleteDialog({ open: false }),
-                          row: { ReportId: selectedReport, name: report.name },
-                        });
-                      }
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </Box>
+              <CardContent sx={{ p: smDown ? 1.5 : 2 }}>
+                <CippUniversalSearch />
               </CardContent>
             </Card>
           </Grid>
@@ -400,7 +313,36 @@ const Page = () => {
 
           {/* Column 3: Assessment Results */}
           <Grid size={{ xs: 12, lg: 4 }}>
-            <AssessmentCard data={reportData} isLoading={testsApi.isFetching} />
+            <AssessmentCard 
+              data={reportData} 
+              isLoading={testsApi.isFetching}
+              reports={reports}
+              formControl={formControl}
+              selectedReport={selectedReport}
+              onRefresh={() => {
+                setRefreshDialog({
+                  open: true,
+                  title: "Refresh Test Data",
+                  message: `Are you sure you want to refresh the test data for ${currentTenant}? This might take up to 2 hours to update.`,
+                  api: {
+                    url: "/api/ExecTestRun",
+                    data: { tenantFilter: currentTenant },
+                    method: "POST",
+                  },
+                  handleClose: () => setRefreshDialog({ open: false }),
+                });
+              }}
+              onDelete={() => {
+                const report = reports.find((r) => r.id === selectedReport);
+                if (report && report.source !== "file") {
+                  setDeleteDialog({
+                    open: true,
+                    handleClose: () => setDeleteDialog({ open: false }),
+                    row: { ReportId: selectedReport, name: report.name },
+                  });
+                }
+              }}
+            />
           </Grid>
         </Grid>
 

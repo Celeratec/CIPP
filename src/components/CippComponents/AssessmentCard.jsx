@@ -1,10 +1,20 @@
-import { Card, CardHeader, CardContent, Box, Typography, Skeleton } from "@mui/material";
-import { Security as SecurityIcon } from "@mui/icons-material";
+import { Card, CardHeader, CardContent, Box, Typography, Skeleton, Button, useMediaQuery, useTheme } from "@mui/material";
+import { Security as SecurityIcon, Refresh as RefreshIcon } from "@mui/icons-material";
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from "recharts";
 import { CippTimeAgo } from "../CippComponents/CippTimeAgo";
+import CippFormComponent from "../CippComponents/CippFormComponent";
+import { CippAddTestReportDrawer } from "../CippComponents/CippAddTestReportDrawer";
 import { useState, useEffect, useRef, useCallback } from "react";
 
-export const AssessmentCard = ({ data, isLoading }) => {
+export const AssessmentCard = ({ 
+  data, 
+  isLoading, 
+  reports = [], 
+  formControl, 
+  onRefresh, 
+  onDelete,
+  selectedReport 
+}) => {
   const chartContainerRef = useRef(null);
   const [containerReady, setContainerReady] = useState(false);
 
@@ -56,6 +66,9 @@ export const AssessmentCard = ({ data, isLoading }) => {
   const devicesPercentage = hasDeviceTests ? (devicesPassed / devicesTotal) * 100 : 100;
   const identityPercentage = (identityPassed / identityTotal) * 100;
 
+  const theme = useTheme();
+  const smDown = useMediaQuery(theme.breakpoints.down("sm"));
+
   const chartData = [
     {
       value: devicesPercentage,
@@ -66,6 +79,9 @@ export const AssessmentCard = ({ data, isLoading }) => {
       fill: "#3b82f6",
     },
   ];
+
+  // Check if report controls are provided
+  const hasReportControls = formControl && reports.length > 0;
 
   return (
     <Card sx={{ height: "100%" }}>
@@ -79,6 +95,52 @@ export const AssessmentCard = ({ data, isLoading }) => {
         sx={{ py: 1, px: 1.5 }}
       />
       <CardContent sx={{ pt: 0, px: 1.5, pb: 1.5, "&:last-child": { pb: 1.5 } }}>
+        {/* Report Controls */}
+        {hasReportControls && (
+          <Box sx={{ mb: 1.5 }}>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start", flexWrap: "wrap" }}>
+              <Box sx={{ flex: 1, minWidth: 150 }}>
+                <CippFormComponent
+                  name="reportId"
+                  label="Report"
+                  type="autoComplete"
+                  multiple={false}
+                  formControl={formControl}
+                  options={reports.map((r) => ({
+                    label: r.name,
+                    value: r.id,
+                    description: r.description,
+                  }))}
+                  placeholder="Select report"
+                  size="small"
+                />
+              </Box>
+              <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                <CippAddTestReportDrawer buttonText="+" buttonProps={{ size: "small", sx: { minWidth: 32, px: 1 } }} />
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  onClick={onRefresh}
+                  sx={{ minWidth: 32, px: 1 }}
+                  title="Update Report"
+                >
+                  <RefreshIcon fontSize="small" />
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  size="small"
+                  onClick={onDelete}
+                  sx={{ minWidth: 32, px: 1, fontSize: "0.75rem" }}
+                  title="Delete Report"
+                >
+                  Del
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+        )}
         <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Box sx={{ mb: 0.75 }}>
