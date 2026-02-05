@@ -49,16 +49,20 @@ export const CippUniversalSearch = React.forwardRef(
           onKeyDown={handleKeyDown}
           onChange={handleChange}
           value={searchValue}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                {search.isFetching ? (
-                  <CircularProgress size={18} />
-                ) : (
-                  <SearchIcon fontSize="small" color="action" />
-                )}
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: 20, height: 20 }}>
+                    {search.isFetching ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      <SearchIcon fontSize="small" color="action" />
+                    )}
+                  </Box>
+                </InputAdornment>
+              ),
+            },
           }}
         />
 

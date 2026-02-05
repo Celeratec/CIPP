@@ -20,7 +20,7 @@ import CippFormComponent from "./CippFormComponent";
 import { CippApiResults } from "./CippApiResults";
 import { ApiPostCall, ApiGetCall } from "../../api/ApiCall";
 
-export const CippAddTestReportDrawer = ({ buttonText = "Create custom report" }) => {
+export const CippAddTestReportDrawer = ({ buttonText = "Create custom report", iconOnly = false, buttonProps = {} }) => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
@@ -145,13 +145,15 @@ export const CippAddTestReportDrawer = ({ buttonText = "Create custom report" })
           borderRadius: 2,
           boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
           transition: "all 0.2s ease-in-out",
-          px: buttonText === "Create" ? 1.5 : 2,
-          minWidth: "auto",
+          px: iconOnly ? 1 : (buttonText === "Create" ? 1.5 : 2),
+          minWidth: iconOnly ? 32 : "auto",
+          ...buttonProps.sx,
         }}
         onClick={() => setDrawerVisible(true)}
-        startIcon={<Add />}
+        startIcon={!iconOnly ? <Add /> : undefined}
+        {...buttonProps}
       >
-        {buttonText}
+        {iconOnly ? <Add fontSize="small" /> : buttonText}
       </Button>
       <CippOffCanvas
         title="Create Custom Report"
