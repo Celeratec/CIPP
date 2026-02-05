@@ -491,6 +491,45 @@ export const CippFormComponent = (props) => {
           }
         : validators;
 
+      // Process API config to substitute row values in data and Endpoint
+      // Supports [fieldName] placeholders that get replaced with row values
+      const resolvedApi = other.api
+        ? (() => {
+            const processValue = (value) => {
+              if (typeof value === "string") {
+                // Replace [fieldName] placeholders with row values
+                return value.replace(/\[([^\]]+)\]/g, (_, key) => {
+                  const rowValue = row?.[key];
+                  return rowValue !== undefined ? rowValue : `[${key}]`;
+                });
+              }
+              return value;
+            };
+
+            const processObject = (obj) => {
+              if (!obj || typeof obj !== "object") return obj;
+              const result = {};
+              for (const [key, value] of Object.entries(obj)) {
+                if (typeof value === "object" && value !== null) {
+                  result[key] = processObject(value);
+                } else {
+                  result[key] = processValue(value);
+                }
+              }
+              return result;
+            };
+
+            return {
+              ...other.api,
+              data: processObject(other.api.data),
+              // Include row data for unique queryKey to prevent caching across different rows
+              queryKey: other.api.queryKey
+                ? `${other.api.queryKey}-${row?.siteId || row?.id || ""}`
+                : undefined,
+            };
+          })()
+        : other.api;
+
       return (
         <div>
           <Controller
@@ -500,6 +539,7 @@ export const CippFormComponent = (props) => {
             render={({ field }) => (
               <MemoizedCippAutoComplete
                 {...other}
+                api={resolvedApi}
                 options={resolvedOptions}
                 isFetching={other.isFetching}
                 variant="filled"

@@ -181,10 +181,10 @@ const Page = () => {
         data: {
           groupId: "ownerPrincipalName",
           add: false,
-          URL: "URL",
+          URL: "webUrl",
           SharePointType: "rootWebTemplate",
         },
-        confirmText: "Select the User to remove as a member.",
+        confirmText: "Select the User to remove as a member from this site.",
         category: "edit",
         fields: [
           {
@@ -196,18 +196,16 @@ const Page = () => {
             api: {
               url: "/api/ListGraphRequest",
               data: {
-                Endpoint: "users",
-                $select: "id,displayName,userPrincipalName",
-                $top: 999,
-                $count: true,
+                Endpoint: "sites/[siteId]/lists/User%20Information%20List/items",
+                AsApp: "true",
+                $expand: "fields",
+                $filter: "fields/ContentType eq 'Person'",
               },
-              queryKey: "ListUsersAutoComplete",
+              queryKey: "ListSiteMembersAutoComplete",
               dataKey: "Results",
-              labelField: (user) => `${user.displayName} (${user.userPrincipalName})`,
-              valueField: "userPrincipalName",
-              addedField: {
-                id: "id",
-              },
+              labelField: (item) =>
+                `${item.fields?.Title || "Unknown"} (${item.fields?.EMail || "No email"})`,
+              valueField: (item) => item.fields?.EMail || item.fields?.UserName,
               showRefresh: true,
             },
           },
@@ -264,29 +262,27 @@ const Page = () => {
           RemovePermission: true,
           URL: "webUrl",
         },
-        confirmText: "Select the User to remove from the Site Admins permissions",
+        confirmText: "Select the Site Admin to remove from this site.",
         fields: [
           {
             type: "autoComplete",
             name: "user",
-            label: "Select User",
+            label: "Select Site Admin",
             multiple: false,
             creatable: false,
             api: {
               url: "/api/ListGraphRequest",
               data: {
-                Endpoint: "users",
-                $select: "id,displayName,userPrincipalName",
-                $top: 999,
-                $count: true,
+                Endpoint: "sites/[siteId]/lists/User%20Information%20List/items",
+                AsApp: "true",
+                $expand: "fields",
+                $filter: "fields/IsSiteAdmin eq 1",
               },
-              queryKey: "ListUsersAutoComplete",
+              queryKey: "ListSiteAdminsAutoComplete",
               dataKey: "Results",
-              labelField: (user) => `${user.displayName} (${user.userPrincipalName})`,
-              valueField: "userPrincipalName",
-              addedField: {
-                id: "id",
-              },
+              labelField: (item) =>
+                `${item.fields?.Title || "Unknown"} (${item.fields?.EMail || "No email"})`,
+              valueField: (item) => item.fields?.EMail || item.fields?.UserName,
               showRefresh: true,
             },
           },
@@ -670,10 +666,29 @@ const Page = () => {
                 data: {
                   Endpoint: `/sites/${row.siteId}/lists/User%20Information%20List/items`,
                   AsApp: "true",
-                  expand: "fields",
+                  $expand: "fields",
+                  $filter: "fields/ContentType eq 'Person'",
                   tenantFilter: tenantFilter,
                 },
                 dataKey: "Results",
+                // Filter out system accounts and entries without email on the client side
+                dataFilter: (data) =>
+                  data.filter((item) => {
+                    const email = item.fields?.EMail;
+                    const title = item.fields?.Title?.toLowerCase() || "";
+                    // Exclude system accounts and entries without email
+                    const excludedTitles = [
+                      "system account",
+                      "sharepoint app",
+                      "nt service",
+                      "everyone",
+                      "everyone except external users",
+                    ];
+                    const isSystemAccount = excludedTitles.some(
+                      (excluded) => title.includes(excluded) || title.startsWith("nt ")
+                    );
+                    return email && !isSystemAccount;
+                  }),
               }}
               simpleColumns={["fields.Title", "fields.EMail", "fields.IsSiteAdmin"]}
             />
