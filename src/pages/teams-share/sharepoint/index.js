@@ -284,7 +284,7 @@ const Page = () => {
                 Endpoint: "sites/[siteId]/lists/User%20Information%20List/items",
                 AsApp: "true",
                 $expand: "fields",
-                $filter: "fields/IsSiteAdmin eq 1",
+                $filter: "fields/ContentType eq 'Person'",
               },
               queryKey: "ListSiteAdminsAutoComplete",
               dataKey: "Results",
@@ -292,13 +292,15 @@ const Page = () => {
                 `${item.fields?.Title || "Unknown"} (${item.fields?.EMail || "No email"})`,
               valueField: (item) => item.fields?.EMail || item.fields?.UserName,
               showRefresh: true,
+              // Filter for site admins client-side (IsSiteAdmin is not indexed in SharePoint)
               dataFilter: (data) =>
                 data.filter((item) => {
                   const email = item.fields?.EMail;
                   const title = (item.fields?.Title || "").toLowerCase();
+                  const isSiteAdmin = item.fields?.IsSiteAdmin === true || item.fields?.IsSiteAdmin === "1" || item.fields?.IsSiteAdmin === 1;
                   const excludedTitles = ["system account", "sharepoint app", "nt service", "everyone"];
                   const isSystemAccount = excludedTitles.some((ex) => title.includes(ex) || title.startsWith("nt "));
-                  return email && !isSystemAccount;
+                  return email && isSiteAdmin && !isSystemAccount;
                 }),
             },
           },
