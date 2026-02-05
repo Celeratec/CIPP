@@ -128,7 +128,7 @@ const Page = () => {
         label: "Open Site",
         type: "link",
         icon: <OpenInNew />,
-        link: "webUrl",
+        link: "[webUrl]",
         external: true,
         category: "view",
       },
