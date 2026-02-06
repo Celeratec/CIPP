@@ -9,7 +9,6 @@ import {
   Tooltip,
   IconButton,
   Link as MuiLink,
-  Skeleton,
   Button,
   CircularProgress,
 } from "@mui/material";
@@ -17,6 +16,7 @@ import { alpha } from "@mui/material/styles";
 import { Box, Stack } from "@mui/system";
 import {
   Folder,
+  FolderOpen,
   InsertDriveFile,
   ArrowBack,
   Home,
@@ -30,53 +30,61 @@ import {
   AudioFile,
   Archive,
   Search,
+  Description,
+  SlideshowOutlined,
+  TextSnippet,
 } from "@mui/icons-material";
 import { CippTablePage } from "../../../components/CippComponents/CippTablePage.jsx";
 import CippFormComponent from "../../../components/CippComponents/CippFormComponent";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 
-// Map file extensions to icons
+// Map file extensions to icons and colors
 const getFileIcon = (extension, isFolder) => {
-  if (isFolder) return <Folder />;
+  if (isFolder) return { icon: <Folder />, color: "info" };
   const iconMap = {
-    pdf: <PictureAsPdf />,
-    jpg: <Image />,
-    jpeg: <Image />,
-    png: <Image />,
-    gif: <Image />,
-    svg: <Image />,
-    webp: <Image />,
-    bmp: <Image />,
-    xlsx: <TableChart />,
-    xls: <TableChart />,
-    csv: <TableChart />,
-    mp4: <VideoFile />,
-    avi: <VideoFile />,
-    mov: <VideoFile />,
-    mkv: <VideoFile />,
-    mp3: <AudioFile />,
-    wav: <AudioFile />,
-    flac: <AudioFile />,
-    zip: <Archive />,
-    rar: <Archive />,
-    "7z": <Archive />,
-    tar: <Archive />,
-    gz: <Archive />,
-    js: <Code />,
-    ts: <Code />,
-    py: <Code />,
-    json: <Code />,
-    xml: <Code />,
-    html: <Code />,
-    css: <Code />,
+    pdf: { icon: <PictureAsPdf />, color: "error" },
+    doc: { icon: <Description />, color: "primary" },
+    docx: { icon: <Description />, color: "primary" },
+    txt: { icon: <TextSnippet />, color: "action" },
+    rtf: { icon: <TextSnippet />, color: "action" },
+    jpg: { icon: <Image />, color: "success" },
+    jpeg: { icon: <Image />, color: "success" },
+    png: { icon: <Image />, color: "success" },
+    gif: { icon: <Image />, color: "success" },
+    svg: { icon: <Image />, color: "success" },
+    webp: { icon: <Image />, color: "success" },
+    bmp: { icon: <Image />, color: "success" },
+    xlsx: { icon: <TableChart />, color: "success" },
+    xls: { icon: <TableChart />, color: "success" },
+    csv: { icon: <TableChart />, color: "success" },
+    pptx: { icon: <SlideshowOutlined />, color: "warning" },
+    ppt: { icon: <SlideshowOutlined />, color: "warning" },
+    mp4: { icon: <VideoFile />, color: "secondary" },
+    avi: { icon: <VideoFile />, color: "secondary" },
+    mov: { icon: <VideoFile />, color: "secondary" },
+    mkv: { icon: <VideoFile />, color: "secondary" },
+    mp3: { icon: <AudioFile />, color: "secondary" },
+    wav: { icon: <AudioFile />, color: "secondary" },
+    flac: { icon: <AudioFile />, color: "secondary" },
+    zip: { icon: <Archive />, color: "warning" },
+    rar: { icon: <Archive />, color: "warning" },
+    "7z": { icon: <Archive />, color: "warning" },
+    tar: { icon: <Archive />, color: "warning" },
+    gz: { icon: <Archive />, color: "warning" },
+    js: { icon: <Code />, color: "warning" },
+    ts: { icon: <Code />, color: "info" },
+    py: { icon: <Code />, color: "info" },
+    json: { icon: <Code />, color: "warning" },
+    xml: { icon: <Code />, color: "warning" },
+    html: { icon: <Code />, color: "warning" },
+    css: { icon: <Code />, color: "info" },
   };
-  return iconMap[extension?.toLowerCase()] || <InsertDriveFile />;
+  return iconMap[extension?.toLowerCase()] || { icon: <InsertDriveFile />, color: "action" };
 };
 
 const UserPicker = () => {
   const router = useRouter();
-  const theme = useTheme();
   const formControl = useForm({ mode: "onChange" });
   const [loading, setLoading] = useState(false);
 
@@ -150,7 +158,6 @@ const Page = () => {
     const crumbs = [{ label: name || "OneDrive", folderId: null }];
     if (folderPath) {
       const parts = folderPath.split("/").filter(Boolean);
-      // folderPath format: "folderName1/folderId1/folderName2/folderId2/..."
       for (let i = 0; i < parts.length; i += 2) {
         crumbs.push({
           label: parts[i],
@@ -161,35 +168,38 @@ const Page = () => {
     return crumbs;
   }, [folderPath, name]);
 
-  const navigateToFolder = (itemId, itemName) => {
-    const newPath = folderPath ? `${folderPath}/${itemName}/${itemId}` : `${itemName}/${itemId}`;
-    router.push(
-      {
-        pathname: router.pathname,
-        query: {
-          ...(siteId && { siteId }),
-          ...(driveId && { driveId }),
-          ...(userId && { userId }),
-          name,
-          folderId: itemId,
-          folderPath: newPath,
+  const navigateToFolder = useCallback(
+    (itemId, itemName) => {
+      const newPath = folderPath
+        ? `${folderPath}/${itemName}/${itemId}`
+        : `${itemName}/${itemId}`;
+      router.push(
+        {
+          pathname: router.pathname,
+          query: {
+            ...(siteId && { siteId }),
+            ...(driveId && { driveId }),
+            ...(userId && { userId }),
+            name,
+            folderId: itemId,
+            folderPath: newPath,
+          },
         },
-      },
-      undefined,
-      { shallow: true }
-    );
-  };
+        undefined,
+        { shallow: true }
+      );
+    },
+    [router, siteId, driveId, userId, name, folderPath]
+  );
 
   const navigateToBreadcrumb = (index) => {
     const crumb = breadcrumbs[index];
     if (index === 0) {
-      // Root - keep siteId/driveId/userId/name, remove folderId/folderPath
       const { folderId: _f, folderPath: _fp, ...rest } = router.query;
       router.push({ pathname: router.pathname, query: rest }, undefined, { shallow: true });
     } else {
-      // Rebuild folderPath up to this crumb
       const parts = folderPath.split("/").filter(Boolean);
-      const newPath = parts.slice(0, (index) * 2).join("/");
+      const newPath = parts.slice(0, index * 2).join("/");
       router.push(
         {
           pathname: router.pathname,
@@ -222,6 +232,149 @@ const Page = () => {
     if (folderId) data.FolderId = folderId;
     return data;
   }, [siteId, driveId, userId, folderId]);
+
+  // Custom columns with icons and clickable folder names
+  const columns = useMemo(
+    () => [
+      {
+        id: "name",
+        header: "Name",
+        accessorKey: "name",
+        size: 350,
+        Cell: ({ row }) => {
+          const item = row.original;
+          const { icon, color } = getFileIcon(item.fileExtension, item.isFolder);
+          const colorValue = color === "action"
+            ? theme.palette.action.active
+            : theme.palette[color]?.main || theme.palette.primary.main;
+
+          return (
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={1.5}
+              sx={{
+                ...(item.isFolder && {
+                  cursor: "pointer",
+                  "&:hover .folder-name": {
+                    color: "primary.main",
+                    textDecoration: "underline",
+                  },
+                }),
+              }}
+              onClick={
+                item.isFolder
+                  ? (e) => {
+                      e.stopPropagation();
+                      navigateToFolder(item.id, item.name);
+                    }
+                  : undefined
+              }
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 28,
+                  height: 28,
+                  borderRadius: 0.75,
+                  bgcolor: alpha(colorValue, 0.1),
+                  color: colorValue,
+                  flexShrink: 0,
+                  "& .MuiSvgIcon-root": { fontSize: 18 },
+                }}
+              >
+                {icon}
+              </Box>
+              <Typography
+                variant="body2"
+                className="folder-name"
+                sx={{
+                  fontWeight: item.isFolder ? 600 : 400,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {item.name}
+              </Typography>
+              {item.isFolder && item.childCount != null && (
+                <Chip
+                  label={`${item.childCount}`}
+                  size="small"
+                  variant="outlined"
+                  sx={{ height: 20, fontSize: "0.7rem", "& .MuiChip-label": { px: 0.75 } }}
+                />
+              )}
+            </Stack>
+          );
+        },
+      },
+      {
+        id: "sizeFormatted",
+        header: "Size",
+        accessorKey: "sizeFormatted",
+        size: 120,
+        Cell: ({ row }) => (
+          <Typography variant="body2" color={row.original.isFolder ? "text.secondary" : "text.primary"}>
+            {row.original.sizeFormatted}
+          </Typography>
+        ),
+      },
+      {
+        id: "lastModified",
+        header: "Modified",
+        accessorKey: "lastModified",
+        size: 180,
+        Cell: ({ row }) => {
+          const date = row.original.lastModified;
+          if (!date) return null;
+          try {
+            return (
+              <Typography variant="body2" color="text.secondary">
+                {new Date(date).toLocaleString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </Typography>
+            );
+          } catch {
+            return <Typography variant="body2" color="text.secondary">{date}</Typography>;
+          }
+        },
+      },
+      {
+        id: "createdBy",
+        header: "Created By",
+        accessorKey: "createdBy",
+        size: 160,
+      },
+      {
+        id: "type",
+        header: "Type",
+        accessorKey: "type",
+        size: 80,
+        Cell: ({ row }) => {
+          const item = row.original;
+          if (item.isFolder) {
+            return (
+              <Chip label="Folder" size="small" color="info" variant="outlined" sx={{ height: 22, fontSize: "0.7rem" }} />
+            );
+          }
+          return (
+            <Typography variant="body2" color="text.secondary" sx={{ textTransform: "uppercase", fontSize: "0.75rem" }}>
+              {item.fileExtension || "File"}
+            </Typography>
+          );
+        },
+      },
+    ],
+    [theme, navigateToFolder]
+  );
 
   const actions = useMemo(
     () => [
@@ -302,45 +455,12 @@ const Page = () => {
         apiData={apiData}
         actions={actions}
         queryKey={`onedrive-files-${siteId || userId || driveId}-${folderId || "root"}`}
-        simpleColumns={["name", "type", "sizeFormatted", "lastModified", "createdBy"]}
-        cardConfig={{
-          title: "name",
-          avatar: {
-            field: "fileExtension",
-            customRender: (value, item) => {
-              const icon = getFileIcon(value, item?.isFolder);
-              const color = item?.isFolder ? "info" : "primary";
-              return (
-                <Box
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: 1,
-                    bgcolor: (t) => alpha(t.palette[color].main, 0.1),
-                    color: (t) => t.palette[color].main,
-                  }}
-                >
-                  {icon}
-                </Box>
-              );
-            },
-          },
-          extraFields: [
-            { field: "sizeFormatted", label: "Size" },
-            { field: "lastModified", label: "Modified" },
-          ],
-          cardGridProps: { md: 6, lg: 4 },
-        }}
-        options={{
-          onRowClick: (row) => {
-            if (row.isFolder) {
-              navigateToFolder(row.id, row.name);
-            }
-          },
-        }}
+        columns={columns}
+        defaultViewMode="table"
+        defaultSorting={[
+          { id: "type", desc: true },
+          { id: "name", desc: false },
+        ]}
       />
     </Box>
   );
