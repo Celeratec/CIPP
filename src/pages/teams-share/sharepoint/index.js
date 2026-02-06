@@ -315,6 +315,7 @@ const Page = () => {
         url: "/api/DeleteSharepointSite",
         data: {
           SiteId: "siteId",
+          DisplayName: "displayName",
         },
         confirmText:
           "Are you sure you want to delete this SharePoint site? This action cannot be undone. The site will be moved to the recycle bin for 93 days before permanent deletion. Deletion runs in the background—for large sites it may take several minutes; you can continue using the app.",

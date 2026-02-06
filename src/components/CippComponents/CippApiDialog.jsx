@@ -1,14 +1,19 @@
 import { useRouter } from "next/router";
 import {
+  Alert,
   Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Typography,
   useMediaQuery,
+  useTheme,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { Stack } from "@mui/system";
+import { WarningAmber } from "@mui/icons-material";
 import { CippApiResults } from "./CippApiResults";
 import { ApiGetCall, ApiPostCall } from "../../api/ApiCall";
 import React, { useEffect, useState } from "react";
@@ -342,14 +347,56 @@ export const CippApiDialog = (props) => {
     confirmText = replaceTextInElement(api?.confirmText);
   }
 
+  const theme = useTheme();
+  const isDanger = api?.color === "error";
+
   return (
     <>
       {!api?.link && (
-        <Dialog fullWidth maxWidth="sm" onClose={handleClose} open={createDialog.open} disableRestoreFocus {...other}>
+        <Dialog
+          fullWidth
+          maxWidth="sm"
+          onClose={handleClose}
+          open={createDialog.open}
+          disableRestoreFocus
+          {...other}
+          PaperProps={{
+            ...other?.PaperProps,
+            sx: {
+              ...other?.PaperProps?.sx,
+              ...(isDanger && {
+                border: `2px solid ${theme.palette.error.main}`,
+                boxShadow: `0 0 24px ${alpha(theme.palette.error.main, 0.25)}`,
+              }),
+            },
+          }}
+        >
           <form onSubmit={formHook.handleSubmit(onSubmit)}>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogContent>
-              <Stack spacing={2}>{confirmText}</Stack>
+            <DialogTitle
+              sx={
+                isDanger
+                  ? {
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      bgcolor: alpha(theme.palette.error.main, 0.08),
+                      color: theme.palette.error.main,
+                      borderBottom: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
+                    }
+                  : undefined
+              }
+            >
+              {isDanger && <WarningAmber sx={{ fontSize: 28 }} />}
+              {title}
+            </DialogTitle>
+            <DialogContent sx={{ pt: isDanger ? 2.5 : undefined }}>
+              {isDanger ? (
+                <Alert severity="error" variant="outlined" icon={false} sx={{ mt: 1 }}>
+                  <Typography variant="body2">{confirmText}</Typography>
+                </Alert>
+              ) : (
+                <Stack spacing={2}>{confirmText}</Stack>
+              )}
             </DialogContent>
             <DialogContent>
               <Stack spacing={2}>
@@ -382,12 +429,15 @@ export const CippApiDialog = (props) => {
             <DialogContent>
               <CippApiResults apiObject={{ ...selectedType, data: partialResults }} />
             </DialogContent>
-            <DialogActions>
+            <DialogActions
+              sx={isDanger ? { borderTop: `1px solid ${alpha(theme.palette.error.main, 0.2)}` } : undefined}
+            >
               <Button color="inherit" onClick={handleClose}>
                 Close
               </Button>
               <Button
                 variant="contained"
+                color={isDanger ? "error" : "primary"}
                 type="submit"
                 disabled={!isValid || (isFormSubmitted && !allowResubmit)}
               >
