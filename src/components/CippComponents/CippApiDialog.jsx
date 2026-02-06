@@ -28,6 +28,7 @@ export const CippApiDialog = (props) => {
     allowResubmit = false,
     children,
     defaultvalues,
+    onActionSuccess,
     ...other
   } = props;
   const router = useRouter();
@@ -174,7 +175,9 @@ export const CippApiDialog = (props) => {
           };
 
           if (action.type === "POST") {
-            actionPostRequest.mutate(payload);
+            actionPostRequest.mutate(payload, {
+              onSuccess: (response) => onActionSuccess?.(response),
+            });
           } else if (action.type === "GET") {
             setGetRequestInfo({
               ...payload,
@@ -202,11 +205,14 @@ export const CippApiDialog = (props) => {
     }
 
     if (action.type === "POST") {
-      actionPostRequest.mutate({
-        url: action.url,
-        bulkRequest: isBulkRequest,
-        data: finalData,
-      });
+      actionPostRequest.mutate(
+        {
+          url: action.url,
+          bulkRequest: isBulkRequest,
+          data: finalData,
+        },
+        { onSuccess: (response) => onActionSuccess?.(response) }
+      );
     } else if (action.type === "GET") {
       setGetRequestInfo({
         url: action.url,

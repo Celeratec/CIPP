@@ -215,6 +215,8 @@ export const CIPPTableToptoolbar = ({
   setGraphFilterData,
   setConfiguredSimpleColumns,
   queueMetadata,
+  rowActionQueueId,
+  onClearRowActionQueueId,
   isInDialog = false,
   showBulkExportAction = true,
   viewMode = 'table',
@@ -1354,11 +1356,12 @@ export const CIPPTableToptoolbar = ({
             </Tooltip>
           )}
 
-          {/* Queue tracker */}
+          {/* Queue tracker - show list queue or row-action queue (e.g. delete site) */}
           <CippQueueTracker
-            queueId={queueMetadata?.QueueId}
+            queueId={rowActionQueueId || queueMetadata?.QueueId}
             queryKey={currentEffectiveQueryKey}
             title={title}
+            onQueueComplete={onClearRowActionQueueId}
           />
         </Box>
 
