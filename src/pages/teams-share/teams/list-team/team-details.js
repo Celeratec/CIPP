@@ -268,7 +268,7 @@ const Page = () => {
           {/* Hero + Stats row */}
           <Grid container spacing={2}>
             {/* Hero */}
-            <Grid item xs={12} lg={8}>
+            <Grid item xs={12} lg={6}>
               <Paper
                 elevation={0}
                 sx={{
@@ -342,7 +342,7 @@ const Page = () => {
             </Grid>
 
             {/* Stats */}
-            <Grid item xs={12} lg={4}>
+            <Grid item xs={12} lg={6}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Stack direction="row" spacing={0} divider={<Divider orientation="vertical" flexItem />} justifyContent="space-around" sx={{ width: "100%" }}>
                   <StatBox value={owners.length} label="Owners" color="primary" />
