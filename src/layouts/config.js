@@ -510,8 +510,19 @@ export const nativeMenuItems = [
     items: [
       {
         title: "OneDrive",
-        path: "/teams-share/onedrive",
         permissions: ["Sharepoint.Site.*"],
+        items: [
+          {
+            title: "OneDrive Accounts",
+            path: "/teams-share/onedrive",
+            permissions: ["Sharepoint.Site.*"],
+          },
+          {
+            title: "File Browser",
+            path: "/teams-share/onedrive/file-browser",
+            permissions: ["Sharepoint.Site.*"],
+          },
+        ],
       },
       {
         title: "SharePoint",
