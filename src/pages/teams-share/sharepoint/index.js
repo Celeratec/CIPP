@@ -39,6 +39,9 @@ import {
   TrendingDown,
   Description,
   FolderShared,
+  Lock,
+  Share,
+  DataUsage,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { CippDataTable } from "../../../components/CippTable/CippDataTable";
@@ -307,6 +310,92 @@ const Page = () => {
         ],
         multiPost: false,
         category: "security",
+      },
+      {
+        label: "Lock / Unlock Site",
+        type: "POST",
+        icon: <Lock />,
+        url: "/api/ExecSetSiteProperty",
+        data: {
+          SiteId: "siteId",
+          DisplayName: "displayName",
+        },
+        confirmText:
+          "Set the lock state for '[displayName]'. 'Read Only' prevents edits, 'No Access' blocks all users, and 'Unlock' restores normal access.",
+        fields: [
+          {
+            type: "autoComplete",
+            name: "LockState",
+            label: "Lock State",
+            multiple: false,
+            creatable: false,
+            options: [
+              { label: "Unlock (normal access)", value: "Unlock" },
+              { label: "Read Only", value: "ReadOnly" },
+              { label: "No Access", value: "NoAccess" },
+            ],
+            required: true,
+          },
+        ],
+        multiPost: false,
+        category: "security",
+      },
+      {
+        label: "Set Sharing Policy",
+        type: "POST",
+        icon: <Share />,
+        url: "/api/ExecSetSiteProperty",
+        data: {
+          SiteId: "siteId",
+          DisplayName: "displayName",
+        },
+        confirmText:
+          "Set the external sharing policy for '[displayName]'. This controls who can access content shared from this site.",
+        fields: [
+          {
+            type: "autoComplete",
+            name: "SharingCapability",
+            label: "Sharing Policy",
+            multiple: false,
+            creatable: false,
+            options: [
+              { label: "Disabled (no external sharing)", value: 0 },
+              { label: "Existing external users only", value: 3 },
+              { label: "New and existing external users (sign-in required)", value: 1 },
+              { label: "Anyone (including anonymous guest links)", value: 2 },
+            ],
+            required: true,
+          },
+        ],
+        multiPost: false,
+        category: "security",
+      },
+      {
+        label: "Set Storage Quota",
+        type: "POST",
+        icon: <DataUsage />,
+        url: "/api/ExecSetSiteProperty",
+        data: {
+          SiteId: "siteId",
+          DisplayName: "displayName",
+        },
+        confirmText:
+          "Set the storage quota for '[displayName]'. Values are in GB. The warning level triggers a notification to site admins.",
+        fields: [
+          {
+            type: "textField",
+            name: "StorageMaximumLevelGB",
+            label: "Maximum Storage (GB)",
+            required: true,
+          },
+          {
+            type: "textField",
+            name: "StorageWarningLevelGB",
+            label: "Warning Level (GB, optional — defaults to 90% of max)",
+          },
+        ],
+        multiPost: false,
+        category: "edit",
       },
       {
         label: "Delete Site",

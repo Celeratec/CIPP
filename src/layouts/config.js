@@ -515,8 +515,19 @@ export const nativeMenuItems = [
       },
       {
         title: "SharePoint",
-        path: "/teams-share/sharepoint",
         permissions: ["Sharepoint.Admin.*"],
+        items: [
+          {
+            title: "SharePoint Sites",
+            path: "/teams-share/sharepoint",
+            permissions: ["Sharepoint.Admin.*"],
+          },
+          {
+            title: "Recycle Bin",
+            path: "/teams-share/sharepoint/recycle-bin",
+            permissions: ["Sharepoint.Site.ReadWrite"],
+          },
+        ],
       },
       {
         title: "Teams",
