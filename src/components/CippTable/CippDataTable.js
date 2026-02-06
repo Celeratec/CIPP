@@ -369,6 +369,9 @@ const CardView = ({
   };
 
   const CARD_HEIGHT = "100%";
+  // Max card width sized to fit 8 quick-action icon buttons in a single row
+  // Calculation: 8 buttons × 34px + 7 gaps × 6px + 32px padding + 5px borders ≈ 351px → 360px
+  const CARD_MAX_WIDTH = 360;
 
   // Render badge based on config
   const renderBadge = (badge, item, badgeIndex, isCompact = false, router = null) => {
@@ -735,7 +738,8 @@ const CardView = ({
             sx={{
               height: CARD_HEIGHT,
               width: "100%",
-              maxWidth: "100%",
+              maxWidth: CARD_MAX_WIDTH,
+              mx: "auto", // Center card within grid cell when cell is wider than max
               minWidth: 0, // Allow card to shrink below content size
               overflow: "hidden", // Prevent content overflow
               transition: "all 0.15s ease-in-out",
@@ -888,20 +892,21 @@ const CardView = ({
                   </Stack>
 
                   {subtitleValue && (
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      title={subtitleValue}
-                      sx={{
-                        display: "block",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        maxWidth: "100%",
-                      }}
-                    >
-                      {subtitleValue}
-                    </Typography>
+                    <Tooltip title={subtitleValue} arrow enterDelay={500} placement="bottom">
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          display: "block",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          maxWidth: "100%",
+                        }}
+                      >
+                        {subtitleValue}
+                      </Typography>
+                    </Tooltip>
                   )}
                 </Box>
               </Stack>
@@ -1225,7 +1230,6 @@ const CardView = ({
                                 )}
                                 <Typography
                                   variant="caption"
-                                  title={value || undefined}
                                   component={href ? "a" : "span"}
                                   href={href || undefined}
                                   onClick={href ? (e) => e.stopPropagation() : undefined}
@@ -1259,34 +1263,35 @@ const CardView = ({
                           
                           return (
                             <Grid item xs={6} key={fieldIndex} sx={{ minWidth: 0, overflow: "hidden" }}>
-                              <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, width: "100%", overflow: "hidden", minHeight: 18 }}>
-                                {field.icon && (
-                                  <SvgIcon sx={{ fontSize: 12, color: hasValue ? "text.disabled" : "info.main", opacity: hasValue ? 1 : 0.6, flexShrink: 0 }}>
-                                    {field.icon}
-                                  </SvgIcon>
-                                )}
-                                <Typography 
-                                  variant="caption" 
-                                  title={value || undefined}
-                                  component={href ? "a" : "span"}
-                                  href={href || undefined}
-                                  onClick={href ? (e) => e.stopPropagation() : undefined}
-                                  sx={{ 
-                                    fontSize: "0.7rem",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                    minWidth: 0,
-                                    flex: 1,
-                                    color: href ? "primary.main" : hasValue ? "text.secondary" : "info.main",
-                                    opacity: hasValue || href ? 1 : 0.6,
-                                    textDecoration: href ? "underline" : "none",
-                                    fontStyle: hasValue ? "normal" : "italic",
-                                  }}
-                                >
-                                  {value || "—"}
-                                </Typography>
-                              </Stack>
+                              <Tooltip title={value || ""} arrow enterDelay={500} placement="top" disableHoverListener={!hasValue}>
+                                <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, width: "100%", overflow: "hidden", minHeight: 18 }}>
+                                  {field.icon && (
+                                    <SvgIcon sx={{ fontSize: 12, color: hasValue ? "text.disabled" : "info.main", opacity: hasValue ? 1 : 0.6, flexShrink: 0 }}>
+                                      {field.icon}
+                                    </SvgIcon>
+                                  )}
+                                  <Typography 
+                                    variant="caption" 
+                                    component={href ? "a" : "span"}
+                                    href={href || undefined}
+                                    onClick={href ? (e) => e.stopPropagation() : undefined}
+                                    sx={{ 
+                                      fontSize: "0.7rem",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                      minWidth: 0,
+                                      flex: 1,
+                                      color: href ? "primary.main" : hasValue ? "text.secondary" : "info.main",
+                                      opacity: hasValue || href ? 1 : 0.6,
+                                      textDecoration: href ? "underline" : "none",
+                                      fontStyle: hasValue ? "normal" : "italic",
+                                    }}
+                                  >
+                                    {value || "—"}
+                                  </Typography>
+                                </Stack>
+                              </Tooltip>
                             </Grid>
                           );
                         })}
@@ -1351,7 +1356,7 @@ const CardView = ({
         <Grid container spacing={2}>
           {[1, 2, 3, 4, 5, 6].map((i) => (
               <Grid item xs={12} sm={isMobile ? 12 : 6} md={4} lg={3} key={i}>
-              <Card sx={{ height: CARD_HEIGHT }}>
+              <Card sx={{ height: CARD_HEIGHT, maxWidth: CARD_MAX_WIDTH, mx: "auto" }}>
                 <CardContent sx={{ height: "100%", p: 2 }}>
                   <Stack direction="row" spacing={2} alignItems="center">
                     <Skeleton variant="circular" width={52} height={52} />
