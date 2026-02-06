@@ -26,6 +26,7 @@ export const CippTablePage = (props) => {
     initialFilters,
     sx = {},
     spacing = 2,
+    dataFreshnessField,
     ...other
   } = props;
   const tenant = useSettings().currentTenant;
@@ -60,6 +61,7 @@ export const CippTablePage = (props) => {
               columnsFromApi={columnsFromApi}
               offCanvas={offCanvas}
               filters={activeFilters}
+              dataFreshnessField={dataFreshnessField}
               {...other}
             />
           </Stack>

@@ -1717,6 +1717,7 @@ export const CippDataTable = (props) => {
     showRowActionsMenu = true,
     rowSx = null, // Optional row styling callback (row) => sx object
     onCardClick = null, // Callback when card avatar/title is clicked for navigation
+    dataFreshnessField = null, // Field name to extract data freshness date from first row (e.g. "reportRefreshDate")
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
   const [configuredSimpleColumns, setConfiguredSimpleColumns] = useState(simpleColumns);
@@ -2293,6 +2294,7 @@ export const CippDataTable = (props) => {
               viewMode={viewMode}
               onViewModeChange={handleViewModeChange}
               cardConfigAvailable={!!effectiveCardConfig}
+              dataFreshnessField={dataFreshnessField}
               searchValue={cardSearchInput}
               onSearchChange={setCardSearchInput}
             />
@@ -2525,6 +2527,7 @@ export const CippDataTable = (props) => {
         onViewModeChange={handleViewModeChange}
         cardConfigAvailable={!!effectiveCardConfig}
         isCardView={true}
+        dataFreshnessField={dataFreshnessField}
         searchValue={cardSearchInput}
         onSearchChange={setCardSearchInput}
       />

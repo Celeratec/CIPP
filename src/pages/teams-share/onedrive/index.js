@@ -31,6 +31,7 @@ import {
   LinkOff,
   CloudDone,
   CheckCircle,
+  QueryStats,
 } from "@mui/icons-material";
 import { CippDataTable } from "../../../components/CippTable/CippDataTable";
 import { useSettings } from "../../../hooks/use-settings";
@@ -228,6 +229,20 @@ const Page = () => {
         ],
         multiPost: false,
         category: "edit",
+      },
+      {
+        label: "Get Live Storage",
+        type: "POST",
+        icon: <QueryStats />,
+        url: "/api/ListSiteLiveStorage",
+        data: {
+          SiteId: "siteId",
+          DisplayName: "displayName",
+        },
+        confirmText:
+          "Fetch real-time storage data for [displayName]'s OneDrive directly from the SharePoint Admin API. This bypasses the usage reports cache and returns current values.",
+        multiPost: false,
+        category: "view",
       },
       {
         label: "Lock / Unlock",
@@ -714,6 +729,7 @@ const Page = () => {
       simpleColumns={simpleColumns}
       filters={filters}
       cardConfig={cardConfig}
+      dataFreshnessField="reportRefreshDate"
     />
   );
 };

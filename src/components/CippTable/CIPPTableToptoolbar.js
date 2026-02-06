@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
+  Chip,
   Menu,
   MenuItem,
   ListItemText,
@@ -44,6 +45,7 @@ import {
   Settings,
   Warning,
   Circle,
+  Schedule as ScheduleIcon,
 } from "@mui/icons-material";
 import { ExclamationCircleIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { styled, alpha } from "@mui/material/styles";
@@ -223,6 +225,7 @@ export const CIPPTableToptoolbar = ({
   onViewModeChange,
   cardConfigAvailable = false,
   isCardView = false,
+  dataFreshnessField = null,
   searchValue: controlledSearchValue,
   onSearchChange,
 }) => {
@@ -1347,6 +1350,27 @@ export const CIPPTableToptoolbar = ({
             >
               Bulk Actions
             </Button>
+          )}
+
+          {/* Data freshness indicator */}
+          {dataFreshnessField && usedData?.length > 0 && usedData[0]?.[dataFreshnessField] && (
+            <Tooltip
+              title={`Storage and file counts are from Microsoft's usage reports, which refresh daily with a 24-48 hour lag. Use "Get Live Storage" on individual sites for real-time data.`}
+            >
+              <Chip
+                icon={<ScheduleIcon sx={{ fontSize: 16 }} />}
+                label={`Data as of ${new Date(usedData[0][dataFreshnessField]).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`}
+                size="small"
+                variant="outlined"
+                color="default"
+                sx={{
+                  height: 28,
+                  fontSize: "0.75rem",
+                  "& .MuiChip-icon": { ml: 0.5 },
+                  borderStyle: "dashed",
+                }}
+              />
+            </Tooltip>
           )}
 
           {/* Cold start indicator */}

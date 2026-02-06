@@ -42,6 +42,7 @@ import {
   Lock,
   Share,
   DataUsage,
+  QueryStats,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { CippDataTable } from "../../../components/CippTable/CippDataTable";
@@ -396,6 +397,20 @@ const Page = () => {
         ],
         multiPost: false,
         category: "edit",
+      },
+      {
+        label: "Get Live Storage",
+        type: "POST",
+        icon: <QueryStats />,
+        url: "/api/ListSiteLiveStorage",
+        data: {
+          SiteId: "siteId",
+          DisplayName: "displayName",
+        },
+        confirmText:
+          "Fetch real-time storage data for '[displayName]' directly from the SharePoint Admin API. This bypasses the usage reports cache and returns current values.",
+        multiPost: false,
+        category: "view",
       },
       {
         label: "Delete Site",
@@ -843,6 +858,7 @@ const Page = () => {
       simpleColumns={simpleColumns}
       filters={filters}
       cardConfig={cardConfig}
+      dataFreshnessField="reportRefreshDate"
       cardButton={
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
           <Button component={Link} href="/teams-share/sharepoint/add-site" startIcon={<Add />}>
