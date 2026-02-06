@@ -43,6 +43,7 @@ import {
   Share,
   DataUsage,
   QueryStats,
+  Groups,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { CippDataTable } from "../../../components/CippTable/CippDataTable";
@@ -418,6 +419,21 @@ const Page = () => {
           "Fetch real-time storage data for '[displayName]' directly from the SharePoint Admin API. This bypasses the usage reports cache and returns current values.",
         multiPost: false,
         category: "view",
+      },
+      {
+        label: "Create Team from Site",
+        type: "POST",
+        icon: <Groups />,
+        url: "/api/ExecTeamFromGroup",
+        data: {
+          SiteId: "siteId",
+          DisplayName: "displayName",
+        },
+        confirmText:
+          "Create a Microsoft Team for '[displayName]'? This will team-enable the existing Microsoft 365 Group behind this site, preserving the current site, membership, and content. Full Team provisioning may take a few minutes.",
+        multiPost: false,
+        condition: (row) => row.rootWebTemplate?.includes("Group"),
+        category: "edit",
       },
       {
         label: "Delete Site",

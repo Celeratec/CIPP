@@ -40,6 +40,7 @@ import {
   QueryStats,
   Delete,
   Hub,
+  Groups,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -180,6 +181,20 @@ const Page = () => {
     relatedQueryKeys: [`site-members-${siteId}`],
   };
 
+  // Create Team from Group dialog
+  const isGroupConnected = rootWebTemplate?.includes("Group");
+  const createTeamDialog = useDialog();
+  const createTeamApi = {
+    url: "/api/ExecTeamFromGroup",
+    type: "POST",
+    data: {
+      SiteId: siteId,
+      DisplayName: displayName,
+    },
+    confirmText:
+      "Create a Microsoft Team for this site? This will team-enable the existing Microsoft 365 Group, preserving the current site, membership, and content. Full Team provisioning may take a few minutes.",
+  };
+
   const userPickerField = [
     {
       type: "autoComplete",
@@ -305,6 +320,17 @@ const Page = () => {
                           target="_blank"
                           rel="noopener noreferrer"
                           clickable
+                        />
+                      )}
+                      {isGroupConnected && (
+                        <Chip
+                          icon={<Groups sx={{ fontSize: 14 }} />}
+                          label="Create Team"
+                          size="small"
+                          color="info"
+                          variant="outlined"
+                          clickable
+                          onClick={() => createTeamDialog.handleOpen()}
                         />
                       )}
                     </Stack>
@@ -512,6 +538,9 @@ const Page = () => {
       {/* Dialogs */}
       <CippApiDialog createDialog={addMemberDialog} title="Add Site Member" fields={userPickerField} api={addMemberApi} row={{}} relatedQueryKeys={[`site-members-${siteId}`]} />
       <CippApiDialog createDialog={addAdminDialog} title="Add Site Admin" fields={userPickerField} api={addAdminApi} row={{}} relatedQueryKeys={[`site-members-${siteId}`]} />
+      {isGroupConnected && (
+        <CippApiDialog createDialog={createTeamDialog} title="Create Team from Site" fields={[]} api={createTeamApi} row={{}} />
+      )}
     </>
   );
 };
