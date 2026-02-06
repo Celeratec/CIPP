@@ -31,6 +31,16 @@ import {
 import { useSettings } from "../../../../hooks/use-settings";
 import { useMemo, useCallback } from "react";
 
+// Helper to safely extract a display string from AssignedTo (may be string or object)
+const getAssignedToDisplay = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    return value.displayName || value.userPrincipalName || value.id || "";
+  }
+  return String(value);
+};
+
 const Page = () => {
   const pageTitle = "Teams Business Voice";
   const tenantFilter = useSettings().currentTenant;
@@ -182,7 +192,7 @@ const Page = () => {
           field: "AssignedTo",
           icon: <Person />,
           label: "Assigned To",
-          formatter: (value) => value || "Unassigned",
+          formatter: (value) => getAssignedToDisplay(value) || "Unassigned",
         },
       ],
       desktopFields: [
@@ -283,7 +293,7 @@ const Page = () => {
                   Assigned To
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {row.AssignedTo || "—"}
+                  {getAssignedToDisplay(row.AssignedTo) || "—"}
                 </Typography>
               </Stack>
               <Stack direction="row" justifyContent="space-between" alignItems="center">

@@ -583,8 +583,8 @@ const CardView = ({
         };
         
         return (
-          (titleValue && String(titleValue).toLowerCase().includes(term)) ||
-          (subtitleValue && String(subtitleValue).toLowerCase().includes(term)) ||
+          (titleValue && formatFieldValue(titleValue).toLowerCase().includes(term)) ||
+          (subtitleValue && formatFieldValue(subtitleValue).toLowerCase().includes(term)) ||
           searchAllFields()
         );
       });
@@ -892,7 +892,7 @@ const CardView = ({
                   </Stack>
 
                   {subtitleValue && (
-                    <Tooltip title={subtitleValue} arrow enterDelay={500} placement="bottom">
+                    <Tooltip title={formatFieldValue(subtitleValue)} arrow enterDelay={500} placement="bottom">
                       <Typography
                         variant="caption"
                         color="text.secondary"
@@ -904,7 +904,7 @@ const CardView = ({
                           maxWidth: "100%",
                         }}
                       >
-                        {subtitleValue}
+                        {formatFieldValue(subtitleValue)}
                       </Typography>
                     </Tooltip>
                   )}
