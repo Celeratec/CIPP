@@ -1812,16 +1812,19 @@ export const CippDataTable = (props) => {
 
   useEffect(() => {
     if (getRequestData.isSuccess && !getRequestData.isFetching) {
-      const lastPage = getRequestData.data?.pages[getRequestData.data.pages.length - 1];
-      const nextLinkExists = lastPage?.Metadata?.nextLink;
-      if (nextLinkExists) {
-        getRequestData.fetchNextPage();
+      const pages = getRequestData.data?.pages;
+      if (pages && pages.length > 0) {
+        const lastPage = pages[pages.length - 1];
+        const nextLinkExists = lastPage?.Metadata?.nextLink;
+        if (nextLinkExists) {
+          getRequestData.fetchNextPage();
+        }
       }
     }
   }, [getRequestData.data?.pages?.length, getRequestData.isFetching, queryKey]);
 
   useEffect(() => {
-    if (getRequestData.isSuccess) {
+    if (getRequestData.isSuccess && getRequestData.data?.pages) {
       const allPages = getRequestData.data.pages;
 
       let combinedResults = allPages.flatMap((page) => {
@@ -2578,7 +2581,7 @@ export const CippDataTable = (props) => {
             <ResourceUnavailable message={incorrectDataMessage} />
           ) : (
             <>
-              {(getRequestData.isSuccess || getRequestData.data?.pages.length >= 0 || data) && (
+              {(getRequestData.isSuccess || getRequestData.data?.pages?.length >= 0 || data) && (
                 <MaterialReactTable table={table} />
               )}
             </>
@@ -2610,7 +2613,7 @@ export const CippDataTable = (props) => {
               ) : (
                 <>
                   {(getRequestData.isSuccess ||
-                    getRequestData.data?.pages.length >= 0 ||
+                    getRequestData.data?.pages?.length >= 0 ||
                     (data && !getRequestData.isError)) && (
                     <MaterialReactTable
                       enableRowVirtualization
