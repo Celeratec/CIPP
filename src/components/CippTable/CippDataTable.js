@@ -1729,7 +1729,7 @@ export const CippDataTable = (props) => {
   const [customComponentData, setCustomComponentData] = useState({});
   const [customComponentVisible, setCustomComponentVisible] = useState(false);
   const [actionData, setActionData] = useState({ data: {}, action: {}, ready: false });
-  const [rowActionQueueId, setRowActionQueueId] = useState(null);
+  const [rowActionQueueIds, setRowActionQueueIds] = useState([]);
   const [graphFilterData, setGraphFilterData] = useState({});
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
@@ -2284,8 +2284,10 @@ export const CippDataTable = (props) => {
               setGraphFilterData={setGraphFilterData}
               setConfiguredSimpleColumns={setConfiguredSimpleColumns}
               queueMetadata={getRequestData.data?.pages?.[0]?.Metadata}
-              rowActionQueueId={rowActionQueueId}
-              onClearRowActionQueueId={() => setRowActionQueueId(null)}
+              rowActionQueueIds={rowActionQueueIds}
+              onRemoveRowActionQueueId={(id) =>
+                setRowActionQueueIds((prev) => prev.filter((qid) => qid !== id))
+              }
               isInDialog={isInDialog}
               showBulkExportAction={showBulkExportAction}
               viewMode={viewMode}
@@ -2513,8 +2515,10 @@ export const CippDataTable = (props) => {
         setGraphFilterData={setGraphFilterData}
         setConfiguredSimpleColumns={setConfiguredSimpleColumns}
         queueMetadata={getRequestData.data?.pages?.[0]?.Metadata}
-        rowActionQueueId={rowActionQueueId}
-        onClearRowActionQueueId={() => setRowActionQueueId(null)}
+        rowActionQueueIds={rowActionQueueIds}
+        onRemoveRowActionQueueId={(id) =>
+          setRowActionQueueIds((prev) => prev.filter((qid) => qid !== id))
+        }
         isInDialog={isInDialog}
         showBulkExportAction={showBulkExportAction}
         viewMode={viewMode}
@@ -2695,7 +2699,7 @@ export const CippDataTable = (props) => {
             relatedQueryKeys={queryKey ? queryKey : title}
             onActionSuccess={(response) => {
               if (response?.data?.Queued && response?.data?.QueueId) {
-                setRowActionQueueId(response.data.QueueId);
+                setRowActionQueueIds((prev) => [...prev, response.data.QueueId]);
               }
             }}
             {...actionData.action}
