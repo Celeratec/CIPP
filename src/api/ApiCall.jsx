@@ -179,13 +179,17 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
   const mutation = useMutation({
     mutationFn: async (props) => {
       const { url, data, bulkRequest } = props;
+      // Timeout so long-running backend calls don't hang the app (e.g. large site delete, slow APIs).
+      const timeoutMs = props.timeout ?? 90000; // 90 seconds default
+      const requestConfig = {
+        headers: await buildVersionedHeaders(),
+        timeout: timeoutMs,
+      };
       if (bulkRequest && Array.isArray(data)) {
         const results = [];
         for (let i = 0; i < data.length; i++) {
           let element = data[i];
-          const response = await axios.post(url, element, {
-            headers: await buildVersionedHeaders(),
-          });
+          const response = await axios.post(url, element, requestConfig);
           results.push(response);
           if (onResult) {
             onResult(response.data); // Emit each result as it arrives
@@ -193,7 +197,7 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
         }
         return results;
       } else {
-        const response = await axios.post(url, data, { headers: await buildVersionedHeaders() });
+        const response = await axios.post(url, data, requestConfig);
         if (onResult) {
           onResult(response.data); // Emit each result as it arrives
         }
