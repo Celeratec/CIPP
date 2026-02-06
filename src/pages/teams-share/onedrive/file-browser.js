@@ -10,6 +10,8 @@ import {
   IconButton,
   Link as MuiLink,
   Skeleton,
+  Button,
+  CircularProgress,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { Box, Stack } from "@mui/system";
@@ -27,9 +29,12 @@ import {
   VideoFile,
   AudioFile,
   Archive,
+  Search,
 } from "@mui/icons-material";
 import { CippTablePage } from "../../../components/CippComponents/CippTablePage.jsx";
-import { useMemo } from "react";
+import CippFormComponent from "../../../components/CippComponents/CippFormComponent";
+import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 
 // Map file extensions to icons
 const getFileIcon = (extension, isFolder) => {
@@ -69,10 +74,76 @@ const getFileIcon = (extension, isFolder) => {
   return iconMap[extension?.toLowerCase()] || <InsertDriveFile />;
 };
 
+const UserPicker = () => {
+  const router = useRouter();
+  const theme = useTheme();
+  const formControl = useForm({ mode: "onChange" });
+  const [loading, setLoading] = useState(false);
+
+  const handleBrowse = (values) => {
+    const user = values.selectedUser;
+    if (!user) return;
+    setLoading(true);
+    router.push({
+      pathname: router.pathname,
+      query: {
+        userId: user.value || user,
+        name: user.label || user.value || "OneDrive",
+      },
+    });
+  };
+
+  return (
+    <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
+      <Paper sx={{ p: 4, textAlign: "center", maxWidth: 500, width: "100%" }}>
+        <CloudQueue sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />
+        <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+          Browse OneDrive Files
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Select a user to browse their OneDrive files and folders.
+        </Typography>
+        <Stack spacing={2}>
+          <CippFormComponent
+            type="autoComplete"
+            name="selectedUser"
+            label="Select User"
+            formControl={formControl}
+            multiple={false}
+            api={{
+              url: "/api/ListGraphRequest",
+              data: {
+                Endpoint: "users",
+                $filter: "accountEnabled eq true",
+                $top: 999,
+                $count: true,
+                $orderby: "displayName",
+                $select: "id,displayName,userPrincipalName",
+              },
+              dataKey: "Results",
+              labelField: (user) => `${user.displayName} (${user.userPrincipalName})`,
+              valueField: "id",
+            }}
+          />
+          <Button
+            variant="contained"
+            startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <Search />}
+            onClick={formControl.handleSubmit(handleBrowse)}
+            disabled={loading || !formControl.watch("selectedUser")}
+            fullWidth
+          >
+            {loading ? "Loading..." : "Browse Files"}
+          </Button>
+        </Stack>
+      </Paper>
+    </Box>
+  );
+};
+
 const Page = () => {
   const router = useRouter();
   const theme = useTheme();
-  const { siteId, driveId, folderId, name, folderPath } = router.query;
+  const { siteId, driveId, folderId, name, folderPath, userId } = router.query;
 
   // Build breadcrumb from folderPath
   const breadcrumbs = useMemo(() => {
@@ -96,8 +167,9 @@ const Page = () => {
       {
         pathname: router.pathname,
         query: {
-          siteId,
+          ...(siteId && { siteId }),
           ...(driveId && { driveId }),
+          ...(userId && { userId }),
           name,
           folderId: itemId,
           folderPath: newPath,
@@ -111,8 +183,8 @@ const Page = () => {
   const navigateToBreadcrumb = (index) => {
     const crumb = breadcrumbs[index];
     if (index === 0) {
-      // Root
-      const { folderId: _, folderPath: __, ...rest } = router.query;
+      // Root - keep siteId/driveId/userId/name, remove folderId/folderPath
+      const { folderId: _f, folderPath: _fp, ...rest } = router.query;
       router.push({ pathname: router.pathname, query: rest }, undefined, { shallow: true });
     } else {
       // Rebuild folderPath up to this crumb
@@ -122,8 +194,9 @@ const Page = () => {
         {
           pathname: router.pathname,
           query: {
-            siteId,
+            ...(siteId && { siteId }),
             ...(driveId && { driveId }),
+            ...(userId && { userId }),
             name,
             folderId: crumb.folderId,
             folderPath: newPath,
@@ -142,11 +215,13 @@ const Page = () => {
 
   // Build API query params
   const apiData = useMemo(() => {
-    const data = { SiteId: siteId };
+    const data = {};
+    if (siteId) data.SiteId = siteId;
     if (driveId) data.DriveId = driveId;
+    if (userId) data.UserId = userId;
     if (folderId) data.FolderId = folderId;
     return data;
-  }, [siteId, driveId, folderId]);
+  }, [siteId, driveId, userId, folderId]);
 
   const actions = useMemo(
     () => [
@@ -164,21 +239,8 @@ const Page = () => {
 
   const pageTitle = `Files — ${name || "OneDrive"}`;
 
-  if (!siteId && !driveId) {
-    return (
-      <Box sx={{ p: 4 }}>
-        <Paper sx={{ p: 4, textAlign: "center" }}>
-          <CloudQueue sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />
-          <Typography variant="h6" color="text.secondary">
-            No OneDrive selected
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Navigate to a user&apos;s OneDrive from the OneDrive Accounts page and click
-            &quot;Browse Files&quot; to view their files.
-          </Typography>
-        </Paper>
-      </Box>
-    );
+  if (!siteId && !driveId && !userId) {
+    return <UserPicker />;
   }
 
   return (
@@ -239,7 +301,7 @@ const Page = () => {
         apiUrl="/api/ListOneDriveFiles"
         apiData={apiData}
         actions={actions}
-        queryKey={`onedrive-files-${siteId}-${folderId || "root"}`}
+        queryKey={`onedrive-files-${siteId || userId || driveId}-${folderId || "root"}`}
         simpleColumns={["name", "type", "sizeFormatted", "lastModified", "createdBy"]}
         cardConfig={{
           title: "name",
