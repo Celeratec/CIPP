@@ -129,9 +129,16 @@ const Page = () => {
   const actions = useMemo(
     () => [
       {
-        label: "Open Site",
+        label: "View Details",
         type: "link",
         icon: <OpenInNew />,
+        link: "/teams-share/sharepoint/site-details?siteId=[siteId]&displayName=[displayName]&webUrl=[webUrl]&rootWebTemplate=[rootWebTemplate]&ownerPrincipalName=[ownerPrincipalName]&ownerDisplayName=[ownerDisplayName]&storageUsedInGigabytes=[storageUsedInGigabytes]&storageAllocatedInGigabytes=[storageAllocatedInGigabytes]&fileCount=[fileCount]&lastActivityDate=[lastActivityDate]&createdDateTime=[createdDateTime]&reportRefreshDate=[reportRefreshDate]",
+        category: "view",
+      },
+      {
+        label: "Open Site",
+        type: "link",
+        icon: <Language />,
         link: "[webUrl]",
         external: true,
         category: "view",
@@ -541,7 +548,7 @@ const Page = () => {
         md: 6,
         lg: 4,
       },
-      mobileQuickActions: ["Open Site", "Add Member", "Add Site Admin"],
+      mobileQuickActions: ["View Details", "Open Site", "Add Member"],
     }),
     []
   );
