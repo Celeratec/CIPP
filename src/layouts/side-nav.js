@@ -45,9 +45,9 @@ const findActiveMenuPath = (items, pathname, parentPath = []) => {
 };
 
 const renderItems = ({ collapse = false, depth = 0, items, pathname, openMenus, onMenuToggle }) =>
-  items.reduce((acc, item) => reduceChildRoutes({ acc, collapse, depth, item, pathname, openMenus, onMenuToggle }), []);
+  items.reduce((acc, item) => reduceChildRoutes({ acc, collapse, depth, item, pathname, openMenus, onMenuToggle, siblings: items }), []);
 
-const reduceChildRoutes = ({ acc, collapse, depth, item, pathname, openMenus, onMenuToggle }) => {
+const reduceChildRoutes = ({ acc, collapse, depth, item, pathname, openMenus, onMenuToggle, siblings = [] }) => {
   const hasChildren = item.items && item.items.length > 0;
   
   // Determine if this item is "active" (currently selected page)
@@ -55,9 +55,30 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname, openMenus, on
   if (item.path && pathname && !hasChildren) {
     const exactMatch = pathname === item.path;
     // More precise partial match - ensure path boundary
-    const partialMatch = item.path !== "/" && (
+    let partialMatch = item.path !== "/" && (
       pathname.startsWith(item.path + "/") || pathname === item.path
     );
+    // If partial match, check that no sibling has a longer/more-specific match
+    // This prevents /teams-share/onedrive from highlighting when /teams-share/onedrive/file-browser is the actual match
+    if (partialMatch && !exactMatch) {
+      const allLeafPaths = [];
+      const collectLeafPaths = (items) => {
+        for (const sibling of items) {
+          if (sibling.items && sibling.items.length > 0) {
+            collectLeafPaths(sibling.items);
+          } else if (sibling.path) {
+            allLeafPaths.push(sibling.path);
+          }
+        }
+      };
+      collectLeafPaths(siblings);
+      const hasMoreSpecificMatch = allLeafPaths.some(
+        (p) => p !== item.path && p.length > item.path.length && (pathname === p || pathname.startsWith(p + "/"))
+      );
+      if (hasMoreSpecificMatch) {
+        partialMatch = false;
+      }
+    }
     isActive = exactMatch || partialMatch;
   }
   
