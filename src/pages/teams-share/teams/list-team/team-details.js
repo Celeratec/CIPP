@@ -35,6 +35,8 @@ import {
   LockOpen,
   CheckCircle,
   Cancel,
+  OpenInNew,
+  Language,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -42,6 +44,8 @@ import { CippDataTable } from "../../../../components/CippTable/CippDataTable";
 import { useSettings } from "../../../../hooks/use-settings";
 import { ApiGetCall } from "../../../../api/ApiCall";
 import { CippHead } from "../../../../components/CippComponents/CippHead";
+import { CippApiDialog } from "../../../../components/CippComponents/CippApiDialog";
+import { useDialog } from "../../../../hooks/use-dialog";
 
 const BooleanIndicator = ({ value, trueLabel, falseLabel }) => {
   const isTrue = value === true || value === "true" || value === "True";
@@ -110,10 +114,99 @@ const Page = () => {
   const members = data?.Members || [];
   const owners = data?.Owners || [];
   const installedApps = data?.InstalledApps || [];
+  const sharePointUrl = data?.SharePointUrl || null;
 
   const isArchived = teamInfo?.isArchived === true;
   const isPublic = teamInfo?.visibility === "public" || teamInfo?.visibility === "Public";
   const teamName = data?.Name || name || "Team Details";
+
+  // Add Member dialog
+  const addMemberDialog = useDialog();
+  const addMemberApi = {
+    url: "/api/ExecTeamMember",
+    type: "POST",
+    data: {
+      TeamID: teamId,
+      DisplayName: teamName,
+      Action: "Add",
+      Role: "member",
+    },
+    confirmText: "Select a user to add as a member to this team.",
+    relatedQueryKeys: [`TeamDetails-${teamId}`],
+  };
+  const addMemberFields = [
+    {
+      type: "autoComplete",
+      name: "UserID",
+      label: "Select User",
+      multiple: false,
+      creatable: false,
+      api: {
+        url: "/api/ListGraphRequest",
+        data: {
+          Endpoint: "users",
+          $filter: "accountEnabled eq true",
+          $top: 999,
+          $count: true,
+          $orderby: "displayName",
+          $select: "id,displayName,userPrincipalName",
+        },
+        dataKey: "Results",
+        labelField: (user) => `${user.displayName} (${user.userPrincipalName})`,
+        valueField: "id",
+      },
+      validators: {
+        validate: (value) => {
+          if (!value) return "Please select a user";
+          return true;
+        },
+      },
+    },
+  ];
+
+  // Add Owner dialog
+  const addOwnerDialog = useDialog();
+  const addOwnerApi = {
+    url: "/api/ExecTeamMember",
+    type: "POST",
+    data: {
+      TeamID: teamId,
+      DisplayName: teamName,
+      Action: "Add",
+      Role: "owner",
+    },
+    confirmText: "Select a user to add as an owner. Owners can manage team settings and membership.",
+    relatedQueryKeys: [`TeamDetails-${teamId}`],
+  };
+  const addOwnerFields = [
+    {
+      type: "autoComplete",
+      name: "UserID",
+      label: "Select User",
+      multiple: false,
+      creatable: false,
+      api: {
+        url: "/api/ListGraphRequest",
+        data: {
+          Endpoint: "users",
+          $filter: "accountEnabled eq true",
+          $top: 999,
+          $count: true,
+          $orderby: "displayName",
+          $select: "id,displayName,userPrincipalName",
+        },
+        dataKey: "Results",
+        labelField: (user) => `${user.displayName} (${user.userPrincipalName})`,
+        valueField: "id",
+      },
+      validators: {
+        validate: (value) => {
+          if (!value) return "Please select a user";
+          return true;
+        },
+      },
+    },
+  ];
 
   // Format apps data for the table
   const appsData = installedApps
@@ -313,6 +406,29 @@ const Page = () => {
                     {teamInfo.description}
                   </Typography>
                 )}
+                {sharePointUrl && (
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+                    <Language fontSize="small" color="action" />
+                    <Typography
+                      variant="body2"
+                      component="a"
+                      href={sharePointUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{
+                        color: "primary.main",
+                        textDecoration: "none",
+                        "&:hover": { textDecoration: "underline" },
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 0.5,
+                      }}
+                    >
+                      Open SharePoint Site
+                      <OpenInNew sx={{ fontSize: 14 }} />
+                    </Typography>
+                  </Stack>
+                )}
               </Box>
             </Stack>
           </Paper>
@@ -360,12 +476,22 @@ const Page = () => {
 
           {/* Owners Table */}
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <SupervisorAccount color="warning" />
-                <span>Owners ({owners.length})</span>
-              </Stack>
-            </Typography>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <SupervisorAccount color="warning" />
+                  <span>Owners ({owners.length})</span>
+                </Stack>
+              </Typography>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<PersonAdd />}
+                onClick={() => addOwnerDialog.handleOpen()}
+              >
+                Add Owner
+              </Button>
+            </Stack>
             <CippDataTable
               title="Owners"
               data={owners}
@@ -377,12 +503,22 @@ const Page = () => {
 
           {/* Members Table */}
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Person color="info" />
-                <span>Members ({members.length})</span>
-              </Stack>
-            </Typography>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Person color="info" />
+                  <span>Members ({members.length})</span>
+                </Stack>
+              </Typography>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<PersonAdd />}
+                onClick={() => addMemberDialog.handleOpen()}
+              >
+                Add Member
+              </Button>
+            </Stack>
             <CippDataTable
               title="Members"
               data={members}
@@ -491,6 +627,26 @@ const Page = () => {
           )}
         </Stack>
       </Container>
+
+      {/* Add Member Dialog */}
+      <CippApiDialog
+        createDialog={addMemberDialog}
+        title="Add Member"
+        fields={addMemberFields}
+        api={addMemberApi}
+        row={{}}
+        relatedQueryKeys={[`TeamDetails-${teamId}`]}
+      />
+
+      {/* Add Owner Dialog */}
+      <CippApiDialog
+        createDialog={addOwnerDialog}
+        title="Add Owner"
+        fields={addOwnerFields}
+        api={addOwnerApi}
+        row={{}}
+        relatedQueryKeys={[`TeamDetails-${teamId}`]}
+      />
     </>
   );
 };

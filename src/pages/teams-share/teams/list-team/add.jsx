@@ -599,6 +599,17 @@ const TeamsAddTeamForm = () => {
               configured above can be changed later from the team details page.
             </Typography>
           </Alert>
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            <Typography variant="body2">
+              <strong>SharePoint site provisioning:</strong> A SharePoint site is automatically
+              created alongside the team, but it may take <strong>5-15 minutes</strong> to fully
+              provision. The site will not appear in the CIPP SharePoint Sites list until
+              Microsoft&apos;s usage reports refresh, which can take <strong>24-48 hours</strong>.
+              You can verify the site exists immediately by visiting it directly at{" "}
+              <em>https://yourtenant.sharepoint.com/sites/TeamName</em> or by opening the
+              Files tab in the Teams channel.
+            </Typography>
+          </Alert>
         </Grid>
       </Grid>
     </CippFormPage>
