@@ -253,7 +253,7 @@ const Page = () => {
 
           {/* Hero + Stats row */}
           <Grid container spacing={2}>
-            <Grid item xs={12} lg={8}>
+            <Grid item xs={12} lg={6}>
               <Paper
                 elevation={0}
                 sx={{
@@ -318,7 +318,7 @@ const Page = () => {
               </Paper>
             </Grid>
 
-            <Grid item xs={12} lg={4}>
+            <Grid item xs={12} lg={6}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Stack direction="row" spacing={0} divider={<Divider orientation="vertical" flexItem />} justifyContent="space-around" sx={{ width: "100%" }}>
                   <StatBox value={fileCount.toLocaleString()} label="Files" color="primary" />
@@ -463,7 +463,40 @@ const Page = () => {
                           return email && !isSys;
                         }),
                     }}
-                    simpleColumns={["fields.Title", "fields.EMail", "fields.IsSiteAdmin"]}
+                    columns={[
+                      {
+                        id: "fields.Title",
+                        header: "Name",
+                        accessorFn: (row) => row.fields?.Title || "",
+                        size: 220,
+                        Cell: ({ row }) => {
+                          const isAdmin = row.original.fields?.IsSiteAdmin;
+                          return (
+                            <Stack direction="row" alignItems="center" spacing={1}>
+                              <Typography variant="body2" sx={{ fontWeight: isAdmin ? 600 : 400 }}>
+                                {row.original.fields?.Title || "—"}
+                              </Typography>
+                              {isAdmin && (
+                                <Chip
+                                  icon={<AdminPanelSettings sx={{ fontSize: 14 }} />}
+                                  label="Admin"
+                                  size="small"
+                                  color="warning"
+                                  variant="outlined"
+                                  sx={{ height: 22, fontSize: "0.7rem", "& .MuiChip-label": { px: 0.5 } }}
+                                />
+                              )}
+                            </Stack>
+                          );
+                        },
+                      },
+                      {
+                        id: "fields.EMail",
+                        header: "Email",
+                        accessorFn: (row) => row.fields?.EMail || "",
+                        size: 260,
+                      },
+                    ]}
                     actions={memberActions}
                     noCard
                     hideTitle
