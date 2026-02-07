@@ -181,18 +181,21 @@ const Page = () => {
   };
 
   // Resolve associated team for group-connected sites
+  // Extract the site path segment from webUrl (e.g. "ShippingTeam" from ".../sites/ShippingTeam")
+  // This always matches the M365 Group's mailNickname for group-connected sites
   const isGroupConnected = rootWebTemplate?.includes("Group");
+  const sitePathName = webUrl ? decodeURIComponent(webUrl.split("/sites/")[1]?.split("/")[0] || "") : "";
   const groupLookup = ApiGetCall({
     url: "/api/ListGraphRequest",
     data: {
       Endpoint: "groups",
-      $filter: `mail eq '${ownerPrincipalName}'`,
+      $filter: `mailNickname eq '${sitePathName}'`,
       $select: "id,displayName,resourceProvisioningOptions",
       $count: true,
       tenantFilter: tenantFilter,
     },
     queryKey: `site-group-lookup-${siteId}`,
-    waiting: !!(isGroupConnected && ownerPrincipalName && tenantFilter && siteId),
+    waiting: !!(isGroupConnected && sitePathName && tenantFilter && siteId),
   });
   const associatedGroup = groupLookup?.data?.Results?.[0];
   const isTeamEnabled =
