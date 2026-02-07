@@ -355,183 +355,180 @@ const Page = () => {
             </Grid>
           </Grid>
 
-          {/* Two-column content */}
+          {/* Site Info + Storage side by side */}
           <Grid container spacing={2}>
-            {/* Left: Site Info + Storage */}
+            {/* Site Information */}
             <Grid item xs={12} lg={6}>
-              <Stack spacing={2}>
-                {/* Site Information */}
-                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-                    <Language sx={{ fontSize: 16 }} color="action" />
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      Site Information
-                    </Typography>
-                  </Stack>
-                  <Stack spacing={0.5}>
-                    <InfoRow label="Site Name" value={displayName} />
-                    <InfoRow label="Template" value={rootWebTemplate} />
-                    <InfoRow label="Owner" value={ownerDisplayName || ownerPrincipalName} />
-                    {createdDateTime && <InfoRow label="Created" value={getCippFormatting(createdDateTime, "createdDateTime")} />}
-                    <InfoRow label="Last Activity" value={lastActivityDate || "Unknown"}>
-                      <Stack direction="row" alignItems="center" spacing={0.5}>
-                        {inactive && (
-                          <Tooltip title="No activity in 90+ days">
-                            <Warning sx={{ fontSize: 14 }} color="warning" />
-                          </Tooltip>
-                        )}
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {lastActivityDate || "Unknown"}
-                        </Typography>
-                      </Stack>
-                    </InfoRow>
-                    {reportRefreshDate && <InfoRow label="Report Date" value={reportRefreshDate} />}
-                    {webUrl && (
-                      <InfoRow label="URL">
-                        <Typography
-                          component="a"
-                          href={webUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          variant="body2"
-                          sx={{
-                            color: "primary.main",
-                            textDecoration: "none",
-                            "&:hover": { textDecoration: "underline" },
-                            maxWidth: "60%",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                            display: "block",
-                            textAlign: "right",
-                          }}
-                        >
-                          {webUrl}
-                        </Typography>
-                      </InfoRow>
-                    )}
-                  </Stack>
-                </Paper>
-
-                {/* Storage */}
-                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-                    <Storage sx={{ fontSize: 16 }} color="action" />
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      Storage
-                    </Typography>
-                  </Stack>
-                  <Box sx={{ mb: 1.5 }}>
-                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        {storageUsed} GB used
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {storagePct}%
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: "100%" }}>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                  <Language sx={{ fontSize: 16 }} color="action" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Site Information
+                  </Typography>
+                </Stack>
+                <Stack spacing={0.5}>
+                  <InfoRow label="Site Name" value={displayName} />
+                  <InfoRow label="Template" value={rootWebTemplate} />
+                  <InfoRow label="Owner" value={ownerDisplayName || ownerPrincipalName} />
+                  {createdDateTime && <InfoRow label="Created" value={getCippFormatting(createdDateTime, "createdDateTime")} />}
+                  <InfoRow label="Last Activity" value={lastActivityDate || "Unknown"}>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      {inactive && (
+                        <Tooltip title="No activity in 90+ days">
+                          <Warning sx={{ fontSize: 14 }} color="warning" />
+                        </Tooltip>
+                      )}
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {lastActivityDate || "Unknown"}
                       </Typography>
                     </Stack>
-                    <LinearProgress
-                      variant="determinate"
-                      value={storagePct}
-                      color={storageColor}
-                      sx={{ height: 8, borderRadius: 4, bgcolor: (t) => alpha(t.palette.grey[500], 0.15) }}
-                    />
-                  </Box>
-                  <Stack spacing={0.5}>
-                    <InfoRow label="Allocated" value={`${storageAllocated} GB`} />
-                    <InfoRow label="Used" value={`${storageUsed} GB`} />
-                    <InfoRow label="Available" value={`${(storageAllocated - storageUsed).toFixed(2)} GB`} />
-                    <InfoRow label="File Count" value={fileCount.toLocaleString()} />
-                  </Stack>
-                </Paper>
-              </Stack>
+                  </InfoRow>
+                  {reportRefreshDate && <InfoRow label="Report Date" value={reportRefreshDate} />}
+                  {webUrl && (
+                    <InfoRow label="URL">
+                      <Typography
+                        component="a"
+                        href={webUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="body2"
+                        sx={{
+                          color: "primary.main",
+                          textDecoration: "none",
+                          "&:hover": { textDecoration: "underline" },
+                          maxWidth: "60%",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          display: "block",
+                          textAlign: "right",
+                        }}
+                      >
+                        {webUrl}
+                      </Typography>
+                    </InfoRow>
+                  )}
+                </Stack>
+              </Paper>
             </Grid>
 
-            {/* Right: Members */}
+            {/* Storage */}
             <Grid item xs={12} lg={6}>
-              <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden", height: "100%" }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, bgcolor: "background.default" }}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Person sx={{ fontSize: 16 }} color="info" />
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      Site Members
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: "100%" }}>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                  <Storage sx={{ fontSize: 16 }} color="action" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Storage
+                  </Typography>
+                </Stack>
+                <Box sx={{ mb: 1.5 }}>
+                  <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {storageUsed} GB used
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {storagePct}%
                     </Typography>
                   </Stack>
-                  <Stack direction="row" spacing={1}>
-                    <Button size="small" startIcon={<PersonAdd />} onClick={() => addMemberDialog.handleOpen()}>
-                      Member
-                    </Button>
-                    <Button size="small" startIcon={<AdminPanelSettings />} onClick={() => addAdminDialog.handleOpen()}>
-                      Admin
-                    </Button>
-                  </Stack>
-                </Stack>
-                <Box sx={{ px: 0 }}>
-                  <CippDataTable
-                    title="Site Members"
-                    queryKey={`site-members-${siteId}`}
-                    api={{
-                      url: "/api/ListGraphRequest",
-                      data: {
-                        Endpoint: `/sites/${siteId}/lists/User%20Information%20List/items`,
-                        AsApp: "true",
-                        $expand: "fields",
-                        $filter: "fields/ContentType eq 'Person'",
-                        tenantFilter: tenantFilter,
-                      },
-                      dataKey: "Results",
-                      dataFilter: (data) =>
-                        data.filter((item) => {
-                          const email = item.fields?.EMail;
-                          const title = (item.fields?.Title || "").toLowerCase();
-                          const excluded = ["system account", "sharepoint app", "nt service", "everyone"];
-                          const isSys = excluded.some((ex) => title.includes(ex) || title.startsWith("nt "));
-                          return email && !isSys;
-                        }),
-                    }}
-                    columns={[
-                      {
-                        id: "fields.Title",
-                        header: "Name",
-                        accessorFn: (row) => row.fields?.Title || "",
-                        size: 220,
-                        Cell: ({ row }) => {
-                          const isAdmin = row.original.fields?.IsSiteAdmin;
-                          return (
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                              <Typography variant="body2" sx={{ fontWeight: isAdmin ? 600 : 400 }}>
-                                {row.original.fields?.Title || "—"}
-                              </Typography>
-                              {isAdmin && (
-                                <Chip
-                                  icon={<AdminPanelSettings sx={{ fontSize: 14 }} />}
-                                  label="Admin"
-                                  size="small"
-                                  color="warning"
-                                  variant="outlined"
-                                  sx={{ height: 22, fontSize: "0.7rem", "& .MuiChip-label": { px: 0.5 } }}
-                                />
-                              )}
-                            </Stack>
-                          );
-                        },
-                      },
-                      {
-                        id: "fields.EMail",
-                        header: "Email",
-                        accessorFn: (row) => row.fields?.EMail || "",
-                        size: 260,
-                      },
-                    ]}
-                    actions={memberActions}
-                    noCard
-                    hideTitle
-                    maxHeightOffset="500px"
+                  <LinearProgress
+                    variant="determinate"
+                    value={storagePct}
+                    color={storageColor}
+                    sx={{ height: 8, borderRadius: 4, bgcolor: (t) => alpha(t.palette.grey[500], 0.15) }}
                   />
                 </Box>
+                <Stack spacing={0.5}>
+                  <InfoRow label="Allocated" value={`${storageAllocated} GB`} />
+                  <InfoRow label="Used" value={`${storageUsed} GB`} />
+                  <InfoRow label="Available" value={`${(storageAllocated - storageUsed).toFixed(2)} GB`} />
+                  <InfoRow label="File Count" value={fileCount.toLocaleString()} />
+                </Stack>
               </Paper>
             </Grid>
           </Grid>
+
+          {/* Members - full width */}
+          <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden" }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, bgcolor: "background.default" }}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Person sx={{ fontSize: 16 }} color="info" />
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Site Members
+                </Typography>
+              </Stack>
+              <Stack direction="row" spacing={1}>
+                <Button size="small" startIcon={<PersonAdd />} onClick={() => addMemberDialog.handleOpen()}>
+                  Member
+                </Button>
+                <Button size="small" startIcon={<AdminPanelSettings />} onClick={() => addAdminDialog.handleOpen()}>
+                  Admin
+                </Button>
+              </Stack>
+            </Stack>
+            <Box sx={{ px: 0 }}>
+              <CippDataTable
+                title="Site Members"
+                queryKey={`site-members-${siteId}`}
+                api={{
+                  url: "/api/ListGraphRequest",
+                  data: {
+                    Endpoint: `/sites/${siteId}/lists/User%20Information%20List/items`,
+                    AsApp: "true",
+                    $expand: "fields",
+                    $filter: "fields/ContentType eq 'Person'",
+                    tenantFilter: tenantFilter,
+                  },
+                  dataKey: "Results",
+                  dataFilter: (data) =>
+                    data.filter((item) => {
+                      const email = item.fields?.EMail;
+                      const title = (item.fields?.Title || "").toLowerCase();
+                      const excluded = ["system account", "sharepoint app", "nt service", "everyone"];
+                      const isSys = excluded.some((ex) => title.includes(ex) || title.startsWith("nt "));
+                      return email && !isSys;
+                    }),
+                }}
+                columns={[
+                  {
+                    id: "fields.Title",
+                    header: "Name",
+                    accessorFn: (row) => row.fields?.Title || "",
+                    size: 220,
+                    Cell: ({ row }) => {
+                      const isAdmin = row.original.fields?.IsSiteAdmin;
+                      return (
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <Typography variant="body2" sx={{ fontWeight: isAdmin ? 600 : 400 }}>
+                            {row.original.fields?.Title || "—"}
+                          </Typography>
+                          {isAdmin && (
+                            <Chip
+                              icon={<AdminPanelSettings sx={{ fontSize: 14 }} />}
+                              label="Admin"
+                              size="small"
+                              color="warning"
+                              variant="outlined"
+                              sx={{ height: 22, fontSize: "0.7rem", "& .MuiChip-label": { px: 0.5 } }}
+                            />
+                          )}
+                        </Stack>
+                      );
+                    },
+                  },
+                  {
+                    id: "fields.EMail",
+                    header: "Email",
+                    accessorFn: (row) => row.fields?.EMail || "",
+                    size: 260,
+                  },
+                ]}
+                actions={memberActions}
+                noCard
+                hideTitle
+                maxHeightOffset="500px"
+              />
+            </Box>
+          </Paper>
         </Stack>
       </Container>
 
