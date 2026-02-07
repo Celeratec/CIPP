@@ -29,8 +29,13 @@ export const CippScheduledTaskActions = (drawerHandlers = {}) => {
       customFunction:
         drawerHandlers.openEditDrawer ||
         ((row) => {
-          // Fallback to page navigation if no drawer handler provided
-          window.location.href = `/cipp/scheduler/job?id=${row.RowKey}`;
+          import("next/router")
+            .then(({ default: router }) => {
+              router.push(`/cipp/scheduler/job?id=${row.RowKey}`);
+            })
+            .catch(() => {
+              window.location.href = `/cipp/scheduler/job?id=${row.RowKey}`;
+            });
         }),
       multiPost: false,
       icon: <Edit />,
@@ -44,8 +49,13 @@ export const CippScheduledTaskActions = (drawerHandlers = {}) => {
       customFunction:
         drawerHandlers.openCloneDrawer ||
         ((row) => {
-          // Fallback to page navigation if no drawer handler provided
-          window.location.href = `/cipp/scheduler/job?id=${row.RowKey}&Clone=True`;
+          import("next/router")
+            .then(({ default: router }) => {
+              router.push(`/cipp/scheduler/job?id=${row.RowKey}&Clone=True`);
+            })
+            .catch(() => {
+              window.location.href = `/cipp/scheduler/job?id=${row.RowKey}&Clone=True`;
+            });
         }),
       multiPost: false,
       icon: <CopyAll />,

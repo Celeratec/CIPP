@@ -32,6 +32,7 @@ import {
   Delete,
   MoreHoriz,
 } from "@mui/icons-material";
+import { useRouter } from "next/router";
 import { useDialog } from "../../hooks/use-dialog";
 import { CippApiDialog } from "./CippApiDialog";
 import { useSettings } from "../../hooks/use-settings";
@@ -113,6 +114,7 @@ export const CippActionMenu = ({
   disabled = false,
 }) => {
   const theme = useTheme();
+  const router = useRouter();
   const smDown = useMediaQuery(theme.breakpoints.down("sm"));
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedCategories, setExpandedCategories] = useState({});
@@ -195,7 +197,7 @@ export const CippActionMenu = ({
       if (action.external || action.target === "_blank") {
         window.open(link, "_blank");
       } else {
-        window.location.href = link;
+        router.push(link);
       }
       if (onActionClick) onActionClick(action);
       return;
@@ -459,6 +461,7 @@ export const CippQuickActions = ({
   variant = "icon", // "icon" | "button"
 }) => {
   const theme = useTheme();
+  const router = useRouter();
   const smDown = useMediaQuery(theme.breakpoints.down("sm"));
   const [actionData, setActionData] = useState({ data: {}, action: {}, ready: false });
   const createDialog = useDialog();
@@ -505,7 +508,7 @@ export const CippQuickActions = ({
       if (action.external || action.target === "_blank") {
         window.open(link, "_blank");
       } else {
-        window.location.href = link;
+        router.push(link);
       }
       if (onActionClick) onActionClick(action);
       return;
