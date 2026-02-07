@@ -12,8 +12,7 @@ import {
   Alert,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { Box, Stack, Container } from "@mui/system";
-import Grid from "@mui/material/Grid";
+import { Box, Stack, Container, Grid } from "@mui/system";
 import {
   Groups,
   Public,
@@ -268,7 +267,7 @@ const Page = () => {
           {/* Hero + Stats row */}
           <Grid container spacing={2}>
             {/* Hero */}
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -342,7 +341,7 @@ const Page = () => {
             </Grid>
 
             {/* Stats */}
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Stack direction="row" spacing={0} divider={<Divider orientation="vertical" flexItem />} justifyContent="space-around" sx={{ width: "100%" }}>
                   <StatBox value={owners.length} label="Owners" color="primary" />
@@ -356,7 +355,7 @@ const Page = () => {
 
           {/* Channels + Apps side by side */}
           <Grid container spacing={2}>
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden", height: "100%" }}>
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 2, py: 1.5, bgcolor: "background.default" }}>
                   <Forum fontSize="small" color="success" />
@@ -377,7 +376,7 @@ const Page = () => {
                 </Box>
               </Paper>
             </Grid>
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden", height: "100%" }}>
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 2, py: 1.5, bgcolor: "background.default" }}>
                   <Apps fontSize="small" color="primary" />
@@ -465,7 +464,7 @@ const Page = () => {
               </Stack>
               <Grid container spacing={2}>
                 {teamInfo.memberSettings && (
-                  <Grid item xs={12} sm={6} lg={3}>
+                  <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
                     <SettingsSection
                       title="Member Permissions"
                       icon={<Person sx={{ fontSize: 14 }} color="info" />}
@@ -481,7 +480,7 @@ const Page = () => {
                   </Grid>
                 )}
                 {teamInfo.guestSettings && (
-                  <Grid item xs={12} sm={6} lg={3}>
+                  <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
                     <SettingsSection
                       title="Guest Permissions"
                       icon={<Person sx={{ fontSize: 14 }} color="warning" />}
@@ -493,7 +492,7 @@ const Page = () => {
                   </Grid>
                 )}
                 {teamInfo.messagingSettings && (
-                  <Grid item xs={12} sm={6} lg={3}>
+                  <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
                     <SettingsSection
                       title="Messaging"
                       icon={<Forum sx={{ fontSize: 14 }} color="success" />}
@@ -508,7 +507,7 @@ const Page = () => {
                   </Grid>
                 )}
                 {teamInfo.funSettings && (
-                  <Grid item xs={12} sm={6} lg={3}>
+                  <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
                     <SettingsSection
                       title="Fun Settings"
                       icon={<Apps sx={{ fontSize: 14 }} color="primary" />}

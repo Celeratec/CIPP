@@ -12,9 +12,8 @@ import {
   Alert,
   LinearProgress,
 } from "@mui/material";
-import Grid from "@mui/material/Grid";
 import { alpha } from "@mui/material/styles";
-import { Box, Stack, Container } from "@mui/system";
+import { Box, Stack, Container, Grid } from "@mui/system";
 import {
   Language,
   Campaign,
@@ -268,7 +267,7 @@ const Page = () => {
 
           {/* Hero + Stats row */}
           <Grid container spacing={2}>
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -344,7 +343,7 @@ const Page = () => {
               </Paper>
             </Grid>
 
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Stack direction="row" spacing={0} divider={<Divider orientation="vertical" flexItem />} justifyContent="space-around" sx={{ width: "100%" }}>
                   <StatBox value={fileCount.toLocaleString()} label="Files" color="primary" />
@@ -358,7 +357,7 @@ const Page = () => {
           {/* Site Info + Storage side by side */}
           <Grid container spacing={2}>
             {/* Site Information */}
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: "100%" }}>
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
                   <Language sx={{ fontSize: 16 }} color="action" />
@@ -413,7 +412,7 @@ const Page = () => {
             </Grid>
 
             {/* Storage */}
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: "100%" }}>
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
                   <Storage sx={{ fontSize: 16 }} color="action" />
