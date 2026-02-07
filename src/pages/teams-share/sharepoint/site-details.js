@@ -239,6 +239,25 @@ const Page = () => {
     },
   ];
 
+  // Wait for router to be ready before checking params
+  if (!router.isReady) {
+    return (
+      <>
+        <CippHead title="Site Details" />
+        <Container maxWidth={false}>
+          <Stack spacing={2} sx={{ py: 4 }}>
+            <Button component={Link} href="/teams-share/sharepoint" startIcon={<ArrowBack />} sx={{ alignSelf: "flex-start" }}>
+              Back to Sites
+            </Button>
+            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+              <CircularProgress />
+            </Box>
+          </Stack>
+        </Container>
+      </>
+    );
+  }
+
   if (!siteId) {
     return (
       <>

@@ -62,6 +62,7 @@ const Page = () => {
         icon: <Edit />,
         link: "/identity/administration/groups/edit?groupId=[id]&groupType=Microsoft 365",
         category: "edit",
+        quickAction: true,
       },
       {
         label: "Add Member",
@@ -100,6 +101,7 @@ const Page = () => {
         ],
         multiPost: false,
         category: "edit",
+        quickAction: true,
       },
       {
         label: "Add Owner",
@@ -138,6 +140,7 @@ const Page = () => {
         ],
         multiPost: false,
         category: "security",
+        quickAction: true,
       },
       {
         label: "Archive Team",
@@ -153,6 +156,7 @@ const Page = () => {
           "Are you sure you want to archive '[displayName]'? Archived teams become read-only. Users can still view content but cannot post new messages or modify channels.",
         multiPost: false,
         category: "manage",
+        quickAction: true,
       },
       {
         label: "Unarchive Team",
@@ -168,6 +172,7 @@ const Page = () => {
           "Are you sure you want to unarchive '[displayName]'? This will restore full functionality to the team.",
         multiPost: false,
         category: "manage",
+        quickAction: true,
       },
       {
         label: "Clone Team",
@@ -207,6 +212,7 @@ const Page = () => {
         ],
         multiPost: false,
         category: "edit",
+        quickAction: true,
       },
       {
         label: "Delete Team",
@@ -223,6 +229,7 @@ const Page = () => {
         color: "error",
         multiPost: false,
         category: "danger",
+        quickAction: true,
       },
     ],
     []

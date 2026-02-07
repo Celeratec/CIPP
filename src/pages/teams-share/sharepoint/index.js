@@ -144,6 +144,7 @@ const Page = () => {
         link: "[webUrl]",
         external: true,
         category: "view",
+        quickAction: true,
       },
       {
         label: "Add Member",
@@ -185,6 +186,7 @@ const Page = () => {
         ],
         multiPost: false,
         category: "edit",
+        quickAction: true,
       },
       {
         label: "Remove Member",
@@ -232,6 +234,7 @@ const Page = () => {
           },
         ],
         multiPost: false,
+        quickAction: true,
       },
       {
         label: "Add Site Admin",
@@ -272,6 +275,7 @@ const Page = () => {
         ],
         multiPost: false,
         category: "security",
+        quickAction: true,
       },
       {
         label: "Remove Site Admin",
@@ -320,6 +324,7 @@ const Page = () => {
         ],
         multiPost: false,
         category: "security",
+        quickAction: true,
       },
       {
         label: "Lock / Unlock Site",
@@ -349,6 +354,7 @@ const Page = () => {
         ],
         multiPost: false,
         category: "security",
+        quickAction: true,
       },
       {
         label: "Set Sharing Policy",
@@ -379,6 +385,7 @@ const Page = () => {
         ],
         multiPost: false,
         category: "security",
+        quickAction: true,
       },
       {
         label: "Set Storage Quota",
@@ -406,6 +413,7 @@ const Page = () => {
         ],
         multiPost: false,
         category: "edit",
+        quickAction: true,
       },
       {
         label: "Get Live Storage",
@@ -420,6 +428,7 @@ const Page = () => {
           "Fetch real-time storage data for '[displayName]' directly from the SharePoint Admin API. This bypasses the usage reports cache and returns current values.",
         multiPost: false,
         category: "view",
+        quickAction: true,
       },
       {
         label: "Create Team from Site",
@@ -435,6 +444,7 @@ const Page = () => {
         multiPost: false,
         condition: (row) => row.rootWebTemplate?.includes("Group"),
         category: "edit",
+        quickAction: true,
       },
       {
         label: "Delete Site",
@@ -450,6 +460,7 @@ const Page = () => {
         color: "error",
         multiPost: false,
         category: "danger",
+        quickAction: true,
       },
     ],
     []

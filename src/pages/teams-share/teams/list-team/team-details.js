@@ -216,8 +216,8 @@ const Page = () => {
     },
   ];
 
-  // Loading state
-  if (teamDetails.isLoading) {
+  // Loading state — also wait for router.isReady so query params are available
+  if (!router.isReady || teamDetails.isLoading) {
     return (
       <>
         <CippHead title={`${teamName} - Details`} />
