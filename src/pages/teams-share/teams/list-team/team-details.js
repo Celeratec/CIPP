@@ -10,7 +10,13 @@ import {
   Button,
   CircularProgress,
   Alert,
-  Switch,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  MenuItem,
+  Select,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { Box, Stack, Container, Grid } from "@mui/system";
@@ -29,6 +35,9 @@ import {
   ArrowBack,
   OpenInNew,
   Language,
+  CheckCircle,
+  Cancel,
+  Warning,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -42,43 +51,129 @@ import { CippApiDialog } from "../../../../components/CippComponents/CippApiDial
 import { useDialog } from "../../../../hooks/use-dialog";
 import { showToast } from "../../../../store/toasts";
 
-const SettingsSection = ({ title, icon, settings, onToggle, loadingField }) => (
-  <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, height: "100%" }}>
-    <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1 }}>
-      {icon}
-      <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
-        {title}
-      </Typography>
-    </Stack>
-    <Stack spacing={0.25}>
-      {settings.map(({ label, value, field }, idx) => (
-        <Stack key={idx} direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 0.25 }}>
-          <Typography variant="caption" color="text.secondary">
-            {label}
-          </Typography>
-          {typeof value === "boolean" && field ? (
-            <Box sx={{ position: "relative", display: "flex", alignItems: "center" }}>
-              {loadingField === field && (
-                <CircularProgress size={14} sx={{ position: "absolute", left: -2, zIndex: 1 }} />
-              )}
-              <Switch
-                size="small"
-                checked={value}
-                disabled={loadingField === field}
-                onChange={() => onToggle(field, !value)}
-                sx={{ ml: -0.5 }}
-              />
-            </Box>
-          ) : (
-            <Typography variant="caption" sx={{ fontWeight: 500 }}>
-              {value ?? "N/A"}
-            </Typography>
-          )}
-        </Stack>
-      ))}
-    </Stack>
-  </Paper>
-);
+// Risk metadata for settings that could reduce security or cause data loss
+const settingsRiskInfo = {
+  allowDeleteChannels: {
+    risk: "high",
+    warning: "Allowing members to delete channels can result in permanent data loss. All messages, files, and tabs within deleted channels will be removed.",
+  },
+  allowAddRemoveApps: {
+    risk: "medium",
+    warning: "Apps can access team data including messages and files. Allowing members to add apps could expose sensitive information to third-party services.",
+  },
+  allowCreateUpdateRemoveConnectors: {
+    risk: "medium",
+    warning: "Connectors can send team data to external services. Allowing members to manage connectors could result in data being shared outside your organization.",
+  },
+  allowCreateUpdateChannels_guest: {
+    risk: "medium",
+    warning: "This allows guest users (external to your organization) to create and modify channels in this team.",
+  },
+  allowDeleteChannels_guest: {
+    risk: "high",
+    warning: "Allowing guest users to delete channels is a significant data loss risk. External users could remove channels containing sensitive organizational data.",
+  },
+  allowUserDeleteMessages: {
+    risk: "medium",
+    warning: "Allowing users to delete their own messages may impact compliance and audit trails. Deleted messages cannot be recovered by end users.",
+  },
+};
+
+const SettingsSection = ({ title, icon, settings, onSettingClick, loadingField, onGiphyChange, giphyLoading }) => {
+  const theme = useTheme();
+  return (
+    <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, height: "100%" }}>
+      <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1 }}>
+        {icon}
+        <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
+          {title}
+        </Typography>
+      </Stack>
+      <Stack spacing={0.75}>
+        {settings.map(({ label, value, field, type }, idx) => {
+          if (type === "giphyRating") {
+            return (
+              <Stack key={idx} direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 0.25 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {label}
+                </Typography>
+                <Select
+                  size="small"
+                  value={value || "moderate"}
+                  disabled={giphyLoading}
+                  onChange={(e) => onGiphyChange(e.target.value)}
+                  sx={{ minWidth: 120, height: 26, fontSize: "0.75rem" }}
+                >
+                  <MenuItem value="strict">Strict</MenuItem>
+                  <MenuItem value="moderate">Moderate</MenuItem>
+                  <MenuItem value="noRestriction">No Restriction</MenuItem>
+                </Select>
+              </Stack>
+            );
+          }
+          if (typeof value === "boolean" && field) {
+            const isEnabled = value === true;
+            const riskInfo = settingsRiskInfo[field];
+            const isLoading = loadingField === field;
+            return (
+              <Tooltip
+                key={idx}
+                title={`${label} — Click to ${isEnabled ? "disable" : "enable"}`}
+                arrow
+                placement="left"
+              >
+                <Chip
+                  label={label}
+                  icon={
+                    isLoading ? (
+                      <CircularProgress size={14} color="inherit" />
+                    ) : isEnabled ? (
+                      <CheckCircle fontSize="small" />
+                    ) : (
+                      <Cancel fontSize="small" />
+                    )
+                  }
+                  color={isEnabled ? "success" : "default"}
+                  variant={isEnabled ? "filled" : "outlined"}
+                  size="small"
+                  disabled={isLoading}
+                  onClick={() => onSettingClick(field, !isEnabled, label, riskInfo)}
+                  sx={{
+                    fontWeight: 500,
+                    justifyContent: "flex-start",
+                    cursor: "pointer",
+                    "&:hover": {
+                      opacity: 0.85,
+                      transform: "scale(1.01)",
+                    },
+                    transition: "all 0.15s ease-in-out",
+                    ...(isEnabled && {
+                      bgcolor: alpha(theme.palette.success.main, 0.85),
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.success.main, 0.7),
+                        transform: "scale(1.01)",
+                      },
+                    }),
+                  }}
+                />
+              </Tooltip>
+            );
+          }
+          return (
+            <Stack key={idx} direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 0.25 }}>
+              <Typography variant="caption" color="text.secondary">
+                {label}
+              </Typography>
+              <Typography variant="caption" sx={{ fontWeight: 500 }}>
+                {value ?? "N/A"}
+              </Typography>
+            </Stack>
+          );
+        })}
+      </Stack>
+    </Paper>
+  );
+};
 
 const StatBox = ({ value, label, color }) => (
   <Box sx={{ textAlign: "center", px: 2 }}>
@@ -218,9 +313,10 @@ const Page = () => {
   // Settings toggle logic
   const dispatch = useDispatch();
   const [loadingField, setLoadingField] = useState(null);
+  const [settingsDialog, setSettingsDialog] = useState({ open: false, field: null, newValue: false, label: "", riskInfo: null });
   const settingsMutation = ApiPostCall({ relatedQueryKeys: [`TeamDetails-${teamId}`] });
 
-  const handleSettingToggle = useCallback(
+  const executeSettingChange = useCallback(
     (field, newValue) => {
       setLoadingField(field);
       settingsMutation.mutate(
@@ -235,12 +331,65 @@ const Page = () => {
         },
         {
           onSuccess: (res) => {
-            const msg = res?.data?.Results || `Setting updated successfully`;
+            const msg = res?.data?.Results || "Setting updated successfully";
             dispatch(showToast({ message: msg, title: "Team Settings" }));
             setLoadingField(null);
           },
           onError: (err) => {
             const msg = err?.response?.data?.Results || err?.message || "Failed to update setting";
+            dispatch(showToast({ message: msg, title: "Team Settings", toastError: { message: msg } }));
+            setLoadingField(null);
+          },
+        }
+      );
+    },
+    [teamId, teamName, tenantFilter, settingsMutation, dispatch]
+  );
+
+  const handleSettingClick = useCallback(
+    (field, newValue, label, riskInfo) => {
+      // If enabling a risky setting, show confirmation dialog
+      if (newValue === true && riskInfo) {
+        setSettingsDialog({ open: true, field, newValue, label, riskInfo });
+      } else {
+        // Safe change — execute immediately
+        executeSettingChange(field, newValue);
+      }
+    },
+    [executeSettingChange]
+  );
+
+  const handleSettingsDialogConfirm = useCallback(() => {
+    const { field, newValue } = settingsDialog;
+    setSettingsDialog((prev) => ({ ...prev, open: false }));
+    executeSettingChange(field, newValue);
+  }, [settingsDialog, executeSettingChange]);
+
+  const handleSettingsDialogClose = useCallback(() => {
+    setSettingsDialog({ open: false, field: null, newValue: false, label: "", riskInfo: null });
+  }, []);
+
+  const handleGiphyChange = useCallback(
+    (newRating) => {
+      setLoadingField("giphyContentRating");
+      settingsMutation.mutate(
+        {
+          url: "/api/ExecTeamSettings",
+          data: {
+            TeamID: teamId,
+            DisplayName: teamName,
+            TenantFilter: tenantFilter,
+            giphyContentRating: newRating,
+          },
+        },
+        {
+          onSuccess: (res) => {
+            const msg = res?.data?.Results || "Giphy rating updated successfully";
+            dispatch(showToast({ message: msg, title: "Team Settings" }));
+            setLoadingField(null);
+          },
+          onError: (err) => {
+            const msg = err?.response?.data?.Results || err?.message || "Failed to update giphy rating";
             dispatch(showToast({ message: msg, title: "Team Settings", toastError: { message: msg } }));
             setLoadingField(null);
           },
@@ -506,7 +655,7 @@ const Page = () => {
                     <SettingsSection
                       title="Member Permissions"
                       icon={<Person sx={{ fontSize: 14 }} color="info" />}
-                      onToggle={handleSettingToggle}
+                      onSettingClick={handleSettingClick}
                       loadingField={loadingField}
                       settings={[
                         { label: "Create/Update Channels", value: teamInfo.memberSettings.allowCreateUpdateChannels, field: "allowCreateUpdateChannels" },
@@ -524,7 +673,7 @@ const Page = () => {
                     <SettingsSection
                       title="Guest Permissions"
                       icon={<Person sx={{ fontSize: 14 }} color="warning" />}
-                      onToggle={handleSettingToggle}
+                      onSettingClick={handleSettingClick}
                       loadingField={loadingField}
                       settings={[
                         { label: "Create/Update Channels", value: teamInfo.guestSettings.allowCreateUpdateChannels, field: "allowCreateUpdateChannels_guest" },
@@ -538,7 +687,7 @@ const Page = () => {
                     <SettingsSection
                       title="Messaging"
                       icon={<Forum sx={{ fontSize: 14 }} color="success" />}
-                      onToggle={handleSettingToggle}
+                      onSettingClick={handleSettingClick}
                       loadingField={loadingField}
                       settings={[
                         { label: "Users Edit Messages", value: teamInfo.messagingSettings.allowUserEditMessages, field: "allowUserEditMessages" },
@@ -555,11 +704,13 @@ const Page = () => {
                     <SettingsSection
                       title="Fun Settings"
                       icon={<Apps sx={{ fontSize: 14 }} color="primary" />}
-                      onToggle={handleSettingToggle}
+                      onSettingClick={handleSettingClick}
                       loadingField={loadingField}
+                      onGiphyChange={handleGiphyChange}
+                      giphyLoading={loadingField === "giphyContentRating"}
                       settings={[
                         { label: "Giphy", value: teamInfo.funSettings.allowGiphy, field: "allowGiphy" },
-                        { label: "Giphy Rating", value: teamInfo.funSettings.giphyContentRating },
+                        { label: "Giphy Rating", value: teamInfo.funSettings.giphyContentRating, type: "giphyRating" },
                         { label: "Stickers & Memes", value: teamInfo.funSettings.allowStickersAndMemes, field: "allowStickersAndMemes" },
                         { label: "Custom Memes", value: teamInfo.funSettings.allowCustomMemes, field: "allowCustomMemes" },
                       ]}
@@ -575,6 +726,42 @@ const Page = () => {
       {/* Dialogs */}
       <CippApiDialog createDialog={addMemberDialog} title="Add Member" fields={userPickerField} api={addMemberApi} row={{}} relatedQueryKeys={[`TeamDetails-${teamId}`]} />
       <CippApiDialog createDialog={addOwnerDialog} title="Add Owner" fields={userPickerField} api={addOwnerApi} row={{}} relatedQueryKeys={[`TeamDetails-${teamId}`]} />
+
+      {/* Settings Confirmation Dialog */}
+      <Dialog open={settingsDialog.open} onClose={handleSettingsDialogClose} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ color: settingsDialog.riskInfo?.risk === "high" ? "error.main" : "warning.main" }}>
+          {settingsDialog.riskInfo?.risk === "high" ? "Security Warning" : "Confirm Setting Change"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText component="div">
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Are you sure you want to enable <strong>{settingsDialog.label}</strong> for this team?
+            </Typography>
+            <Alert
+              severity={settingsDialog.riskInfo?.risk === "high" ? "error" : "warning"}
+              icon={<Warning />}
+              sx={{ mb: 1 }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                {settingsDialog.riskInfo?.risk === "high" ? "High Risk — Not Recommended" : "Proceed with Caution"}
+              </Typography>
+              <Typography variant="body2">
+                {settingsDialog.riskInfo?.warning}
+              </Typography>
+            </Alert>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleSettingsDialogClose}>Cancel</Button>
+          <Button
+            onClick={handleSettingsDialogConfirm}
+            color={settingsDialog.riskInfo?.risk === "high" ? "error" : "warning"}
+            variant="contained"
+          >
+            {settingsDialog.riskInfo?.risk === "high" ? "Enable Anyway" : "Enable"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
