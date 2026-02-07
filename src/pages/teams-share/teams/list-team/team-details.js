@@ -353,6 +353,64 @@ const Page = () => {
             </Grid>
           </Grid>
 
+          {/* Owners + Members side by side */}
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden", height: "100%" }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, bgcolor: "background.default" }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <SupervisorAccount fontSize="small" color="warning" />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      Owners ({owners.length})
+                    </Typography>
+                  </Stack>
+                  <Button size="small" startIcon={<PersonAdd />} onClick={() => addOwnerDialog.handleOpen()}>
+                    Add
+                  </Button>
+                </Stack>
+                <Box sx={{ px: 0 }}>
+                  <CippDataTable
+                    title="Owners"
+                    data={owners}
+                    simpleColumns={["displayName", "email"]}
+                    actions={ownerActions}
+                    queryKey={`team-owners-${teamId}`}
+                    noCard
+                    hideTitle
+                    maxHeightOffset="600px"
+                  />
+                </Box>
+              </Paper>
+            </Grid>
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden", height: "100%" }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, bgcolor: "background.default" }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Person fontSize="small" color="info" />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      Members ({members.length})
+                    </Typography>
+                  </Stack>
+                  <Button size="small" startIcon={<PersonAdd />} onClick={() => addMemberDialog.handleOpen()}>
+                    Add
+                  </Button>
+                </Stack>
+                <Box sx={{ px: 0 }}>
+                  <CippDataTable
+                    title="Members"
+                    data={members}
+                    simpleColumns={["displayName", "email"]}
+                    actions={memberActions}
+                    queryKey={`team-members-${teamId}`}
+                    noCard
+                    hideTitle
+                    maxHeightOffset="600px"
+                  />
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
+
           {/* Channels + Apps side by side */}
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, lg: 6 }}>
@@ -398,60 +456,6 @@ const Page = () => {
               </Paper>
             </Grid>
           </Grid>
-
-          {/* Owners - full width */}
-          <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden" }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, bgcolor: "background.default" }}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <SupervisorAccount fontSize="small" color="warning" />
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Owners ({owners.length})
-                </Typography>
-              </Stack>
-              <Button size="small" startIcon={<PersonAdd />} onClick={() => addOwnerDialog.handleOpen()}>
-                Add
-              </Button>
-            </Stack>
-            <Box sx={{ px: 0 }}>
-              <CippDataTable
-                title="Owners"
-                data={owners}
-                simpleColumns={["displayName", "email"]}
-                actions={ownerActions}
-                queryKey={`team-owners-${teamId}`}
-                noCard
-                hideTitle
-                maxHeightOffset="600px"
-              />
-            </Box>
-          </Paper>
-
-          {/* Members - full width */}
-          <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden" }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, bgcolor: "background.default" }}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Person fontSize="small" color="info" />
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Members ({members.length})
-                </Typography>
-              </Stack>
-              <Button size="small" startIcon={<PersonAdd />} onClick={() => addMemberDialog.handleOpen()}>
-                Add
-              </Button>
-            </Stack>
-            <Box sx={{ px: 0 }}>
-              <CippDataTable
-                title="Members"
-                data={members}
-                simpleColumns={["displayName", "email"]}
-                actions={memberActions}
-                queryKey={`team-members-${teamId}`}
-                noCard
-                hideTitle
-                maxHeightOffset="600px"
-              />
-            </Box>
-          </Paper>
 
           {/* Settings: 2x2 grid */}
           {teamInfo && (
