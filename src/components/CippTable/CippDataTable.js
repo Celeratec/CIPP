@@ -1898,7 +1898,7 @@ export const CippDataTable = (props) => {
       const providedColumnKeys = new Set(columns.map((col) => col.id || col.header));
       finalColumns = [...columns, ...apiColumns.filter((col) => !providedColumnKeys.has(col.id))];
       finalColumns.forEach((col) => {
-        newVisibility[col.accessorKey] = providedColumnKeys.has(col.id);
+        newVisibility[col.id] = providedColumnKeys.has(col.id);
       });
 
       // Handle Tenant column for custom columns case

@@ -35,6 +35,7 @@ import {
   Warning,
   CheckCircle,
   OpenInNew,
+  Info,
   Refresh,
   TrendingDown,
   Description,
@@ -132,7 +133,7 @@ const Page = () => {
       {
         label: "View Details",
         type: "link",
-        icon: <OpenInNew />,
+        icon: <Info />,
         link: "/teams-share/sharepoint/site-details?siteId=[siteId]&displayName=[displayName]&webUrl=[webUrl]&rootWebTemplate=[rootWebTemplate]&ownerPrincipalName=[ownerPrincipalName]&ownerDisplayName=[ownerDisplayName]&storageUsedInGigabytes=[storageUsedInGigabytes]&storageAllocatedInGigabytes=[storageAllocatedInGigabytes]&fileCount=[fileCount]&lastActivityDate=[lastActivityDate]&createdDateTime=[createdDateTime]&reportRefreshDate=[reportRefreshDate]",
         category: "view",
         quickAction: true,
