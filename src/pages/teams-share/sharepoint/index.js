@@ -54,10 +54,10 @@ import { useMemo, useCallback } from "react";
 // Helper function to get site type icon and color
 const getSiteTypeInfo = (template) => {
   const templateMap = {
-    "Communication Site": { icon: <Campaign />, color: "primary", label: "Communication" },
-    "Group": { icon: <Group />, color: "info", label: "Team Site" },
-    "Team Site": { icon: <Group />, color: "info", label: "Team Site" },
-    "STS": { icon: <FolderShared />, color: "secondary", label: "Team Site" },
+    "Communication Site": { icon: <Campaign />, color: "primary", label: "Communication Site" },
+    "Group": { icon: <Group />, color: "info", label: "Group-Connected Site" },
+    "Team Site": { icon: <FolderShared />, color: "secondary", label: "Classic Site" },
+    "STS": { icon: <FolderShared />, color: "secondary", label: "Classic Site" },
   };
 
   for (const [key, value] of Object.entries(templateMap)) {
@@ -135,6 +135,7 @@ const Page = () => {
         icon: <OpenInNew />,
         link: "/teams-share/sharepoint/site-details?siteId=[siteId]&displayName=[displayName]&webUrl=[webUrl]&rootWebTemplate=[rootWebTemplate]&ownerPrincipalName=[ownerPrincipalName]&ownerDisplayName=[ownerDisplayName]&storageUsedInGigabytes=[storageUsedInGigabytes]&storageAllocatedInGigabytes=[storageAllocatedInGigabytes]&fileCount=[fileCount]&lastActivityDate=[lastActivityDate]&createdDateTime=[createdDateTime]&reportRefreshDate=[reportRefreshDate]",
         category: "view",
+        quickAction: true,
       },
       {
         label: "Open Site",
@@ -478,7 +479,7 @@ const Page = () => {
         type: "column",
       },
       {
-        filterName: "Team Sites",
+        filterName: "Group-Connected Sites",
         value: [{ id: "rootWebTemplate", value: "Group" }],
         type: "column",
       },

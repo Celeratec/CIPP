@@ -54,6 +54,7 @@ const Page = () => {
         icon: <Info />,
         link: "/teams-share/teams/list-team/team-details?teamId=[id]&name=[displayName]",
         category: "view",
+        quickAction: true,
       },
       {
         label: "Edit Group",

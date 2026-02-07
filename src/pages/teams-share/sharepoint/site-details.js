@@ -54,10 +54,10 @@ import { getCippFormatting } from "../../../utils/get-cipp-formatting";
 // Helpers
 const getSiteTypeInfo = (template) => {
   const templateMap = {
-    "Communication Site": { icon: <Campaign />, color: "primary", label: "Communication" },
-    Group: { icon: <Group />, color: "info", label: "Team Site" },
-    "Team Site": { icon: <Group />, color: "info", label: "Team Site" },
-    STS: { icon: <FolderShared />, color: "secondary", label: "Team Site" },
+    "Communication Site": { icon: <Campaign />, color: "primary", label: "Communication Site" },
+    Group: { icon: <Group />, color: "info", label: "Group-Connected Site" },
+    "Team Site": { icon: <FolderShared />, color: "secondary", label: "Classic Site" },
+    STS: { icon: <FolderShared />, color: "secondary", label: "Classic Site" },
   };
   for (const [key, value] of Object.entries(templateMap)) {
     if (template?.includes(key)) return value;
@@ -492,7 +492,7 @@ const Page = () => {
                     id: "fields.Title",
                     header: "Name",
                     accessorFn: (row) => row.fields?.Title || "",
-                    size: 220,
+                    size: 200,
                     Cell: ({ row }) => {
                       const isAdmin = row.original.fields?.IsSiteAdmin;
                       return (
@@ -518,7 +518,41 @@ const Page = () => {
                     id: "fields.EMail",
                     header: "Email",
                     accessorFn: (row) => row.fields?.EMail || "",
-                    size: 260,
+                    size: 220,
+                  },
+                  {
+                    id: "createdBy",
+                    header: "Created By",
+                    accessorFn: (row) => row.createdBy?.user?.displayName || "",
+                    size: 160,
+                  },
+                  {
+                    id: "createdDateTime",
+                    header: "Created",
+                    accessorFn: (row) => row.createdDateTime || "",
+                    size: 140,
+                    Cell: ({ cell }) => {
+                      const val = cell.getValue();
+                      if (!val) return "—";
+                      return new Date(val).toLocaleDateString();
+                    },
+                  },
+                  {
+                    id: "lastModifiedBy",
+                    header: "Modified By",
+                    accessorFn: (row) => row.lastModifiedBy?.user?.displayName || "",
+                    size: 160,
+                  },
+                  {
+                    id: "lastModifiedDateTime",
+                    header: "Modified",
+                    accessorFn: (row) => row.lastModifiedDateTime || "",
+                    size: 140,
+                    Cell: ({ cell }) => {
+                      const val = cell.getValue();
+                      if (!val) return "—";
+                      return new Date(val).toLocaleDateString();
+                    },
                   },
                 ]}
                 actions={memberActions}
