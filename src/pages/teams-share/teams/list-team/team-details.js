@@ -10,6 +10,7 @@ import {
   Button,
   CircularProgress,
   Alert,
+  Switch,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { Box, Stack, Container, Grid } from "@mui/system";
@@ -26,35 +27,22 @@ import {
   PersonRemove,
   SupervisorAccount,
   ArrowBack,
-  CheckCircle,
-  Cancel,
   OpenInNew,
   Language,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useState, useCallback } from "react";
+import { useDispatch } from "react-redux";
 import { CippDataTable } from "../../../../components/CippTable/CippDataTable";
 import { useSettings } from "../../../../hooks/use-settings";
-import { ApiGetCall } from "../../../../api/ApiCall";
+import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall";
 import { CippHead } from "../../../../components/CippComponents/CippHead";
 import { CippApiDialog } from "../../../../components/CippComponents/CippApiDialog";
 import { useDialog } from "../../../../hooks/use-dialog";
+import { showToast } from "../../../../store/toasts";
 
-const BooleanIndicator = ({ value }) => {
-  const isTrue = value === true || value === "true" || value === "True";
-  return (
-    <Chip
-      icon={isTrue ? <CheckCircle fontSize="small" /> : <Cancel fontSize="small" />}
-      label={isTrue ? "Yes" : "No"}
-      size="small"
-      color={isTrue ? "success" : "default"}
-      variant="outlined"
-      sx={{ height: 22, fontSize: "0.7rem" }}
-    />
-  );
-};
-
-const SettingsSection = ({ title, icon, settings }) => (
+const SettingsSection = ({ title, icon, settings, onToggle, loadingField }) => (
   <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, height: "100%" }}>
     <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1 }}>
       {icon}
@@ -63,13 +51,24 @@ const SettingsSection = ({ title, icon, settings }) => (
       </Typography>
     </Stack>
     <Stack spacing={0.25}>
-      {settings.map(({ label, value }, idx) => (
+      {settings.map(({ label, value, field }, idx) => (
         <Stack key={idx} direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 0.25 }}>
           <Typography variant="caption" color="text.secondary">
             {label}
           </Typography>
-          {typeof value === "boolean" ? (
-            <BooleanIndicator value={value} />
+          {typeof value === "boolean" && field ? (
+            <Box sx={{ position: "relative", display: "flex", alignItems: "center" }}>
+              {loadingField === field && (
+                <CircularProgress size={14} sx={{ position: "absolute", left: -2, zIndex: 1 }} />
+              )}
+              <Switch
+                size="small"
+                checked={value}
+                disabled={loadingField === field}
+                onChange={() => onToggle(field, !value)}
+                sx={{ ml: -0.5 }}
+              />
+            </Box>
           ) : (
             <Typography variant="caption" sx={{ fontWeight: 500 }}>
               {value ?? "N/A"}
@@ -215,6 +214,41 @@ const Page = () => {
       category: "danger",
     },
   ];
+
+  // Settings toggle logic
+  const dispatch = useDispatch();
+  const [loadingField, setLoadingField] = useState(null);
+  const settingsMutation = ApiPostCall({ relatedQueryKeys: [`TeamDetails-${teamId}`] });
+
+  const handleSettingToggle = useCallback(
+    (field, newValue) => {
+      setLoadingField(field);
+      settingsMutation.mutate(
+        {
+          url: "/api/ExecTeamSettings",
+          data: {
+            TeamID: teamId,
+            DisplayName: teamName,
+            TenantFilter: tenantFilter,
+            [field]: newValue,
+          },
+        },
+        {
+          onSuccess: (res) => {
+            const msg = res?.data?.Results || `Setting updated successfully`;
+            dispatch(showToast({ message: msg, title: "Team Settings" }));
+            setLoadingField(null);
+          },
+          onError: (err) => {
+            const msg = err?.response?.data?.Results || err?.message || "Failed to update setting";
+            dispatch(showToast({ message: msg, title: "Team Settings", toastError: { message: msg } }));
+            setLoadingField(null);
+          },
+        }
+      );
+    },
+    [teamId, teamName, tenantFilter, settingsMutation, dispatch]
+  );
 
   // Loading state — also wait for router.isReady so query params are available
   if (!router.isReady || teamDetails.isLoading) {
@@ -472,13 +506,15 @@ const Page = () => {
                     <SettingsSection
                       title="Member Permissions"
                       icon={<Person sx={{ fontSize: 14 }} color="info" />}
+                      onToggle={handleSettingToggle}
+                      loadingField={loadingField}
                       settings={[
-                        { label: "Create/Update Channels", value: teamInfo.memberSettings.allowCreateUpdateChannels },
-                        { label: "Delete Channels", value: teamInfo.memberSettings.allowDeleteChannels },
-                        { label: "Add/Remove Apps", value: teamInfo.memberSettings.allowAddRemoveApps },
-                        { label: "Create Private Channels", value: teamInfo.memberSettings.allowCreatePrivateChannels },
-                        { label: "Create/Update/Remove Tabs", value: teamInfo.memberSettings.allowCreateUpdateRemoveTabs },
-                        { label: "Create/Update/Remove Connectors", value: teamInfo.memberSettings.allowCreateUpdateRemoveConnectors },
+                        { label: "Create/Update Channels", value: teamInfo.memberSettings.allowCreateUpdateChannels, field: "allowCreateUpdateChannels" },
+                        { label: "Delete Channels", value: teamInfo.memberSettings.allowDeleteChannels, field: "allowDeleteChannels" },
+                        { label: "Add/Remove Apps", value: teamInfo.memberSettings.allowAddRemoveApps, field: "allowAddRemoveApps" },
+                        { label: "Create Private Channels", value: teamInfo.memberSettings.allowCreatePrivateChannels, field: "allowCreatePrivateChannels" },
+                        { label: "Create/Update/Remove Tabs", value: teamInfo.memberSettings.allowCreateUpdateRemoveTabs, field: "allowCreateUpdateRemoveTabs" },
+                        { label: "Create/Update/Remove Connectors", value: teamInfo.memberSettings.allowCreateUpdateRemoveConnectors, field: "allowCreateUpdateRemoveConnectors" },
                       ]}
                     />
                   </Grid>
@@ -488,9 +524,11 @@ const Page = () => {
                     <SettingsSection
                       title="Guest Permissions"
                       icon={<Person sx={{ fontSize: 14 }} color="warning" />}
+                      onToggle={handleSettingToggle}
+                      loadingField={loadingField}
                       settings={[
-                        { label: "Create/Update Channels", value: teamInfo.guestSettings.allowCreateUpdateChannels },
-                        { label: "Delete Channels", value: teamInfo.guestSettings.allowDeleteChannels },
+                        { label: "Create/Update Channels", value: teamInfo.guestSettings.allowCreateUpdateChannels, field: "allowCreateUpdateChannels_guest" },
+                        { label: "Delete Channels", value: teamInfo.guestSettings.allowDeleteChannels, field: "allowDeleteChannels_guest" },
                       ]}
                     />
                   </Grid>
@@ -500,12 +538,14 @@ const Page = () => {
                     <SettingsSection
                       title="Messaging"
                       icon={<Forum sx={{ fontSize: 14 }} color="success" />}
+                      onToggle={handleSettingToggle}
+                      loadingField={loadingField}
                       settings={[
-                        { label: "Users Edit Messages", value: teamInfo.messagingSettings.allowUserEditMessages },
-                        { label: "Users Delete Messages", value: teamInfo.messagingSettings.allowUserDeleteMessages },
-                        { label: "Owners Delete Messages", value: teamInfo.messagingSettings.allowOwnerDeleteMessages },
-                        { label: "Team Mentions", value: teamInfo.messagingSettings.allowTeamMentions },
-                        { label: "Channel Mentions", value: teamInfo.messagingSettings.allowChannelMentions },
+                        { label: "Users Edit Messages", value: teamInfo.messagingSettings.allowUserEditMessages, field: "allowUserEditMessages" },
+                        { label: "Users Delete Messages", value: teamInfo.messagingSettings.allowUserDeleteMessages, field: "allowUserDeleteMessages" },
+                        { label: "Owners Delete Messages", value: teamInfo.messagingSettings.allowOwnerDeleteMessages, field: "allowOwnerDeleteMessages" },
+                        { label: "Team Mentions", value: teamInfo.messagingSettings.allowTeamMentions, field: "allowTeamMentions" },
+                        { label: "Channel Mentions", value: teamInfo.messagingSettings.allowChannelMentions, field: "allowChannelMentions" },
                       ]}
                     />
                   </Grid>
@@ -515,11 +555,13 @@ const Page = () => {
                     <SettingsSection
                       title="Fun Settings"
                       icon={<Apps sx={{ fontSize: 14 }} color="primary" />}
+                      onToggle={handleSettingToggle}
+                      loadingField={loadingField}
                       settings={[
-                        { label: "Giphy", value: teamInfo.funSettings.allowGiphy },
+                        { label: "Giphy", value: teamInfo.funSettings.allowGiphy, field: "allowGiphy" },
                         { label: "Giphy Rating", value: teamInfo.funSettings.giphyContentRating },
-                        { label: "Stickers & Memes", value: teamInfo.funSettings.allowStickersAndMemes },
-                        { label: "Custom Memes", value: teamInfo.funSettings.allowCustomMemes },
+                        { label: "Stickers & Memes", value: teamInfo.funSettings.allowStickersAndMemes, field: "allowStickersAndMemes" },
+                        { label: "Custom Memes", value: teamInfo.funSettings.allowCustomMemes, field: "allowCustomMemes" },
                       ]}
                     />
                   </Grid>
