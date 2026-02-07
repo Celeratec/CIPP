@@ -35,6 +35,7 @@ import {
   ArrowBack,
   OpenInNew,
   Language,
+  FolderShared,
   CheckCircle,
   Cancel,
   Warning,
@@ -206,6 +207,9 @@ const Page = () => {
   const owners = data?.Owners || [];
   const installedApps = data?.InstalledApps || [];
   const sharePointUrl = data?.SharePointUrl || null;
+  const sharePointSiteId = data?.SharePointSiteId || null;
+  const sharePointName = data?.SharePointName || null;
+  const sharePointCreated = data?.SharePointCreated || null;
 
   const isArchived = teamInfo?.isArchived === true;
   const isPublic = teamInfo?.visibility === "public" || teamInfo?.visibility === "Public";
@@ -496,20 +500,33 @@ const Page = () => {
                       {isArchived && (
                         <Chip icon={<Inventory fontSize="small" />} label="Archived" size="small" color="error" variant="outlined" />
                       )}
-                      {sharePointUrl && (
+                      {sharePointSiteId && sharePointUrl && (
                         <Chip
-                          icon={<Language fontSize="small" />}
-                          label="SharePoint Site"
+                          icon={<FolderShared fontSize="small" />}
+                          label="View SharePoint Site"
                           size="small"
                           color="primary"
+                          variant="outlined"
+                          clickable
+                          onClick={() =>
+                            router.push(
+                              `/teams-share/sharepoint/site-details?siteId=${encodeURIComponent(sharePointSiteId)}&displayName=${encodeURIComponent(sharePointName || teamName)}&webUrl=${encodeURIComponent(sharePointUrl)}&rootWebTemplate=Group&createdDateTime=${encodeURIComponent(sharePointCreated || "")}`
+                            )
+                          }
+                        />
+                      )}
+                      {sharePointUrl && (
+                        <Chip
+                          icon={<OpenInNew sx={{ fontSize: 14 }} />}
+                          label="Open in SharePoint"
+                          size="small"
+                          color="default"
                           variant="outlined"
                           component="a"
                           href={sharePointUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           clickable
-                          deleteIcon={<OpenInNew sx={{ fontSize: 14 }} />}
-                          onDelete={() => window.open(sharePointUrl, "_blank")}
                         />
                       )}
                     </Stack>

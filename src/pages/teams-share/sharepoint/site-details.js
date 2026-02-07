@@ -180,8 +180,27 @@ const Page = () => {
     relatedQueryKeys: [`site-members-${siteId}`],
   };
 
-  // Create Team from Group dialog
+  // Resolve associated team for group-connected sites
   const isGroupConnected = rootWebTemplate?.includes("Group");
+  const groupLookup = ApiGetCall({
+    url: "/api/ListGraphRequest",
+    data: {
+      Endpoint: "groups",
+      $filter: `mail eq '${ownerPrincipalName}'`,
+      $select: "id,displayName,resourceProvisioningOptions",
+      $count: true,
+      tenantFilter: tenantFilter,
+    },
+    queryKey: `site-group-lookup-${siteId}`,
+    waiting: !!(isGroupConnected && ownerPrincipalName && tenantFilter && siteId),
+  });
+  const associatedGroup = groupLookup?.data?.Results?.[0];
+  const isTeamEnabled =
+    associatedGroup?.resourceProvisioningOptions?.includes("Team") ?? false;
+  const associatedTeamId = isTeamEnabled ? associatedGroup.id : null;
+  const associatedTeamName = isTeamEnabled ? associatedGroup.displayName : null;
+
+  // Create Team from Group dialog
   const createTeamDialog = useDialog();
   const createTeamApi = {
     url: "/api/ExecTeamFromGroup",
@@ -340,7 +359,22 @@ const Page = () => {
                           clickable
                         />
                       )}
-                      {isGroupConnected && (
+                      {isGroupConnected && isTeamEnabled && associatedTeamId && (
+                        <Chip
+                          icon={<Groups sx={{ fontSize: 14 }} />}
+                          label="View Team"
+                          size="small"
+                          color="info"
+                          variant="outlined"
+                          clickable
+                          onClick={() =>
+                            router.push(
+                              `/teams-share/teams/list-team/team-details?teamId=${encodeURIComponent(associatedTeamId)}&name=${encodeURIComponent(associatedTeamName || displayName)}`
+                            )
+                          }
+                        />
+                      )}
+                      {isGroupConnected && !isTeamEnabled && !groupLookup.isLoading && (
                         <Chip
                           icon={<Groups sx={{ fontSize: 14 }} />}
                           label="Create Team"
