@@ -351,7 +351,7 @@ const Page = () => {
                       {webUrl && (
                         <Chip
                           icon={<OpenInNew sx={{ fontSize: 14 }} />}
-                          label="Open Site"
+                          label="Open in SharePoint"
                           size="small"
                           color="primary"
                           variant="outlined"

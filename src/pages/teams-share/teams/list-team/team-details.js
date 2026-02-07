@@ -515,15 +515,15 @@ const Page = () => {
                           }
                         />
                       )}
-                      {sharePointUrl && (
+                      {teamId && (
                         <Chip
                           icon={<OpenInNew sx={{ fontSize: 14 }} />}
-                          label="Open in SharePoint"
+                          label="Open in Teams"
                           size="small"
                           color="default"
                           variant="outlined"
                           component="a"
-                          href={sharePointUrl}
+                          href={`https://teams.microsoft.com/l/team/${encodeURIComponent(teamId)}/conversations?groupId=${encodeURIComponent(teamId)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           clickable
