@@ -1,4 +1,4 @@
-import { Close, Download, Help, ExpandMore, ExpandLess } from "@mui/icons-material";
+import { Close, Download, ExpandMore, ExpandLess } from "@mui/icons-material";
 import {
   Alert,
   CircularProgress,
@@ -9,13 +9,11 @@ import {
   Box,
   SvgIcon,
   Tooltip,
-  Button,
   keyframes,
 } from "@mui/material";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { getCippError } from "../../utils/get-cipp-error";
 import { CippCopyToClipBoard } from "./CippCopyToClipboard";
-import { CippDocsLookup } from "./CippDocsLookup";
 import { CippCodeBlock } from "./CippCodeBlock";
 import React from "react";
 import { CippTableDialog } from "./CippTableDialog";
@@ -118,6 +116,54 @@ const extractAllResults = (data) => {
 
   extractFrom(data);
   return results;
+};
+
+// Format result messages for readability
+const FormattedResultText = ({ text, severity }) => {
+  if (typeof text !== "string") {
+    return <Typography variant="body2">{String(text)}</Typography>;
+  }
+
+  // Pattern: "Failed to X. Error: Y" or "Successfully X. Message: Y"
+  const errorSplit = text.match(/^(.+?)\.\s*Error:\s*(.+)$/s);
+  if (errorSplit) {
+    return (
+      <Box>
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {errorSplit[1]}
+        </Typography>
+        <Typography
+          variant="body2"
+          sx={{ mt: 0.5, opacity: 0.9, wordBreak: "break-word" }}
+        >
+          {errorSplit[2]}
+        </Typography>
+      </Box>
+    );
+  }
+
+  // Pattern: quoted names like 'SiteName' or "SiteName" — bold them
+  const hasQuotedNames = /['"][^'"]+['"]/.test(text);
+  if (hasQuotedNames) {
+    const parts = text.split(/(['"][^'"]+['"])/g);
+    return (
+      <Typography variant="body2" sx={{ wordBreak: "break-word" }}>
+        {parts.map((part, i) =>
+          /^['"]/.test(part) ? (
+            <strong key={i}>{part}</strong>
+          ) : (
+            <span key={i}>{part}</span>
+          )
+        )}
+      </Typography>
+    );
+  }
+
+  return (
+    <Typography variant="body2" sx={{ wordBreak: "break-word" }}>
+      {text}
+    </Typography>
+  );
 };
 
 export const CippApiResults = (props) => {
@@ -295,36 +341,6 @@ export const CippApiResults = (props) => {
                   severity={resultObj.severity || "success"}
                   action={
                     <>
-                      {resultObj.severity === "error" && (
-                        <Button
-                          size="small"
-                          variant="contained"
-                          color="secondary"
-                          startIcon={<Help />}
-                          onClick={() => {
-                            const searchUrl = `https://docs.cipp.app/?q=Help+with:+${encodeURIComponent(
-                              resultObj.copyField || resultObj.text
-                            )}&ask=true`;
-                            window.open(searchUrl, "_blank");
-                          }}
-                          sx={{
-                            ml: 1,
-                            mr: 1,
-                            backgroundColor: "white",
-                            color: "error.main",
-                            "&:hover": {
-                              backgroundColor: "grey.100",
-                            },
-                            py: 0.5,
-                            px: 1,
-                            minWidth: "auto",
-                            fontSize: "0.875rem",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          Get Help
-                        </Button>
-                      )}
                       <CippCopyToClipBoard
                         color="inherit"
                         text={resultObj.copyField || resultObj.text}
@@ -361,7 +377,7 @@ export const CippApiResults = (props) => {
                   }
                 >
                   <Box sx={{ width: "100%" }}>
-                    <Typography variant="body2">{resultObj.text}</Typography>
+                    <FormattedResultText text={resultObj.text} severity={resultObj.severity} />
                     {resultObj.details && (
                       <Collapse in={showDetails[resultObj.id]}>
                         <Box mt={2} sx={{ width: "100%" }}>
