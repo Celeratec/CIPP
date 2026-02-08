@@ -303,6 +303,7 @@ const Page = () => {
   const appsData = installedApps
     .filter((app) => app.teamsAppDefinition)
     .map((app) => ({
+      installationId: app.id,
       displayName: app.teamsAppDefinition?.displayName || "Unknown App",
       version: app.teamsAppDefinition?.version || "N/A",
       description: app.teamsAppDefinition?.shortDescription || "",
@@ -367,6 +368,27 @@ const Page = () => {
       },
       confirmText:
         "Are you sure you want to delete this channel? This action is permanent and cannot be undone. All messages, files, and tabs within this channel will be permanently removed.",
+      color: "error",
+      category: "danger",
+      relatedQueryKeys: [`TeamDetails-${teamId}`],
+    },
+  ];
+
+  const appActions = [
+    {
+      label: "Remove App",
+      type: "POST",
+      icon: <DeleteOutline />,
+      url: "/api/ExecTeamAction",
+      data: {
+        TeamID: `!${teamId}`,
+        DisplayName: `!${teamName}`,
+        Action: "!RemoveApp",
+        AppInstallationID: "installationId",
+        AppName: "displayName",
+      },
+      confirmText:
+        "Are you sure you want to remove this app from the team? Any tabs or integrations provided by this app will stop working.",
       color: "error",
       category: "danger",
       relatedQueryKeys: [`TeamDetails-${teamId}`],
@@ -712,6 +734,7 @@ const Page = () => {
                     title="Installed Apps"
                     data={appsData}
                     simpleColumns={["displayName", "version", "publishingState"]}
+                    actions={appActions}
                     queryKey={`team-apps-${teamId}`}
                     noCard
                     hideTitle
