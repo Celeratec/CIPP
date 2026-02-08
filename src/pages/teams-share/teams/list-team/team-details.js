@@ -40,6 +40,7 @@ import {
   Cancel,
   Warning,
   Add,
+  DeleteOutline,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -348,6 +349,27 @@ const Page = () => {
       confirmText: "Remove this owner? Ensure at least one owner remains.",
       color: "error",
       category: "danger",
+    },
+  ];
+
+  const channelActions = [
+    {
+      label: "Delete Channel",
+      type: "POST",
+      icon: <DeleteOutline />,
+      url: "/api/ExecTeamAction",
+      data: {
+        TeamID: `!${teamId}`,
+        DisplayName: `!${teamName}`,
+        Action: "!DeleteChannel",
+        ChannelID: "id",
+        ChannelName: "displayName",
+      },
+      confirmText:
+        "Are you sure you want to delete this channel? This action is permanent and cannot be undone. All messages, files, and tabs within this channel will be permanently removed.",
+      color: "error",
+      category: "danger",
+      relatedQueryKeys: [`TeamDetails-${teamId}`],
     },
   ];
 
@@ -668,6 +690,7 @@ const Page = () => {
                     title="Channels"
                     data={channels}
                     simpleColumns={["displayName", "description", "membershipType"]}
+                    actions={channelActions}
                     queryKey={`team-channels-${teamId}`}
                     noCard
                     hideTitle
