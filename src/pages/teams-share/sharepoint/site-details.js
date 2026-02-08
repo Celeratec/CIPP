@@ -118,7 +118,7 @@ const Page = () => {
   const tenantFilter = useSettings().currentTenant;
   const theme = useTheme();
 
-  // We receive the site data as query params from the list page
+  // We receive some site data as query params; fetch usage data to fill gaps
   const {
     siteId,
     displayName: qName,
@@ -134,17 +134,28 @@ const Page = () => {
     reportRefreshDate: qRefresh,
   } = router.query;
 
-  const displayName = qName || "Site Details";
-  const webUrl = qUrl || "";
-  const rootWebTemplate = qTemplate || "";
-  const ownerPrincipalName = qOwner || "";
-  const ownerDisplayName = qOwnerDisplay || qOwner || "";
-  const storageUsed = parseFloat(qUsed) || 0;
-  const storageAllocated = parseFloat(qAllocated) || 0;
-  const fileCount = parseInt(qFiles) || 0;
-  const lastActivityDate = qLastActivity || "";
-  const createdDateTime = qCreated || "";
-  const reportRefreshDate = qRefresh || "";
+  // Fetch site usage data to populate fields not available from query params
+  // This will use React Query's cache if the list page was recently viewed
+  const siteUsageData = ApiGetCall({
+    url: "/api/ListSites",
+    data: { type: "SharePointSiteUsage", tenantFilter },
+    queryKey: `SharePointSiteUsage-${tenantFilter}`,
+    waiting: !!(siteId && tenantFilter),
+  });
+  const siteFromApi = siteUsageData?.data?.find?.((s) => s.siteId === siteId);
+
+  // Merge: query params take priority, API data fills gaps
+  const displayName = qName || siteFromApi?.displayName || "Site Details";
+  const webUrl = qUrl || siteFromApi?.webUrl || "";
+  const rootWebTemplate = qTemplate || siteFromApi?.rootWebTemplate || "";
+  const ownerPrincipalName = qOwner || siteFromApi?.ownerPrincipalName || "";
+  const ownerDisplayName = qOwnerDisplay || qOwner || siteFromApi?.ownerDisplayName || siteFromApi?.ownerPrincipalName || "";
+  const storageUsed = parseFloat(qUsed) || siteFromApi?.storageUsedInGigabytes || 0;
+  const storageAllocated = parseFloat(qAllocated) || siteFromApi?.storageAllocatedInGigabytes || 0;
+  const fileCount = parseInt(qFiles) || siteFromApi?.fileCount || 0;
+  const lastActivityDate = qLastActivity || siteFromApi?.lastActivityDate || "";
+  const createdDateTime = qCreated || siteFromApi?.createdDateTime || "";
+  const reportRefreshDate = qRefresh || siteFromApi?.reportRefreshDate || "";
 
   const typeInfo = getSiteTypeInfo(rootWebTemplate);
   const storagePct = getStoragePercentage(storageUsed, storageAllocated);
@@ -426,15 +437,15 @@ const Page = () => {
                   <InfoRow label="Template" value={rootWebTemplate} />
                   <InfoRow label="Owner" value={ownerDisplayName || ownerPrincipalName} />
                   {createdDateTime && <InfoRow label="Created" value={getCippFormatting(createdDateTime, "createdDateTime")} />}
-                  <InfoRow label="Last Activity" value={lastActivityDate || "Unknown"}>
+                  <InfoRow label="Last Activity" value={lastActivityDate ? getCippFormatting(lastActivityDate, "lastActivityDate") : "—"}>
                     <Stack direction="row" alignItems="center" spacing={0.5}>
-                      {inactive && (
+                      {lastActivityDate && inactive && (
                         <Tooltip title="No activity in 90+ days">
                           <Warning sx={{ fontSize: 14 }} color="warning" />
                         </Tooltip>
                       )}
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {lastActivityDate || "Unknown"}
+                        {lastActivityDate ? getCippFormatting(lastActivityDate, "lastActivityDate") : "—"}
                       </Typography>
                     </Stack>
                   </InfoRow>
