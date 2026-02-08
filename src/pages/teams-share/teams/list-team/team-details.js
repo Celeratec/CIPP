@@ -39,6 +39,7 @@ import {
   CheckCircle,
   Cancel,
   Warning,
+  Add,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -218,6 +219,7 @@ const Page = () => {
   // Dialogs
   const addMemberDialog = useDialog();
   const addOwnerDialog = useDialog();
+  const addChannelDialog = useDialog();
 
   const userPickerField = [
     {
@@ -259,6 +261,41 @@ const Page = () => {
     type: "POST",
     data: { TeamID: teamId, DisplayName: teamName, Action: "Add", Role: "owner" },
     confirmText: "Select a user to add as an owner. Owners can manage team settings and membership.",
+    relatedQueryKeys: [`TeamDetails-${teamId}`],
+  };
+
+  const channelFields = [
+    {
+      type: "textField",
+      name: "ChannelName",
+      label: "Channel Name",
+      validators: {
+        validate: (value) => (!value ? "Channel name is required" : true),
+      },
+    },
+    {
+      type: "textField",
+      name: "ChannelDescription",
+      label: "Description (optional)",
+    },
+    {
+      type: "select",
+      name: "ChannelType",
+      label: "Channel Type",
+      options: [
+        { value: "standard", label: "Standard — Accessible to all team members" },
+        { value: "private", label: "Private — Only accessible to invited members" },
+        { value: "shared", label: "Shared — Can be shared with people outside the team" },
+      ],
+      defaultValue: "standard",
+    },
+  ];
+
+  const addChannelApi = {
+    url: "/api/ExecTeamAction",
+    type: "POST",
+    data: { TeamID: teamId, DisplayName: teamName, Action: "CreateChannel" },
+    confirmText: "Create a new channel in this team.",
     relatedQueryKeys: [`TeamDetails-${teamId}`],
   };
 
@@ -615,11 +652,16 @@ const Page = () => {
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, lg: 6 }}>
               <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden", height: "100%" }}>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 2, py: 1.5, bgcolor: "background.default" }}>
-                  <Forum fontSize="small" color="success" />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    Channels ({channels.length})
-                  </Typography>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, bgcolor: "background.default" }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Forum fontSize="small" color="success" />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      Channels ({channels.length})
+                    </Typography>
+                  </Stack>
+                  <Button size="small" startIcon={<Add />} onClick={() => addChannelDialog.handleOpen()}>
+                    Add
+                  </Button>
                 </Stack>
                 <Box sx={{ px: 0 }}>
                   <CippDataTable
@@ -743,6 +785,7 @@ const Page = () => {
       {/* Dialogs */}
       <CippApiDialog createDialog={addMemberDialog} title="Add Member" fields={userPickerField} api={addMemberApi} row={{}} relatedQueryKeys={[`TeamDetails-${teamId}`]} />
       <CippApiDialog createDialog={addOwnerDialog} title="Add Owner" fields={userPickerField} api={addOwnerApi} row={{}} relatedQueryKeys={[`TeamDetails-${teamId}`]} />
+      <CippApiDialog createDialog={addChannelDialog} title="Add Channel" fields={channelFields} api={addChannelApi} row={{}} relatedQueryKeys={[`TeamDetails-${teamId}`]} />
 
       {/* Settings Confirmation Dialog */}
       <Dialog open={settingsDialog.open} onClose={handleSettingsDialogClose} maxWidth="sm" fullWidth>
