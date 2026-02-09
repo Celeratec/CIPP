@@ -114,6 +114,7 @@ A comprehensive management interface for individual Microsoft Teams, consolidati
 - **Team overview** with visibility status, archive state, and quick stats (owners, members, channels, apps)
 - **Member and owner management** -- add members/owners via user picker, remove members, promote to owner, demote to member
 - **Channel management** -- create new channels (standard, private, shared) with owner selection for private/shared channels; delete channels with data loss warnings
+- **Channel member management** -- expand private and shared channels inline to view their members; add members with role selection (member/owner); remove members directly from the channel member list
 - **App management** -- view all installed apps with version info; remove apps with impact warnings
 - **Interactive settings** -- toggle team settings directly from the page using chip buttons (not read-only display):
   - Member permissions (create channels, delete channels, add apps, manage tabs, manage connectors)
@@ -185,7 +186,7 @@ The following API endpoints were created to support Manage365-specific features:
 |---|---|
 | `ExecTeamFromGroup` | Team-enable an existing M365 Group from a SharePoint site |
 | `ExecTeamSettings` | Update individual team settings (member, guest, messaging, fun) |
-| `ExecTeamAction` | Archive, unarchive, clone teams; create/delete channels; remove apps |
+| `ExecTeamAction` | Archive, unarchive, clone teams; create/delete channels; list/add/remove channel members; remove apps |
 | `ExecTeamMember` | Add/remove team members and owners; change roles |
 | `ExecOneDriveFileAction` | OneDrive file operations (download, rename, move, copy, delete, create folder) |
 

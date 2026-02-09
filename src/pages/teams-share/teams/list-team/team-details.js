@@ -17,6 +17,14 @@ import {
   DialogActions,
   MenuItem,
   Select,
+  IconButton,
+  Collapse,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  LinearProgress,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { Box, Stack, Container, Grid } from "@mui/system";
@@ -34,13 +42,16 @@ import {
   SupervisorAccount,
   ArrowBack,
   OpenInNew,
-  Language,
   FolderShared,
   CheckCircle,
   Cancel,
   Warning,
   Add,
   DeleteOutline,
+  ExpandMore,
+  ExpandLess,
+  Lock,
+  Share,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -188,6 +199,348 @@ const StatBox = ({ value, label, color }) => (
     </Typography>
   </Box>
 );
+
+// Channel row component with expandable member management for private/shared channels
+const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
+  const theme = useTheme();
+  const dispatch = useDispatch();
+  const [expanded, setExpanded] = useState(false);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  const isPrivateOrShared = channel.membershipType === "private" || channel.membershipType === "shared";
+
+  const addChannelMemberDialog = useDialog();
+  const deleteChannelDialog = useDialog();
+
+  const deleteChannelApi = {
+    url: "/api/ExecTeamAction",
+    type: "POST",
+    data: {
+      TeamID: teamId,
+      DisplayName: teamName,
+      Action: "DeleteChannel",
+      ChannelID: channel.id,
+      ChannelName: channel.displayName,
+    },
+    confirmText:
+      "Are you sure you want to delete this channel? This action is permanent and cannot be undone. All messages, files, and tabs within this channel will be permanently removed.",
+    relatedQueryKeys: [`TeamDetails-${teamId}`],
+  };
+
+  const fetchMembers = useCallback(async () => {
+    if (loaded && members.length > 0) return;
+    setLoading(true);
+    try {
+      const response = await fetch("/api/ExecTeamAction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          TenantFilter: tenantFilter,
+          TeamID: teamId,
+          Action: "ListChannelMembers",
+          ChannelID: channel.id,
+        }),
+      });
+      const data = await response.json();
+      setMembers(data?.Results || []);
+      setLoaded(true);
+    } catch (err) {
+      dispatch(showToast({ message: "Failed to load channel members", title: "Error", toastError: { message: err.message } }));
+    } finally {
+      setLoading(false);
+    }
+  }, [teamId, channel.id, tenantFilter, loaded, members.length, dispatch]);
+
+  const handleExpand = useCallback(() => {
+    if (!expanded && isPrivateOrShared) {
+      fetchMembers();
+    }
+    setExpanded((prev) => !prev);
+  }, [expanded, isPrivateOrShared, fetchMembers]);
+
+  const handleRefreshMembers = useCallback(() => {
+    setLoaded(false);
+    setMembers([]);
+    setLoading(true);
+    fetch("/api/ExecTeamAction", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        TenantFilter: tenantFilter,
+        TeamID: teamId,
+        Action: "ListChannelMembers",
+        ChannelID: channel.id,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setMembers(data?.Results || []);
+        setLoaded(true);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [teamId, channel.id, tenantFilter]);
+
+  const removeMemberMutation = ApiPostCall({ relatedQueryKeys: [`TeamDetails-${teamId}`] });
+
+  const handleRemoveMember = useCallback(
+    (member) => {
+      if (!confirm(`Remove ${member.displayName || "this member"} from channel ${channel.displayName}?`)) return;
+      removeMemberMutation.mutate(
+        {
+          url: "/api/ExecTeamAction",
+          data: {
+            TenantFilter: tenantFilter,
+            TeamID: teamId,
+            Action: "RemoveChannelMember",
+            ChannelID: channel.id,
+            ChannelName: channel.displayName,
+            MembershipID: member.id,
+            MemberName: member.displayName,
+          },
+        },
+        {
+          onSuccess: (res) => {
+            const msg = res?.data?.Results || "Member removed successfully";
+            dispatch(showToast({ message: msg, title: "Channel Member" }));
+            handleRefreshMembers();
+          },
+          onError: (err) => {
+            const msg = err?.response?.data?.Results || err?.message || "Failed to remove member";
+            dispatch(showToast({ message: msg, title: "Channel Member", toastError: { message: msg } }));
+          },
+        }
+      );
+    },
+    [teamId, channel.id, channel.displayName, tenantFilter, removeMemberMutation, dispatch, handleRefreshMembers]
+  );
+
+  const channelMemberFields = [
+    {
+      type: "autoComplete",
+      name: "UserID",
+      label: "Select User",
+      multiple: false,
+      creatable: false,
+      api: {
+        url: "/api/ListGraphRequest",
+        data: {
+          Endpoint: "users",
+          $filter: "accountEnabled eq true",
+          $top: 999,
+          $count: true,
+          $orderby: "displayName",
+          $select: "id,displayName,userPrincipalName",
+        },
+        dataKey: "Results",
+        labelField: (user) => `${user.displayName} (${user.userPrincipalName})`,
+        valueField: "id",
+      },
+      validators: {
+        validate: (value) => (!value ? "Please select a user" : true),
+      },
+    },
+    {
+      type: "select",
+      name: "ChannelRole",
+      label: "Role",
+      options: [
+        { value: "member", label: "Member" },
+        { value: "owner", label: "Owner" },
+      ],
+      defaultValue: "member",
+    },
+  ];
+
+  const addChannelMemberApi = {
+    url: "/api/ExecTeamAction",
+    type: "POST",
+    data: {
+      TeamID: teamId,
+      DisplayName: teamName,
+      Action: "AddChannelMember",
+      ChannelID: channel.id,
+      ChannelName: channel.displayName,
+    },
+    confirmText: `Add a user to the '${channel.displayName}' channel.`,
+    relatedQueryKeys: [`TeamDetails-${teamId}`],
+  };
+
+  const typeIcon = channel.membershipType === "private" ? (
+    <Lock sx={{ fontSize: 14 }} />
+  ) : channel.membershipType === "shared" ? (
+    <Share sx={{ fontSize: 14 }} />
+  ) : null;
+
+  return (
+    <>
+      <Paper
+        variant="outlined"
+        sx={{
+          mb: 0.5,
+          borderRadius: 1.5,
+          overflow: "hidden",
+          ...(expanded && isPrivateOrShared && { borderColor: "primary.main", borderWidth: 1.5 }),
+        }}
+      >
+        {/* Channel header row */}
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={1}
+          sx={{
+            px: 1.5,
+            py: 1,
+            cursor: isPrivateOrShared ? "pointer" : "default",
+            "&:hover": isPrivateOrShared
+              ? { bgcolor: alpha(theme.palette.primary.main, 0.04) }
+              : {},
+            transition: "background-color 0.15s",
+          }}
+          onClick={isPrivateOrShared ? handleExpand : undefined}
+        >
+          {isPrivateOrShared && (
+            <IconButton size="small" sx={{ p: 0.25 }}>
+              {expanded ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+            </IconButton>
+          )}
+          {typeIcon && (
+            <Tooltip title={channel.membershipType === "private" ? "Private Channel" : "Shared Channel"}>
+              {typeIcon}
+            </Tooltip>
+          )}
+          <Typography variant="body2" sx={{ fontWeight: 500, flex: 1, minWidth: 0 }} noWrap>
+            {channel.displayName}
+          </Typography>
+          <Chip
+            label={channel.membershipType || "standard"}
+            size="small"
+            variant="outlined"
+            color={
+              channel.membershipType === "private"
+                ? "warning"
+                : channel.membershipType === "shared"
+                ? "info"
+                : "default"
+            }
+            sx={{ fontSize: "0.7rem", height: 20 }}
+          />
+          {channel.description && (
+            <Tooltip title={channel.description}>
+              <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 200 }}>
+                {channel.description}
+              </Typography>
+            </Tooltip>
+          )}
+          {/* Delete channel button */}
+          <Tooltip title="Delete Channel">
+            <IconButton
+              size="small"
+              color="error"
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteChannelDialog.handleOpen();
+              }}
+            >
+              <DeleteOutline sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+
+        {/* Expandable member list for private/shared channels */}
+        {isPrivateOrShared && (
+          <Collapse in={expanded}>
+            <Divider />
+            {loading && <LinearProgress />}
+            <Box sx={{ px: 1.5, py: 1 }}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  Channel Members ({members.length})
+                </Typography>
+                <Stack direction="row" spacing={0.5}>
+                  <Button size="small" startIcon={<PersonAdd sx={{ fontSize: 14 }} />} onClick={() => addChannelMemberDialog.handleOpen()}>
+                    Add
+                  </Button>
+                </Stack>
+              </Stack>
+              {members.length > 0 ? (
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ py: 0.5, fontWeight: 600, fontSize: "0.75rem" }}>Name</TableCell>
+                      <TableCell sx={{ py: 0.5, fontWeight: 600, fontSize: "0.75rem" }}>Email</TableCell>
+                      <TableCell sx={{ py: 0.5, fontWeight: 600, fontSize: "0.75rem" }}>Role</TableCell>
+                      <TableCell sx={{ py: 0.5, fontWeight: 600, fontSize: "0.75rem" }} align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {members.map((member) => (
+                      <TableRow key={member.id} hover>
+                        <TableCell sx={{ py: 0.5, fontSize: "0.8rem" }}>
+                          <Stack direction="row" alignItems="center" spacing={0.5}>
+                            <Typography variant="body2" sx={{ fontSize: "0.8rem" }}>{member.displayName}</Typography>
+                            {member.roles && member.roles.includes("owner") && (
+                              <Chip label="Owner" size="small" color="warning" sx={{ height: 18, fontSize: "0.65rem" }} />
+                            )}
+                          </Stack>
+                        </TableCell>
+                        <TableCell sx={{ py: 0.5, fontSize: "0.8rem" }}>{member.email || "—"}</TableCell>
+                        <TableCell sx={{ py: 0.5, fontSize: "0.8rem" }}>{member.roles || "member"}</TableCell>
+                        <TableCell sx={{ py: 0.5 }} align="right">
+                          <Tooltip title="Remove from channel">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleRemoveMember(member)}
+                              disabled={removeMemberMutation.isPending}
+                            >
+                              <PersonRemove sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                !loading && (
+                  <Typography variant="body2" color="text.secondary" sx={{ py: 1, textAlign: "center" }}>
+                    No members found
+                  </Typography>
+                )
+              )}
+            </Box>
+          </Collapse>
+        )}
+      </Paper>
+
+      {/* Add Channel Member Dialog */}
+      <CippApiDialog
+        createDialog={addChannelMemberDialog}
+        title={`Add Member to ${channel.displayName}`}
+        fields={channelMemberFields}
+        api={addChannelMemberApi}
+        row={{}}
+        relatedQueryKeys={[`TeamDetails-${teamId}`]}
+        onActionSuccess={() => {
+          setTimeout(() => handleRefreshMembers(), 1000);
+        }}
+      />
+
+      {/* Delete Channel Dialog */}
+      <CippApiDialog
+        createDialog={deleteChannelDialog}
+        title={`Delete Channel: ${channel.displayName}`}
+        fields={[]}
+        api={deleteChannelApi}
+        row={channel}
+        relatedQueryKeys={[`TeamDetails-${teamId}`]}
+      />
+    </>
+  );
+};
 
 const Page = () => {
   const router = useRouter();
@@ -371,27 +724,6 @@ const Page = () => {
       confirmText: "Remove this owner? Ensure at least one owner remains.",
       color: "error",
       category: "danger",
-    },
-  ];
-
-  const channelActions = [
-    {
-      label: "Delete Channel",
-      type: "POST",
-      icon: <DeleteOutline />,
-      url: "/api/ExecTeamAction",
-      data: {
-        TeamID: `!${teamId}`,
-        DisplayName: `!${teamName}`,
-        Action: "!DeleteChannel",
-        ChannelID: "id",
-        ChannelName: "displayName",
-      },
-      confirmText:
-        "Are you sure you want to delete this channel? This action is permanent and cannot be undone. All messages, files, and tabs within this channel will be permanently removed.",
-      color: "error",
-      category: "danger",
-      relatedQueryKeys: [`TeamDetails-${teamId}`],
     },
   ];
 
@@ -726,22 +1058,29 @@ const Page = () => {
                       Channels ({channels.length})
                     </Typography>
                   </Stack>
-                  <Button size="small" startIcon={<Add />} onClick={() => addChannelDialog.handleOpen()}>
-                    Add
-                  </Button>
+                  <Stack direction="row" spacing={0.5}>
+                    <Button size="small" startIcon={<Add />} onClick={() => addChannelDialog.handleOpen()}>
+                      Add
+                    </Button>
+                  </Stack>
                 </Stack>
-                <Box sx={{ px: 0 }}>
-                  <CippDataTable
-                    title="Channels"
-                    data={channels}
-                    simpleColumns={["displayName", "description", "membershipType"]}
-                    actions={channelActions}
-                    queryKey={`team-channels-${teamId}`}
-                    refreshFunction={() => teamDetails.refetch()}
-                    noCard
-                    hideTitle
-                    maxHeightOffset="600px"
-                  />
+                <Box sx={{ px: 1, py: 0.5, maxHeight: 500, overflowY: "auto" }}>
+                  {channels.length > 0 ? (
+                    channels.map((channel) => (
+                      <ChannelRow
+                        key={channel.id}
+                        channel={channel}
+                        teamId={teamId}
+                        teamName={teamName}
+                        tenantFilter={tenantFilter}
+                        onRefetch={() => teamDetails.refetch()}
+                      />
+                    ))
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: "center" }}>
+                      No channels found
+                    </Typography>
+                  )}
                 </Box>
               </Paper>
             </Grid>
