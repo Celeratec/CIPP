@@ -290,13 +290,34 @@ const Page = () => {
       ],
       defaultValue: "standard",
     },
+    {
+      type: "autoComplete",
+      name: "ChannelOwnerID",
+      label: "Channel Owner (required for Private/Shared channels)",
+      multiple: false,
+      creatable: false,
+      api: {
+        url: "/api/ListGraphRequest",
+        data: {
+          Endpoint: "users",
+          $filter: "accountEnabled eq true",
+          $top: 999,
+          $count: true,
+          $orderby: "displayName",
+          $select: "id,displayName,userPrincipalName",
+        },
+        dataKey: "Results",
+        labelField: (user) => `${user.displayName} (${user.userPrincipalName})`,
+        valueField: "id",
+      },
+    },
   ];
 
   const addChannelApi = {
     url: "/api/ExecTeamAction",
     type: "POST",
     data: { TeamID: teamId, DisplayName: teamName, Action: "CreateChannel" },
-    confirmText: "Create a new channel in this team.",
+    confirmText: "Create a new channel in this team. For Private and Shared channels, a channel owner must be selected.",
     relatedQueryKeys: [`TeamDetails-${teamId}`],
   };
 
