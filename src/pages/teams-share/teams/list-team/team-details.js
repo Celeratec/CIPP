@@ -677,6 +677,7 @@ const Page = () => {
                     simpleColumns={["displayName", "email"]}
                     actions={ownerActions}
                     queryKey={`team-owners-${teamId}`}
+                    refreshFunction={() => teamDetails.refetch()}
                     noCard
                     hideTitle
                     maxHeightOffset="600px"
@@ -704,6 +705,7 @@ const Page = () => {
                     simpleColumns={["displayName", "email"]}
                     actions={memberActions}
                     queryKey={`team-members-${teamId}`}
+                    refreshFunction={() => teamDetails.refetch()}
                     noCard
                     hideTitle
                     maxHeightOffset="600px"
@@ -735,6 +737,7 @@ const Page = () => {
                     simpleColumns={["displayName", "description", "membershipType"]}
                     actions={channelActions}
                     queryKey={`team-channels-${teamId}`}
+                    refreshFunction={() => teamDetails.refetch()}
                     noCard
                     hideTitle
                     maxHeightOffset="600px"
@@ -757,6 +760,7 @@ const Page = () => {
                     simpleColumns={["displayName", "version", "publishingState"]}
                     actions={appActions}
                     queryKey={`team-apps-${teamId}`}
+                    refreshFunction={() => teamDetails.refetch()}
                     noCard
                     hideTitle
                     maxHeightOffset="600px"
