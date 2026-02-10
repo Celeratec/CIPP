@@ -1,7 +1,7 @@
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { useSettings } from "../../../../hooks/use-settings.js";
-import { ApiGetCall } from "../../../../api/ApiCall";
+import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall";
 import { PermissionButton } from "../../../../utils/permissions";
 import { CippInviteGuestDrawer } from "../../../../components/CippComponents/CippInviteGuestDrawer.jsx";
 import { CippBulkUserDrawer } from "../../../../components/CippComponents/CippBulkUserDrawer.jsx";
@@ -18,11 +18,18 @@ import {
   Typography,
   Chip,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+  CircularProgress,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { Stack } from "@mui/system";
 import { useRouter } from "next/router";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Email,
   Phone,
@@ -44,6 +51,7 @@ import {
   VerifiedUser,
   Warning,
   AccountTree,
+  GppBad,
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import CippUserAvatar from "../../../../components/CippComponents/CippUserAvatar";
@@ -93,6 +101,32 @@ const Page = () => {
     queryKey: `ListCASMailboxes-${tenant}`,
     waiting: !!tenant && tenant !== "AllTenants",
   });
+
+  // Mutation for disabling legacy protocols directly from the badge
+  const disableLegacyProtocols = ApiPostCall({
+    relatedQueryKeys: [`ListCASMailboxes-${tenant}`],
+  });
+
+  // Confirmation dialog state for disabling legacy protocols
+  const [legacyDialog, setLegacyDialog] = useState({ open: false, user: null, protocols: [] });
+
+  const handleDisableLegacyProtocols = () => {
+    if (!legacyDialog.user) return;
+    disableLegacyProtocols.mutate({
+      url: "/api/ExecSetCASMailbox",
+      data: {
+        user: legacyDialog.user.userPrincipalName,
+        tenantFilter: tenant,
+        protocols: legacyDialog.protocols.join(","),
+        enable: false,
+      },
+    });
+  };
+
+  const handleLegacyDialogClose = () => {
+    setLegacyDialog({ open: false, user: null, protocols: [] });
+    disableLegacyProtocols.reset();
+  };
 
   const sharedMailboxSet = useMemo(() => {
     const raw =
@@ -177,16 +211,16 @@ const Page = () => {
     if (protocols.length === 0) return null;
     
     return (
-      <Tooltip title={`Insecure protocols enabled: ${protocols.join(" & ")}. These legacy protocols may bypass MFA protections. Click to view Exchange settings.`}>
+      <Tooltip title={`Insecure protocols enabled: ${protocols.join(" & ")}. These legacy protocols may bypass MFA protections. Click to disable.`}>
         <Chip
           size="small"
-          color="warning"
+          color="error"
           variant="outlined"
-          icon={<Warning sx={{ fontSize: "12px !important", color: "warning.main" }} />}
+          icon={<GppBad sx={{ fontSize: "12px !important", color: "error.main" }} />}
           label={protocols.join(" & ")}
           onClick={(e) => {
             e.stopPropagation();
-            router.push(`/identity/administration/users/user/exchange?userId=${item.id}`);
+            setLegacyDialog({ open: true, user: item, protocols });
           }}
           sx={{
             height: 20,
@@ -194,23 +228,23 @@ const Page = () => {
             fontWeight: 600,
             ml: 0.5,
             flexShrink: 0,
-            backgroundColor: (t) => `${alpha(t.palette.warning.main, 0.15)} !important`,
-            borderColor: (t) => `${alpha(t.palette.warning.main, 0.5)} !important`,
+            backgroundColor: (t) => `${alpha(t.palette.error.main, 0.15)} !important`,
+            borderColor: (t) => `${alpha(t.palette.error.main, 0.5)} !important`,
             cursor: "pointer",
             "& .MuiChip-label": {
-              color: "warning.dark",
+              color: "error.dark",
             },
             "& .MuiChip-icon": {
-              color: "warning.main",
+              color: "error.main",
             },
             "&:hover": {
-              backgroundColor: (t) => `${alpha(t.palette.warning.main, 0.25)} !important`,
+              backgroundColor: (t) => `${alpha(t.palette.error.main, 0.25)} !important`,
             },
           }}
         />
       </Tooltip>
     );
-  }, [hasLegacyProtocols, router]);
+  }, [hasLegacyProtocols]);
 
   // Memoized shared mailbox transform function
   const sharedMailboxTransform = useCallback(
@@ -702,7 +736,12 @@ const Page = () => {
     children: offCanvasChildren,
   }), [userActions, offCanvasChildren]);
 
+  const legacyDialogSuccess = disableLegacyProtocols.isSuccess;
+  const legacyDialogLoading = disableLegacyProtocols.isPending;
+  const legacyDialogError = disableLegacyProtocols.isError;
+
   return (
+    <>
     <CippTablePage
       title={pageTitle}
       apiUrl="/api/ListGraphRequest"
@@ -798,6 +837,64 @@ const Page = () => {
       tenantInTitle={!isMobile}
       cardConfig={cardConfig}
     />
+
+    {/* Confirmation dialog for disabling legacy protocols */}
+    <Dialog
+      open={legacyDialog.open}
+      onClose={!legacyDialogLoading ? handleLegacyDialogClose : undefined}
+      maxWidth="xs"
+      fullWidth
+    >
+      <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <GppBad color="error" />
+        Disable Legacy Protocols
+      </DialogTitle>
+      <DialogContent>
+        {!legacyDialogSuccess && !legacyDialogError && (
+          <DialogContentText>
+            Are you sure you want to disable <strong>{legacyDialog.protocols.join(" & ")}</strong> for{" "}
+            <strong>{legacyDialog.user?.displayName || legacyDialog.user?.userPrincipalName}</strong>?
+            <Box component="span" sx={{ display: "block", mt: 1, color: "text.secondary", fontSize: "0.85rem" }}>
+              These legacy protocols can bypass MFA protections and pose a security risk. Disabling them is recommended unless legacy email clients require them.
+            </Box>
+          </DialogContentText>
+        )}
+        {legacyDialogSuccess && (
+          <DialogContentText sx={{ color: "success.main", fontWeight: 500 }}>
+            Successfully disabled {legacyDialog.protocols.join(" & ")} for{" "}
+            {legacyDialog.user?.displayName || legacyDialog.user?.userPrincipalName}.
+          </DialogContentText>
+        )}
+        {legacyDialogError && (
+          <DialogContentText sx={{ color: "error.main", fontWeight: 500 }}>
+            Failed to disable legacy protocols. Please try again or use the Exchange settings page.
+          </DialogContentText>
+        )}
+      </DialogContent>
+      <DialogActions>
+        {!legacyDialogSuccess ? (
+          <>
+            <Button onClick={handleLegacyDialogClose} disabled={legacyDialogLoading}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDisableLegacyProtocols}
+              variant="contained"
+              color="error"
+              disabled={legacyDialogLoading}
+              startIcon={legacyDialogLoading ? <CircularProgress size={16} color="inherit" /> : <GppBad />}
+            >
+              {legacyDialogLoading ? "Disabling..." : "Disable"}
+            </Button>
+          </>
+        ) : (
+          <Button onClick={handleLegacyDialogClose} variant="contained">
+            Close
+          </Button>
+        )}
+      </DialogActions>
+    </Dialog>
+    </>
   );
 };
 
