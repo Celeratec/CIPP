@@ -142,18 +142,25 @@ export const CippUserInfoCard = (props) => {
     staleTime: 1000 * 60 * 5,
   });
 
+  // Helper to get device array from API response (backend may return Results or raw Graph value)
+  const getDeviceList = (data) => {
+    if (!data) return [];
+    const list = data.Results ?? data.value;
+    return Array.isArray(list) ? list : [];
+  };
+
   // Compute deduplicated device count
   const deviceCount = useMemo(() => {
-    const registered = registeredDevicesRequest.data?.Results || [];
-    const owned = ownedDevicesRequest.data?.Results || [];
+    const registered = getDeviceList(registeredDevicesRequest.data);
+    const owned = getDeviceList(ownedDevicesRequest.data);
     const deviceIds = new Set();
-    registered.forEach((d) => deviceIds.add(d.id));
-    owned.forEach((d) => deviceIds.add(d.id));
+    registered.forEach((d) => d?.id && deviceIds.add(d.id));
+    owned.forEach((d) => d?.id && deviceIds.add(d.id));
     return deviceIds.size;
-  }, [registeredDevicesRequest.data?.Results, ownedDevicesRequest.data?.Results]);
+  }, [registeredDevicesRequest.data, ownedDevicesRequest.data]);
 
   const devicesLoading = registeredDevicesRequest.isLoading || ownedDevicesRequest.isLoading;
-  const devicesReady = registeredDevicesRequest.isSuccess || ownedDevicesRequest.isSuccess;
+  const canShowDevices = !!user?.id && !!tenant && tenant !== "AllTenants";
 
   // Fetch tenant's subscribed SKUs for license name mapping
   const licensesRequest = ApiGetCall({
@@ -743,22 +750,24 @@ export const CippUserInfoCard = (props) => {
                     variant="outlined"
                   />
                 )}
-                {devicesLoading ? (
-                  <Chip
-                    icon={<CircularProgress size={14} />}
-                    label="Devices..."
-                    size="small"
-                    variant="outlined"
-                  />
-                ) : devicesReady ? (
-                  <Chip
-                    icon={<Devices fontSize="small" />}
-                    label={`${deviceCount} Device${deviceCount !== 1 ? "s" : ""}`}
-                    color={deviceCount > 0 ? "primary" : "default"}
-                    size="small"
-                    variant="outlined"
-                  />
-                ) : null}
+                {canShowDevices && (
+                  devicesLoading ? (
+                    <Chip
+                      icon={<CircularProgress size={14} />}
+                      label="Devices..."
+                      size="small"
+                      variant="outlined"
+                    />
+                  ) : (
+                    <Chip
+                      icon={<Devices fontSize="small" />}
+                      label={`${deviceCount} Device${deviceCount !== 1 ? "s" : ""}`}
+                      color={deviceCount > 0 ? "primary" : "default"}
+                      size="small"
+                      variant="outlined"
+                    />
+                  )
+                )}
               </Stack>
 
               {/* Photo status messages */}
