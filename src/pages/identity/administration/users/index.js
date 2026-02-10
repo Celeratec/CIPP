@@ -834,6 +834,7 @@ const Page = () => {
       onCardClick={handleCardClick}
       simpleColumns={simpleColumns}
       filters={filters}
+      initialColumnFilters={[{ id: "assignedLicenses", value: "licensed" }]}
       tenantInTitle={!isMobile}
       cardConfig={cardConfig}
     />

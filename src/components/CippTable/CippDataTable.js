@@ -1723,6 +1723,7 @@ export const CippDataTable = (props) => {
     rowSx = null, // Optional row styling callback (row) => sx object
     onCardClick = null, // Callback when card avatar/title is clicked for navigation
     dataFreshnessField = null, // Field name to extract data freshness date from first row (e.g. "reportRefreshDate")
+    initialColumnFilters = null, // Optional initial column filters (e.g. [{ id: "assignedLicenses", value: "licensed" }])
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
   const [configuredSimpleColumns, setConfiguredSimpleColumns] = useState(simpleColumns);
@@ -1738,7 +1739,12 @@ export const CippDataTable = (props) => {
   const [rowActionQueueIds, setRowActionQueueIds] = useState([]);
   const [graphFilterData, setGraphFilterData] = useState({});
   const [sorting, setSorting] = useState([]);
-  const [columnFilters, setColumnFilters] = useState([]);
+  const [columnFilters, setColumnFilters] = useState(() => {
+    if (initialColumnFilters && Array.isArray(initialColumnFilters) && initialColumnFilters.length > 0) {
+      return initialColumnFilters;
+    }
+    return [];
+  });
   const [cardSearchInput, setCardSearchInput] = useState("");
   const [debouncedCardSearchTerm, setDebouncedCardSearchTerm] = useState("");
   const waitingBool = api?.url ? true : false;
