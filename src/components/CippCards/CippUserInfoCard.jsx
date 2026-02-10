@@ -44,6 +44,7 @@ import {
   Check as CheckIcon,
   Add,
   Lightbulb,
+  Devices,
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 import { getCippLicenseTranslation } from "../../utils/get-cipp-license-translation";
@@ -113,6 +114,47 @@ export const CippUserInfoCard = (props) => {
   const [isAddingLicense, setIsAddingLicense] = useState(false);
   const [addLicenseError, setAddLicenseError] = useState(null);
   
+  // Fetch user's registered devices
+  const registeredDevicesRequest = ApiGetCall({
+    url: "/api/ListGraphRequest",
+    data: {
+      Endpoint: `users/${user?.id}/registeredDevices`,
+      tenantFilter: tenant,
+      $select: "id",
+      noPagination: true,
+    },
+    queryKey: `UserRegisteredDevices-${user?.id}-${tenant}`,
+    waiting: !!user?.id && !!tenant && tenant !== "AllTenants",
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Fetch user's owned devices
+  const ownedDevicesRequest = ApiGetCall({
+    url: "/api/ListGraphRequest",
+    data: {
+      Endpoint: `users/${user?.id}/ownedDevices`,
+      tenantFilter: tenant,
+      $select: "id",
+      noPagination: true,
+    },
+    queryKey: `UserOwnedDevices-${user?.id}-${tenant}`,
+    waiting: !!user?.id && !!tenant && tenant !== "AllTenants",
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Compute deduplicated device count
+  const deviceCount = useMemo(() => {
+    const registered = registeredDevicesRequest.data?.Results || [];
+    const owned = ownedDevicesRequest.data?.Results || [];
+    const deviceIds = new Set();
+    registered.forEach((d) => deviceIds.add(d.id));
+    owned.forEach((d) => deviceIds.add(d.id));
+    return deviceIds.size;
+  }, [registeredDevicesRequest.data?.Results, ownedDevicesRequest.data?.Results]);
+
+  const devicesLoading = registeredDevicesRequest.isLoading || ownedDevicesRequest.isLoading;
+  const devicesReady = registeredDevicesRequest.isSuccess || ownedDevicesRequest.isSuccess;
+
   // Fetch tenant's subscribed SKUs for license name mapping
   const licensesRequest = ApiGetCall({
     url: `/api/ListLicenses?tenantFilter=${tenant}`,
@@ -701,6 +743,22 @@ export const CippUserInfoCard = (props) => {
                     variant="outlined"
                   />
                 )}
+                {devicesLoading ? (
+                  <Chip
+                    icon={<CircularProgress size={14} />}
+                    label="Devices..."
+                    size="small"
+                    variant="outlined"
+                  />
+                ) : devicesReady ? (
+                  <Chip
+                    icon={<Devices fontSize="small" />}
+                    label={`${deviceCount} Device${deviceCount !== 1 ? "s" : ""}`}
+                    color={deviceCount > 0 ? "primary" : "default"}
+                    size="small"
+                    variant="outlined"
+                  />
+                ) : null}
               </Stack>
 
               {/* Photo status messages */}
