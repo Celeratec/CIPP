@@ -16,9 +16,9 @@
 
 ## What is Manage365?
 
-Manage365 is a Microsoft 365 multi-tenant administration portal designed for Microsoft Partners and IT administrators. It provides a centralized interface for managing users, teams, SharePoint, Exchange, security, compliance, Intune, and more across all of your Microsoft 365 tenants.
+Manage365 is a Microsoft 365 multi-tenant administration portal designed for Microsoft Partners and IT administrators. It provides a centralized interface for managing users, teams, SharePoint, Exchange, security, compliance, Intune, Dynamics 365, and more across all of your Microsoft 365 tenants.
 
-Manage365 inherits the full feature set of CIPP and extends it with additional capabilities focused on deeper Teams, SharePoint, and OneDrive management -- areas where day-to-day administration often requires switching between multiple Microsoft portals.
+Manage365 inherits the full feature set of CIPP and extends it with additional capabilities focused on deeper Teams, SharePoint, OneDrive, and Dynamics 365 management -- areas where day-to-day administration often requires switching between multiple Microsoft portals.
 
 For information about the upstream CIPP project, visit [cipp.app](https://cipp.app) and [docs.cipp.app](https://docs.cipp.app).
 
@@ -171,6 +171,18 @@ CIPP uses table-only views for listing data. Manage365 adds card view alternativ
 - **SharePoint Recycle Bin** -- cards with retention countdown and expiration warnings
 - Standardized card widths with text truncation and tooltips for consistency across all card views
 
+### Dynamics 365 Management
+
+Read-only visibility into Microsoft Dynamics 365 / Dataverse environments, providing insight without needing the Power Platform Admin Center:
+
+- **Environment listing** -- view all Power Platform environments (production, sandbox, trial) with type, region, version, state, and capacity details via the BAP Admin API
+- **User management** -- list all Dataverse system users with access mode, business unit, and security role assignments displayed inline
+- **Security roles** -- browse all security roles with managed/custom classification, business unit association, and inherited status
+- **Business units** -- view the organizational hierarchy of business units with parent relationships, contact details, and location
+- **Solutions** -- list all installed Dataverse solutions with version, publisher, managed/unmanaged classification, and install date
+- **Environment context** -- admin pages (users, roles, business units, solutions) support environment selection; navigate from the environments list or pick one inline
+- **Off-canvas details** -- each entity type has a rich detail panel with structured metadata, status badges, and related information
+
 ### Additional Enhancements
 
 - **Background site deletion** -- SharePoint site deletion is offloaded to prevent UI timeouts on large sites, with polling for completion status and toast notifications
@@ -189,6 +201,11 @@ The following API endpoints were created to support Manage365-specific features:
 | `ExecTeamAction` | Archive, unarchive, clone teams; create/delete channels; list/add/remove channel members; remove apps |
 | `ExecTeamMember` | Add/remove team members and owners; change roles |
 | `ExecOneDriveFileAction` | OneDrive file operations (download, rename, move, copy, delete, create folder) |
+| `ListDynamicsEnvironments` | List Power Platform / Dynamics 365 environments via BAP Admin API |
+| `ListDynamicsUsers` | List Dataverse system users with security role expansion |
+| `ListDynamicsSecurityRoles` | List Dynamics 365 security roles with business unit details |
+| `ListDynamicsBusinessUnits` | List Dynamics 365 business unit hierarchy |
+| `ListDynamicsSolutions` | List installed Dataverse solutions with publisher info |
 
 ---
 
@@ -196,7 +213,7 @@ The following API endpoints were created to support Manage365-specific features:
 
 - **Frontend:** React / Next.js with Material-UI (MUI v7)
 - **Backend:** PowerShell Azure Functions
-- **API:** Microsoft Graph API, SharePoint Admin API
+- **API:** Microsoft Graph API, SharePoint Admin API, Power Platform BAP API, Dataverse Web API
 - **Hosting:** Azure Static Web Apps + Azure Functions
 - **Data:** React Query for caching and state management
 

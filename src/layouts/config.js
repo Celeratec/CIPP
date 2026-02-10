@@ -2,6 +2,7 @@ import { BuildingOfficeIcon, HomeIcon, UsersIcon, WrenchIcon } from "@heroicons/
 import {
   CloudOutlined,
   HomeRepairService,
+  Hub,
   Laptop,
   MailOutline,
   ShieldOutlined,
@@ -772,6 +773,55 @@ export const nativeMenuItems = [
             title: "Global Address List",
             path: "/email/reports/global-address-list",
             permissions: ["Exchange.Group.*"],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    title: "Dynamics 365",
+    type: "header",
+    icon: (
+      <SvgIcon>
+        <Hub />
+      </SvgIcon>
+    ),
+    permissions: [
+      "Dynamics.Environment.*",
+      "Dynamics.User.*",
+      "Dynamics.SecurityRole.*",
+      "Dynamics.BusinessUnit.*",
+      "Dynamics.Solution.*",
+    ],
+    items: [
+      {
+        title: "Environments",
+        path: "/dynamics/environments",
+        permissions: ["Dynamics.Environment.*"],
+      },
+      {
+        title: "Administration",
+        permissions: ["Dynamics.User.*", "Dynamics.SecurityRole.*", "Dynamics.BusinessUnit.*"],
+        items: [
+          {
+            title: "Users",
+            path: "/dynamics/administration/users",
+            permissions: ["Dynamics.User.*"],
+          },
+          {
+            title: "Security Roles",
+            path: "/dynamics/administration/security-roles",
+            permissions: ["Dynamics.SecurityRole.*"],
+          },
+          {
+            title: "Business Units",
+            path: "/dynamics/administration/business-units",
+            permissions: ["Dynamics.BusinessUnit.*"],
+          },
+          {
+            title: "Solutions",
+            path: "/dynamics/administration/solutions",
+            permissions: ["Dynamics.Solution.*"],
           },
         ],
       },
