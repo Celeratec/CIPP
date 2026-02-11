@@ -540,11 +540,6 @@ export const nativeMenuItems = [
             permissions: ["Sharepoint.Admin.*"],
           },
           {
-            title: "File Browser",
-            path: "/teams-share/onedrive/file-browser",
-            permissions: ["Sharepoint.Site.*"],
-          },
-          {
             title: "Recycle Bin",
             path: "/teams-share/sharepoint/recycle-bin",
             permissions: ["Sharepoint.Site.ReadWrite"],
