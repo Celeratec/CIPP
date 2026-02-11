@@ -55,18 +55,19 @@ import { getFileIcon } from "../../../utils/get-file-icon";
 
 // ─── Cross-Drive Transfer Dialog ─────────────────────────────────────────────
 // Rendered via customComponent action pattern from CippDataTable
-const CrossDriveTransferDrawer = (row, { drawerVisible, setDrawerVisible }, actionType) => {
+const CrossDriveTransferDrawer = (row, { drawerVisible, setDrawerVisible }, actionType, sourceIdentity) => {
   return (
     <CrossDriveTransferDialog
       open={drawerVisible}
       onClose={() => setDrawerVisible(false)}
       item={row}
       actionType={actionType}
+      sourceIdentity={sourceIdentity}
     />
   );
 };
 
-const CrossDriveTransferDialog = ({ open, onClose, item, actionType }) => {
+const CrossDriveTransferDialog = ({ open, onClose, item, actionType, sourceIdentity = {} }) => {
   const tenantFilter = useSettings().currentTenant;
   const formControl = useForm({ mode: "onChange" });
   const theme = useTheme();
@@ -180,6 +181,7 @@ const CrossDriveTransferDialog = ({ open, onClose, item, actionType }) => {
       url: "/api/ExecOneDriveFileAction",
       data: {
         TenantFilter: tenantFilter,
+        ...sourceIdentity,
         ItemId: item.id,
         ItemName: item.name,
         Action: action,
@@ -936,13 +938,13 @@ const Page = () => {
       {
         label: "Move to Another Drive",
         icon: <SwapHoriz />,
-        customComponent: (row, opts) => CrossDriveTransferDrawer(row, opts, "move"),
+        customComponent: (row, opts) => CrossDriveTransferDrawer(row, opts, "move", driveIdentity),
         category: "manage",
       },
       {
         label: "Copy to Another Drive",
         icon: <ContentCopy />,
-        customComponent: (row, opts) => CrossDriveTransferDrawer(row, opts, "copy"),
+        customComponent: (row, opts) => CrossDriveTransferDrawer(row, opts, "copy", driveIdentity),
         category: "manage",
       },
 
