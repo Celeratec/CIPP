@@ -523,6 +523,11 @@ export const nativeMenuItems = [
             path: "/teams-share/onedrive/file-browser",
             permissions: ["Sharepoint.Site.*"],
           },
+          {
+            title: "File Transfer",
+            path: "/teams-share/onedrive/file-transfer",
+            permissions: ["Sharepoint.Site.ReadWrite"],
+          },
         ],
       },
       {

@@ -141,6 +141,16 @@ A full-featured file browser for managing OneDrive contents without leaving the 
 - **File type icons** -- visual indicators for different file types and directories
 - **Open in browser** -- launch files directly in their web application
 
+### Cross-Drive File Transfer
+
+A guided wizard for moving or copying files between OneDrive accounts and SharePoint sites:
+
+- **Transfer between any combination** -- OneDrive to SharePoint, OneDrive to OneDrive, or SharePoint to SharePoint
+- **Visual file picker** -- browse and select files and folders from the source with checkbox selection
+- **Destination folder browser** -- navigate into the target location and choose exactly where files should land
+- **Move or Copy** -- choose to move files (removes the original) or copy them (keeps the original in place)
+- **Bulk transfers** -- select multiple files and folders in a single operation
+
 ### SharePoint Recycle Bin
 
 A management interface for deleted SharePoint sites, enabling recovery and cleanup:
@@ -200,7 +210,7 @@ The following API endpoints were created to support Manage365-specific features:
 | `ExecTeamSettings` | Update individual team settings (member, guest, messaging, fun) |
 | `ExecTeamAction` | Archive, unarchive, clone teams; create/delete channels; list/add/remove channel members; remove apps |
 | `ExecTeamMember` | Add/remove team members and owners; change roles |
-| `ExecOneDriveFileAction` | OneDrive file operations (download, rename, move, copy, delete, create folder) |
+| `ExecOneDriveFileAction` | OneDrive file operations (download, rename, move, copy, delete, create folder) and cross-drive transfers between OneDrive and SharePoint |
 | `ListDynamicsEnvironments` | List Power Platform / Dynamics 365 environments via BAP Admin API |
 | `ListDynamicsUsers` | List Dataverse system users with security role expansion |
 | `ListDynamicsSecurityRoles` | List Dynamics 365 security roles with business unit details |
