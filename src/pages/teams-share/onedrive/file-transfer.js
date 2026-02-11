@@ -3,7 +3,7 @@ import { useSettings } from "../../../hooks/use-settings";
 import { ApiGetCall, ApiPostCall } from "../../../api/ApiCall";
 import { getFileIcon } from "../../../utils/get-file-icon";
 import { useForm } from "react-hook-form";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
   Alert,
   Box,
@@ -42,7 +42,6 @@ import { alpha } from "@mui/material/styles";
 import {
   ArrowBack,
   ArrowForward,
-  CheckCircle,
   ContentCopy,
   DriveFileMove,
   Folder,
@@ -59,30 +58,50 @@ const STEPS = ["Select Source", "Select Destination", "Review & Execute"];
 // ─── Location Picker (OneDrive user or SharePoint site) ──────────────────────
 const LocationPicker = ({ prefix, formControl, tenantFilter, onLocationReady }) => {
   const [locationType, setLocationType] = useState("onedrive");
+  const prevValueRef = useRef(null);
 
   const handleTypeChange = (_e, val) => {
     if (!val) return;
     setLocationType(val);
     formControl.setValue(`${prefix}User`, null);
     formControl.setValue(`${prefix}Site`, null);
+    prevValueRef.current = null;
     onLocationReady(null);
   };
 
-  const handleUserChange = (value) => {
-    if (value?.value) {
-      onLocationReady({ type: "onedrive", userId: value.value, label: value.label });
-    } else {
-      onLocationReady(null);
-    }
-  };
+  // Watch the form field values and react to changes
+  const userValue = formControl.watch(`${prefix}User`);
+  const siteValue = formControl.watch(`${prefix}Site`);
 
-  const handleSiteChange = (value) => {
-    if (value?.value) {
-      onLocationReady({ type: "sharepoint", siteId: value.value, label: value.label });
-    } else {
-      onLocationReady(null);
+  useEffect(() => {
+    if (locationType === "onedrive") {
+      const val = userValue;
+      const key = val?.value || null;
+      if (key !== prevValueRef.current) {
+        prevValueRef.current = key;
+        if (val?.value) {
+          onLocationReady({ type: "onedrive", userId: val.value, label: val.label });
+        } else {
+          onLocationReady(null);
+        }
+      }
     }
-  };
+  }, [userValue, locationType, onLocationReady]);
+
+  useEffect(() => {
+    if (locationType === "sharepoint") {
+      const val = siteValue;
+      const key = val?.value || null;
+      if (key !== prevValueRef.current) {
+        prevValueRef.current = key;
+        if (val?.value) {
+          onLocationReady({ type: "sharepoint", siteId: val.value, label: val.label });
+        } else {
+          onLocationReady(null);
+        }
+      }
+    }
+  }, [siteValue, locationType, onLocationReady]);
 
   return (
     <Stack spacing={3}>
@@ -122,8 +141,8 @@ const LocationPicker = ({ prefix, formControl, tenantFilter, onLocationReady }) 
             dataKey: "Results",
             labelField: (u) => `${u.displayName} (${u.userPrincipalName})`,
             valueField: "id",
+            queryKey: `transfer-users-${prefix}-${tenantFilter}`,
           }}
-          onChange={handleUserChange}
         />
       )}
 
@@ -137,13 +156,11 @@ const LocationPicker = ({ prefix, formControl, tenantFilter, onLocationReady }) 
           api={{
             tenantFilter,
             url: "/api/ListSites",
-            data: { type: "SharePointSiteUsage", TenantFilter: tenantFilter },
-            queryKey: `sites-${tenantFilter}`,
-            dataKey: "Results",
+            data: { Type: "SharePointSiteUsage" },
+            queryKey: `transfer-sites-${prefix}-${tenantFilter}`,
             labelField: (s) => s.displayName || s.webUrl || s.siteId,
             valueField: "siteId",
           }}
-          onChange={handleSiteChange}
         />
       )}
     </Stack>
@@ -165,6 +182,17 @@ const FileBrowserTable = ({
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [breadcrumbs, setBreadcrumbs] = useState([{ label: location?.label || "Root", id: null }]);
 
+  // Reset state when location changes
+  const locationKey = location?.userId || location?.siteId;
+  const prevLocationKeyRef = useRef(locationKey);
+  useEffect(() => {
+    if (locationKey !== prevLocationKeyRef.current) {
+      prevLocationKeyRef.current = locationKey;
+      setCurrentFolderId(null);
+      setBreadcrumbs([{ label: location?.label || "Root", id: null }]);
+    }
+  }, [locationKey, location?.label]);
+
   // Build API params
   const apiParams = useMemo(() => {
     const params = { TenantFilter: tenantFilter };
@@ -174,7 +202,7 @@ const FileBrowserTable = ({
     return params;
   }, [tenantFilter, location, currentFolderId]);
 
-  const queryKey = `file-transfer-${location?.userId || location?.siteId}-${currentFolderId || "root"}`;
+  const queryKey = `file-transfer-${locationKey}-${currentFolderId || "root"}`;
 
   const filesQuery = ApiGetCall({
     url: "/api/ListOneDriveFiles",
@@ -184,7 +212,7 @@ const FileBrowserTable = ({
   });
 
   const items = useMemo(() => {
-    const raw = filesQuery.data || [];
+    const raw = Array.isArray(filesQuery.data) ? filesQuery.data : [];
     if (foldersOnly) return raw.filter((item) => item.isFolder);
     return raw;
   }, [filesQuery.data, foldersOnly]);
@@ -193,7 +221,6 @@ const FileBrowserTable = ({
     (folderId, folderName) => {
       setCurrentFolderId(folderId);
       setBreadcrumbs((prev) => [...prev, { label: folderName, id: folderId }]);
-      // When navigating folders in destination, auto-select the folder
       if (onFolderSelect) {
         onFolderSelect(folderId);
       }
@@ -241,11 +268,9 @@ const FileBrowserTable = ({
   const toggleAll = () => {
     if (!onSelectionChange) return;
     if (allSelected) {
-      // Deselect all items from current view
       const currentIds = new Set(items.map((i) => i.id));
       onSelectionChange(selectedItems.filter((i) => !currentIds.has(i.id)));
     } else {
-      // Add all items from current view
       const existing = new Set(selectedItems.map((i) => i.id));
       const toAdd = items.filter((i) => !existing.has(i.id));
       onSelectionChange([...selectedItems, ...toAdd]);
@@ -311,11 +336,7 @@ const FileBrowserTable = ({
           </Breadcrumbs>
           {foldersOnly && (
             <Chip
-              label={
-                selectedFolder === null
-                  ? `Target: ${breadcrumbs[breadcrumbs.length - 1]?.label || "Root"}`
-                  : `Target: ${breadcrumbs[breadcrumbs.length - 1]?.label || "Root"}`
-              }
+              label={`Target: ${breadcrumbs[breadcrumbs.length - 1]?.label || "Root"}`}
               color="primary"
               size="small"
               variant="filled"
@@ -566,7 +587,6 @@ const ReviewStep = ({
   setTransferMode,
   onExecute,
   transferMutation,
-  transferResults,
 }) => (
   <Stack spacing={3}>
     <Typography variant="h6">Review and Execute Transfer</Typography>
