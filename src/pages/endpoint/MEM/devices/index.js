@@ -1,5 +1,7 @@
+import { useCallback, useMemo } from "react";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
+import { ApiGetCall } from "../../../../api/ApiCall.jsx";
 import { useSettings } from "../../../../hooks/use-settings";
 import { EyeIcon } from "@heroicons/react/24/outline";
 import {
@@ -39,6 +41,9 @@ import {
   CalendarToday,
   Info as InfoIcon,
   Business,
+  Dns,
+  WifiOff,
+  Wifi,
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import { getInitials, stringToColor } from "../../../../utils/get-initials";
@@ -47,6 +52,41 @@ const Page = () => {
   const pageTitle = "Devices";
   const tenantFilter = useSettings().currentTenant;
   const theme = useTheme();
+
+  // Fetch NinjaOne enrichment data (runs in parallel with the Intune fetch)
+  const ninjaDevices = ApiGetCall({
+    url: "/api/ListNinjaDeviceInfo",
+    data: { TenantFilter: tenantFilter },
+    queryKey: `NinjaDevices-${tenantFilter}`,
+    waiting: !!tenantFilter,
+  });
+
+  // Build a lookup map keyed by azureADDeviceId
+  const ninjaLookup = useMemo(() => {
+    const map = {};
+    const raw = ninjaDevices.data;
+    const arr = Array.isArray(raw) ? raw : raw?.Results;
+    if (arr) {
+      arr.forEach((d) => {
+        if (d.azureADDeviceId) map[d.azureADDeviceId] = d;
+      });
+    }
+    return map;
+  }, [ninjaDevices.data]);
+
+  const hasNinjaData = Object.keys(ninjaLookup).length > 0;
+
+  // Merge NinjaOne fields into each Intune device row
+  const mergeNinjaData = useCallback(
+    (devices) => {
+      if (!hasNinjaData) return devices;
+      return devices.map((device) => {
+        const ninja = ninjaLookup[device.azureADDeviceId];
+        return ninja ? { ...device, ...ninja } : device;
+      });
+    },
+    [ninjaLookup, hasNinjaData]
+  );
 
   // Card view configuration (works for both mobile and desktop)
   const cardConfig = {
@@ -606,6 +646,93 @@ const Page = () => {
             </Stack>
           </Box>
 
+          {/* NinjaOne Hardware — shown only when enrichment data is present */}
+          {row.ninjaDeviceId && (
+            <>
+              <Divider />
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                  <Dns fontSize="small" color="action" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    NinjaOne Hardware
+                  </Typography>
+                  <Chip
+                    icon={row.ninjaOffline ? <WifiOff sx={{ fontSize: 14 }} /> : <Wifi sx={{ fontSize: 14 }} />}
+                    label={row.ninjaOffline ? "Offline" : "Online"}
+                    color={row.ninjaOffline ? "default" : "success"}
+                    variant="outlined"
+                    size="small"
+                    sx={{ ml: "auto" }}
+                  />
+                </Stack>
+                <Stack spacing={1}>
+                  {row.ninjaCpuName && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">CPU</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {row.ninjaCpuName}{row.ninjaCpuCores ? ` (${row.ninjaCpuCores} cores)` : ""}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.ninjaTotalRamGB != null && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Memory</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {row.ninjaTotalRamGB} GB
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.ninjaOsName && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">OS (NinjaOne)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {row.ninjaOsName}{row.ninjaOsBuild ? ` (${row.ninjaOsBuild})` : ""}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.ninjaOsArch && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Architecture</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {row.ninjaOsArch}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.ninjaLastBootTime && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Last Boot</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {getCippFormatting(row.ninjaLastBootTime, "ninjaLastBootTime")}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.ninjaDomain && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Domain</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {row.ninjaDomain}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.ninjaLastContact && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Last NinjaOne Contact</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {getCippFormatting(row.ninjaLastContact, "ninjaLastContact")}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {row.ninjaNodeClass && (
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" color="text.secondary">Device Class</Typography>
+                      <Chip label={row.ninjaNodeClass} size="small" variant="outlined" />
+                    </Stack>
+                  )}
+                </Stack>
+              </Box>
+            </>
+          )}
+
           {/* User & Enrollment */}
           <Divider />
           <Box>
@@ -692,6 +819,33 @@ const Page = () => {
     },
   };
 
+  // Build simpleColumns — always show Intune columns, conditionally add NinjaOne columns
+  const simpleColumns = useMemo(() => {
+    const base = [
+      "deviceName",
+      "userPrincipalName",
+      "complianceState",
+      "manufacturer",
+      "model",
+      "operatingSystem",
+      "osVersion",
+      "enrolledDateTime",
+      "managedDeviceOwnerType",
+      "deviceEnrollmentType",
+      "joinType",
+    ];
+
+    if (!hasNinjaData) return base;
+
+    return [
+      ...base,
+      "ninjaCpuName",
+      "ninjaTotalRamGB",
+      "ninjaOffline",
+      "ninjaLastContact",
+    ];
+  }, [hasNinjaData]);
+
   return (
     <CippTablePage
       title={pageTitle}
@@ -700,22 +854,11 @@ const Page = () => {
         Endpoint: "deviceManagement/managedDevices",
       }}
       apiDataKey="Results"
+      apiDataFilter={mergeNinjaData}
       actions={actions}
       queryKey={`MEMDevices-${tenantFilter}`}
       offCanvas={offCanvas}
-      simpleColumns={[
-        "deviceName",
-        "userPrincipalName",
-        "complianceState",
-        "manufacturer",
-        "model",
-        "operatingSystem",
-        "osVersion",
-        "enrolledDateTime",
-        "managedDeviceOwnerType",
-        "deviceEnrollmentType",
-        "joinType",
-      ]}
+      simpleColumns={simpleColumns}
       cardConfig={cardConfig}
       offCanvasOnRowClick={true}
     />

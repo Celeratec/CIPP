@@ -27,6 +27,7 @@ export const CippTablePage = (props) => {
     sx = {},
     spacing = 2,
     dataFreshnessField,
+    apiDataFilter,
     ...other
   } = props;
   const tenant = useSettings().currentTenant;
@@ -56,6 +57,7 @@ export const CippTablePage = (props) => {
                 url: apiUrl,
                 data: { tenantFilter: tenant, ...apiData },
                 dataKey: apiDataKey,
+                ...(apiDataFilter && { dataFilter: apiDataFilter }),
               }}
               columns={columns}
               columnsFromApi={columnsFromApi}
