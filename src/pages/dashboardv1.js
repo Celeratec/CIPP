@@ -165,7 +165,7 @@ const Page = () => {
     // Combine standards from all applicable templates:
     let combinedStandards = {};
     for (const template of applicableTemplates) {
-      for (const [standardKey, standardValue] of Object.entries(template.standards)) {
+      for (const [standardKey, standardValue] of Object.entries(template.standards || {})) {
         combinedStandards[standardKey] = standardValue;
       }
     }

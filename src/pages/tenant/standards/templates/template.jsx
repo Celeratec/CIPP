@@ -140,6 +140,7 @@ const Page = () => {
     if (existingTemplate.isSuccess) {
       //formControl.reset(existingTemplate.data?.[0]);
       const apiData = existingTemplate.data?.[0];
+      if (!apiData || !apiData.standards) return;
 
       Object.keys(apiData.standards).forEach((key) => {
         if (Array.isArray(apiData.standards[key])) {

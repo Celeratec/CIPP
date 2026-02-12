@@ -111,7 +111,7 @@ export const CippStandardsDialog = ({ open, onClose, standardsData, currentTenan
   // Combine standards from all applicable templates
   const combinedStandards = {};
   for (const template of applicableTemplates) {
-    for (const [standardKey, standardValue] of Object.entries(template.standards)) {
+    for (const [standardKey, standardValue] of Object.entries(template.standards || {})) {
       if (combinedStandards[standardKey]) {
         // If the standard already exists, we need to merge it
         const existing = combinedStandards[standardKey];
