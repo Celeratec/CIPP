@@ -32,7 +32,8 @@ Manage365 includes the complete CIPP feature set:
 - User administration (create, edit, delete, offboard)
 - Risky users monitoring
 - Group management with templates
-- Device management
+- Device management (Entra ID devices with NinjaOne enrichment, cross-linked to Intune)
+- Per-user device view with hardware details and NinjaOne agent status
 - Role management and JIT Admin
 - Reports: MFA, inactive users, sign-in logs, Azure AD Connect, risk detections
 
@@ -55,6 +56,7 @@ Manage365 includes the complete CIPP feature set:
 
 ### Intune / Endpoint Management
 - Application management and deployment queue
+- Managed device administration with NinjaOne hardware enrichment (CPU, RAM, agent status)
 - Autopilot device management, profiles, and status pages
 - Configuration and compliance policies with templates
 - App protection policies and assignment filters
@@ -193,12 +195,44 @@ Read-only visibility into Microsoft Dynamics 365 / Dataverse environments, provi
 - **Environment context** -- admin pages (users, roles, business units, solutions) support environment selection; navigate from the environments list or pick one inline
 - **Off-canvas details** -- each entity type has a rich detail panel with structured metadata, status badges, and related information
 
+### NinjaOne Device Enrichment
+
+When a NinjaOne integration is configured and device data has been synced, Manage365 automatically enriches device views across the application with hardware and agent data from NinjaOne. This works across all three device pages:
+
+- **MEM Devices** (`/endpoint/MEM/devices`) -- Intune managed devices enriched with NinjaOne hardware
+- **Identity Devices** (`/identity/administration/devices`) -- Entra ID device objects enriched with NinjaOne hardware
+- **User Devices tab** (`/identity/administration/users/user/devices`) -- per-user device cards enriched with NinjaOne hardware
+
+**Table enrichment:**
+- Four additional columns appear when NinjaOne data is available: CPU, RAM (GB), Agent Status (Online/Offline), and Last NinjaOne Contact
+- Columns are conditionally shown -- when NinjaOne is not configured, the tables work exactly as before
+
+**Card enrichment:**
+- Compliance/status color-coded left borders on all device cards (green = compliant, red = non-compliant/disabled, orange = grace period, blue = enabled)
+- NinjaOne Online/Offline badge chip on each device card
+- Ownership type badges (Corporate/Personal) on MEM device cards
+- Trust type badges (Azure AD Joined / Domain Joined / Workplace) on Identity device cards
+- NinjaOne hardware panel on each card showing CPU (with core count), RAM, OS, domain, and last contact time
+
+**Offcanvas detail views:**
+- Rich offcanvas panels on MEM Devices and Identity Devices pages with structured sections: hero header, status badges, device info, NinjaOne hardware (CPU, RAM, OS, architecture, last boot, domain, last contact, device class), user/enrollment, and timeline
+- NinjaOne hardware section only appears for devices with NinjaOne data
+
+**Cross-linking between device views:**
+- MEM Devices page includes "View in Entra" action linking to the Entra device details
+- Identity Devices page includes "View in Intune" action linking to the Intune device details
+- User Devices tab includes "View in Intune" icon on managed device cards
+- All pages retain their existing "View in Entra" / "View in Intune" external links
+
+**Graceful degradation:** If NinjaOne is not configured, returns no cached data, or the API call fails, all pages work exactly as before with no NinjaOne UI elements visible.
+
 ### Additional Enhancements
 
 - **Background site deletion** -- SharePoint site deletion is offloaded to prevent UI timeouts on large sites, with polling for completion status and toast notifications
 - **Data freshness indicators** -- SharePoint and OneDrive list pages display the Microsoft report refresh date
 - **Client-side navigation** -- internal links use Next.js router for seamless navigation (no full page reloads or toolbar flashing)
 - **Consistent action icons** -- standardized quick-action buttons on Teams and SharePoint site cards
+- **Table data filtering** -- `CippTablePage` supports an `apiDataFilter` prop for client-side data transformation, enabling enrichment patterns like the NinjaOne device merge
 
 ### Custom Backend Endpoints
 
@@ -216,6 +250,7 @@ The following API endpoints were created to support Manage365-specific features:
 | `ListDynamicsSecurityRoles` | List Dynamics 365 security roles with business unit details |
 | `ListDynamicsBusinessUnits` | List Dynamics 365 business unit hierarchy |
 | `ListDynamicsSolutions` | List installed Dataverse solutions with publisher info |
+| `ListNinjaDeviceInfo` | Read NinjaOne parsed device cache and return enrichment fields (CPU, RAM, OS, agent status) keyed by Azure AD device ID |
 
 ---
 
@@ -223,7 +258,7 @@ The following API endpoints were created to support Manage365-specific features:
 
 - **Frontend:** React / Next.js with Material-UI (MUI v7)
 - **Backend:** PowerShell Azure Functions
-- **API:** Microsoft Graph API, SharePoint Admin API, Power Platform BAP API, Dataverse Web API
+- **API:** Microsoft Graph API, SharePoint Admin API, Power Platform BAP API, Dataverse Web API, NinjaOne API (via CIPP extension)
 - **Hosting:** Azure Static Web Apps + Azure Functions
 - **Data:** React Query for caching and state management
 
