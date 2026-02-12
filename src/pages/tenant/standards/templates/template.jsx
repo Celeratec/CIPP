@@ -140,7 +140,12 @@ const Page = () => {
     if (existingTemplate.isSuccess) {
       //formControl.reset(existingTemplate.data?.[0]);
       const apiData = existingTemplate.data?.[0];
-      if (!apiData || !apiData.standards) return;
+      if (!apiData) return;
+
+      // Auto-initialize missing standards key so the template is still usable
+      if (!apiData.standards) {
+        apiData.standards = {};
+      }
 
       Object.keys(apiData.standards).forEach((key) => {
         if (Array.isArray(apiData.standards[key])) {
