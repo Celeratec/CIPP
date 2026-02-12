@@ -19,6 +19,11 @@ import {
   OpenInNew,
   Schedule,
   Devices,
+  Dns,
+  WifiOff,
+  Wifi,
+  Memory,
+  Storage,
 } from "@mui/icons-material";
 import { HeaderedTabbedLayout } from "../../../../../layouts/HeaderedTabbedLayout";
 import tabOptions from "./tabOptions";
@@ -62,6 +67,14 @@ const DeviceCard = memo(({ device, tenant, theme }) => {
     return { label: "Unknown", color: "default", icon: <Warning fontSize="small" /> };
   };
 
+  // Color-code by compliance state
+  const getBorderColor = () => {
+    if (!device.accountEnabled) return theme.palette.error.main;
+    if (device.isCompliant === true) return theme.palette.success.main;
+    if (device.isCompliant === false) return theme.palette.warning.main;
+    return theme.palette.primary.main;
+  };
+
   const getOSColor = (os) => {
     const osLower = String(os || "").toLowerCase();
     if (osLower.includes("windows")) return theme.palette.info.main;
@@ -73,14 +86,17 @@ const DeviceCard = memo(({ device, tenant, theme }) => {
   const complianceInfo = getComplianceInfo();
   const osIcon = getOSIcon(device.operatingSystem);
   const osColor = getOSColor(device.operatingSystem);
+  const borderColor = getBorderColor();
 
   const entraUrl = `https://entra.microsoft.com/${tenant}/#view/Microsoft_AAD_Devices/DeviceDetailsMenuBlade/~/Properties/objectId/${device.id}`;
+  const intuneUrl = `https://intune.microsoft.com/${tenant}/#view/Microsoft_Intune_Devices/DeviceSettingsMenuBlade/~/overview/mdmDeviceId/${device.id}`;
 
   return (
     <Card 
       variant="outlined"
       sx={{ 
         height: "100%",
+        borderLeft: `4px solid ${borderColor}`,
         transition: "all 0.2s ease-in-out",
         "&:hover": {
           borderColor: theme.palette.primary.main,
@@ -90,7 +106,7 @@ const DeviceCard = memo(({ device, tenant, theme }) => {
     >
       <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2.5 } }}>
         {/* Header with device name and actions */}
-        <Stack direction="row" spacing={2} alignItems="flex-start" sx={{ mb: 2 }}>
+        <Stack direction="row" spacing={2} alignItems="flex-start" sx={{ mb: 1.5 }}>
           <Avatar
             sx={{
               bgcolor: alpha(osColor, 0.1),
@@ -115,17 +131,30 @@ const DeviceCard = memo(({ device, tenant, theme }) => {
               >
                 {device.displayName || "Unknown Device"}
               </Typography>
-              <Tooltip title="View in Entra">
-                <IconButton
-                  size="small"
-                  href={entraUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{ ml: 1 }}
-                >
-                  <OpenInNew fontSize="small" />
-                </IconButton>
-              </Tooltip>
+              <Stack direction="row" spacing={0}>
+                <Tooltip title="View in Entra">
+                  <IconButton
+                    size="small"
+                    href={entraUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <OpenInNew fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                {device.isManaged && (
+                  <Tooltip title="View in Intune">
+                    <IconButton
+                      size="small"
+                      href={intuneUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Devices fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Stack>
             </Stack>
             <Typography variant="body2" color="text.secondary">
               {device.operatingSystem} {device.operatingSystemVersion}
@@ -134,7 +163,7 @@ const DeviceCard = memo(({ device, tenant, theme }) => {
         </Stack>
 
         {/* Status Chips */}
-        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
+        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
           <Chip
             icon={complianceInfo.icon}
             label={complianceInfo.label}
@@ -152,55 +181,52 @@ const DeviceCard = memo(({ device, tenant, theme }) => {
             />
           )}
           {!device.accountEnabled && (
+            <Chip label="Disabled" color="error" variant="outlined" size="small" />
+          )}
+          {device.trustType && (
             <Chip
-              label="Disabled"
-              color="error"
+              label={device.trustType}
+              size="small"
+              variant="outlined"
+              sx={{ height: 22, fontSize: "0.7rem" }}
+            />
+          )}
+          {device.ninjaDeviceId && (
+            <Chip
+              icon={device.ninjaOffline ? <WifiOff sx={{ fontSize: 14 }} /> : <Wifi sx={{ fontSize: 14 }} />}
+              label={device.ninjaOffline ? "Offline" : "Online"}
+              color={device.ninjaOffline ? "default" : "success"}
               variant="outlined"
               size="small"
             />
           )}
         </Stack>
 
-        <Divider sx={{ my: 1.5 }} />
+        <Divider sx={{ my: 1 }} />
 
         {/* Device Details */}
-        <Stack spacing={1}>
+        <Stack spacing={0.75} sx={{ mt: 1 }}>
           {(device.manufacturer || device.model) && (
             <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="caption" color="text.secondary">
-                Device
-              </Typography>
+              <Typography variant="caption" color="text.secondary">Device</Typography>
               <Typography variant="body2" sx={{ fontWeight: 500, textAlign: "right" }}>
                 {[device.manufacturer, device.model].filter(Boolean).join(" ")}
               </Typography>
             </Stack>
           )}
-          {device.trustType && (
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="caption" color="text.secondary">
-                Trust Type
-              </Typography>
-              <Chip 
-                label={device.trustType} 
-                size="small" 
-                variant="outlined"
-                sx={{ height: 20, fontSize: "0.7rem" }}
-              />
-            </Stack>
-          )}
           <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="caption" color="text.secondary">
-              Relationship
-            </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-              {device.relationship}
-            </Typography>
+            <Typography variant="caption" color="text.secondary">Relationship</Typography>
+            <Chip
+              label={device.relationship}
+              size="small"
+              color={device.relationship === "Registered & Owned" ? "primary" : "default"}
+              variant="outlined"
+              sx={{ height: 20, fontSize: "0.7rem" }}
+            />
           </Stack>
           {device.approximateLastSignInDateTime && (
             <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="caption" color="text.secondary">
-                Last Sign-In
-              </Typography>
+              <Typography variant="caption" color="text.secondary">Last Sign-In</Typography>
               <Stack direction="row" alignItems="center" spacing={0.5}>
                 <Schedule fontSize="small" sx={{ color: "text.secondary", fontSize: 14 }} />
                 <Typography variant="body2">
@@ -210,6 +236,74 @@ const DeviceCard = memo(({ device, tenant, theme }) => {
             </Stack>
           )}
         </Stack>
+
+        {/* NinjaOne Hardware — shown only when enrichment data is present */}
+        {device.ninjaDeviceId && (
+          <>
+            <Divider sx={{ my: 1 }} />
+            <Box
+              sx={{
+                p: 1,
+                borderRadius: 1,
+                bgcolor: alpha(theme.palette.info.main, 0.04),
+                border: `1px solid ${alpha(theme.palette.info.main, 0.12)}`,
+              }}
+            >
+              <Stack spacing={0.75}>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Dns sx={{ fontSize: 13, color: "text.secondary" }} />
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    NinjaOne Hardware
+                  </Typography>
+                </Stack>
+                {device.ninjaCpuName && (
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <Memory sx={{ fontSize: 13, color: "text.secondary" }} />
+                      <Typography variant="caption" color="text.secondary">CPU</Typography>
+                    </Stack>
+                    <Typography variant="caption" sx={{ fontWeight: 500, textAlign: "right", maxWidth: "60%" }} noWrap>
+                      {device.ninjaCpuName}{device.ninjaCpuCores ? ` (${device.ninjaCpuCores}c)` : ""}
+                    </Typography>
+                  </Stack>
+                )}
+                {device.ninjaTotalRamGB != null && (
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <Storage sx={{ fontSize: 13, color: "text.secondary" }} />
+                      <Typography variant="caption" color="text.secondary">RAM</Typography>
+                    </Stack>
+                    <Typography variant="caption" sx={{ fontWeight: 500 }}>
+                      {device.ninjaTotalRamGB} GB
+                    </Typography>
+                  </Stack>
+                )}
+                {device.ninjaOsName && (
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="caption" color="text.secondary">OS</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 500, textAlign: "right", maxWidth: "65%" }} noWrap>
+                      {device.ninjaOsName}{device.ninjaOsBuild ? ` (${device.ninjaOsBuild})` : ""}
+                    </Typography>
+                  </Stack>
+                )}
+                {device.ninjaDomain && (
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="caption" color="text.secondary">Domain</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 500 }}>{device.ninjaDomain}</Typography>
+                  </Stack>
+                )}
+                {device.ninjaLastContact && (
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="caption" color="text.secondary">Last Contact</Typography>
+                    <Typography variant="caption">
+                      <CippTimeAgo data={device.ninjaLastContact} />
+                    </Typography>
+                  </Stack>
+                )}
+              </Stack>
+            </Box>
+          </>
+        )}
       </CardContent>
     </Card>
   );
@@ -254,6 +348,27 @@ const Page = () => {
     waiting: !!userId,
   });
 
+  // Fetch NinjaOne enrichment data (runs in parallel)
+  const ninjaDevices = ApiGetCall({
+    url: "/api/ListNinjaDeviceInfo",
+    data: { TenantFilter: tenant },
+    queryKey: `NinjaDevices-${tenant}`,
+    waiting: !!tenant,
+  });
+
+  // Build NinjaOne lookup map keyed by azureADDeviceId (= Entra device "id")
+  const ninjaLookup = useMemo(() => {
+    const map = {};
+    const raw = ninjaDevices.data;
+    const arr = Array.isArray(raw) ? raw : raw?.Results;
+    if (arr) {
+      arr.forEach((d) => {
+        if (d.azureADDeviceId) map[d.azureADDeviceId] = d;
+      });
+    }
+    return map;
+  }, [ninjaDevices.data]);
+
   // Set the title and subtitle for the layout
   const title = userRequest.isSuccess ? userRequest.data?.[0]?.displayName : "Loading...";
 
@@ -296,7 +411,7 @@ const Page = () => {
     ];
   }, [userRequest.isSuccess, userRequest.data, tenant, userId]);
 
-  // Combine and deduplicate devices - memoized for performance
+  // Combine, deduplicate, and enrich devices - memoized for performance
   const allDevices = useMemo(() => {
     const registeredDevicesList = registeredDevices.data?.Results || [];
     const ownedDevicesList = ownedDevices.data?.Results || [];
@@ -313,9 +428,13 @@ const Page = () => {
         deviceMap.set(device.id, { ...device, relationship: "Owned" });
       }
     });
-    
-    return Array.from(deviceMap.values());
-  }, [registeredDevices.data?.Results, ownedDevices.data?.Results]);
+
+    // Merge NinjaOne enrichment data into each device
+    return Array.from(deviceMap.values()).map((device) => {
+      const ninja = ninjaLookup[device.id];
+      return ninja ? { ...device, ...ninja } : device;
+    });
+  }, [registeredDevices.data?.Results, ownedDevices.data?.Results, ninjaLookup]);
 
   const isLoading = userRequest.isLoading || registeredDevices.isLoading || ownedDevices.isLoading;
 

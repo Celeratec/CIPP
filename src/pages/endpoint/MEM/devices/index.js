@@ -44,6 +44,8 @@ import {
   Dns,
   WifiOff,
   Wifi,
+  Memory,
+  Storage,
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import { getInitials, stringToColor } from "../../../../utils/get-initials";
@@ -95,28 +97,98 @@ const Page = () => {
     avatar: {
       field: "deviceName",
     },
+    // Color-code left border by compliance state
+    cardSx: (item) => {
+      const state = String(item.complianceState || "").toLowerCase();
+      if (state === "compliant") return { borderLeft: `4px solid ${theme.palette.success.main}` };
+      if (state === "noncompliant") return { borderLeft: `4px solid ${theme.palette.error.main}` };
+      if (state === "ingraceperiod") return { borderLeft: `4px solid ${theme.palette.warning.main}` };
+      return { borderLeft: `4px solid ${theme.palette.grey[400]}` };
+    },
     badges: [
       {
         field: "complianceState",
         conditions: {
-          compliant: { icon: "check", color: "success", label: "Device is Compliant" },
-          noncompliant: { icon: "cancel", color: "error", label: "Device is Non-Compliant" },
-          unknown: { label: "Compliance Status Unknown", color: "default", icon: <Help fontSize="small" /> },
-          inGracePeriod: { label: "In Grace Period - Compliance pending", color: "warning" },
+          compliant: { icon: "check", color: "success", label: "Compliant" },
+          noncompliant: { icon: "cancel", color: "error", label: "Non-Compliant" },
+          unknown: { label: "Unknown", color: "default", icon: <Help fontSize="small" /> },
+          inGracePeriod: { label: "Grace Period", color: "warning" },
+        },
+      },
+      {
+        field: "managedDeviceOwnerType",
+        conditions: {
+          company: { label: "Corporate", color: "primary" },
+          personal: { label: "Personal", color: "default" },
+        },
+      },
+      {
+        field: "ninjaOffline",
+        transform: (value) => (value === false ? "online" : value === true ? "offline" : null),
+        conditions: {
+          online: { color: "success", label: "NinjaOne Online" },
+          offline: { color: "default", label: "NinjaOne Offline" },
         },
       },
     ],
     extraFields: [
       { field: "operatingSystem", icon: <Computer />, maxLines: 1 },
-      { field: "model", icon: <PhoneAndroid />, maxLines: 1 },
+      [
+        { field: "manufacturer", maxLines: 1 },
+        { field: "model", maxLines: 1 },
+      ],
     ],
+    extraFieldsMax: 3,
+    // NinjaOne hardware summary rendered as custom content
+    customContent: (item) => {
+      if (!item.ninjaDeviceId) return null;
+      return (
+        <Box
+          sx={{
+            mt: 1,
+            mb: 0.5,
+            p: 1,
+            borderRadius: 1,
+            bgcolor: alpha(theme.palette.info.main, 0.04),
+            border: `1px solid ${alpha(theme.palette.info.main, 0.12)}`,
+          }}
+        >
+          <Stack spacing={0.5}>
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Dns sx={{ fontSize: 12, color: "text.secondary" }} />
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                NinjaOne
+              </Typography>
+            </Stack>
+            <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+              {item.ninjaCpuName && (
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Memory sx={{ fontSize: 12, color: "text.secondary" }} />
+                  <Typography variant="caption" noWrap sx={{ maxWidth: 140 }}>
+                    {item.ninjaCpuName}
+                  </Typography>
+                </Stack>
+              )}
+              {item.ninjaTotalRamGB != null && (
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Storage sx={{ fontSize: 12, color: "text.secondary" }} />
+                  <Typography variant="caption">{item.ninjaTotalRamGB} GB</Typography>
+                </Stack>
+              )}
+            </Stack>
+          </Stack>
+        </Box>
+      );
+    },
     // Additional fields shown only on desktop cards
     desktopFields: [
-      { field: "manufacturer", label: "Manufacturer", icon: <Business /> },
       { field: "osVersion", label: "OS Version" },
-      { field: "enrolledDateTime", label: "Enrolled", icon: <CalendarToday /> },
-      { field: "managedDeviceOwnerType", label: "Owner Type", icon: <Person /> },
+      { field: "serialNumber", label: "Serial Number" },
+      { field: "lastSyncDateTime", label: "Last Sync" },
+      { field: "enrolledDateTime", label: "Enrolled" },
     ],
+    desktopFieldsMax: 4,
+    desktopFieldsLayout: "column",
     // Grid sizing for consistent card widths
     cardGridProps: {
       xs: 12,
@@ -130,6 +202,16 @@ const Page = () => {
     {
       label: "View in Intune",
       link: `https://intune.microsoft.com/${tenantFilter}/#view/Microsoft_Intune_Devices/DeviceSettingsMenuBlade/~/overview/mdmDeviceId/[id]`,
+      color: "info",
+      icon: <EyeIcon />,
+      target: "_blank",
+      multiPost: false,
+      external: true,
+      category: "view",
+    },
+    {
+      label: "View in Entra",
+      link: `https://entra.microsoft.com/${tenantFilter}/#view/Microsoft_AAD_Devices/DeviceDetailsMenuBlade/~/Properties/objectId/[azureADDeviceId]/deviceId/`,
       color: "info",
       icon: <EyeIcon />,
       target: "_blank",
