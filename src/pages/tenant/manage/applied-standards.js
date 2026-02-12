@@ -84,6 +84,7 @@ const Page = () => {
   const templates = useMemo(() => {
     const raw = templateDetails?.data;
     if (Array.isArray(raw)) return raw;
+    if (raw && Array.isArray(raw.Results)) return raw.Results; // API standard wrapper
     if (raw && Array.isArray(raw.templates)) return raw.templates; // alternate key
     if (raw && Array.isArray(raw.data)) return raw.data; // nested data property
     return [];

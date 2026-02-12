@@ -63,8 +63,9 @@ const PoliciesDeployedPage = () => {
     queryKey: "ListIntuneTemplates",
   });
 
-  // Find the current template from standards data
-  const currentTemplate = (standardsApi.data || []).find(
+  // Find the current template from standards data (API returns { Results: [...] })
+  const standardsTemplates = Array.isArray(standardsApi.data) ? standardsApi.data : standardsApi.data?.Results || [];
+  const currentTemplate = standardsTemplates.find(
     (template) => template.GUID === templateId
   );
   const templateStandards = currentTemplate?.standards || {};

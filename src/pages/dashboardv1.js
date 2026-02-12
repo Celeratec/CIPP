@@ -197,8 +197,10 @@ const Page = () => {
   }
 
   const driftData = processDriftDataForTenant(driftApi.data, currentTenant);
+  // API returns { Results: [...] }, unwrap accordingly
+  const standardsArr = Array.isArray(standards.data) ? standards.data : standards.data?.Results;
   const { remediateCount, alertCount, reportCount, total } = getActionCountsForTenant(
-    standards.data,
+    standardsArr,
     currentTenant
   );
 

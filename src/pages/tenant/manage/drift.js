@@ -1525,9 +1525,10 @@ const ManageDriftPage = () => {
     );
   };
 
-  // Simple filter for drift templates
-  const driftTemplateOptions = standardsApi.data
-    ? standardsApi.data
+  // Simple filter for drift templates (API returns { Results: [...] })
+  const standardsArr = Array.isArray(standardsApi.data) ? standardsApi.data : standardsApi.data?.Results;
+  const driftTemplateOptions = standardsArr
+    ? standardsArr
         .filter((template) => template.type === "drift" || template.Type === "drift")
         .map((template) => ({
           label:
@@ -2140,7 +2141,7 @@ const ManageDriftPage = () => {
             guests: 0,
             globalAdmins: 0,
           }}
-          standardsData={standardsApi.data}
+          standardsData={standardsArr}
           organizationData={currentTenantData}
         />
       </Box>

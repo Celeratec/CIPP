@@ -138,8 +138,9 @@ const Page = () => {
     }
 
     if (existingTemplate.isSuccess) {
-      //formControl.reset(existingTemplate.data?.[0]);
-      const apiData = existingTemplate.data?.[0];
+      // API returns { Results: [...] }, unwrap accordingly; fall back to array format for safety
+      const rawData = existingTemplate.data;
+      const apiData = Array.isArray(rawData) ? rawData[0] : rawData?.Results?.[0];
       if (!apiData) return;
 
       // Auto-initialize missing standards key so the template is still usable
