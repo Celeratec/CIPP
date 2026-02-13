@@ -65,6 +65,42 @@ TimeAgo.addDefaultLocale(en);
 
 const queryClient = new QueryClient();
 const clientSideEmotionCache = createEmotionCache();
+
+// Extracted into its own component so we can use useMemo for theme creation
+const ThemedApp = ({ settings, preferredTheme, children }) => {
+  const direction = settings.direction || "ltr";
+  const paletteMode =
+    settings.currentTheme?.value !== "browser"
+      ? settings.currentTheme?.value || "light"
+      : preferredTheme;
+  const theme = useMemo(
+    () =>
+      createTheme({
+        colorPreset: "cerulean",
+        direction,
+        paletteMode,
+        contrast: "high",
+      }),
+    [direction, paletteMode]
+  );
+
+  return (
+    <>
+      <ThemeProvider theme={theme}>
+        <RTL direction={settings.direction}>
+          <CssBaseline />
+          {children}
+        </RTL>
+      </ThemeProvider>
+      {settings.isInitialized && settings?.showDevtools === true ? (
+        <React.Suspense fallback={null}>
+          <ReactQueryDevtoolsProduction />
+        </React.Suspense>
+      ) : null}
+    </>
+  );
+};
+
 const App = (props) => {
   const { Component, emotionCache = clientSideEmotionCache, pageProps } = props;
   const getLayout = Component.getLayout ?? ((page) => page);
@@ -222,56 +258,27 @@ const App = (props) => {
           <SettingsProvider>
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={dateLocale}>
               <SettingsConsumer>
-                {(settings) => {
-                  // Memoize theme to avoid recreating on every render
-                  const direction = settings.direction || "ltr";
-                  const paletteMode =
-                    settings.currentTheme?.value !== "browser"
-                      ? settings.currentTheme?.value || "light"
-                      : preferredTheme;
-                  const theme = useMemo(
-                    () =>
-                      createTheme({
-                        colorPreset: "cerulean",
-                        direction,
-                        paletteMode,
-                        contrast: "high",
-                      }),
-                    [direction, paletteMode]
-                  );
-
-                  return (
-                    <>
-                      <ThemeProvider theme={theme}>
-                        <RTL direction={settings.direction}>
-                          <CssBaseline />
-                          <ErrorBoundary FallbackComponent={Error500}>
-                            <PrivateRoute>
-                              <ReleaseNotesProvider>
-                                {getLayout(<Component {...pageProps} />)}
-                              </ReleaseNotesProvider>
-                            </PrivateRoute>
-                          </ErrorBoundary>
-                          <Toaster position="top-center" />
-                          <CippSpeedDial
-                            actions={speedDialActions}
-                            icon={<HelpIcon />}
-                            position={{
-                              bottom: 12,
-                              right:
-                                settings.isInitialized && settings?.showDevtools === true ? 60 : 12,
-                            }}
-                          />
-                        </RTL>
-                      </ThemeProvider>
-                      {settings.isInitialized && settings?.showDevtools === true ? (
-                        <React.Suspense fallback={null}>
-                          <ReactQueryDevtoolsProduction />
-                        </React.Suspense>
-                      ) : null}
-                    </>
-                  );
-                }}
+                {(settings) => (
+                  <ThemedApp settings={settings} preferredTheme={preferredTheme}>
+                    <ErrorBoundary FallbackComponent={Error500}>
+                      <PrivateRoute>
+                        <ReleaseNotesProvider>
+                          {getLayout(<Component {...pageProps} />)}
+                        </ReleaseNotesProvider>
+                      </PrivateRoute>
+                    </ErrorBoundary>
+                    <Toaster position="top-center" />
+                    <CippSpeedDial
+                      actions={speedDialActions}
+                      icon={<HelpIcon />}
+                      position={{
+                        bottom: 12,
+                        right:
+                          settings.isInitialized && settings?.showDevtools === true ? 60 : 12,
+                      }}
+                    />
+                  </ThemedApp>
+                )}
               </SettingsConsumer>
             </LocalizationProvider>
           </SettingsProvider>
