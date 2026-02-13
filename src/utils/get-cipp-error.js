@@ -21,6 +21,17 @@ export const getCippError = (data) => {
     return data.response.data;
   }
 
+  // CORS-blocked auth redirect: network error on /api/ call with no response
+  // indicates the Azure SWA session has expired and the request was redirected
+  // to the identity provider, which failed CORS preflight.
+  if (
+    !data.response &&
+    data.code === "ERR_NETWORK" &&
+    data.config?.url?.startsWith("/api/")
+  ) {
+    return "Your session has expired. Please refresh the page to log in again.";
+  }
+
   if (data.message) {
     return data.message;
   }

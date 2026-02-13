@@ -53,6 +53,20 @@ export function ApiGetCall(props) {
       }
       returnRetry = false;
     }
+    // Detect CORS-blocked auth redirects: when Azure SWA auth expires, API calls get
+    // redirected to the identity provider, which fails CORS preflight and results in a
+    // network error with no response object. Invalidate auth queries so PrivateRoute
+    // can redirect to the login page.
+    if (
+      isAxiosError(error) &&
+      !error.response &&
+      error.code === "ERR_NETWORK" &&
+      error.config?.url?.startsWith("/api/")
+    ) {
+      queryClient.invalidateQueries({ queryKey: ["authmecipp"] });
+      queryClient.invalidateQueries({ queryKey: ["authmeswa"] });
+      returnRetry = false;
+    }
     if (returnRetry === false && toast) {
       dispatch(
         showToast({
@@ -283,6 +297,20 @@ export function ApiGetCallWithPagination({
       ) {
         queryClient.invalidateQueries({ queryKey: ["authmecipp"] });
       }
+      returnRetry = false;
+    }
+    // Detect CORS-blocked auth redirects: when Azure SWA auth expires, API calls get
+    // redirected to the identity provider, which fails CORS preflight and results in a
+    // network error with no response object. Invalidate auth queries so PrivateRoute
+    // can redirect to the login page.
+    if (
+      isAxiosError(error) &&
+      !error.response &&
+      error.code === "ERR_NETWORK" &&
+      error.config?.url?.startsWith("/api/")
+    ) {
+      queryClient.invalidateQueries({ queryKey: ["authmecipp"] });
+      queryClient.invalidateQueries({ queryKey: ["authmeswa"] });
       returnRetry = false;
     }
 
