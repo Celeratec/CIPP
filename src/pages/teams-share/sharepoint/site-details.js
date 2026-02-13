@@ -44,11 +44,13 @@ import {
 } from "@mui/icons-material";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useState } from "react";
 import { CippDataTable } from "../../../components/CippTable/CippDataTable";
 import { useSettings } from "../../../hooks/use-settings";
 import { ApiGetCall } from "../../../api/ApiCall";
 import { CippHead } from "../../../components/CippComponents/CippHead";
 import { CippApiDialog } from "../../../components/CippComponents/CippApiDialog";
+import CippGuestInviteDialog from "../../../components/CippComponents/CippGuestInviteDialog";
 import { useDialog } from "../../../hooks/use-dialog";
 import { getCippFormatting } from "../../../utils/get-cipp-formatting";
 
@@ -229,18 +231,7 @@ const Page = () => {
   };
 
   // Invite Guest dialog
-  const inviteGuestDialog = useDialog();
-  const inviteGuestApi = {
-    url: "/api/ExecSharePointInviteGuest",
-    type: "POST",
-    data: {
-      groupId: ownerPrincipalName,
-      URL: webUrl,
-      SharePointType: rootWebTemplate,
-    },
-    confirmText: "Invite an external guest user to this SharePoint site. The guest will be invited to the tenant and, for group-connected sites, automatically added as a site member.",
-    relatedQueryKeys: [`site-members-${siteId}`],
-  };
+  const [inviteGuestOpen, setInviteGuestOpen] = useState(false);
 
   const userPickerField = [
     {
@@ -265,40 +256,6 @@ const Page = () => {
         showRefresh: true,
       },
       validators: { validate: (v) => (!v ? "Please select a user" : true) },
-    },
-  ];
-
-  const guestInviteFields = [
-    {
-      type: "textField",
-      name: "displayName",
-      label: "Display Name",
-      placeholder: "Guest user's display name",
-      validators: { required: "Display name is required" },
-    },
-    {
-      type: "textField",
-      name: "mail",
-      label: "Email Address",
-      placeholder: "guest@externaldomain.com",
-      validators: {
-        required: "Email address is required",
-        pattern: {
-          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-          message: "Please enter a valid email address",
-        },
-      },
-    },
-    {
-      type: "textField",
-      name: "redirectUri",
-      label: "Redirect URL (Optional)",
-      placeholder: "https://myapps.microsoft.com",
-    },
-    {
-      type: "switch",
-      name: "sendInvite",
-      label: "Send email invitation to guest",
     },
   ];
 
@@ -572,7 +529,7 @@ const Page = () => {
                 </Typography>
               </Stack>
               <Stack direction="row" spacing={1}>
-                <Button size="small" startIcon={<Send />} onClick={() => inviteGuestDialog.handleOpen()}>
+                <Button size="small" startIcon={<Send />} onClick={() => setInviteGuestOpen(true)}>
                   Invite Guest
                 </Button>
                 <Button size="small" startIcon={<PersonAdd />} onClick={() => addMemberDialog.handleOpen()}>
@@ -687,7 +644,15 @@ const Page = () => {
       {/* Dialogs */}
       <CippApiDialog createDialog={addMemberDialog} title="Add Site Member" fields={userPickerField} api={addMemberApi} row={{}} relatedQueryKeys={[`site-members-${siteId}`]} />
       <CippApiDialog createDialog={addAdminDialog} title="Add Site Admin" fields={userPickerField} api={addAdminApi} row={{}} relatedQueryKeys={[`site-members-${siteId}`]} />
-      <CippApiDialog createDialog={inviteGuestDialog} title="Invite External Guest" fields={guestInviteFields} api={inviteGuestApi} row={{}} relatedQueryKeys={[`site-members-${siteId}`]} />
+      <CippGuestInviteDialog
+        open={inviteGuestOpen}
+        onClose={() => setInviteGuestOpen(false)}
+        tenantFilter={tenantFilter}
+        groupId={ownerPrincipalName}
+        webUrl={webUrl}
+        sharePointType={rootWebTemplate}
+        relatedQueryKeys={[`site-members-${siteId}`]}
+      />
       {isGroupConnected && (
         <CippApiDialog createDialog={createTeamDialog} title="Create Team from Site" fields={[]} api={createTeamApi} row={{}} />
       )}
