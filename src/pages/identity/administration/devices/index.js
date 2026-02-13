@@ -58,31 +58,36 @@ const Page = () => {
     waiting: !!tenantFilter,
   });
 
-  // Build lookup map keyed by azureADDeviceId (which is the Entra device object "id")
-  const ninjaLookup = useMemo(() => {
-    const map = {};
+  // Build NinjaOne lookup: by azureADDeviceId (= Entra device id) and by serial
+  const { ninjaLookup, ninjaBySerial } = useMemo(() => {
+    const byId = {};
+    const bySerial = {};
     const raw = ninjaDevices.data;
     const arr = Array.isArray(raw) ? raw : raw?.Results;
     if (arr) {
       arr.forEach((d) => {
-        if (d.azureADDeviceId) map[d.azureADDeviceId] = d;
+        if (d.azureADDeviceId) byId[d.azureADDeviceId] = d;
       });
     }
-    return map;
+    const serialIndex = raw?.BySerial || {};
+    Object.keys(serialIndex).forEach((sn) => {
+      if (sn && serialIndex[sn]) bySerial[String(sn).trim()] = serialIndex[sn];
+    });
+    return { ninjaLookup: byId, ninjaBySerial: bySerial };
   }, [ninjaDevices.data]);
 
-  const hasNinjaData = Object.keys(ninjaLookup).length > 0;
+  const hasNinjaData = Object.keys(ninjaLookup).length > 0 || Object.keys(ninjaBySerial).length > 0;
 
-  // Merge NinjaOne fields into each Entra device row
+  // Merge NinjaOne fields into each Entra device row (match by id, deviceId, or serial)
   const mergeNinjaData = useCallback(
     (devices) => {
       if (!hasNinjaData) return devices;
       return devices.map((device) => {
-        const ninja = ninjaLookup[device.id];
+        const ninja = ninjaLookup[device.id] || ninjaLookup[device.deviceId] || (device.serialNumber && ninjaBySerial[String(device.serialNumber).trim()]);
         return ninja ? { ...device, ...ninja } : device;
       });
     },
-    [ninjaLookup, hasNinjaData]
+    [ninjaLookup, ninjaBySerial, hasNinjaData]
   );
 
   // Helper functions for device styling

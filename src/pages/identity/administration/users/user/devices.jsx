@@ -498,12 +498,12 @@ const Page = () => {
     waiting: !!userId,
   });
 
-  // Fetch Intune managed devices to get managed device IDs for Entra devices
+  // Fetch Intune managed devices to get managed device IDs and serial numbers for Entra devices
   const managedDevicesRequest = ApiGetCall({
     url: "/api/ListGraphRequest",
     data: {
       Endpoint: "deviceManagement/managedDevices",
-      $select: "id,azureADDeviceId",
+      $select: "id,azureADDeviceId,serialNumber",
       $top: 999,
       tenantFilter: tenant,
     },
@@ -519,30 +519,36 @@ const Page = () => {
     waiting: !!tenant,
   });
 
-  // Build map: Entra device id (azureADDeviceId) -> Intune managed device id
-  const managedDeviceIdMap = useMemo(() => {
+  // Build map: Entra device id (azureADDeviceId) -> { id, serialNumber }
+  const managedDeviceMap = useMemo(() => {
     const map = {};
     const raw = managedDevicesRequest.data;
     const arr = Array.isArray(raw) ? raw : raw?.Results || raw?.value || [];
     arr.forEach((md) => {
-      if (md.azureADDeviceId && md.id) {
-        map[md.azureADDeviceId] = md.id;
+      const key = md.azureADDeviceId?.toLowerCase?.() || md.azureADDeviceId;
+      if (key && md.id) {
+        map[key] = { id: md.id, serialNumber: md.serialNumber };
       }
     });
     return map;
   }, [managedDevicesRequest.data]);
 
-  // Build NinjaOne lookup map keyed by azureADDeviceId (= Entra device "id")
-  const ninjaLookup = useMemo(() => {
-    const map = {};
+  // Build NinjaOne lookup: by azureADDeviceId and by serial (NinjaOne stores serial as primary identifier)
+  const { ninjaLookup, ninjaBySerial } = useMemo(() => {
+    const byId = {};
+    const bySerial = {};
     const raw = ninjaDevices.data;
     const arr = Array.isArray(raw) ? raw : raw?.Results;
     if (arr) {
       arr.forEach((d) => {
-        if (d.azureADDeviceId) map[d.azureADDeviceId] = d;
+        if (d.azureADDeviceId) byId[d.azureADDeviceId] = d;
       });
     }
-    return map;
+    const serialIndex = raw?.BySerial || {};
+    Object.keys(serialIndex).forEach((sn) => {
+      if (sn && serialIndex[sn]) bySerial[String(sn).trim()] = serialIndex[sn];
+    });
+    return { ninjaLookup: byId, ninjaBySerial: bySerial };
   }, [ninjaDevices.data]);
 
   // Set the title and subtitle for the layout
@@ -605,17 +611,20 @@ const Page = () => {
       }
     });
 
-    // Merge NinjaOne enrichment data and managed device ID into each device
+    // Merge NinjaOne enrichment data and managed device info into each device
     return Array.from(deviceMap.values()).map((device) => {
-      const ninja = ninjaLookup[device.id];
-      const managedDeviceId = managedDeviceIdMap[device.id] || null;
+      const idKey = device.id?.toLowerCase?.() || device.id;
+      const managed = managedDeviceMap[idKey] || managedDeviceMap[device.deviceId?.toLowerCase?.()] || managedDeviceMap[device.deviceId];
+      const serialNumber = managed?.serialNumber ?? device.serialNumber;
+      const ninja = ninjaLookup[device.id] || ninjaLookup[device.deviceId] || ninjaLookup[idKey] || (serialNumber && ninjaBySerial[String(serialNumber).trim()]);
       return {
         ...device,
         ...(ninja || {}),
-        managedDeviceId,
+        serialNumber,
+        managedDeviceId: managed?.id ?? null,
       };
     });
-  }, [registeredDevices.data?.Results, ownedDevices.data?.Results, ninjaLookup, managedDeviceIdMap]);
+  }, [registeredDevices.data?.Results, ownedDevices.data?.Results, ninjaLookup, ninjaBySerial, managedDeviceMap]);
 
   const isLoading = userRequest.isLoading || registeredDevices.isLoading || ownedDevices.isLoading;
 
