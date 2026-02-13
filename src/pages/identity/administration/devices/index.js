@@ -125,13 +125,21 @@ const Page = () => {
           Workplace: { label: "Workplace Joined", color: "default" },
         },
       },
+      // Source presence indicators — show which systems this device exists in
       {
-        field: "ninjaOffline",
-        transform: (value) => (value === false ? "online" : value === true ? "offline" : null),
-        conditions: {
-          online: { color: "success", label: "NinjaOne Online" },
-          offline: { color: "default", label: "NinjaOne Offline" },
-        },
+        field: "id",
+        transform: (v) => (v ? "yes" : null),
+        conditions: { yes: { label: "Entra", color: "info" } },
+      },
+      {
+        field: "isManaged",
+        transform: (v) => (v === true ? "yes" : null),
+        conditions: { yes: { label: "Intune", color: "primary" } },
+      },
+      {
+        field: "ninjaDeviceId",
+        transform: (v) => (v ? "yes" : null),
+        conditions: { yes: { label: "NinjaOne", color: "success" } },
       },
     ],
     extraFields: [
@@ -315,6 +323,30 @@ const Page = () => {
               </Box>
             </Stack>
           </Paper>
+
+          {/* Source Presence */}
+          <Box>
+            <Typography
+              variant="overline"
+              color="text.secondary"
+              sx={{ fontWeight: 600, letterSpacing: 1, mb: 1, display: "block" }}
+            >
+              Sources
+            </Typography>
+            <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+              <Chip label="Entra" color="info" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.7rem" }} />
+              {row.isManaged ? (
+                <Chip label="Intune" color="primary" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.7rem" }} />
+              ) : (
+                <Chip label="Intune" size="small" variant="outlined" sx={{ fontWeight: 500, fontSize: "0.7rem", opacity: 0.4 }} />
+              )}
+              {row.ninjaDeviceId ? (
+                <Chip label="NinjaOne" color="success" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.7rem" }} />
+              ) : (
+                <Chip label="NinjaOne" size="small" variant="outlined" sx={{ fontWeight: 500, fontSize: "0.7rem", opacity: 0.4 }} />
+              )}
+            </Stack>
+          </Box>
 
           {/* Status Badges */}
           <Box>

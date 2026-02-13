@@ -162,6 +162,21 @@ const DeviceCard = memo(({ device, tenant, theme }) => {
           </Box>
         </Stack>
 
+        {/* Source Presence */}
+        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
+          <Chip label="Entra" color="info" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }} />
+          {device.isManaged ? (
+            <Chip label="Intune" color="primary" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }} />
+          ) : (
+            <Chip label="Intune" size="small" variant="outlined" sx={{ fontWeight: 500, fontSize: "0.65rem", height: 20, opacity: 0.4 }} />
+          )}
+          {device.ninjaDeviceId ? (
+            <Chip label="NinjaOne" color="success" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }} />
+          ) : (
+            <Chip label="NinjaOne" size="small" variant="outlined" sx={{ fontWeight: 500, fontSize: "0.65rem", height: 20, opacity: 0.4 }} />
+          )}
+        </Stack>
+
         {/* Status Chips */}
         <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
           <Chip
