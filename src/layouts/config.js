@@ -21,111 +21,6 @@ export const nativeMenuItems = [
     permissions: ["CIPP.Core.*"],
   },
   {
-    title: "Identity Management",
-    type: "header",
-    icon: (
-      <SvgIcon>
-        <UsersIcon />
-      </SvgIcon>
-    ),
-    permissions: ["Identity.*"],
-    items: [
-      {
-        title: "Administration",
-        permissions: ["Identity.User.*"],
-        items: [
-          {
-            title: "Users",
-            path: "/identity/administration/users",
-            permissions: ["Identity.User.*"],
-          },
-          {
-            title: "Risky Users",
-            path: "/identity/administration/risky-users",
-            permissions: ["Identity.User.*"],
-          },
-          {
-            title: "Groups",
-            path: "/identity/administration/groups",
-            permissions: ["Identity.Group.*"],
-          },
-          {
-            title: "Group Templates",
-            path: "/identity/administration/group-templates",
-            permissions: ["Identity.Group.*"],
-          },
-          {
-            title: "Devices",
-            path: "/identity/administration/devices",
-            permissions: ["Identity.Device.*"],
-          },
-          {
-            title: "Deleted Items",
-            path: "/identity/administration/deleted-items",
-            permissions: ["Identity.User.*"],
-          },
-          {
-            title: "Roles",
-            path: "/identity/administration/roles",
-            permissions: ["Identity.Role.*"],
-          },
-          {
-            title: "JIT Admin",
-            path: "/identity/administration/jit-admin",
-            permissions: ["Identity.Role.*"],
-          },
-          {
-            title: "JIT Admin Templates",
-            path: "/identity/administration/jit-admin-templates",
-            permissions: ["Identity.Role.*"],
-          },
-          {
-            title: "Offboarding Wizard",
-            path: "/identity/administration/offboarding-wizard",
-            permissions: ["Identity.User.*"],
-          },
-        ],
-      },
-      {
-        title: "Reports",
-        permissions: [
-          "Identity.User.*",
-          "Identity.Group.*",
-          "Identity.Device.*",
-          "Identity.Role.*",
-          "Identity.AuditLog.*",
-        ],
-        items: [
-          {
-            title: "MFA Report",
-            path: "/identity/reports/mfa-report",
-            permissions: ["Identity.User.*"],
-          },
-          {
-            title: "Inactive Users",
-            path: "/identity/reports/inactive-users-report",
-            permissions: ["Identity.User.*"],
-          },
-          {
-            title: "Sign-in Report",
-            path: "/identity/reports/signin-report",
-            permissions: ["Identity.User.*"],
-          },
-          {
-            title: "AAD Connect Report",
-            path: "/identity/reports/azure-ad-connect-report",
-            permissions: ["Identity.User.*"],
-          },
-          {
-            title: "Risk Detections",
-            path: "/identity/reports/risk-detections",
-            permissions: ["Identity.User.*"],
-          },
-        ],
-      },
-    ],
-  },
-  {
     title: "Tenant Administration",
     type: "header",
     icon: (
@@ -145,6 +40,11 @@ export const nativeMenuItems = [
             permissions: ["Tenant.Administration.*"],
           },
           {
+            title: "Manage Tenant",
+            path: "/tenant/manage/edit",
+            permissions: ["Tenant.Administration.*"],
+          },
+          {
             title: "Alert Configuration",
             path: "/tenant/administration/alert-configuration",
             permissions: ["Tenant.Alert.*"],
@@ -160,14 +60,14 @@ export const nativeMenuItems = [
             permissions: ["Tenant.Application.*"],
           },
           {
-            title: "Secure Score",
-            path: "/tenant/administration/securescore",
-            permissions: ["Tenant.Administration.*"],
-          },
-          {
             title: "App Consent Requests",
             path: "/tenant/administration/app-consent-requests",
             permissions: ["Tenant.Application.*"],
+          },
+          {
+            title: "Secure Score",
+            path: "/tenant/administration/securescore",
+            permissions: ["Tenant.Administration.*"],
           },
           {
             title: "Authentication Methods",
@@ -263,10 +163,110 @@ export const nativeMenuItems = [
           },
         ],
       },
+    ],
+  },
+  {
+    title: "Identity Management",
+    type: "header",
+    icon: (
+      <SvgIcon>
+        <UsersIcon />
+      </SvgIcon>
+    ),
+    permissions: ["Identity.*"],
+    items: [
       {
-        title: "Manage Tenant",
-        path: "/tenant/manage/edit",
-        permissions: ["Tenant.Administration.*"],
+        title: "Administration",
+        permissions: ["Identity.User.*"],
+        items: [
+          {
+            title: "Users",
+            path: "/identity/administration/users",
+            permissions: ["Identity.User.*"],
+          },
+          {
+            title: "Risky Users",
+            path: "/identity/administration/risky-users",
+            permissions: ["Identity.User.*"],
+          },
+          {
+            title: "Groups",
+            path: "/identity/administration/groups",
+            permissions: ["Identity.Group.*"],
+          },
+          {
+            title: "Group Templates",
+            path: "/identity/administration/group-templates",
+            permissions: ["Identity.Group.*"],
+          },
+          {
+            title: "Entra Devices",
+            path: "/identity/administration/devices",
+            permissions: ["Identity.Device.*"],
+          },
+          {
+            title: "Deleted Items",
+            path: "/identity/administration/deleted-items",
+            permissions: ["Identity.User.*"],
+          },
+          {
+            title: "Roles",
+            path: "/identity/administration/roles",
+            permissions: ["Identity.Role.*"],
+          },
+          {
+            title: "JIT Admin",
+            path: "/identity/administration/jit-admin",
+            permissions: ["Identity.Role.*"],
+          },
+          {
+            title: "JIT Admin Templates",
+            path: "/identity/administration/jit-admin-templates",
+            permissions: ["Identity.Role.*"],
+          },
+          {
+            title: "Offboarding Wizard",
+            path: "/identity/administration/offboarding-wizard",
+            permissions: ["Identity.User.*"],
+          },
+        ],
+      },
+      {
+        title: "Reports",
+        permissions: [
+          "Identity.User.*",
+          "Identity.Group.*",
+          "Identity.Device.*",
+          "Identity.Role.*",
+          "Identity.AuditLog.*",
+        ],
+        items: [
+          {
+            title: "MFA Report",
+            path: "/identity/reports/mfa-report",
+            permissions: ["Identity.User.*"],
+          },
+          {
+            title: "Inactive Users",
+            path: "/identity/reports/inactive-users-report",
+            permissions: ["Identity.User.*"],
+          },
+          {
+            title: "Sign-in Report",
+            path: "/identity/reports/signin-report",
+            permissions: ["Identity.User.*"],
+          },
+          {
+            title: "Entra Connect Report",
+            path: "/identity/reports/azure-ad-connect-report",
+            permissions: ["Identity.User.*"],
+          },
+          {
+            title: "Risk Detections",
+            path: "/identity/reports/risk-detections",
+            permissions: ["Identity.User.*"],
+          },
+        ],
       },
     ],
   },
@@ -282,7 +282,6 @@ export const nativeMenuItems = [
       "Security.Incident.*",
       "Security.Alert.*",
       "Tenant.DeviceCompliance.*",
-      "Security.SafeLinksPolicy.*",
     ],
     items: [
       {
@@ -333,249 +332,9 @@ export const nativeMenuItems = [
         ],
       },
       {
-        title: "Reports",
+        title: "Device Compliance",
+        path: "/security/reports/list-device-compliance",
         permissions: ["Tenant.DeviceCompliance.*"],
-        items: [
-          {
-            title: "Device Compliance",
-            path: "/security/reports/list-device-compliance",
-            permissions: ["Tenant.DeviceCompliance.*"],
-          },
-        ],
-      },
-      {
-        title: "Safe Links",
-        permissions: ["Security.SafeLinksPolicy.*"],
-        items: [
-          {
-            title: "Safe Links Policies",
-            path: "/security/safelinks/safelinks",
-            permissions: ["Security.SafeLinksPolicy.*"],
-          },
-          {
-            title: "Safe Links Templates",
-            path: "/security/safelinks/safelinks-template",
-            permissions: ["Security.SafeLinksPolicy.*"],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    title: "Intune",
-    type: "header",
-    icon: (
-      <SvgIcon>
-        <Laptop />
-      </SvgIcon>
-    ),
-    permissions: [
-      "Endpoint.Application.*",
-      "Endpoint.Autopilot.*",
-      "Endpoint.MEM.*",
-      "Endpoint.Device.*",
-      "Endpoint.Device.Read",
-    ],
-    items: [
-      {
-        title: "Applications",
-        permissions: ["Endpoint.Application.*"],
-        items: [
-          {
-            title: "Applications",
-            path: "/endpoint/applications/list",
-            permissions: ["Endpoint.Application.*"],
-          },
-          {
-            title: "Application Queue",
-            path: "/endpoint/applications/queue",
-            permissions: ["Endpoint.Application.*"],
-          },
-        ],
-      },
-      {
-        title: "Autopilot",
-        permissions: ["Endpoint.Autopilot.*"],
-        items: [
-          {
-            title: "Autopilot Devices",
-            path: "/endpoint/autopilot/list-devices",
-            permissions: ["Endpoint.Autopilot.*"],
-          },
-          {
-            title: "Add Autopilot Device",
-            path: "/endpoint/autopilot/add-device",
-            permissions: ["Endpoint.Autopilot.*"],
-          },
-          {
-            title: "Profiles",
-            path: "/endpoint/autopilot/list-profiles",
-            permissions: ["Endpoint.Autopilot.*"],
-          },
-          {
-            title: "Status Pages",
-            path: "/endpoint/autopilot/list-status-pages",
-            permissions: ["Endpoint.Autopilot.*"],
-          },
-        ],
-      },
-      {
-        title: "Device Management",
-        permissions: ["Endpoint.MEM.*"],
-        items: [
-          {
-            title: "Devices",
-            path: "/endpoint/MEM/devices",
-            permissions: ["Endpoint.Device.*"],
-          },
-          {
-            title: "Configuration Policies",
-            path: "/endpoint/MEM/list-policies",
-            permissions: ["Endpoint.MEM.*"],
-          },
-          {
-            title: "Compliance Policies",
-            path: "/endpoint/MEM/list-compliance-policies",
-            permissions: ["Endpoint.MEM.*"],
-          },
-          {
-            title: "App Policies",
-            path: "/endpoint/MEM/list-appprotection-policies",
-            permissions: ["Endpoint.MEM.*"],
-          },
-          {
-            title: "Policy Templates",
-            path: "/endpoint/MEM/list-templates",
-            permissions: ["Endpoint.MEM.*"],
-          },
-          {
-            title: "Assignment Filters",
-            path: "/endpoint/MEM/assignment-filters",
-            permissions: ["Endpoint.MEM.*"],
-          },
-          {
-            title: "Assignment Filter Templates",
-            path: "/endpoint/MEM/assignment-filter-templates",
-            permissions: ["Endpoint.MEM.*"],
-          },
-          {
-            title: "Scripts",
-            path: "/endpoint/MEM/list-scripts",
-            permissions: ["Endpoint.MEM.*"],
-          },
-        ],
-      },
-      {
-        title: "Reports",
-        permissions: ["Endpoint.Device.*", "Endpoint.Autopilot.*", "Endpoint.MEM.*"],
-        items: [
-          {
-            title: "Analytics Device Score",
-            path: "/endpoint/reports/analyticsdevicescore",
-            permissions: ["Endpoint.Device.*"],
-          },
-          {
-            title: "Work from anywhere",
-            path: "/endpoint/reports/workfromanywhere",
-            permissions: ["Endpoint.Device.*"],
-          },
-          {
-            title: "Autopilot Deployments",
-            path: "/endpoint/reports/autopilot-deployment",
-            permissions: ["Endpoint.Autopilot.*"],
-          },
-          {
-            title: "Discovered Apps",
-            path: "/endpoint/reports/detected-apps",
-            permissions: ["Endpoint.MEM.*"],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    title: "Teams & SharePoint",
-    type: "header",
-    icon: (
-      <SvgIcon>
-        <CloudOutlined />
-      </SvgIcon>
-    ),
-    permissions: [
-      "Sharepoint.Site.*",
-      "Sharepoint.Admin.*",
-      "Teams.Group.*",
-      "Teams.Activity.*",
-      "Teams.Voice.*",
-    ],
-    items: [
-      {
-        title: "OneDrive",
-        permissions: ["Sharepoint.Site.*"],
-        items: [
-          {
-            title: "OneDrive Accounts",
-            path: "/teams-share/onedrive",
-            permissions: ["Sharepoint.Site.*"],
-          },
-          {
-            title: "File Browser",
-            path: "/teams-share/onedrive/file-browser",
-            permissions: ["Sharepoint.Site.*"],
-          },
-          {
-            title: "File Transfer",
-            path: "/teams-share/onedrive/file-transfer",
-            permissions: ["Sharepoint.Site.ReadWrite"],
-          },
-        ],
-      },
-      {
-        title: "SharePoint",
-        permissions: ["Sharepoint.Admin.*"],
-        items: [
-          {
-            title: "SharePoint Sites",
-            path: "/teams-share/sharepoint",
-            permissions: ["Sharepoint.Admin.*"],
-          },
-          {
-            title: "Sharing Settings",
-            path: "/teams-share/sharepoint/sharing-settings",
-            permissions: ["Sharepoint.Admin.*"],
-          },
-          {
-            title: "Recycle Bin",
-            path: "/teams-share/sharepoint/recycle-bin",
-            permissions: ["Sharepoint.Site.ReadWrite"],
-          },
-        ],
-      },
-      {
-        title: "Teams",
-        permissions: ["Teams.Group.*"],
-        items: [
-          {
-            title: "Teams",
-            path: "/teams-share/teams/list-team",
-            permissions: ["Teams.Group.*"],
-          },
-          {
-            title: "Teams Settings",
-            path: "/teams-share/teams/teams-settings",
-            permissions: ["Teams.Group.*"],
-          },
-          {
-            title: "Teams Activity",
-            path: "/teams-share/teams/teams-activity",
-            permissions: ["Teams.Activity.*"],
-          },
-          {
-            title: "Business Voice",
-            path: "/teams-share/teams/business-voice",
-            permissions: ["Teams.Voice.*"],
-          },
-        ],
       },
     ],
   },
@@ -599,6 +358,7 @@ export const nativeMenuItems = [
       "Exchange.SafeLinks.*",
       "Exchange.Group.*",
       "Exchange.RetentionPolicies.*",
+      "Security.SafeLinksPolicy.*",
     ],
     items: [
       {
@@ -657,7 +417,7 @@ export const nativeMenuItems = [
         permissions: ["Exchange.TransportRule.*"],
         items: [
           {
-            title: "Transport rules",
+            title: "Transport Rules",
             path: "/email/transport/list-rules",
             permissions: ["Exchange.TransportRule.*"],
           },
@@ -679,26 +439,26 @@ export const nativeMenuItems = [
         ],
       },
       {
-        title: "Spamfilter",
+        title: "Spam Filter",
         permissions: ["Exchange.SpamFilter.*"],
         items: [
           {
-            title: "Spamfilter",
+            title: "Spam Filter Policies",
             path: "/email/spamfilter/list-spamfilter",
             permissions: ["Exchange.SpamFilter.*"],
           },
           {
-            title: "Spamfilter templates",
+            title: "Spam Filter Templates",
             path: "/email/spamfilter/list-templates",
             permissions: ["Exchange.SpamFilter.*"],
           },
           {
-            title: "Connection filter",
+            title: "Connection Filter",
             path: "/email/spamfilter/list-connectionfilter",
             permissions: ["Exchange.ConnectionFilter.*"],
           },
           {
-            title: "Connection filter templates",
+            title: "Connection Filter Templates",
             path: "/email/spamfilter/list-connectionfilter-templates",
             permissions: ["Exchange.ConnectionFilter.*"],
           },
@@ -706,6 +466,22 @@ export const nativeMenuItems = [
             title: "Quarantine Policies",
             path: "/email/spamfilter/list-quarantine-policies",
             permissions: ["Exchange.SpamFilter.*"],
+          },
+        ],
+      },
+      {
+        title: "Safe Links",
+        permissions: ["Security.SafeLinksPolicy.*"],
+        items: [
+          {
+            title: "Safe Links Policies",
+            path: "/security/safelinks/safelinks",
+            permissions: ["Security.SafeLinksPolicy.*"],
+          },
+          {
+            title: "Safe Links Templates",
+            path: "/security/safelinks/safelinks-template",
+            permissions: ["Security.SafeLinksPolicy.*"],
           },
         ],
       },
@@ -788,6 +564,224 @@ export const nativeMenuItems = [
             title: "Global Address List",
             path: "/email/reports/global-address-list",
             permissions: ["Exchange.Group.*"],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    title: "Teams & SharePoint",
+    type: "header",
+    icon: (
+      <SvgIcon>
+        <CloudOutlined />
+      </SvgIcon>
+    ),
+    permissions: [
+      "Sharepoint.Site.*",
+      "Sharepoint.Admin.*",
+      "Teams.Group.*",
+      "Teams.Activity.*",
+      "Teams.Voice.*",
+    ],
+    items: [
+      {
+        title: "OneDrive",
+        permissions: ["Sharepoint.Site.*"],
+        items: [
+          {
+            title: "OneDrive Accounts",
+            path: "/teams-share/onedrive",
+            permissions: ["Sharepoint.Site.*"],
+          },
+          {
+            title: "File Browser",
+            path: "/teams-share/onedrive/file-browser",
+            permissions: ["Sharepoint.Site.*"],
+          },
+          {
+            title: "File Transfer",
+            path: "/teams-share/onedrive/file-transfer",
+            permissions: ["Sharepoint.Site.ReadWrite"],
+          },
+        ],
+      },
+      {
+        title: "SharePoint",
+        permissions: ["Sharepoint.Admin.*"],
+        items: [
+          {
+            title: "SharePoint Sites",
+            path: "/teams-share/sharepoint",
+            permissions: ["Sharepoint.Admin.*"],
+          },
+          {
+            title: "Sharing Settings",
+            path: "/teams-share/sharepoint/sharing-settings",
+            permissions: ["Sharepoint.Admin.*"],
+          },
+          {
+            title: "Recycle Bin",
+            path: "/teams-share/sharepoint/recycle-bin",
+            permissions: ["Sharepoint.Site.ReadWrite"],
+          },
+        ],
+      },
+      {
+        title: "Teams",
+        permissions: ["Teams.Group.*"],
+        items: [
+          {
+            title: "Teams List",
+            path: "/teams-share/teams/list-team",
+            permissions: ["Teams.Group.*"],
+          },
+          {
+            title: "Teams Settings",
+            path: "/teams-share/teams/teams-settings",
+            permissions: ["Teams.Group.*"],
+          },
+          {
+            title: "Teams Activity",
+            path: "/teams-share/teams/teams-activity",
+            permissions: ["Teams.Activity.*"],
+          },
+          {
+            title: "Business Voice",
+            path: "/teams-share/teams/business-voice",
+            permissions: ["Teams.Voice.*"],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    title: "Endpoint Management",
+    type: "header",
+    icon: (
+      <SvgIcon>
+        <Laptop />
+      </SvgIcon>
+    ),
+    permissions: [
+      "Endpoint.Application.*",
+      "Endpoint.Autopilot.*",
+      "Endpoint.MEM.*",
+      "Endpoint.Device.*",
+      "Endpoint.Device.Read",
+    ],
+    items: [
+      {
+        title: "Applications",
+        permissions: ["Endpoint.Application.*"],
+        items: [
+          {
+            title: "Application List",
+            path: "/endpoint/applications/list",
+            permissions: ["Endpoint.Application.*"],
+          },
+          {
+            title: "Application Queue",
+            path: "/endpoint/applications/queue",
+            permissions: ["Endpoint.Application.*"],
+          },
+        ],
+      },
+      {
+        title: "Autopilot",
+        permissions: ["Endpoint.Autopilot.*"],
+        items: [
+          {
+            title: "Autopilot Devices",
+            path: "/endpoint/autopilot/list-devices",
+            permissions: ["Endpoint.Autopilot.*"],
+          },
+          {
+            title: "Add Autopilot Device",
+            path: "/endpoint/autopilot/add-device",
+            permissions: ["Endpoint.Autopilot.*"],
+          },
+          {
+            title: "Profiles",
+            path: "/endpoint/autopilot/list-profiles",
+            permissions: ["Endpoint.Autopilot.*"],
+          },
+          {
+            title: "Status Pages",
+            path: "/endpoint/autopilot/list-status-pages",
+            permissions: ["Endpoint.Autopilot.*"],
+          },
+        ],
+      },
+      {
+        title: "Device Management",
+        permissions: ["Endpoint.MEM.*"],
+        items: [
+          {
+            title: "Managed Devices",
+            path: "/endpoint/MEM/devices",
+            permissions: ["Endpoint.Device.*"],
+          },
+          {
+            title: "Configuration Policies",
+            path: "/endpoint/MEM/list-policies",
+            permissions: ["Endpoint.MEM.*"],
+          },
+          {
+            title: "Compliance Policies",
+            path: "/endpoint/MEM/list-compliance-policies",
+            permissions: ["Endpoint.MEM.*"],
+          },
+          {
+            title: "App Policies",
+            path: "/endpoint/MEM/list-appprotection-policies",
+            permissions: ["Endpoint.MEM.*"],
+          },
+          {
+            title: "Policy Templates",
+            path: "/endpoint/MEM/list-templates",
+            permissions: ["Endpoint.MEM.*"],
+          },
+          {
+            title: "Assignment Filters",
+            path: "/endpoint/MEM/assignment-filters",
+            permissions: ["Endpoint.MEM.*"],
+          },
+          {
+            title: "Assignment Filter Templates",
+            path: "/endpoint/MEM/assignment-filter-templates",
+            permissions: ["Endpoint.MEM.*"],
+          },
+          {
+            title: "Scripts",
+            path: "/endpoint/MEM/list-scripts",
+            permissions: ["Endpoint.MEM.*"],
+          },
+        ],
+      },
+      {
+        title: "Reports",
+        permissions: ["Endpoint.Device.*", "Endpoint.Autopilot.*", "Endpoint.MEM.*"],
+        items: [
+          {
+            title: "Analytics Device Score",
+            path: "/endpoint/reports/analyticsdevicescore",
+            permissions: ["Endpoint.Device.*"],
+          },
+          {
+            title: "Work From Anywhere",
+            path: "/endpoint/reports/workfromanywhere",
+            permissions: ["Endpoint.Device.*"],
+          },
+          {
+            title: "Autopilot Deployments",
+            path: "/endpoint/reports/autopilot-deployment",
+            permissions: ["Endpoint.Autopilot.*"],
+          },
+          {
+            title: "Discovered Apps",
+            path: "/endpoint/reports/detected-apps",
+            permissions: ["Endpoint.MEM.*"],
           },
         ],
       },
@@ -878,13 +872,11 @@ export const nativeMenuItems = [
             path: "/tenant/tools/tenantlookup",
             permissions: ["Tenant.Administration.*"],
           },
-
           {
             title: "IP Database",
             path: "/tenant/tools/geoiplookup",
             permissions: ["CIPP.Core.*"],
           },
-
           {
             title: "Individual Domain Check",
             path: "/tenant/tools/individual-domains",

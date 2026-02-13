@@ -18,7 +18,7 @@
 
 Manage365 is a Microsoft 365 multi-tenant administration portal designed for Microsoft Partners and IT administrators. It provides a centralized interface for managing users, teams, SharePoint, Exchange, security, compliance, Intune, Dynamics 365, and more across all of your Microsoft 365 tenants.
 
-Manage365 inherits the full feature set of CIPP and extends it with additional capabilities focused on deeper Teams, SharePoint, OneDrive, and Dynamics 365 management, as well as centralized cross-tenant access governance and external collaboration controls -- areas where day-to-day administration often requires switching between multiple Microsoft portals.
+Manage365 inherits the full feature set of CIPP and extends it with additional capabilities focused on deeper Teams, SharePoint, OneDrive, and Dynamics 365 management, centralized cross-tenant access governance, external collaboration controls, and tenant-level SharePoint and Teams policy management -- areas where day-to-day administration often requires switching between multiple Microsoft portals.
 
 For information about the upstream CIPP project, visit [cipp.app](https://cipp.app) and [docs.cipp.app](https://docs.cipp.app).
 
@@ -35,7 +35,7 @@ Manage365 includes the complete CIPP feature set:
 - Device management (Entra ID devices with NinjaOne enrichment, cross-linked to Intune)
 - Per-user device view with hardware details and NinjaOne agent status
 - Role management and JIT Admin
-- Reports: MFA, inactive users, sign-in logs, Azure AD Connect, risk detections
+- Reports: MFA, inactive users, sign-in logs, Entra Connect, risk detections
 
 ### Tenant Administration
 - Multi-tenant management and configuration
@@ -52,9 +52,8 @@ Manage365 includes the complete CIPP feature set:
 - Incident and alert management (including MDO alerts)
 - Defender status, deployment, and TVM vulnerabilities
 - Device compliance reporting
-- Safe Links policies and templates
 
-### Intune / Endpoint Management
+### Endpoint Management
 - Application management and deployment queue
 - Managed device administration with NinjaOne hardware enrichment (CPU, RAM, agent status)
 - Autopilot device management, profiles, and status pages
@@ -70,6 +69,7 @@ Manage365 includes the complete CIPP feature set:
 - Tenant Allow/Block Lists
 - Retention policies and tags
 - Transport rules and connectors with templates
+- Safe Links policies and templates
 - Spam filter and connection filter management
 - Resource management (rooms, equipment, room lists)
 - Reports: mailbox statistics, activity, CAS settings, permissions, calendar permissions, anti-phishing, malware filters, safe attachments, GAL
@@ -227,6 +227,36 @@ When a NinjaOne integration is configured and device data has been synced, Manag
 
 **Graceful degradation:** If NinjaOne is not configured, returns no cached data, or the API call fails, all pages work exactly as before with no NinjaOne UI elements visible.
 
+### SharePoint Sharing Settings
+
+A dedicated tenant-level settings page for managing SharePoint and OneDrive external sharing policies, accessible from **Teams & SharePoint > SharePoint > Sharing Settings**:
+
+- **External Sharing Level** -- set the top-level sharing capability (internal only, existing guests, new and existing guests, anyone with anonymous links); site-level sharing cannot exceed this tenant setting
+- **Sharing Domain Restrictions** -- configure an allow list or block list of domains that can receive SharePoint/OneDrive sharing invitations; domain management with inline add/remove chip interface
+- **External User Behavior** -- toggle whether external users can reshare content they received
+- **Default Sharing Link Settings** -- configure the default link type (specific people, organization members, anyone), default permission (view/edit), and anonymous link controls including file/folder permissions and expiration days
+
+| Endpoint | Purpose |
+|---|---|
+| `ListSharepointSettings` | Get tenant-level SharePoint settings via Graph API (existing, now surfaced in UI) |
+| `EditSharepointSettings` | Update tenant-level SharePoint sharing settings |
+
+### Teams Tenant Settings
+
+A comprehensive tenant-level policy management page for Microsoft Teams, accessible from **Teams & SharePoint > Teams > Teams Settings**. Organized into four tabs:
+
+- **Federation & External Access** -- configure federation mode (allow all, block all, allow/block specific domains) with inline domain list management; toggle Teams consumer and unmanaged account communication; control external access policy settings
+- **Guest & Cloud Storage** -- toggle guest user access to Teams; enable or disable third-party cloud storage providers (Google Drive, ShareFile, Box, Dropbox, Egnyte)
+- **Meeting Policy** -- control anonymous user join/start, lobby bypass rules, PSTN bypass, presenter roles, meeting chat, and external participant control sharing
+- **Messaging Policy** -- configure message editing/deletion, chat deletion, read receipts, custom emoji creation/deletion, and security/compliance end-user reporting
+
+Each tab tracks changes independently with visual "modified" indicators and section-specific save buttons.
+
+| Endpoint | Purpose |
+|---|---|
+| `ListTeamsSettings` | Get all tenant-level Teams policies (federation, external access, client config, meeting, messaging) |
+| `EditTeamsSettings` | Update Teams tenant policies by section (federation, client, meeting, messaging) |
+
 ### Cross-Tenant Access & External Collaboration Management
 
 Centralized governance of Microsoft Entra cross-tenant access policies, B2B collaboration settings, and external identity controls -- settings that are otherwise only manageable directly in the Entra portal and difficult to standardize across clients.
@@ -261,10 +291,13 @@ Centralized governance of Microsoft Entra cross-tenant access policies, B2B coll
   - Overly permissive B2B Collaboration or Direct Connect defaults
   - Missing inbound trust configuration
   - Unconfigured Tenant Restrictions v2
-  - Permissive guest invitation policies
+  - Permissive or completely disabled guest invitation policies
   - Guest users with member-level access
   - Partner configuration conflicts (partner overrides that contradict defaults)
+  - SharePoint sharing domain restrictions (allow/block lists) that may independently block external access
+  - SharePoint external sharing completely disabled
 - Health score with visual breakdown and categorized findings with specific recommendations
+- Each finding includes a direct "Go to settings" link navigating to the exact page where the issue can be resolved
 
 **Security Baseline Templates** (`/tenant/administration/cross-tenant-access/templates/`)
 - Create reusable security baseline templates capturing the full cross-tenant and external collaboration configuration
@@ -289,6 +322,16 @@ Cross-tenant settings are also available as individual standards in the existing
 | `AutomaticUserConsent` | Automatic invitation redemption (inbound + outbound) |
 
 These join the existing `ExternalMFATrusted`, `GuestInvite`, and `DisableGuestDirectory` standards for 12 total standards covering the full cross-tenant and external collaboration surface area.
+
+### Cross-Service Context Clues & Navigation
+
+External access in Microsoft 365 is controlled by multiple independent settings layers (Cross-Tenant Access Policy, Entra External Collaboration, SharePoint Sharing, Teams Federation) -- any one of which can block access. Manage365 adds contextual banners and cross-links throughout these settings pages so administrators can quickly identify which layer is causing an issue:
+
+- **Cross-Tenant Default Policy** -- banner explaining that B2B settings are only one layer, with direct links to External Collaboration, SharePoint Sharing Settings, and Teams Settings
+- **External Collaboration** -- banner in the domain restrictions section warning that SharePoint has a separate domain list, with link to SharePoint Sharing Settings
+- **SharePoint Sharing Settings** -- banners in the sharing level and domain restrictions cards explaining the relationship with Entra domain lists and Cross-Tenant Access Policy
+- **Teams Settings** -- banners on the Federation tab (explaining the difference between federation and B2B collaboration) and Guest Access tab (explaining that Entra, Cross-Tenant, and SharePoint must all align)
+- **Health Report** -- every finding includes a "Go to settings" button linking directly to the page where the issue can be resolved
 
 ### Additional Enhancements
 
@@ -324,11 +367,14 @@ The following API endpoints were created to support Manage365-specific features:
 | `ExecRemoveCrossTenantPartner` | Remove a partner cross-tenant access configuration |
 | `ListExternalCollaboration` | Get authorization policy, guest settings, and B2B domain allow/deny lists |
 | `EditExternalCollaboration` | Update guest invite, guest role, and domain restriction settings |
-| `ListCrossTenantHealth` | Aggregated health analysis with conflict detection and security scoring |
+| `ListCrossTenantHealth` | Aggregated health analysis with conflict detection, SharePoint sharing checks, and security scoring |
 | `ListCrossTenantTemplates` | List saved cross-tenant security baseline templates |
 | `ExecAddCrossTenantTemplate` | Create or update a security baseline template |
 | `ExecRemoveCrossTenantTemplate` | Delete a security baseline template |
 | `ExecApplyCrossTenantTemplate` | Apply a template to a tenant (cross-tenant policy + authorization policy + domain restrictions) |
+| `EditSharepointSettings` | Update tenant-level SharePoint sharing settings (sharing capability, domain restrictions, link defaults) |
+| `ListTeamsSettings` | Get all tenant-level Teams policies (federation, external access, client config, meeting, messaging) |
+| `EditTeamsSettings` | Update Teams tenant policies by section (federation, client, meeting, messaging) |
 
 ---
 
@@ -336,8 +382,12 @@ The following API endpoints were created to support Manage365-specific features:
 
 - **Frontend:** React / Next.js with Material-UI (MUI v7)
 - **Backend:** PowerShell Azure Functions
-- **API:** Microsoft Graph API (including Cross-Tenant Access Policy and Authorization Policy endpoints), SharePoint Admin API, Power Platform BAP API, Dataverse Web API, NinjaOne API (via CIPP extension)
+- **API:** Microsoft Graph API (including Cross-Tenant Access Policy, Authorization Policy, and SharePoint Admin Settings endpoints), SharePoint Admin API, Teams PowerShell cmdlets (via `New-TeamsRequest`), Power Platform BAP API, Dataverse Web API, NinjaOne API (via CIPP extension)
 - **Hosting:** Azure Static Web Apps + Azure Functions
 - **Data:** React Query for caching and state management
 
----## AcknowledgmentsManage365 is built on the [CIPP](https://cipp.app) open-source project created by [Kelvin Tegelaar](https://github.com/KelvinTegelaar) and the CIPP community. We are grateful for their foundational work that makes this project possible.
+---
+
+## Acknowledgments
+
+Manage365 is built on the [CIPP](https://cipp.app) open-source project created by [Kelvin Tegelaar](https://github.com/KelvinTegelaar) and the CIPP community. We are grateful for their foundational work that makes this project possible.
