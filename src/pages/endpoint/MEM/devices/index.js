@@ -10,6 +10,7 @@ import {
   Typography,
   Chip,
   Divider,
+  Tooltip,
   useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -647,14 +648,60 @@ const Page = () => {
             </Typography>
             <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
               {row.azureADDeviceId && (
-                <Chip label="Entra" color="info" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.7rem" }} />
+                <Tooltip title="Device registered in Microsoft Entra ID">
+                  <Chip
+                    label="Entra"
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      height: 22,
+                      fontWeight: 600,
+                      fontSize: "0.7rem",
+                      borderColor: (t) => alpha(t.palette.info.main, 0.6),
+                      color: "text.primary",
+                      bgcolor: (t) => alpha(t.palette.info.main, 0.08),
+                    }}
+                  />
+                </Tooltip>
               )}
-              <Chip label="Intune" color="primary" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.7rem" }} />
-              {row.ninjaDeviceId ? (
-                <Chip label="NinjaOne" color="success" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.7rem" }} />
-              ) : (
-                <Chip label="NinjaOne" size="small" variant="outlined" sx={{ fontWeight: 500, fontSize: "0.7rem", opacity: 0.4 }} />
-              )}
+              <Tooltip title="Device managed by Microsoft Intune">
+                <Chip
+                  label="Intune"
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    height: 22,
+                    fontWeight: 600,
+                    fontSize: "0.7rem",
+                    borderColor: (t) => alpha(t.palette.primary.main, 0.6),
+                    color: "text.primary",
+                    bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
+                  }}
+                />
+              </Tooltip>
+              <Tooltip title={row.ninjaDeviceId ? "Device has NinjaOne agent" : "No NinjaOne agent on this device"}>
+                <Chip
+                  label="NinjaOne"
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    height: 22,
+                    fontWeight: 600,
+                    fontSize: "0.7rem",
+                    ...(row.ninjaDeviceId
+                      ? {
+                          borderColor: (t) => alpha(t.palette.success.main, 0.6),
+                          color: "text.primary",
+                          bgcolor: (t) => alpha(t.palette.success.main, 0.12),
+                        }
+                      : {
+                          borderColor: (t) => alpha(t.palette.text.secondary, 0.4),
+                          color: "text.secondary",
+                          bgcolor: (t) => alpha(t.palette.text.secondary, 0.06),
+                        }),
+                  }}
+                />
+              </Tooltip>
             </Stack>
           </Box>
 
@@ -668,33 +715,42 @@ const Page = () => {
               Compliance Status
             </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              <Chip
-                icon={complianceInfo.icon}
-                label={complianceInfo.label}
-                sx={{ 
-                  fontWeight: 600, 
-                  bgcolor: alpha(complianceInfo.color, 0.1),
-                  color: complianceInfo.color,
-                  borderColor: complianceInfo.color,
-                }}
-                variant="outlined"
-              />
-              {row.managedDeviceOwnerType && (
+              <Tooltip title={complianceInfo.label === "Compliant" ? "Device meets compliance policies" : complianceInfo.label === "Non-Compliant" ? "Device does not meet compliance policies" : "Compliance status unknown"}>
                 <Chip
-                  label={row.managedDeviceOwnerType === "company" ? "Corporate" : "Personal"}
-                  color={row.managedDeviceOwnerType === "company" ? "primary" : "default"}
+                  icon={complianceInfo.icon}
+                  label={complianceInfo.label}
+                  sx={{ 
+                    height: 22,
+                    fontWeight: 600, 
+                    bgcolor: alpha(complianceInfo.color, 0.1),
+                    color: complianceInfo.color,
+                    borderColor: complianceInfo.color,
+                  }}
                   variant="outlined"
-                  size="small"
                 />
+              </Tooltip>
+              {row.managedDeviceOwnerType && (
+                <Tooltip title={`Device ownership: ${row.managedDeviceOwnerType === "company" ? "Corporate" : "Personal"}`}>
+                  <Chip
+                    label={row.managedDeviceOwnerType === "company" ? "Corporate" : "Personal"}
+                    color={row.managedDeviceOwnerType === "company" ? "primary" : "default"}
+                    variant="outlined"
+                    size="small"
+                    sx={{ height: 22 }}
+                  />
+                </Tooltip>
               )}
               {row.isEncrypted && (
-                <Chip
-                  icon={<Security fontSize="small" />}
-                  label="Encrypted"
-                  color="success"
-                  variant="outlined"
-                  size="small"
-                />
+                <Tooltip title="Device encryption is enabled">
+                  <Chip
+                    icon={<Security fontSize="small" />}
+                    label="Encrypted"
+                    color="success"
+                    variant="outlined"
+                    size="small"
+                    sx={{ height: 22 }}
+                  />
+                </Tooltip>
               )}
             </Stack>
           </Box>

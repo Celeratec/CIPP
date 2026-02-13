@@ -725,47 +725,62 @@ export const CippUserInfoCard = (props) => {
               
               {/* Status chips */}
               <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                <Chip
-                  icon={user?.accountEnabled ? <CheckCircle fontSize="small" /> : <Cancel fontSize="small" />}
-                  label={user?.accountEnabled ? "Enabled" : "Disabled"}
-                  color={user?.accountEnabled ? "success" : "error"}
-                  size="small"
-                  variant="outlined"
-                />
-                {user?.onPremisesSyncEnabled && (
+                <Tooltip title={user?.accountEnabled ? "Account is enabled" : "Account is disabled"}>
                   <Chip
-                    icon={<Sync fontSize="small" />}
-                    label="AD Synced"
-                    color="info"
+                    icon={user?.accountEnabled ? <CheckCircle fontSize="small" /> : <Cancel fontSize="small" />}
+                    label={user?.accountEnabled ? "Enabled" : "Disabled"}
+                    color={user?.accountEnabled ? "success" : "error"}
                     size="small"
                     variant="outlined"
+                    sx={{ height: 22 }}
                   />
+                </Tooltip>
+                {user?.onPremisesSyncEnabled && (
+                  <Tooltip title="Synced from Active Directory">
+                    <Chip
+                      icon={<Sync fontSize="small" />}
+                      label="AD Synced"
+                      color="info"
+                      size="small"
+                      variant="outlined"
+                      sx={{ height: 22 }}
+                    />
+                  </Tooltip>
                 )}
                 {user?.userType === "Guest" && (
-                  <Chip
-                    icon={<PersonAddAlt1 fontSize="small" />}
-                    label="Guest"
-                    color="warning"
-                    size="small"
-                    variant="outlined"
-                  />
+                  <Tooltip title="Guest user account">
+                    <Chip
+                      icon={<PersonAddAlt1 fontSize="small" />}
+                      label="Guest"
+                      color="warning"
+                      size="small"
+                      variant="outlined"
+                      sx={{ height: 22 }}
+                    />
+                  </Tooltip>
                 )}
                 {canShowDevices && (
                   devicesLoading ? (
-                    <Chip
-                      icon={<CircularProgress size={14} />}
-                      label="Devices..."
-                      size="small"
-                      variant="outlined"
-                    />
+                    <Tooltip title="Loading device count">
+                      <Chip
+                        icon={<CircularProgress size={14} />}
+                        label="Devices..."
+                        size="small"
+                        variant="outlined"
+                        sx={{ height: 22 }}
+                      />
+                    </Tooltip>
                   ) : (
-                    <Chip
-                      icon={<Devices fontSize="small" />}
-                      label={`${deviceCount} Device${deviceCount !== 1 ? "s" : ""}`}
-                      color={deviceCount > 0 ? "primary" : "default"}
-                      size="small"
-                      variant="outlined"
-                    />
+                    <Tooltip title={`${deviceCount} device${deviceCount !== 1 ? "s" : ""} registered or owned`}>
+                      <Chip
+                        icon={<Devices fontSize="small" />}
+                        label={`${deviceCount} Device${deviceCount !== 1 ? "s" : ""}`}
+                        color={deviceCount > 0 ? "primary" : "default"}
+                        size="small"
+                        variant="outlined"
+                        sx={{ height: 22 }}
+                      />
+                    </Tooltip>
                   )
                 )}
               </Stack>

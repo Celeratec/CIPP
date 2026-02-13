@@ -10,6 +10,7 @@ import {
   Typography,
   Chip,
   Divider,
+  Tooltip,
   useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -334,63 +335,127 @@ const Page = () => {
               Sources
             </Typography>
             <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-              <Chip label="Entra" color="info" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.7rem" }} />
-              {row.isManaged ? (
-                <Chip label="Intune" color="primary" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.7rem" }} />
-              ) : (
-                <Chip label="Intune" size="small" variant="outlined" sx={{ fontWeight: 500, fontSize: "0.7rem", opacity: 0.4 }} />
-              )}
-              {row.ninjaDeviceId ? (
-                <Chip label="NinjaOne" color="success" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.7rem" }} />
-              ) : (
-                <Chip label="NinjaOne" size="small" variant="outlined" sx={{ fontWeight: 500, fontSize: "0.7rem", opacity: 0.4 }} />
-              )}
+              <Tooltip title="Device registered in Microsoft Entra ID">
+                <Chip
+                  label="Entra"
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    height: 22,
+                    fontWeight: 600,
+                    fontSize: "0.7rem",
+                    borderColor: (t) => alpha(t.palette.info.main, 0.6),
+                    color: "text.primary",
+                    bgcolor: (t) => alpha(t.palette.info.main, 0.08),
+                  }}
+                />
+              </Tooltip>
+              <Tooltip title={row.isManaged ? "Device managed by Microsoft Intune" : "Not managed by Intune"}>
+                <Chip
+                  label="Intune"
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    height: 22,
+                    fontWeight: 600,
+                    fontSize: "0.7rem",
+                    ...(row.isManaged
+                      ? {
+                          borderColor: (t) => alpha(t.palette.primary.main, 0.6),
+                          color: "text.primary",
+                          bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
+                        }
+                      : {
+                          borderColor: (t) => alpha(t.palette.text.secondary, 0.4),
+                          color: "text.secondary",
+                          bgcolor: (t) => alpha(t.palette.text.secondary, 0.06),
+                        }),
+                  }}
+                />
+              </Tooltip>
+              <Tooltip title={row.ninjaDeviceId ? "Device has NinjaOne agent" : "No NinjaOne agent on this device"}>
+                <Chip
+                  label="NinjaOne"
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    height: 22,
+                    fontWeight: 600,
+                    fontSize: "0.7rem",
+                    ...(row.ninjaDeviceId
+                      ? {
+                          borderColor: (t) => alpha(t.palette.success.main, 0.6),
+                          color: "text.primary",
+                          bgcolor: (t) => alpha(t.palette.success.main, 0.12),
+                        }
+                      : {
+                          borderColor: (t) => alpha(t.palette.text.secondary, 0.4),
+                          color: "text.secondary",
+                          bgcolor: (t) => alpha(t.palette.text.secondary, 0.06),
+                        }),
+                  }}
+                />
+              </Tooltip>
             </Stack>
           </Box>
 
           {/* Status Badges */}
           <Box>
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              <Chip
-                icon={isEnabled ? <CheckCircle fontSize="small" /> : <Cancel fontSize="small" />}
-                label={isEnabled ? "Enabled" : "Disabled"}
-                sx={{
-                  fontWeight: 600,
-                  bgcolor: alpha(statusColor, 0.1),
-                  color: statusColor,
-                  borderColor: statusColor,
-                }}
-                variant="outlined"
-              />
-              {row.trustType && (
+              <Tooltip title={isEnabled ? "Device is enabled in Entra" : "Device is disabled in Entra"}>
                 <Chip
-                  icon={<VerifiedUser fontSize="small" />}
-                  label={row.trustType}
-                  color="primary"
+                  icon={isEnabled ? <CheckCircle fontSize="small" /> : <Cancel fontSize="small" />}
+                  label={isEnabled ? "Enabled" : "Disabled"}
+                  sx={{
+                    height: 22,
+                    fontWeight: 600,
+                    bgcolor: alpha(statusColor, 0.1),
+                    color: statusColor,
+                    borderColor: statusColor,
+                  }}
                   variant="outlined"
-                  size="small"
                 />
+              </Tooltip>
+              {row.trustType && (
+                <Tooltip title={`Trust type: ${row.trustType}`}>
+                  <Chip
+                    icon={<VerifiedUser fontSize="small" />}
+                    label={row.trustType}
+                    color="primary"
+                    variant="outlined"
+                    size="small"
+                    sx={{ height: 22 }}
+                  />
+                </Tooltip>
               )}
               {row.isCompliant === true && (
-                <Chip
-                  icon={<CheckCircle fontSize="small" />}
-                  label="Compliant"
-                  color="success"
-                  variant="outlined"
-                  size="small"
-                />
+                <Tooltip title="Device meets compliance policies">
+                  <Chip
+                    icon={<CheckCircle fontSize="small" />}
+                    label="Compliant"
+                    color="success"
+                    variant="outlined"
+                    size="small"
+                    sx={{ height: 22 }}
+                  />
+                </Tooltip>
               )}
               {row.isCompliant === false && (
-                <Chip
-                  icon={<Cancel fontSize="small" />}
-                  label="Non-Compliant"
-                  color="error"
-                  variant="outlined"
-                  size="small"
-                />
+                <Tooltip title="Device does not meet compliance policies">
+                  <Chip
+                    icon={<Cancel fontSize="small" />}
+                    label="Non-Compliant"
+                    color="error"
+                    variant="outlined"
+                    size="small"
+                    sx={{ height: 22 }}
+                  />
+                </Tooltip>
               )}
               {row.isManaged && (
-                <Chip label="Managed" color="info" variant="outlined" size="small" />
+                <Tooltip title="Managed by Microsoft Intune">
+                  <Chip label="Managed" color="info" variant="outlined" size="small" sx={{ height: 22 }} />
+                </Tooltip>
               )}
             </Stack>
           </Box>

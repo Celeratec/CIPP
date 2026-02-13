@@ -1,7 +1,7 @@
 import { Layout as DashboardLayout } from "../../../../../layouts/index.js";
 import { useSettings } from "../../../../../hooks/use-settings";
 import { useRouter } from "next/router";
-import { ApiGetCall } from "../../../../../api/ApiCall";
+import { ApiGetCall, ApiPostCall } from "../../../../../api/ApiCall";
 import CippFormSkeleton from "../../../../../components/CippFormPages/CippFormSkeleton";
 import CalendarIcon from "@heroicons/react/24/outline/CalendarIcon";
 import { 
@@ -24,6 +24,13 @@ import {
   Wifi,
   Memory,
   Storage,
+  RestartAlt,
+  LocationOn,
+  Lock,
+  Recycling,
+  Key,
+  Security,
+  FindInPage,
 } from "@mui/icons-material";
 import { HeaderedTabbedLayout } from "../../../../../layouts/HeaderedTabbedLayout";
 import tabOptions from "./tabOptions";
@@ -47,8 +54,20 @@ import { alpha, useTheme } from "@mui/material/styles";
 import { useCippUserActions } from "../../../../../components/CippComponents/CippUserActions";
 import { memo, useMemo, useCallback } from "react";
 
+// Intune quick actions - up to 8 common device actions
+const INTUNE_QUICK_ACTIONS = [
+  { action: "view", label: "View in Intune", icon: OpenInNew, type: "link", key: "view" },
+  { action: "syncDevice", label: "Sync Device", icon: Sync, confirm: "Sync this device?", key: "sync" },
+  { action: "rebootNow", label: "Reboot Device", icon: RestartAlt, confirm: "Reboot this device?", key: "reboot" },
+  { action: "locateDevice", label: "Locate Device", icon: LocationOn, confirm: "Locate this device?", key: "locate" },
+  { action: "remoteLock", label: "Remote Lock", icon: Lock, confirm: "Remotely lock this device?", key: "lock" },
+  { action: "retire", label: "Retire Device", icon: Recycling, confirm: "Retire this device? Apps and data will be removed.", key: "retire" },
+  { action: "RotateLocalAdminPassword", label: "Rotate LAPS", icon: Key, confirm: "Rotate the local admin password?", key: "laps", os: "Windows" },
+  { action: "WindowsDefenderScan", label: "Defender Quick Scan", icon: FindInPage, confirm: "Run Windows Defender quick scan?", key: "scan", os: "Windows", quickScan: true },
+];
+
 // Device Card Component - Memoized to prevent unnecessary re-renders
-const DeviceCard = memo(({ device, tenant, theme }) => {
+const DeviceCard = memo(({ device, tenant, theme, managedDeviceId, onDeviceAction }) => {
   const getOSIcon = (os) => {
     const osLower = String(os || "").toLowerCase();
     if (osLower.includes("windows")) return <Computer />;
@@ -89,7 +108,15 @@ const DeviceCard = memo(({ device, tenant, theme }) => {
   const borderColor = getBorderColor();
 
   const entraUrl = `https://entra.microsoft.com/${tenant}/#view/Microsoft_AAD_Devices/DeviceDetailsMenuBlade/~/Properties/objectId/${device.id}`;
-  const intuneUrl = `https://intune.microsoft.com/${tenant}/#view/Microsoft_Intune_Devices/DeviceSettingsMenuBlade/~/overview/mdmDeviceId/${device.id}`;
+  const intuneUrl = managedDeviceId
+    ? `https://intune.microsoft.com/${tenant}/#view/Microsoft_Intune_Devices/DeviceSettingsMenuBlade/~/overview/mdmDeviceId/${managedDeviceId}`
+    : null;
+
+  const osLower = String(device.operatingSystem || "").toLowerCase();
+  const isWindows = osLower.includes("windows");
+  const quickActions = managedDeviceId && onDeviceAction
+    ? INTUNE_QUICK_ACTIONS.filter((a) => !a.os || (a.os === "Windows" && isWindows)).slice(0, 8)
+    : [];
 
   return (
     <Card 
@@ -164,58 +191,166 @@ const DeviceCard = memo(({ device, tenant, theme }) => {
 
         {/* Source Presence */}
         <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
-          <Chip label="Entra" color="info" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }} />
-          {device.isManaged ? (
-            <Chip label="Intune" color="primary" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }} />
-          ) : (
-            <Chip label="Intune" size="small" variant="outlined" sx={{ fontWeight: 500, fontSize: "0.65rem", height: 20, opacity: 0.4 }} />
-          )}
-          {device.ninjaDeviceId ? (
-            <Chip label="NinjaOne" color="success" size="small" variant="filled" sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }} />
-          ) : (
-            <Chip label="NinjaOne" size="small" variant="outlined" sx={{ fontWeight: 500, fontSize: "0.65rem", height: 20, opacity: 0.4 }} />
-          )}
+          <Tooltip title="Device registered in Microsoft Entra ID">
+            <Chip
+              label="Entra"
+              size="small"
+              variant="outlined"
+              sx={{
+                fontWeight: 600,
+                fontSize: "0.65rem",
+                height: 22,
+                borderColor: (t) => alpha(t.palette.info.main, 0.6),
+                color: "text.primary",
+                bgcolor: (t) => alpha(t.palette.info.main, 0.08),
+              }}
+            />
+          </Tooltip>
+          <Tooltip title={device.isManaged ? "Device managed by Microsoft Intune" : "Not managed by Intune"}>
+            <Chip
+              label="Intune"
+              size="small"
+              variant="outlined"
+              sx={{
+                fontWeight: 600,
+                fontSize: "0.65rem",
+                height: 22,
+                ...(device.isManaged
+                  ? {
+                      borderColor: (t) => alpha(t.palette.primary.main, 0.6),
+                      color: "text.primary",
+                      bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
+                    }
+                  : {
+                      borderColor: (t) => alpha(t.palette.text.secondary, 0.4),
+                      color: "text.secondary",
+                      bgcolor: (t) => alpha(t.palette.text.secondary, 0.06),
+                    }),
+              }}
+            />
+          </Tooltip>
+          <Tooltip title={device.ninjaDeviceId ? "Device has NinjaOne agent" : "No NinjaOne agent on this device"}>
+            <Chip
+              label="NinjaOne"
+              size="small"
+              variant="outlined"
+              sx={{
+                fontWeight: 600,
+                fontSize: "0.65rem",
+                height: 22,
+                ...(device.ninjaDeviceId
+                  ? {
+                      borderColor: (t) => alpha(t.palette.success.main, 0.6),
+                      color: "text.primary",
+                      bgcolor: (t) => alpha(t.palette.success.main, 0.12),
+                    }
+                  : {
+                      borderColor: (t) => alpha(t.palette.text.secondary, 0.4),
+                      color: "text.secondary",
+                      bgcolor: (t) => alpha(t.palette.text.secondary, 0.06),
+                    }),
+              }}
+            />
+          </Tooltip>
         </Stack>
 
         {/* Status Chips */}
         <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
-          <Chip
-            icon={complianceInfo.icon}
-            label={complianceInfo.label}
-            color={complianceInfo.color}
-            size="small"
-            sx={{ fontWeight: 500 }}
-          />
-          {device.isManaged && (
+          <Tooltip title={complianceInfo.label === "Compliant" ? "Device meets compliance policies" : complianceInfo.label === "Non-Compliant" ? "Device does not meet compliance policies" : "Compliance status unknown"}>
             <Chip
-              icon={<Sync fontSize="small" />}
-              label="Managed"
-              color="info"
+              icon={complianceInfo.icon}
+              label={complianceInfo.label}
+              color={complianceInfo.color}
               size="small"
-              sx={{ fontWeight: 500 }}
+              sx={{ fontWeight: 500, height: 22 }}
             />
+          </Tooltip>
+          {device.isManaged && (
+            <Tooltip title="Managed by Microsoft Intune">
+              <Chip
+                icon={<Sync fontSize="small" />}
+                label="Managed"
+                color="info"
+                size="small"
+                sx={{ fontWeight: 500, height: 22 }}
+              />
+            </Tooltip>
           )}
           {!device.accountEnabled && (
-            <Chip label="Disabled" color="error" variant="outlined" size="small" />
+            <Tooltip title="Device is disabled in Entra">
+              <Chip label="Disabled" color="error" variant="outlined" size="small" sx={{ height: 22 }} />
+            </Tooltip>
           )}
           {device.trustType && (
-            <Chip
-              label={device.trustType}
-              size="small"
-              variant="outlined"
-              sx={{ height: 22, fontSize: "0.7rem" }}
-            />
+            <Tooltip title={`Trust type: ${device.trustType}`}>
+              <Chip
+                label={device.trustType}
+                size="small"
+                variant="outlined"
+                sx={{ height: 22, fontSize: "0.7rem" }}
+              />
+            </Tooltip>
           )}
           {device.ninjaDeviceId && (
-            <Chip
-              icon={device.ninjaOffline ? <WifiOff sx={{ fontSize: 14 }} /> : <Wifi sx={{ fontSize: 14 }} />}
-              label={device.ninjaOffline ? "Offline" : "Online"}
-              color={device.ninjaOffline ? "default" : "success"}
-              variant="outlined"
-              size="small"
-            />
+            <Tooltip title={device.ninjaOffline ? "NinjaOne agent is offline" : "NinjaOne agent is online"}>
+              <Chip
+                icon={device.ninjaOffline ? <WifiOff sx={{ fontSize: 14 }} /> : <Wifi sx={{ fontSize: 14 }} />}
+                label={device.ninjaOffline ? "Offline" : "Online"}
+                color={device.ninjaOffline ? "default" : "success"}
+                variant="outlined"
+                size="small"
+                sx={{ height: 22 }}
+              />
+            </Tooltip>
           )}
         </Stack>
+
+        {/* Intune Quick Actions — up to 8 when device is managed */}
+        {quickActions.length > 0 && (
+          <>
+            <Divider sx={{ my: 1 }} />
+            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap alignItems="center">
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mr: 0.5 }}>
+                Quick actions:
+              </Typography>
+              {quickActions.map((qa) => {
+                const Icon = qa.icon;
+                if (qa.type === "link") {
+                  return (
+                    <Tooltip key={qa.key} title={qa.label}>
+                      <IconButton
+                        size="small"
+                        href={intuneUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{ color: "primary.main" }}
+                      >
+                        <Icon sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    </Tooltip>
+                  );
+                }
+                return (
+                  <Tooltip key={qa.key} title={qa.label}>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        if (!qa.confirm || window.confirm(qa.confirm)) {
+                          const body = {};
+                          if (qa.quickScan !== undefined) body.quickScan = qa.quickScan;
+                          onDeviceAction(qa.action, body);
+                        }
+                      }}
+                      sx={{ color: "primary.main" }}
+                    >
+                      <Icon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Tooltip>
+                );
+              })}
+            </Stack>
+          </>
+        )}
 
         <Divider sx={{ my: 1 }} />
 
@@ -363,6 +498,19 @@ const Page = () => {
     waiting: !!userId,
   });
 
+  // Fetch Intune managed devices to get managed device IDs for Entra devices
+  const managedDevicesRequest = ApiGetCall({
+    url: "/api/ListGraphRequest",
+    data: {
+      Endpoint: "deviceManagement/managedDevices",
+      $select: "id,azureADDeviceId",
+      $top: 999,
+      tenantFilter: tenant,
+    },
+    queryKey: `ManagedDevices-${tenant}`,
+    waiting: !!tenant && tenant !== "AllTenants",
+  });
+
   // Fetch NinjaOne enrichment data (runs in parallel)
   const ninjaDevices = ApiGetCall({
     url: "/api/ListNinjaDeviceInfo",
@@ -370,6 +518,19 @@ const Page = () => {
     queryKey: `NinjaDevices-${tenant}`,
     waiting: !!tenant,
   });
+
+  // Build map: Entra device id (azureADDeviceId) -> Intune managed device id
+  const managedDeviceIdMap = useMemo(() => {
+    const map = {};
+    const raw = managedDevicesRequest.data;
+    const arr = Array.isArray(raw) ? raw : raw?.Results || raw?.value || [];
+    arr.forEach((md) => {
+      if (md.azureADDeviceId && md.id) {
+        map[md.azureADDeviceId] = md.id;
+      }
+    });
+    return map;
+  }, [managedDevicesRequest.data]);
 
   // Build NinjaOne lookup map keyed by azureADDeviceId (= Entra device "id")
   const ninjaLookup = useMemo(() => {
@@ -444,14 +605,53 @@ const Page = () => {
       }
     });
 
-    // Merge NinjaOne enrichment data into each device
+    // Merge NinjaOne enrichment data and managed device ID into each device
     return Array.from(deviceMap.values()).map((device) => {
       const ninja = ninjaLookup[device.id];
-      return ninja ? { ...device, ...ninja } : device;
+      const managedDeviceId = managedDeviceIdMap[device.id] || null;
+      return {
+        ...device,
+        ...(ninja || {}),
+        managedDeviceId,
+      };
     });
-  }, [registeredDevices.data?.Results, ownedDevices.data?.Results, ninjaLookup]);
+  }, [registeredDevices.data?.Results, ownedDevices.data?.Results, ninjaLookup, managedDeviceIdMap]);
 
   const isLoading = userRequest.isLoading || registeredDevices.isLoading || ownedDevices.isLoading;
+
+  // Mutation for Intune device actions
+  const deviceActionMutation = ApiPostCall({
+    urlFromData: true,
+    relatedQueryKeys: [`UserRegisteredDevices-${userId}`, `UserOwnedDevices-${userId}`],
+  });
+
+  const handleDeviceAction = useCallback(
+    (action, body = {}) => {
+      const payload = { ...(body || {}), Action: action, tenantFilter: tenant };
+      if (payload.managedDeviceId) {
+        payload.GUID = payload.managedDeviceId;
+        delete payload.managedDeviceId;
+      }
+      deviceActionMutation.mutate(
+        { url: "/api/ExecDeviceAction", data: payload },
+        {
+          onSuccess: () => {
+            registeredDevices.refetch();
+            ownedDevices.refetch();
+            managedDevicesRequest.refetch();
+          },
+        }
+      );
+    },
+    [deviceActionMutation, tenant, registeredDevices, ownedDevices, managedDevicesRequest]
+  );
+
+  const createDeviceActionHandler = useCallback(
+    (managedDeviceId) => (action, body = {}) => {
+      handleDeviceAction(action, { ...body, managedDeviceId });
+    },
+    [handleDeviceAction]
+  );
 
   // Calculate stats - memoized for performance
   const { totalDevices, compliantDevices, nonCompliantDevices, managedDevices } = useMemo(() => ({
@@ -564,7 +764,13 @@ const Page = () => {
             <Grid container spacing={2}>
               {allDevices.map((device) => (
                 <Grid key={device.id} size={{ xs: 12, sm: 6, lg: 4 }}>
-                  <DeviceCard device={device} tenant={tenant} theme={theme} />
+                  <DeviceCard
+                    device={device}
+                    tenant={tenant}
+                    theme={theme}
+                    managedDeviceId={device.managedDeviceId}
+                    onDeviceAction={device.managedDeviceId ? createDeviceActionHandler(device.managedDeviceId) : null}
+                  />
                 </Grid>
               ))}
             </Grid>

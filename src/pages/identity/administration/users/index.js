@@ -270,20 +270,75 @@ const Page = () => {
       <Stack spacing={0.5} sx={{ mt: 0.5, mb: 0.5 }}>
         {hasDeviceBadges && (
           <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Chip
-              icon={<Devices sx={{ fontSize: "13px !important" }} />}
-              label={`${deviceInfo.deviceCount}`}
-              size="small"
-              variant="outlined"
-              sx={{ height: 20, fontSize: "0.65rem", fontWeight: 600, "& .MuiChip-icon": { ml: 0.5 } }}
-            />
-            <Chip label="Entra" color="info" size="small" variant="filled" sx={{ height: 20, fontSize: "0.6rem", fontWeight: 600 }} />
-            <Chip label="Intune" color="primary" size="small" variant="filled" sx={{ height: 20, fontSize: "0.6rem", fontWeight: 600 }} />
-            {deviceInfo.hasNinja ? (
-              <Chip label="NinjaOne" color="success" size="small" variant="filled" sx={{ height: 20, fontSize: "0.6rem", fontWeight: 600 }} />
-            ) : (
-              <Chip label="NinjaOne" size="small" variant="outlined" sx={{ height: 20, fontSize: "0.6rem", fontWeight: 500, opacity: 0.4 }} />
-            )}
+            <Tooltip title={`${deviceInfo.deviceCount} device${deviceInfo.deviceCount !== 1 ? "s" : ""} in Entra or Intune`}>
+              <Chip
+                icon={<Devices sx={{ fontSize: "13px !important" }} />}
+                label={`${deviceInfo.deviceCount}`}
+                size="small"
+                variant="outlined"
+                sx={{
+                  height: 22,
+                  fontSize: "0.65rem",
+                  fontWeight: 600,
+                  borderColor: (t) => alpha(t.palette.primary.main, 0.5),
+                  color: "text.primary",
+                  "& .MuiChip-icon": { ml: 0.5, color: "primary.main" },
+                }}
+              />
+            </Tooltip>
+            <Tooltip title="Device registered in Microsoft Entra ID">
+              <Chip
+                label="Entra"
+                size="small"
+                variant="outlined"
+                sx={{
+                  height: 22,
+                  fontSize: "0.6rem",
+                  fontWeight: 600,
+                  borderColor: (t) => alpha(t.palette.info.main, 0.6),
+                  color: "text.primary",
+                  bgcolor: (t) => alpha(t.palette.info.main, 0.08),
+                }}
+              />
+            </Tooltip>
+            <Tooltip title="Device managed by Microsoft Intune">
+              <Chip
+                label="Intune"
+                size="small"
+                variant="outlined"
+                sx={{
+                  height: 22,
+                  fontSize: "0.6rem",
+                  fontWeight: 600,
+                  borderColor: (t) => alpha(t.palette.primary.main, 0.6),
+                  color: "text.primary",
+                  bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
+                }}
+              />
+            </Tooltip>
+            <Tooltip title={deviceInfo.hasNinja ? "Device has NinjaOne agent" : "No NinjaOne agent on this device"}>
+              <Chip
+                label="NinjaOne"
+                size="small"
+                variant="outlined"
+                sx={{
+                  height: 22,
+                  fontSize: "0.6rem",
+                  fontWeight: 600,
+                  ...(deviceInfo.hasNinja
+                    ? {
+                        borderColor: (t) => alpha(t.palette.success.main, 0.6),
+                        color: "text.primary",
+                        bgcolor: (t) => alpha(t.palette.success.main, 0.12),
+                      }
+                    : {
+                        borderColor: (t) => alpha(t.palette.text.secondary, 0.4),
+                        color: "text.secondary",
+                        bgcolor: (t) => alpha(t.palette.text.secondary, 0.06),
+                      }),
+                }}
+              />
+            </Tooltip>
           </Stack>
         )}
         {hasLegacy && (
@@ -299,7 +354,7 @@ const Page = () => {
                 setLegacyDialog({ open: true, user: item, protocols });
               }}
               sx={{
-                height: 20,
+                height: 22,
                 fontSize: "0.65rem",
                 fontWeight: 600,
                 flexShrink: 0,
