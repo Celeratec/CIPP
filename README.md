@@ -104,6 +104,7 @@ An interactive detail page for individual SharePoint sites, providing at-a-glanc
 - **Site overview** with hero banner showing site type, status badges (inactive, storage critical), and quick-action chips
 - **Storage monitoring** with visual progress bar, percentage, and color-coded status (green/yellow/red)
 - **Member management** -- add and remove site members, add site administrators, with Admin badges displayed inline
+- **Guest invitation** -- invite external guest users directly from the site details page; guests are invited to the tenant and, for group-connected sites, automatically added as site members in a single operation
 - **Data freshness** -- shows the Microsoft report refresh date so administrators know how current the numbers are
 - **Usage data enrichment** -- automatically fetches site usage data from the API, so the page is fully populated regardless of navigation path
 - **Create Team from Site** -- for group-connected sites, one-click team creation from the existing Microsoft 365 Group
@@ -240,6 +241,7 @@ The following API endpoints were created to support Manage365-specific features:
 
 | Endpoint | Purpose |
 |---|---|
+| `ExecSharePointInviteGuest` | Invite an external guest to the tenant and add them to a SharePoint site group |
 | `ExecTeamFromGroup` | Team-enable an existing M365 Group from a SharePoint site |
 | `ExecTeamSettings` | Update individual team settings (member, guest, messaging, fun) |
 | `ExecTeamAction` | Archive, unarchive, clone teams; create/delete channels; list/add/remove channel members; remove apps |
