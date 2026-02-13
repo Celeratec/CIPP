@@ -14,6 +14,7 @@ import { useTheme } from "@mui/material/styles";
 import CippWizardStepButtons from "./CippWizardStepButtons";
 import CippFormComponent from "../CippComponents/CippFormComponent";
 import { CippFormCondition } from "../CippComponents/CippFormCondition";
+import CippRiskAlert from "../CippComponents/CippRiskAlert";
 import { useWatch } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { Grid } from "@mui/system";
@@ -35,6 +36,13 @@ export const CippWizardOffboarding = (props) => {
   const [showAlert, setShowAlert] = useState(false);
   const userSettingsDefaults = useSettings().userSettingsDefaults;
   const disableForwarding = useWatch({ control: formControl.control, name: "disableForwarding" });
+
+  // Watch risky offboarding fields for inline coaching
+  const watchDeleteUser = useWatch({ control: formControl.control, name: "DeleteUser" });
+  const watchClearImmutableId = useWatch({ control: formControl.control, name: "ClearImmutableId" });
+  const watchRemoveLicenses = useWatch({ control: formControl.control, name: "RemoveLicenses" });
+  const watchRemoveMFADevices = useWatch({ control: formControl.control, name: "RemoveMFADevices" });
+  const watchRemoveGroups = useWatch({ control: formControl.control, name: "RemoveGroups" });
 
   useEffect(() => {
     if (selectedUsers.length >= 3) {
@@ -197,11 +205,25 @@ export const CippWizardOffboarding = (props) => {
                     type="switch"
                     formControl={formControl}
                   />
+                  <CippRiskAlert
+                    visible={watchRemoveGroups === true}
+                    severity="warning"
+                    title="Removes All Group Memberships"
+                    description="This removes the user from all groups including security groups, Microsoft 365 groups, and distribution lists. The user may lose access to resources, VPNs, applications, and shared mailboxes tied to group membership."
+                    recommendation="Review group memberships first if you need to preserve access to specific resources."
+                  />
                   <CippFormComponent
                     name="RemoveLicenses"
                     label="Remove Licenses"
                     type="switch"
                     formControl={formControl}
+                  />
+                  <CippRiskAlert
+                    visible={watchRemoveLicenses === true}
+                    severity="warning"
+                    title="Immediate License Removal"
+                    description="All licenses will be removed immediately. The user will lose access to Exchange mailbox, Teams, SharePoint, and all other licensed services. Mailbox data may be deleted after the retention period."
+                    recommendation="Consider converting to a shared mailbox first if you need to preserve mailbox data without a license."
                   />
                   <CippFormComponent
                     name="RevokeSessions"
@@ -221,6 +243,13 @@ export const CippWizardOffboarding = (props) => {
                     type="switch"
                     formControl={formControl}
                   />
+                  <CippRiskAlert
+                    visible={watchClearImmutableId === true}
+                    severity="error"
+                    title="High Risk — Breaks Hybrid Identity Sync"
+                    description="Clearing the Immutable ID breaks the link between the on-premises Active Directory object and the Azure AD object. This can cause duplicate accounts, sync failures, and identity mismatches that are difficult to resolve."
+                    recommendation="Only use this if you are intentionally decommissioning the on-premises account and understand the sync implications."
+                  />
                   <CippFormComponent
                     name="ResetPass"
                     label="Reset Password"
@@ -233,6 +262,13 @@ export const CippWizardOffboarding = (props) => {
                     type="switch"
                     formControl={formControl}
                   />
+                  <CippRiskAlert
+                    visible={watchRemoveMFADevices === true}
+                    severity="warning"
+                    title="All MFA Methods Will Be Removed"
+                    description="All registered MFA devices and methods will be removed. If the user still has sign-in access, their account will revert to password-only authentication until MFA is re-enrolled."
+                    recommendation="Ensure sign-in is disabled before removing MFA devices to prevent a window of reduced security."
+                  />
                   <CippFormComponent
                     name="RemoveTeamsPhoneDID"
                     label="Remove Teams Phone DID"
@@ -244,6 +280,13 @@ export const CippWizardOffboarding = (props) => {
                     label="Delete user"
                     type="switch"
                     formControl={formControl}
+                  />
+                  <CippRiskAlert
+                    visible={watchDeleteUser === true}
+                    severity="error"
+                    title="High Risk — Permanent Account Deletion"
+                    description="The user account will be permanently deleted. After the soft-delete retention period (30 days), the account and all associated data (mailbox, OneDrive, Teams chats) cannot be recovered."
+                    recommendation="Consider disabling sign-in and removing licenses instead to preserve the ability to restore the account if needed."
                   />
                 </Stack>
             </CardContent>

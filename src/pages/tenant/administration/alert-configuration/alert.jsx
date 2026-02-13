@@ -32,6 +32,7 @@ import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { CippFormCondition } from "../../../../components/CippComponents/CippFormCondition";
 import { CippHead } from "../../../../components/CippComponents/CippHead";
+import CippRiskAlert from "../../../../components/CippComponents/CippRiskAlert";
 
 const AlertWizard = () => {
   const apiRequest = ApiPostCall({
@@ -98,6 +99,7 @@ const AlertWizard = () => {
   const commandValue = useWatch({ control: formControl.control, name: "command" });
   const logbookWatcher = useWatch({ control: formControl.control, name: "logbook" });
   const propertyWatcher = useWatch({ control: formControl.control, name: "conditions" });
+  const actionsWatcher = useWatch({ control: formControl.control, name: "Actions" });
 
   // Clear input value only on actual operator transitions, skip while preset loading
   useEffect(() => {
@@ -826,6 +828,28 @@ const AlertWizard = () => {
                               multiple={true}
                               creatable={false}
                               options={actionsToTake}
+                            />
+                          </Grid>
+                          <Grid size={12}>
+                            <CippRiskAlert
+                              visible={
+                                Array.isArray(actionsWatcher) &&
+                                actionsWatcher.some((a) => (a?.value || a) === "disableuser")
+                              }
+                              severity="warning"
+                              title="Automated User Disabling"
+                              description='This alert will automatically disable user accounts when triggered. If alert conditions produce false positives, legitimate users will be locked out of their accounts without warning.'
+                              recommendation="Test this alert in a monitoring-only mode first. Ensure conditions are specific enough to avoid false positives before enabling automated user disabling."
+                            />
+                            <CippRiskAlert
+                              visible={
+                                Array.isArray(actionsWatcher) &&
+                                actionsWatcher.some((a) => (a?.value || a) === "becremediate")
+                              }
+                              severity="warning"
+                              title="Automated BEC Remediation"
+                              description="This alert will automatically execute BEC remediation (password reset, session revocation, inbox rule cleanup) when triggered. False positives will disrupt legitimate users by resetting their passwords and signing them out."
+                              recommendation="Validate alert conditions thoroughly before enabling automated remediation. Consider using email or webhook notifications first to verify accuracy."
                             />
                           </Grid>
                           <Grid size={12} sx={{ mt: 2 }}>

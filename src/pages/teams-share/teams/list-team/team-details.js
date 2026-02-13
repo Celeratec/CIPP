@@ -91,6 +91,14 @@ const settingsRiskInfo = {
     risk: "medium",
     warning: "Allowing users to delete their own messages may impact compliance and audit trails. Deleted messages cannot be recovered by end users.",
   },
+  allowOwnerDeleteMessages: {
+    risk: "medium",
+    warning: "Allowing team owners to delete any member's messages can impact compliance and audit trails. Owners can remove messages posted by other users, which may affect eDiscovery and regulatory record-keeping.",
+  },
+  allowUserEditMessages: {
+    risk: "medium",
+    warning: "Allowing users to edit their messages can impact compliance and audit trails. Original message content may not be preserved for regulatory or legal review.",
+  },
 };
 
 const SettingsSection = ({ title, icon, settings, onSettingClick, loadingField, onGiphyChange, giphyLoading }) => {

@@ -333,6 +333,32 @@ External access in Microsoft 365 is controlled by multiple independent settings 
 - **Teams Settings** -- banners on the Federation tab (explaining the difference between federation and B2B collaboration) and Guest Access tab (explaining that Entra, Cross-Tenant, and SharePoint must all align)
 - **Health Report** -- every finding includes a "Go to settings" button linking directly to the page where the issue can be resolved
 
+### Risk Coaching & Settings Safety
+
+Manage365 includes an inline risk coaching system that alerts administrators to potentially dangerous settings as they make changes, recommends safer alternatives, and requires explicit confirmation before saving high-risk configurations. This is implemented via two reusable components (`CippRiskAlert` for inline warnings and `CippRiskSummaryDialog` for save-time confirmation) used consistently across the application.
+
+**Settings pages with inline risk coaching (30+ risk rules):**
+
+- **External Collaboration** -- 5 rules: unrestricted guest invitations (error), guests with member-level access (error), self-service join (warning), no domain restrictions (warning), personal accounts allowed (info)
+- **Cross-Tenant Default Policy** -- 4 rules: automatic consent inbound/outbound (warning), all trust claims accepted (info), all access policies open (info)
+- **SharePoint Sharing Settings** -- 8 rules: anonymous sharing enabled (error), default link is anonymous (error), anonymous links grant edit (error), anonymous links never expire (error), no domain restrictions (warning), external resharing (warning), default edit permission (warning)
+- **Teams Tenant Settings** -- 13 rules across all tabs: anonymous meeting start (error), everyone bypasses lobby (error), open federation (warning), consumer/unmanaged accounts (warning), PSTN lobby bypass (warning), external control sharing (warning), presenter defaults (warning), third-party storage (warning), security reporting disabled (warning), message deletion/compliance (info)
+- **Cross-Tenant Partner Configuration** -- 4 rules: automatic consent (warning), all trust accepted (info), all access open (info)
+- **Cross-Tenant Security Templates** -- 8 rules: same as external collaboration + cross-tenant, with emphasis that risky templates get replicated at scale across all tenants
+
+**Action pages with destructive-operation coaching:**
+
+- **Offboarding Wizard** -- 5 inline alerts for the most dangerous offboarding options: delete user (error -- permanent deletion), clear Immutable ID (error -- breaks hybrid sync), remove licenses (warning -- immediate service loss), remove MFA devices (warning -- security gap), remove all groups (warning -- resource access loss)
+- **Transport Rule Creation** -- 3 action-based alerts: delete message (error -- silent permanent loss), redirect message (warning -- original recipient never receives), reject message (warning -- legitimate email may be blocked)
+- **Alert Configuration** -- 2 alerts for automated actions: disable user (warning -- false positives lock out users), BEC remediate (warning -- false positives disrupt users with password resets)
+- **Team Details Settings** -- risk metadata for 8 settings: channel deletion by members/guests (high), app management (medium), connector management (medium), guest channel management (medium), message deletion (medium), owner message deletion (medium), message editing (medium)
+
+**UX behavior:**
+- Risk alerts animate in/out inline next to each control as values change (using MUI `Collapse`)
+- When saving, if any error or warning-level risks are active, a confirmation dialog lists all risks grouped by severity -- the user must click "Save Anyway" to proceed
+- Info-level alerts are shown inline for awareness but do not block saves
+- Each alert includes a specific recommendation for the safer alternative
+
 ### Additional Enhancements
 
 - **Background site deletion** -- SharePoint site deletion is offloaded to prevent UI timeouts on large sites, with polling for completion status and toast notifications

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
 import { Layout as DashboardLayout } from "../../../../../layouts/index.js";
 import { CippHead } from "../../../../../components/CippComponents/CippHead.jsx";
@@ -25,6 +25,8 @@ import { Save, ArrowBack } from "@mui/icons-material";
 import { useSettings } from "../../../../../hooks/use-settings.js";
 import { ApiGetCall, ApiPostCall } from "../../../../../api/ApiCall.jsx";
 import { CippApiResults } from "../../../../../components/CippComponents/CippApiResults.jsx";
+import CippRiskAlert from "../../../../../components/CippComponents/CippRiskAlert.jsx";
+import CippRiskSummaryDialog from "../../../../../components/CippComponents/CippRiskSummaryDialog.jsx";
 import Link from "next/link";
 
 const AccessSettingsEditor = ({ title, description, settings, onChange }) => {
@@ -82,6 +84,54 @@ const AccessSettingsEditor = ({ title, description, settings, onChange }) => {
   );
 };
 
+const PARTNER_RISK_RULES = [
+  {
+    id: "auto-consent-inbound",
+    test: (d) => d.automaticUserConsentSettings?.inboundAllowed === true,
+    severity: "warning",
+    title: "Automatic Inbound Consent Enabled",
+    description:
+      "Inbound invitations from this partner are auto-redeemed without user consent prompts. External users gain access without explicitly accepting an invitation.",
+    recommendation:
+      "Disable unless you have a specific cross-tenant sync agreement with this partner.",
+  },
+  {
+    id: "auto-consent-outbound",
+    test: (d) => d.automaticUserConsentSettings?.outboundAllowed === true,
+    severity: "warning",
+    title: "Automatic Outbound Consent Enabled",
+    description:
+      "Your users' invitations to this partner are auto-redeemed without an explicit consent step.",
+    recommendation:
+      "Disable unless you have a specific cross-tenant sync agreement with this partner.",
+  },
+  {
+    id: "all-trust-enabled",
+    test: (d) =>
+      d.inboundTrust?.isMfaAccepted === true &&
+      d.inboundTrust?.isCompliantDeviceAccepted === true &&
+      d.inboundTrust?.isHybridAzureADJoinedDeviceAccepted === true,
+    severity: "info",
+    title: "All Inbound Trust Claims Accepted",
+    description:
+      "All three trust settings (MFA, device compliance, hybrid AD join) are enabled for this partner. You are fully trusting this partner's security posture.",
+    recommendation:
+      "Ensure you have verified this partner's security practices before trusting all claims.",
+  },
+  {
+    id: "all-access-open",
+    test: (d) =>
+      d.b2bCollaborationInbound?.usersAndGroups?.accessType === "allowed" &&
+      d.b2bCollaborationOutbound?.usersAndGroups?.accessType === "allowed" &&
+      d.b2bDirectConnectInbound?.usersAndGroups?.accessType === "allowed" &&
+      d.b2bDirectConnectOutbound?.usersAndGroups?.accessType === "allowed",
+    severity: "info",
+    title: "All Access Policies Fully Open",
+    description:
+      "Both B2B Collaboration and B2B Direct Connect are set to allow all users in both directions for this partner. This is the most permissive configuration.",
+  },
+];
+
 const Page = () => {
   const router = useRouter();
   const { tenantId: editTenantId } = router.query;
@@ -91,6 +141,7 @@ const Page = () => {
   const currentTenant = settings.currentTenant;
 
   const [partnerTenantId, setPartnerTenantId] = useState("");
+  const [riskDialogOpen, setRiskDialogOpen] = useState(false);
   const [partnerData, setPartnerData] = useState({
     b2bCollaborationInbound: null,
     b2bCollaborationOutbound: null,
@@ -106,6 +157,10 @@ const Page = () => {
       outboundAllowed: false,
     },
   });
+
+  const activeRisks = useMemo(() => {
+    return PARTNER_RISK_RULES.filter((r) => r.test(partnerData)).map(({ test, ...rest }) => rest);
+  }, [partnerData]);
 
   // If editing, fetch existing partner data
   const partnersQuery = ApiGetCall({
@@ -150,7 +205,7 @@ const Page = () => {
     }));
   };
 
-  const handleSave = () => {
+  const executeSave = () => {
     const url = isEditing ? "/api/EditCrossTenantPartner" : "/api/ExecAddCrossTenantPartner";
     savePartner.mutate({
       url,
@@ -160,6 +215,15 @@ const Page = () => {
         ...partnerData,
       },
     });
+  };
+
+  const handleSave = () => {
+    const significantRisks = activeRisks.filter((r) => r.severity !== "info");
+    if (significantRisks.length > 0) {
+      setRiskDialogOpen(true);
+    } else {
+      executeSave();
+    }
   };
 
   if (!currentTenant || currentTenant === "AllTenants") {
@@ -314,6 +378,17 @@ const Page = () => {
                 }
                 label="Trust hybrid Azure AD joined devices from this partner"
               />
+              <CippRiskAlert
+                visible={
+                  partnerData.inboundTrust?.isMfaAccepted === true &&
+                  partnerData.inboundTrust?.isCompliantDeviceAccepted === true &&
+                  partnerData.inboundTrust?.isHybridAzureADJoinedDeviceAccepted === true
+                }
+                severity="info"
+                title="All Inbound Trust Claims Accepted"
+                description="All three trust settings are enabled for this partner. You are fully trusting this partner's security posture."
+                recommendation="Ensure you have verified this partner's security practices before trusting all claims."
+              />
             </Stack>
           </CardContent>
         </Card>
@@ -340,6 +415,13 @@ const Page = () => {
                 }
                 label="Automatically redeem invitations for inbound users"
               />
+              <CippRiskAlert
+                visible={partnerData.automaticUserConsentSettings?.inboundAllowed === true}
+                severity="warning"
+                title="Automatic Inbound Consent Enabled"
+                description="Inbound invitations from this partner are auto-redeemed without user consent prompts."
+                recommendation="Disable unless you have a specific cross-tenant sync agreement with this partner."
+              />
               <FormControlLabel
                 control={
                   <Switch
@@ -354,10 +436,27 @@ const Page = () => {
                 }
                 label="Automatically redeem invitations for outbound users"
               />
+              <CippRiskAlert
+                visible={partnerData.automaticUserConsentSettings?.outboundAllowed === true}
+                severity="warning"
+                title="Automatic Outbound Consent Enabled"
+                description="Your users' invitations to this partner are auto-redeemed without an explicit consent step."
+                recommendation="Disable unless you have a specific cross-tenant sync agreement with this partner."
+              />
             </Stack>
           </CardContent>
         </Card>
       </Stack>
+
+      <CippRiskSummaryDialog
+        open={riskDialogOpen}
+        onClose={() => setRiskDialogOpen(false)}
+        onConfirm={() => {
+          setRiskDialogOpen(false);
+          executeSave();
+        }}
+        risks={activeRisks.filter((r) => r.severity !== "info")}
+      />
     </Box>
   );
 };
