@@ -19,9 +19,11 @@ import {
   ErrorOutline,
   HealthAndSafetyOutlined,
   InfoOutlined,
+  OpenInNew,
   Refresh,
   WarningAmberOutlined,
 } from "@mui/icons-material";
+import Link from "next/link";
 import { useSettings } from "../../../../hooks/use-settings.js";
 import { ApiGetCall } from "../../../../api/ApiCall.jsx";
 
@@ -70,6 +72,21 @@ const FindingCard = ({ finding }) => (
           <Typography variant="body2" color="text.secondary">
             {finding.Recommendation}
           </Typography>
+          {finding.RelatedLink && finding.RelatedPage && (
+            <Box sx={{ mt: 1 }}>
+              <Link href={finding.RelatedLink} passHref legacyBehavior>
+                <Button
+                  component="a"
+                  size="small"
+                  variant="outlined"
+                  endIcon={<OpenInNew fontSize="small" />}
+                  sx={{ textTransform: "none" }}
+                >
+                  Go to {finding.RelatedPage}
+                </Button>
+              </Link>
+            </Box>
+          )}
         </Box>
       </Stack>
     </CardContent>

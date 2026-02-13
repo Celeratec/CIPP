@@ -545,6 +545,11 @@ export const nativeMenuItems = [
             permissions: ["Sharepoint.Admin.*"],
           },
           {
+            title: "Sharing Settings",
+            path: "/teams-share/sharepoint/sharing-settings",
+            permissions: ["Sharepoint.Admin.*"],
+          },
+          {
             title: "Recycle Bin",
             path: "/teams-share/sharepoint/recycle-bin",
             permissions: ["Sharepoint.Site.ReadWrite"],
@@ -558,6 +563,11 @@ export const nativeMenuItems = [
           {
             title: "Teams",
             path: "/teams-share/teams/list-team",
+            permissions: ["Teams.Group.*"],
+          },
+          {
+            title: "Teams Settings",
+            path: "/teams-share/teams/teams-settings",
             permissions: ["Teams.Group.*"],
           },
           {

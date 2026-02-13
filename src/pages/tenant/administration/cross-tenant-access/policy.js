@@ -25,6 +25,7 @@ import {
 import { useSettings } from "../../../../hooks/use-settings.js";
 import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall.jsx";
 import { CippApiResults } from "../../../../components/CippComponents/CippApiResults.jsx";
+import CippRelatedSettings from "../../../../components/CippComponents/CippRelatedSettings.jsx";
 import { Save } from "@mui/icons-material";
 
 const TabPanel = ({ children, value, index }) => (
@@ -170,6 +171,19 @@ const Page = () => {
       </Stack>
 
       <CippApiResults apiObject={updatePolicy} />
+
+      <CippRelatedSettings
+        title="Multiple settings layers control external access"
+        description="B2B Collaboration and Direct Connect settings only control the cross-tenant access layer. Guest invitations are also gated by Entra External Collaboration (domain lists, invite permissions) and SharePoint Sharing Settings (domain restrictions, sharing level). Teams shared channels also depend on Teams Federation settings."
+        links={[
+          {
+            label: "External Collaboration",
+            href: "/tenant/administration/cross-tenant-access/external-collaboration",
+          },
+          { label: "SharePoint Sharing Settings", href: "/teams-share/sharepoint/sharing-settings" },
+          { label: "Teams Settings", href: "/teams-share/teams/teams-settings" },
+        ]}
+      />
 
       {policyQuery.isFetching ? (
         <Skeleton variant="rectangular" height={400} />

@@ -28,6 +28,7 @@ import { Add, Delete, Save } from "@mui/icons-material";
 import { useSettings } from "../../../../hooks/use-settings.js";
 import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall.jsx";
 import { CippApiResults } from "../../../../components/CippComponents/CippApiResults.jsx";
+import CippRelatedSettings from "../../../../components/CippComponents/CippRelatedSettings.jsx";
 
 const DomainListEditor = ({ title, domains, onChange }) => {
   const [newDomain, setNewDomain] = useState("");
@@ -359,6 +360,22 @@ const Page = () => {
               title="Collaboration Restrictions"
               subheader="Control which domains can be invited for B2B collaboration"
             />
+            <CardContent sx={{ pt: 0, pb: 0 }}>
+              <CippRelatedSettings
+                title="SharePoint has a separate domain list"
+                description="These domain restrictions apply to Entra B2B guest invitations across all Microsoft 365 services. SharePoint and OneDrive have their own separate domain allow/deny list. If guests can be invited but cannot access SharePoint, check SharePoint Sharing Settings."
+                links={[
+                  {
+                    label: "SharePoint Sharing Settings",
+                    href: "/teams-share/sharepoint/sharing-settings",
+                  },
+                  {
+                    label: "Cross-Tenant Default Policy",
+                    href: "/tenant/administration/cross-tenant-access/policy",
+                  },
+                ]}
+              />
+            </CardContent>
             <CardContent>
               <Stack spacing={3}>
                 <FormControl component="fieldset">
