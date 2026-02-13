@@ -52,6 +52,7 @@ import {
   Warning,
   AccountTree,
   GppBad,
+  Devices,
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import CippUserAvatar from "../../../../components/CippComponents/CippUserAvatar";
@@ -101,6 +102,57 @@ const Page = () => {
     queryKey: `ListCASMailboxes-${tenant}`,
     waiting: !!tenant && tenant !== "AllTenants",
   });
+
+  // Fetch Intune managed devices to build per-user device presence (lightweight)
+  const intuneDevicesRequest = ApiGetCall({
+    url: "/api/ListGraphRequest",
+    data: {
+      Endpoint: "deviceManagement/managedDevices",
+      $select: "id,azureADDeviceId,userPrincipalName",
+      $top: 999,
+      tenantFilter: tenant,
+    },
+    queryKey: `IntuneDevicesForUsers-${tenant}`,
+    waiting: !!tenant && tenant !== "AllTenants",
+  });
+
+  // Fetch NinjaOne device info for enrichment
+  const ninjaDevicesRequest = ApiGetCall({
+    url: "/api/ListNinjaDeviceInfo",
+    data: { TenantFilter: tenant },
+    queryKey: `NinjaDevicesForUsers-${tenant}`,
+    waiting: !!tenant && tenant !== "AllTenants",
+  });
+
+  // Build per-user device presence map: UPN → { deviceCount, hasIntune, hasNinja }
+  const userDevicePresence = useMemo(() => {
+    const map = new Map();
+    const intuneRaw = intuneDevicesRequest.data;
+    const intuneArr = Array.isArray(intuneRaw) ? intuneRaw : intuneRaw?.Results || [];
+
+    // Build set of azureADDeviceIds that have NinjaOne data
+    const ninjaRaw = ninjaDevicesRequest.data;
+    const ninjaArr = Array.isArray(ninjaRaw) ? ninjaRaw : ninjaRaw?.Results || [];
+    const ninjaDeviceIdSet = new Set(
+      ninjaArr.filter((d) => d.azureADDeviceId).map((d) => d.azureADDeviceId)
+    );
+
+    // Aggregate Intune devices by user UPN
+    intuneArr.forEach((device) => {
+      const upn = (device.userPrincipalName || "").toLowerCase();
+      if (!upn) return;
+      if (!map.has(upn)) {
+        map.set(upn, { deviceCount: 0, hasIntune: true, hasNinja: false });
+      }
+      const entry = map.get(upn);
+      entry.deviceCount += 1;
+      if (!entry.hasNinja && device.azureADDeviceId && ninjaDeviceIdSet.has(device.azureADDeviceId)) {
+        entry.hasNinja = true;
+      }
+    });
+
+    return map;
+  }, [intuneDevicesRequest.data, ninjaDevicesRequest.data]);
 
   // Mutation for disabling legacy protocols directly from the badge
   const disableLegacyProtocols = ApiPostCall({
@@ -199,52 +251,78 @@ const Page = () => {
     router.push(`/identity/administration/users/user?userId=${user.id}`);
   }, [router]);
 
-  // Memoized custom content renderer for legacy protocol warnings
+  // Memoized custom content renderer for device presence badges + legacy protocol warnings
   const customContentRenderer = useCallback((item) => {
+    const upn = (item?.userPrincipalName || "").toLowerCase();
+    const deviceInfo = upn ? userDevicePresence.get(upn) : null;
+
     const legacyInfo = hasLegacyProtocols(item);
-    if (!legacyInfo) return null;
-    
     const protocols = [];
-    if (legacyInfo.imap) protocols.push("IMAP");
-    if (legacyInfo.pop) protocols.push("POP");
-    
-    if (protocols.length === 0) return null;
-    
+    if (legacyInfo?.imap) protocols.push("IMAP");
+    if (legacyInfo?.pop) protocols.push("POP");
+
+    const hasDeviceBadges = !!deviceInfo;
+    const hasLegacy = protocols.length > 0;
+
+    if (!hasDeviceBadges && !hasLegacy) return null;
+
     return (
-      <Tooltip title={`Insecure protocols enabled: ${protocols.join(" & ")}. These legacy protocols may bypass MFA protections. Click to disable.`}>
-        <Chip
-          size="small"
-          color="error"
-          variant="outlined"
-          icon={<GppBad sx={{ fontSize: "12px !important", color: "error.main" }} />}
-          label={protocols.join(" & ")}
-          onClick={(e) => {
-            e.stopPropagation();
-            setLegacyDialog({ open: true, user: item, protocols });
-          }}
-          sx={{
-            height: 20,
-            fontSize: "0.65rem",
-            fontWeight: 600,
-            ml: 0.5,
-            flexShrink: 0,
-            backgroundColor: (t) => `${alpha(t.palette.error.main, 0.15)} !important`,
-            borderColor: (t) => `${alpha(t.palette.error.main, 0.5)} !important`,
-            cursor: "pointer",
-            "& .MuiChip-label": {
-              color: "error.dark",
-            },
-            "& .MuiChip-icon": {
-              color: "error.main",
-            },
-            "&:hover": {
-              backgroundColor: (t) => `${alpha(t.palette.error.main, 0.25)} !important`,
-            },
-          }}
-        />
-      </Tooltip>
+      <Stack spacing={0.5} sx={{ mt: 0.5, mb: 0.5 }}>
+        {hasDeviceBadges && (
+          <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
+            <Chip
+              icon={<Devices sx={{ fontSize: "13px !important" }} />}
+              label={`${deviceInfo.deviceCount}`}
+              size="small"
+              variant="outlined"
+              sx={{ height: 20, fontSize: "0.65rem", fontWeight: 600, "& .MuiChip-icon": { ml: 0.5 } }}
+            />
+            <Chip label="Entra" color="info" size="small" variant="filled" sx={{ height: 20, fontSize: "0.6rem", fontWeight: 600 }} />
+            <Chip label="Intune" color="primary" size="small" variant="filled" sx={{ height: 20, fontSize: "0.6rem", fontWeight: 600 }} />
+            {deviceInfo.hasNinja ? (
+              <Chip label="NinjaOne" color="success" size="small" variant="filled" sx={{ height: 20, fontSize: "0.6rem", fontWeight: 600 }} />
+            ) : (
+              <Chip label="NinjaOne" size="small" variant="outlined" sx={{ height: 20, fontSize: "0.6rem", fontWeight: 500, opacity: 0.4 }} />
+            )}
+          </Stack>
+        )}
+        {hasLegacy && (
+          <Tooltip title={`Insecure protocols enabled: ${protocols.join(" & ")}. These legacy protocols may bypass MFA protections. Click to disable.`}>
+            <Chip
+              size="small"
+              color="error"
+              variant="outlined"
+              icon={<GppBad sx={{ fontSize: "12px !important", color: "error.main" }} />}
+              label={protocols.join(" & ")}
+              onClick={(e) => {
+                e.stopPropagation();
+                setLegacyDialog({ open: true, user: item, protocols });
+              }}
+              sx={{
+                height: 20,
+                fontSize: "0.65rem",
+                fontWeight: 600,
+                flexShrink: 0,
+                alignSelf: "flex-start",
+                backgroundColor: (t) => `${alpha(t.palette.error.main, 0.15)} !important`,
+                borderColor: (t) => `${alpha(t.palette.error.main, 0.5)} !important`,
+                cursor: "pointer",
+                "& .MuiChip-label": {
+                  color: "error.dark",
+                },
+                "& .MuiChip-icon": {
+                  color: "error.main",
+                },
+                "&:hover": {
+                  backgroundColor: (t) => `${alpha(t.palette.error.main, 0.25)} !important`,
+                },
+              }}
+            />
+          </Tooltip>
+        )}
+      </Stack>
     );
-  }, [hasLegacyProtocols]);
+  }, [hasLegacyProtocols, userDevicePresence]);
 
   // Memoized shared mailbox transform function
   const sharedMailboxTransform = useCallback(
@@ -392,9 +470,9 @@ const Page = () => {
     },
     // API endpoint for inline field editing
     editApiUrl: "/api/EditUser",
-    // Render custom content inline with first extraField (companyName row)
-    customContentInline: true,
-    // Custom content to show legacy protocol warnings - now renders inline
+    // Render device badges + legacy warnings as a block below title/badges
+    customContentInline: false,
+    // Custom content: device source badges + legacy protocol warnings
     customContent: customContentRenderer,
   }), [customContentRenderer, sharedMailboxTransform]);
 
