@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Layout as DashboardLayout } from "../../../layouts/index.js";
 import { CippHead } from "../../../components/CippComponents/CippHead.jsx";
 import {
@@ -26,6 +26,8 @@ import { useSettings } from "../../../hooks/use-settings.js";
 import { ApiGetCall, ApiPostCall } from "../../../api/ApiCall.jsx";
 import { CippApiResults } from "../../../components/CippComponents/CippApiResults.jsx";
 import CippRelatedSettings from "../../../components/CippComponents/CippRelatedSettings.jsx";
+import CippRiskAlert from "../../../components/CippComponents/CippRiskAlert.jsx";
+import CippRiskSummaryDialog from "../../../components/CippComponents/CippRiskSummaryDialog.jsx";
 import { getCippError } from "../../../utils/get-cipp-error.js";
 
 const DomainListEditor = ({ title, description, domains, onChange }) => {
@@ -110,11 +112,100 @@ const populateForm = (rawData) => {
   };
 };
 
+const SP_RISK_RULES = [
+  {
+    id: "anyone-sharing",
+    test: (d) => d.sharingCapability === "externalUserAndGuestSharing",
+    severity: "error",
+    title: "High Risk — Anonymous Sharing Enabled",
+    description:
+      'The "Anyone" sharing level enables anonymous links — files and folders can be accessed by anyone with the link, without authentication. This is the most common cause of accidental data leaks.',
+    recommendation:
+      'Set to "New and existing guests" at most. This requires recipients to authenticate before accessing shared content.',
+  },
+  {
+    id: "default-link-anyone",
+    test: (d) => d.defaultSharingLinkType === "anyone",
+    severity: "error",
+    title: "High Risk — Default Link Is Anonymous",
+    description:
+      'When users share files, the default link type is "Anyone." Users will create anonymous links by default without realizing the security implications.',
+    recommendation:
+      'Set the default to "Specific people" so users must explicitly choose to create broader links.',
+  },
+  {
+    id: "anon-file-edit",
+    test: (d) =>
+      d.sharingCapability === "externalUserAndGuestSharing" && d.fileAnonymousLinkType === "edit",
+    severity: "error",
+    title: "High Risk — Anonymous File Links Grant Edit Access",
+    description:
+      "Anyone with an anonymous file link can modify the file. This means unauthenticated users can alter your data.",
+    recommendation: 'Set anonymous file link permission to "View only."',
+  },
+  {
+    id: "anon-folder-edit",
+    test: (d) =>
+      d.sharingCapability === "externalUserAndGuestSharing" && d.folderAnonymousLinkType === "edit",
+    severity: "error",
+    title: "High Risk — Anonymous Folder Links Grant Edit Access",
+    description:
+      "Anyone with an anonymous folder link can modify, upload, and delete files in the folder without authenticating.",
+    recommendation: 'Set anonymous folder link permission to "View only."',
+  },
+  {
+    id: "no-link-expiry",
+    test: (d) =>
+      d.sharingCapability === "externalUserAndGuestSharing" &&
+      (d.requireAnonymousLinksExpireInDays === 0 || d.requireAnonymousLinksExpireInDays === "0"),
+    severity: "error",
+    title: "High Risk — Anonymous Links Never Expire",
+    description:
+      "Anonymous sharing links have no expiration date. Once created, these links provide permanent access to files unless manually revoked.",
+    recommendation: "Set expiration to 30 days or less to limit the exposure window.",
+  },
+  {
+    id: "no-domain-restriction",
+    test: (d) => d.sharingDomainRestrictionMode === "none",
+    severity: "warning",
+    title: "No SharePoint Domain Restrictions",
+    description:
+      "External sharing is unrestricted by domain. Users can share content with any external email address.",
+    recommendation:
+      "Use an allow-list of trusted partner domains to control who content can be shared with.",
+  },
+  {
+    id: "resharing-enabled",
+    test: (d) => d.isResharingByExternalUsersEnabled === true,
+    severity: "warning",
+    title: "External Resharing Enabled",
+    description:
+      "External guests can reshare files and folders with additional external users, creating a chain of access beyond your original sharing intent.",
+    recommendation: "Disable external resharing to maintain control over who accesses your content.",
+  },
+  {
+    id: "default-edit-permission",
+    test: (d) => d.defaultLinkPermission === "edit",
+    severity: "warning",
+    title: "Default Link Permission Is Edit",
+    description:
+      'When users share files, the default permission is "Edit." Recipients can modify shared files unless the user manually changes it to View.',
+    recommendation:
+      'Set the default to "View" so users must explicitly grant edit access when needed.',
+  },
+];
+
 const Page = () => {
   const settings = useSettings();
   const currentTenant = settings.currentTenant;
   const [formData, setFormData] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [riskDialogOpen, setRiskDialogOpen] = useState(false);
+
+  const activeRisks = useMemo(() => {
+    if (!formData) return [];
+    return SP_RISK_RULES.filter((r) => r.test(formData)).map(({ test, ...rest }) => rest);
+  }, [formData]);
 
   const tenantReady = currentTenant && currentTenant !== "AllTenants";
 
@@ -154,7 +245,7 @@ const Page = () => {
     spSettings.refetch();
   }, [spSettings.refetch]);
 
-  const handleSave = () => {
+  const executeSave = () => {
     const payload = {
       tenantFilter: currentTenant,
       sharingCapability: formData.sharingCapability,
@@ -178,6 +269,15 @@ const Page = () => {
       data: payload,
     });
     setHasChanges(false);
+  };
+
+  const handleSave = () => {
+    const significantRisks = activeRisks.filter((r) => r.severity !== "info");
+    if (significantRisks.length > 0) {
+      setRiskDialogOpen(true);
+    } else {
+      executeSave();
+    }
   };
 
   if (!tenantReady) {
@@ -325,6 +425,13 @@ const Page = () => {
                   />
                 </RadioGroup>
               </FormControl>
+              <CippRiskAlert
+                visible={formData.sharingCapability === "externalUserAndGuestSharing"}
+                severity="error"
+                title="High Risk — Anonymous Sharing Enabled"
+                description='The "Anyone" sharing level enables anonymous links — files can be accessed without authentication. This is the most common cause of accidental data leaks.'
+                recommendation='Set to "New and existing guests" at most. This requires recipients to authenticate before accessing shared content.'
+              />
               </Box>
             </CardContent>
           </Card>
@@ -372,6 +479,13 @@ const Page = () => {
                     />
                   </RadioGroup>
                 </FormControl>
+                <CippRiskAlert
+                  visible={formData.sharingDomainRestrictionMode === "none"}
+                  severity="warning"
+                  title="No SharePoint Domain Restrictions"
+                  description="External sharing is unrestricted by domain. Users can share content with any external email address."
+                  recommendation="Use an allow-list of trusted partner domains to control who content can be shared with."
+                />
 
                 {formData.sharingDomainRestrictionMode === "allowList" && (
                   <>
@@ -435,6 +549,13 @@ const Page = () => {
                     </Box>
                   }
                 />
+                <CippRiskAlert
+                  visible={formData.isResharingByExternalUsersEnabled === true}
+                  severity="warning"
+                  title="External Resharing Enabled"
+                  description="External guests can reshare files and folders with additional external users, creating a chain of access beyond your original sharing intent."
+                  recommendation="Disable external resharing to maintain control over who accesses your content."
+                />
               </Stack>
             </CardContent>
           </Card>
@@ -462,6 +583,13 @@ const Page = () => {
                   </MenuItem>
                   <MenuItem value="anyone">Anyone with the link</MenuItem>
                 </TextField>
+                <CippRiskAlert
+                  visible={formData.defaultSharingLinkType === "anyone"}
+                  severity="error"
+                  title="High Risk — Default Link Is Anonymous"
+                  description='When users share files, the default link type is "Anyone." Users will create anonymous links by default without realizing the security implications.'
+                  recommendation='Set the default to "Specific people" so users must explicitly choose broader links.'
+                />
 
                 <TextField
                   select
@@ -473,6 +601,13 @@ const Page = () => {
                   <MenuItem value="view">View only</MenuItem>
                   <MenuItem value="edit">Edit</MenuItem>
                 </TextField>
+                <CippRiskAlert
+                  visible={formData.defaultLinkPermission === "edit"}
+                  severity="warning"
+                  title="Default Link Permission Is Edit"
+                  description='When users share files, the default permission is "Edit." Recipients can modify shared files unless the user manually changes it to View.'
+                  recommendation='Set the default to "View" so users must explicitly grant edit access when needed.'
+                />
 
                 <Divider />
 
@@ -510,6 +645,20 @@ const Page = () => {
                         <MenuItem value="edit">View and edit</MenuItem>
                       </TextField>
                     </Stack>
+                    <CippRiskAlert
+                      visible={formData.fileAnonymousLinkType === "edit"}
+                      severity="error"
+                      title="High Risk — Anonymous File Links Grant Edit Access"
+                      description="Anyone with an anonymous file link can modify the file without authenticating."
+                      recommendation='Set anonymous file link permission to "View only."'
+                    />
+                    <CippRiskAlert
+                      visible={formData.folderAnonymousLinkType === "edit"}
+                      severity="error"
+                      title="High Risk — Anonymous Folder Links Grant Edit Access"
+                      description="Anyone with an anonymous folder link can modify, upload, and delete files in the folder without authenticating."
+                      recommendation='Set anonymous folder link permission to "View only."'
+                    />
 
                     <TextField
                       type="number"
@@ -525,6 +674,16 @@ const Page = () => {
                       inputProps={{ min: 0 }}
                       fullWidth
                     />
+                    <CippRiskAlert
+                      visible={
+                        formData.requireAnonymousLinksExpireInDays === 0 ||
+                        formData.requireAnonymousLinksExpireInDays === "0"
+                      }
+                      severity="error"
+                      title="High Risk — Anonymous Links Never Expire"
+                      description="Anonymous sharing links have no expiration date. Once created, these links provide permanent access unless manually revoked."
+                      recommendation="Set expiration to 30 days or less to limit the exposure window."
+                    />
                   </>
                 )}
               </Stack>
@@ -537,6 +696,16 @@ const Page = () => {
           the selected tenant has SharePoint configured.
         </Alert>
       )}
+
+      <CippRiskSummaryDialog
+        open={riskDialogOpen}
+        onClose={() => setRiskDialogOpen(false)}
+        onConfirm={() => {
+          setRiskDialogOpen(false);
+          executeSave();
+        }}
+        risks={activeRisks.filter((r) => r.severity !== "info")}
+      />
     </Box>
   );
 };

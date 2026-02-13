@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { CippHead } from "../../../../components/CippComponents/CippHead.jsx";
 import {
@@ -28,6 +28,8 @@ import { useSettings } from "../../../../hooks/use-settings.js";
 import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall.jsx";
 import { CippApiResults } from "../../../../components/CippComponents/CippApiResults.jsx";
 import CippRelatedSettings from "../../../../components/CippComponents/CippRelatedSettings.jsx";
+import CippRiskAlert from "../../../../components/CippComponents/CippRiskAlert.jsx";
+import CippRiskSummaryDialog from "../../../../components/CippComponents/CippRiskSummaryDialog.jsx";
 
 const DomainListEditor = ({ title, domains, onChange }) => {
   const [newDomain, setNewDomain] = useState("");
@@ -88,11 +90,68 @@ const DomainListEditor = ({ title, domains, onChange }) => {
   );
 };
 
+const RISK_RULES = [
+  {
+    id: "invites-everyone",
+    test: (d) => d.allowInvitesFrom === "everyone",
+    severity: "error",
+    title: "High Risk — Unrestricted Guest Invitations",
+    description:
+      "Anyone, including existing guest users, can invite additional guests. This creates uncontrolled transitive access where external users bring in more external users.",
+    recommendation:
+      'Set to "Only admins and Guest Inviter role" or "Member users and admins" to maintain invitation oversight.',
+  },
+  {
+    id: "guest-member-access",
+    test: (d) => d.guestUserRoleId === "a0b1b346-4d3e-4e8b-98f8-753987be4970",
+    severity: "error",
+    title: "High Risk — Guests Have Full Member Access",
+    description:
+      "Guest users have the same directory permissions as member users, including the ability to enumerate all users, groups, and other directory objects.",
+    recommendation:
+      'Set to "Limited access" (default) or "Restricted access" to prevent directory enumeration by external users.',
+  },
+  {
+    id: "email-verified-join",
+    test: (d) => d.allowEmailVerifiedUsersToJoinOrganization === true,
+    severity: "warning",
+    title: "Self-Service Join Enabled",
+    description:
+      "Anyone with a verified email address can self-register into this directory without an admin invitation. This may add unintended accounts to the tenant.",
+    recommendation: "Disable unless specifically required for a self-service workflow.",
+  },
+  {
+    id: "no-domain-restrictions",
+    test: (d) => d.domainRestrictionType === "none",
+    severity: "warning",
+    title: "No Domain Restrictions",
+    description:
+      "Guest invitations are allowed from any email domain. Without restrictions, users can invite guests from any organization, including competitors or untrusted entities.",
+    recommendation:
+      "Use an allow-list of trusted partner domains to limit which organizations can be invited.",
+  },
+  {
+    id: "msn-allowed",
+    test: (d) => d.blockMsnSignIn === false,
+    severity: "info",
+    title: "Personal Microsoft Accounts Allowed",
+    description:
+      "Users can sign in with personal Microsoft accounts (MSN, Hotmail, Outlook.com). These accounts are not managed by any organization and lack enterprise security controls.",
+    recommendation: "Enable the MSN block if personal accounts are not needed for this tenant.",
+  },
+];
+
 const Page = () => {
   const settings = useSettings();
   const currentTenant = settings.currentTenant;
   const [formData, setFormData] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [riskDialogOpen, setRiskDialogOpen] = useState(false);
+
+  const activeRisks = useMemo(() => {
+    if (!formData) return [];
+    return RISK_RULES.filter((r) => r.test(formData)).map(({ test, ...rest }) => rest);
+  }, [formData]);
 
   const collabQuery = ApiGetCall({
     url: "/api/ListExternalCollaboration",
@@ -149,7 +208,7 @@ const Page = () => {
     setHasChanges(true);
   };
 
-  const handleSave = () => {
+  const executeSave = () => {
     const payload = {
       tenantFilter: currentTenant,
       allowInvitesFrom: formData.allowInvitesFrom,
@@ -177,6 +236,15 @@ const Page = () => {
       data: payload,
     });
     setHasChanges(false);
+  };
+
+  const handleSave = () => {
+    const significantRisks = activeRisks.filter((r) => r.severity !== "info");
+    if (significantRisks.length > 0) {
+      setRiskDialogOpen(true);
+    } else {
+      executeSave();
+    }
   };
 
   if (!currentTenant || currentTenant === "AllTenants") {
@@ -245,6 +313,13 @@ const Page = () => {
                   Anyone can invite, including guests (least restrictive)
                 </MenuItem>
               </TextField>
+              <CippRiskAlert
+                visible={formData.allowInvitesFrom === "everyone"}
+                severity="error"
+                title="High Risk — Unrestricted Guest Invitations"
+                description="Anyone, including existing guest users, can invite additional guests. This creates uncontrolled transitive access."
+                recommendation='Set to "Only admins and Guest Inviter role" or "Member users and admins" to maintain invitation oversight.'
+              />
             </CardContent>
           </Card>
 
@@ -301,6 +376,13 @@ const Page = () => {
                   />
                 </RadioGroup>
               </FormControl>
+              <CippRiskAlert
+                visible={formData.guestUserRoleId === "a0b1b346-4d3e-4e8b-98f8-753987be4970"}
+                severity="error"
+                title="High Risk — Guests Have Full Member Access"
+                description="Guest users have the same directory permissions as members, including the ability to enumerate all users, groups, and other directory objects."
+                recommendation='Set to "Limited access" (default) or "Restricted access" to prevent directory enumeration by external users.'
+              />
             </CardContent>
           </Card>
 
@@ -340,6 +422,13 @@ const Page = () => {
                   }
                   label="Allow email-verified users to join the organization"
                 />
+                <CippRiskAlert
+                  visible={formData.allowEmailVerifiedUsersToJoinOrganization === true}
+                  severity="warning"
+                  title="Self-Service Join Enabled"
+                  description="Anyone with a verified email address can self-register into this directory without an admin invitation."
+                  recommendation="Disable unless specifically required for a self-service workflow."
+                />
                 <FormControlLabel
                   control={
                     <Switch
@@ -348,6 +437,13 @@ const Page = () => {
                     />
                   }
                   label="Block MSN sign-in (personal Microsoft accounts)"
+                />
+                <CippRiskAlert
+                  visible={formData.blockMsnSignIn === false}
+                  severity="info"
+                  title="Personal Microsoft Accounts Allowed"
+                  description="Users can sign in with personal Microsoft accounts (Hotmail, Outlook.com). These accounts lack enterprise security controls."
+                  recommendation="Enable the MSN block if personal accounts are not needed for this tenant."
                 />
               </Stack>
             </CardContent>
@@ -399,6 +495,13 @@ const Page = () => {
                     />
                   </RadioGroup>
                 </FormControl>
+                <CippRiskAlert
+                  visible={formData.domainRestrictionType === "none"}
+                  severity="warning"
+                  title="No Domain Restrictions"
+                  description="Guest invitations are allowed from any email domain. Users can invite guests from any organization, including competitors or untrusted entities."
+                  recommendation="Use an allow-list of trusted partner domains to limit which organizations can be invited."
+                />
 
                 {formData.domainRestrictionType === "allowlist" && (
                   <>
@@ -426,6 +529,16 @@ const Page = () => {
           </Card>
         </Stack>
       ) : null}
+
+      <CippRiskSummaryDialog
+        open={riskDialogOpen}
+        onClose={() => setRiskDialogOpen(false)}
+        onConfirm={() => {
+          setRiskDialogOpen(false);
+          executeSave();
+        }}
+        risks={activeRisks.filter((r) => r.severity !== "info")}
+      />
     </Box>
   );
 };

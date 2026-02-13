@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Layout as DashboardLayout } from "../../../layouts/index.js";
 import { CippHead } from "../../../components/CippComponents/CippHead.jsx";
 import {
@@ -29,6 +29,8 @@ import { useSettings } from "../../../hooks/use-settings.js";
 import { ApiGetCall, ApiPostCall } from "../../../api/ApiCall.jsx";
 import { CippApiResults } from "../../../components/CippComponents/CippApiResults.jsx";
 import CippRelatedSettings from "../../../components/CippComponents/CippRelatedSettings.jsx";
+import CippRiskAlert from "../../../components/CippComponents/CippRiskAlert.jsx";
+import CippRiskSummaryDialog from "../../../components/CippComponents/CippRiskSummaryDialog.jsx";
 
 const TabPanel = ({ children, value, index }) => (
   <div role="tabpanel" hidden={value !== index}>
@@ -101,12 +103,145 @@ const DomainListEditor = ({ title, description, domains, onChange }) => {
   );
 };
 
+const TEAMS_RISK_RULES = [
+  // Federation tab
+  {
+    id: "federation-allow-all",
+    test: (d) => d.federationMode === "AllowAllExternal",
+    severity: "warning",
+    title: "All External Domains Allowed",
+    description:
+      "Any external Teams organization can initiate chat and calls with your users. This includes unknown or untrusted organizations.",
+    recommendation:
+      "Use the allow-list mode to permit federation only with known partner domains.",
+  },
+  {
+    id: "teams-consumer",
+    test: (d) => d.allowTeamsConsumer === true,
+    severity: "warning",
+    title: "Personal Teams Accounts Allowed",
+    description:
+      "Users can communicate with people using personal (non-work) Teams accounts. These accounts have no organizational security controls.",
+    recommendation: "Disable unless there is a business requirement for personal account communication.",
+  },
+  {
+    id: "teams-consumer-unmanaged",
+    test: (d) => d.enableTeamsConsumerAccess === true,
+    severity: "warning",
+    title: "Unmanaged Teams Accounts Allowed",
+    description:
+      "Users can communicate with Teams accounts not managed by any organization. These accounts lack any admin oversight.",
+    recommendation: "Disable to prevent communication with unmanaged external accounts.",
+  },
+  // Meeting tab
+  {
+    id: "anon-start-meeting",
+    test: (d) => d.allowAnonymousUsersToStartMeeting === true,
+    severity: "error",
+    title: "High Risk — Anonymous Users Can Start Meetings",
+    description:
+      "Unauthenticated users can start meetings in your organization. This allows unknown individuals to initiate meetings on behalf of your tenant.",
+    recommendation: "Disable this setting. Only authenticated users should be able to start meetings.",
+  },
+  {
+    id: "auto-admit-everyone",
+    test: (d) => d.autoAdmittedUsers === "Everyone",
+    severity: "error",
+    title: "High Risk — Everyone Bypasses the Lobby",
+    description:
+      "All participants, including anonymous and external users, are automatically admitted to meetings without waiting in the lobby. There is no opportunity to screen attendees.",
+    recommendation:
+      'Set to "People in my organization" or "Only organizers and co-organizers" for better meeting security.',
+  },
+  {
+    id: "pstn-bypass-lobby",
+    test: (d) => d.allowPSTNUsersToBypassLobby === true,
+    severity: "warning",
+    title: "Dial-in Callers Bypass Lobby",
+    description:
+      "Phone dial-in participants skip the lobby and join meetings directly. Their identity cannot be verified the same way as authenticated users.",
+    recommendation: "Disable to require dial-in callers to wait in the lobby for admission.",
+  },
+  {
+    id: "external-request-control",
+    test: (d) => d.allowExternalParticipantGiveRequestControl === true,
+    severity: "warning",
+    title: "External Participants Can Request Control",
+    description:
+      "External meeting participants can request screen sharing control from presenters. This could allow external users to interact with shared content.",
+    recommendation: "Disable unless external screen control is specifically needed for collaboration.",
+  },
+  {
+    id: "presenter-everyone",
+    test: (d) => d.designatedPresenterRoleMode === "EveryoneUserOverride",
+    severity: "warning",
+    title: "Everyone Can Present by Default",
+    description:
+      "All meeting participants, including external guests, can present by default. This means anyone can share their screen or take over the presentation.",
+    recommendation:
+      'Set to "People in my organization" or "Only organizer" to restrict who can present.',
+  },
+  // Client tab
+  {
+    id: "cloud-storage-enabled",
+    test: (d) =>
+      d.allowGoogleDrive === true ||
+      d.allowDropBox === true ||
+      d.allowBox === true ||
+      d.allowShareFile === true ||
+      d.allowEgnyte === true,
+    severity: "warning",
+    title: "Third-Party Cloud Storage Enabled",
+    description:
+      "One or more third-party cloud storage providers are enabled in Teams. Users can access files from these services, which means organizational data can flow outside the Microsoft 365 boundary.",
+    recommendation:
+      "Disable third-party storage providers unless specifically required. Keep data within Microsoft 365 for better DLP and compliance coverage.",
+  },
+  // Messaging tab
+  {
+    id: "owner-delete-messages",
+    test: (d) => d.allowOwnerDeleteMessage === true,
+    severity: "info",
+    title: "Team Owners Can Delete Any Message",
+    description:
+      "Team owners can delete any member's messages in channels. This may affect audit trails and compliance record-keeping.",
+    recommendation:
+      "Disable if your organization requires complete message retention for compliance or eDiscovery.",
+  },
+  {
+    id: "user-delete-messages-chats",
+    test: (d) => d.allowUserDeleteMessage === true && d.allowUserDeleteChat === true,
+    severity: "info",
+    title: "Users Can Delete Messages and Chats",
+    description:
+      "Users can delete their own messages and entire chat conversations. Deleted content may not be recoverable and could impact eDiscovery.",
+    recommendation:
+      "Consider disabling if retention policies require all messages to be preserved.",
+  },
+  {
+    id: "security-reporting-disabled",
+    test: (d) => d.allowSecurityEndUserReporting === false,
+    severity: "warning",
+    title: "Security Reporting Disabled",
+    description:
+      "End-user security reporting is turned off. Users cannot flag suspicious messages as potential phishing or security threats.",
+    recommendation:
+      "Enable security reporting so users can help identify and report potential threats.",
+  },
+];
+
 const Page = () => {
   const settings = useSettings();
   const currentTenant = settings.currentTenant;
   const [tabValue, setTabValue] = useState(0);
   const [formData, setFormData] = useState(null);
   const [changedSections, setChangedSections] = useState(new Set());
+  const [riskDialogOpen, setRiskDialogOpen] = useState(false);
+
+  const activeRisks = useMemo(() => {
+    if (!formData) return [];
+    return TEAMS_RISK_RULES.filter((r) => r.test(formData)).map(({ test, ...rest }) => rest);
+  }, [formData]);
 
   const teamsSettings = ApiGetCall({
     url: "/api/ListTeamsSettings",
@@ -236,6 +371,15 @@ const Page = () => {
     });
   };
 
+  const handleSaveWithRiskCheck = () => {
+    const significantRisks = activeRisks.filter((r) => r.severity !== "info");
+    if (significantRisks.length > 0) {
+      setRiskDialogOpen(true);
+    } else {
+      handleSave();
+    }
+  };
+
   if (!currentTenant || currentTenant === "AllTenants") {
     return (
       <Box sx={{ p: 3 }}>
@@ -273,7 +417,7 @@ const Page = () => {
           <Button
             variant="contained"
             startIcon={<Save />}
-            onClick={handleSave}
+            onClick={handleSaveWithRiskCheck}
             disabled={!hasCurrentTabChanges || updateSettings.isPending}
           >
             Save {sectionMap[tabValue].charAt(0).toUpperCase() + sectionMap[tabValue].slice(1)}{" "}
@@ -419,6 +563,13 @@ const Page = () => {
                         />
                       </RadioGroup>
                     </FormControl>
+                    <CippRiskAlert
+                      visible={formData.federationMode === "AllowAllExternal"}
+                      severity="warning"
+                      title="All External Domains Allowed"
+                      description="Any external Teams organization can initiate chat and calls with your users, including unknown or untrusted organizations."
+                      recommendation="Use the allow-list mode to permit federation only with known partner domains."
+                    />
 
                     {formData.federationMode === "AllowSpecificExternal" && (
                       <>
@@ -494,6 +645,13 @@ const Page = () => {
                         </Box>
                       }
                     />
+                    <CippRiskAlert
+                      visible={formData.allowTeamsConsumer === true}
+                      severity="warning"
+                      title="Personal Teams Accounts Allowed"
+                      description="Users can communicate with personal (non-work) Teams accounts that have no organizational security controls."
+                      recommendation="Disable unless there is a business requirement for personal account communication."
+                    />
                     <FormControlLabel
                       control={
                         <Switch
@@ -514,6 +672,13 @@ const Page = () => {
                           </Typography>
                         </Box>
                       }
+                    />
+                    <CippRiskAlert
+                      visible={formData.enableTeamsConsumerAccess === true}
+                      severity="warning"
+                      title="Unmanaged Teams Accounts Allowed"
+                      description="Users can communicate with Teams accounts not managed by any organization. These accounts lack any admin oversight."
+                      recommendation="Disable to prevent communication with unmanaged external accounts."
                     />
                   </Stack>
                 </CardContent>
@@ -622,6 +787,19 @@ const Page = () => {
                       }
                       label="Allow Egnyte"
                     />
+                    <CippRiskAlert
+                      visible={
+                        formData.allowGoogleDrive === true ||
+                        formData.allowDropBox === true ||
+                        formData.allowBox === true ||
+                        formData.allowShareFile === true ||
+                        formData.allowEgnyte === true
+                      }
+                      severity="warning"
+                      title="Third-Party Cloud Storage Enabled"
+                      description="One or more third-party cloud storage providers are enabled. Organizational data can flow outside the Microsoft 365 boundary, reducing DLP and compliance coverage."
+                      recommendation="Disable third-party storage providers unless specifically required. Keep data within Microsoft 365."
+                    />
                   </Stack>
                 </CardContent>
               </Card>
@@ -675,6 +853,13 @@ const Page = () => {
                       }
                       label="Allow anonymous users to start meetings"
                     />
+                    <CippRiskAlert
+                      visible={formData.allowAnonymousUsersToStartMeeting === true}
+                      severity="error"
+                      title="High Risk — Anonymous Users Can Start Meetings"
+                      description="Unauthenticated users can start meetings in your organization, allowing unknown individuals to initiate meetings on behalf of your tenant."
+                      recommendation="Disable this setting. Only authenticated users should be able to start meetings."
+                    />
                     <FormControlLabel
                       control={
                         <Switch
@@ -685,6 +870,13 @@ const Page = () => {
                         />
                       }
                       label="Allow PSTN (dial-in) users to bypass the lobby"
+                    />
+                    <CippRiskAlert
+                      visible={formData.allowPSTNUsersToBypassLobby === true}
+                      severity="warning"
+                      title="Dial-in Callers Bypass Lobby"
+                      description="Phone dial-in participants skip the lobby and join meetings directly. Their identity cannot be verified the same way as authenticated users."
+                      recommendation="Disable to require dial-in callers to wait in the lobby for admission."
                     />
                     <FormControlLabel
                       control={
@@ -699,6 +891,13 @@ const Page = () => {
                         />
                       }
                       label="Allow external participants to give or request control"
+                    />
+                    <CippRiskAlert
+                      visible={formData.allowExternalParticipantGiveRequestControl === true}
+                      severity="warning"
+                      title="External Participants Can Request Control"
+                      description="External meeting participants can request screen sharing control from presenters, allowing them to interact with shared content."
+                      recommendation="Disable unless external screen control is specifically needed for collaboration."
                     />
                   </Stack>
                 </CardContent>
@@ -728,6 +927,13 @@ const Page = () => {
                       </MenuItem>
                       <MenuItem value="Everyone">Everyone</MenuItem>
                     </TextField>
+                    <CippRiskAlert
+                      visible={formData.autoAdmittedUsers === "Everyone"}
+                      severity="error"
+                      title="High Risk — Everyone Bypasses the Lobby"
+                      description="All participants, including anonymous and external users, are automatically admitted without waiting in the lobby. There is no opportunity to screen attendees."
+                      recommendation='Set to "People in my organization" or "Only organizers and co-organizers" for better meeting security.'
+                    />
 
                     <TextField
                       select
@@ -747,6 +953,13 @@ const Page = () => {
                       </MenuItem>
                       <MenuItem value="EveryoneUserOverride">Everyone</MenuItem>
                     </TextField>
+                    <CippRiskAlert
+                      visible={formData.designatedPresenterRoleMode === "EveryoneUserOverride"}
+                      severity="warning"
+                      title="Everyone Can Present by Default"
+                      description="All meeting participants, including external guests, can present by default."
+                      recommendation='Set to "People in my organization" or "Only organizer" to restrict who can present.'
+                    />
 
                     <TextField
                       select
@@ -790,6 +1003,13 @@ const Page = () => {
                       }
                       label="Allow team owners to delete all messages"
                     />
+                    <CippRiskAlert
+                      visible={formData.allowOwnerDeleteMessage === true}
+                      severity="info"
+                      title="Team Owners Can Delete Any Message"
+                      description="Team owners can delete any member's messages in channels. This may affect audit trails and compliance record-keeping."
+                      recommendation="Disable if your organization requires complete message retention for compliance or eDiscovery."
+                    />
                     <FormControlLabel
                       control={
                         <Switch
@@ -822,6 +1042,16 @@ const Page = () => {
                         />
                       }
                       label="Allow users to delete chats"
+                    />
+                    <CippRiskAlert
+                      visible={
+                        formData.allowUserDeleteMessage === true &&
+                        formData.allowUserDeleteChat === true
+                      }
+                      severity="info"
+                      title="Users Can Delete Messages and Chats"
+                      description="Users can delete their own messages and entire chat conversations. Deleted content may not be recoverable and could impact eDiscovery."
+                      recommendation="Consider disabling if retention policies require all messages to be preserved."
                     />
                   </Stack>
                 </CardContent>
@@ -882,6 +1112,13 @@ const Page = () => {
                       }
                       label="Allow users to report messages as security concerns"
                     />
+                    <CippRiskAlert
+                      visible={formData.allowSecurityEndUserReporting === false}
+                      severity="warning"
+                      title="Security Reporting Disabled"
+                      description="End-user security reporting is turned off. Users cannot flag suspicious messages as potential phishing or security threats."
+                      recommendation="Enable security reporting so users can help identify and report potential threats."
+                    />
                     <FormControlLabel
                       control={
                         <Switch
@@ -907,6 +1144,16 @@ const Page = () => {
           Failed to load Teams settings. Please try refreshing the page.
         </Alert>
       )}
+
+      <CippRiskSummaryDialog
+        open={riskDialogOpen}
+        onClose={() => setRiskDialogOpen(false)}
+        onConfirm={() => {
+          setRiskDialogOpen(false);
+          handleSave();
+        }}
+        risks={activeRisks.filter((r) => r.severity !== "info")}
+      />
     </Box>
   );
 };

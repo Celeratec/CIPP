@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { CippHead } from "../../../../components/CippComponents/CippHead.jsx";
 import {
@@ -27,6 +27,8 @@ import { useSettings } from "../../../../hooks/use-settings.js";
 import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall.jsx";
 import { CippApiResults } from "../../../../components/CippComponents/CippApiResults.jsx";
 import CippRelatedSettings from "../../../../components/CippComponents/CippRelatedSettings.jsx";
+import CippRiskAlert from "../../../../components/CippComponents/CippRiskAlert.jsx";
+import CippRiskSummaryDialog from "../../../../components/CippComponents/CippRiskSummaryDialog.jsx";
 import { Save } from "@mui/icons-material";
 
 const TabPanel = ({ children, value, index }) => (
@@ -90,12 +92,66 @@ const AccessSettingsEditor = ({ title, description, settings, onChange }) => {
   );
 };
 
+const POLICY_RISK_RULES = [
+  {
+    id: "auto-consent-inbound",
+    test: (d) => d?.automaticUserConsentSettings?.inboundAllowed === true,
+    severity: "warning",
+    title: "Automatic Inbound Consent Enabled",
+    description:
+      "Inbound guest invitations are auto-redeemed without user consent prompts. External users gain access to resources without explicitly accepting an invitation.",
+    recommendation:
+      "Disable unless you have a specific cross-tenant sync or B2B collaboration agreement that requires auto-redemption.",
+  },
+  {
+    id: "auto-consent-outbound",
+    test: (d) => d?.automaticUserConsentSettings?.outboundAllowed === true,
+    severity: "warning",
+    title: "Automatic Outbound Consent Enabled",
+    description:
+      "Your users' outbound invitations are auto-redeemed in partner organizations. Users may gain access to external resources without an explicit consent step.",
+    recommendation:
+      "Disable unless you have a specific cross-tenant sync agreement with partner organizations.",
+  },
+  {
+    id: "all-trust-enabled",
+    test: (d) =>
+      d?.inboundTrust?.isMfaAccepted === true &&
+      d?.inboundTrust?.isCompliantDeviceAccepted === true &&
+      d?.inboundTrust?.isHybridAzureADJoinedDeviceAccepted === true,
+    severity: "info",
+    title: "All Inbound Trust Claims Accepted",
+    description:
+      "All three trust settings (MFA, device compliance, hybrid AD join) are enabled. This accepts all security claims from every external organization, reducing your control over device posture verification for guest users.",
+    recommendation:
+      "Consider enabling trust only for specific partner organizations via per-partner policies rather than in the defaults.",
+  },
+  {
+    id: "b2b-defaults-all-open",
+    test: (d) =>
+      d?.b2bCollaborationInbound?.usersAndGroups?.accessType === "allowed" &&
+      d?.b2bCollaborationOutbound?.usersAndGroups?.accessType === "allowed" &&
+      d?.b2bDirectConnectInbound?.usersAndGroups?.accessType === "allowed" &&
+      d?.b2bDirectConnectOutbound?.usersAndGroups?.accessType === "allowed",
+    severity: "info",
+    title: "All Default Access Policies Are Open",
+    description:
+      "Both B2B Collaboration and B2B Direct Connect are set to allow all users in both directions. This is the most permissive default configuration. Consider restricting at least one direction or using per-partner overrides.",
+  },
+];
+
 const Page = () => {
   const settings = useSettings();
   const currentTenant = settings.currentTenant;
   const [tabValue, setTabValue] = useState(0);
   const [policyData, setPolicyData] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [riskDialogOpen, setRiskDialogOpen] = useState(false);
+
+  const activeRisks = useMemo(() => {
+    if (!policyData) return [];
+    return POLICY_RISK_RULES.filter((r) => r.test(policyData)).map(({ test, ...rest }) => rest);
+  }, [policyData]);
 
   const policyQuery = ApiGetCall({
     url: "/api/ListCrossTenantPolicy",
@@ -128,7 +184,7 @@ const Page = () => {
     setHasChanges(true);
   };
 
-  const handleSave = () => {
+  const executeSave = () => {
     updatePolicy.mutate({
       url: "/api/EditCrossTenantPolicy",
       data: {
@@ -137,6 +193,15 @@ const Page = () => {
       },
     });
     setHasChanges(false);
+  };
+
+  const handleSave = () => {
+    const significantRisks = activeRisks.filter((r) => r.severity !== "info");
+    if (significantRisks.length > 0) {
+      setRiskDialogOpen(true);
+    } else {
+      executeSave();
+    }
   };
 
   if (!currentTenant || currentTenant === "AllTenants") {
@@ -310,6 +375,17 @@ const Page = () => {
                   <Typography variant="body2" color="text.secondary" sx={{ ml: 6 }}>
                     Accept hybrid Azure AD join claims from partner organizations.
                   </Typography>
+                  <CippRiskAlert
+                    visible={
+                      policyData?.inboundTrust?.isMfaAccepted === true &&
+                      policyData?.inboundTrust?.isCompliantDeviceAccepted === true &&
+                      policyData?.inboundTrust?.isHybridAzureADJoinedDeviceAccepted === true
+                    }
+                    severity="info"
+                    title="All Inbound Trust Claims Accepted"
+                    description="All three trust settings are enabled in the defaults, accepting security claims from every external organization. This reduces your control over device posture verification for guest users."
+                    recommendation="Consider enabling trust only for specific partner organizations via per-partner policies rather than in the defaults."
+                  />
                 </Stack>
               </CardContent>
             </Card>
@@ -359,6 +435,13 @@ const Page = () => {
                     External users will automatically redeem invitations when accessing your
                     resources without needing to accept a consent prompt.
                   </Typography>
+                  <CippRiskAlert
+                    visible={policyData?.automaticUserConsentSettings?.inboundAllowed === true}
+                    severity="warning"
+                    title="Automatic Inbound Consent Enabled"
+                    description="Inbound guest invitations are auto-redeemed without user consent prompts. External users gain access without explicitly accepting."
+                    recommendation="Disable unless you have a specific cross-tenant sync or B2B collaboration agreement that requires auto-redemption."
+                  />
 
                   <Divider />
 
@@ -382,12 +465,29 @@ const Page = () => {
                     Your users will automatically redeem invitations when accessing external
                     organizations' resources.
                   </Typography>
+                  <CippRiskAlert
+                    visible={policyData?.automaticUserConsentSettings?.outboundAllowed === true}
+                    severity="warning"
+                    title="Automatic Outbound Consent Enabled"
+                    description="Your users' outbound invitations are auto-redeemed in partner organizations without an explicit consent step."
+                    recommendation="Disable unless you have a specific cross-tenant sync agreement with partner organizations."
+                  />
                 </Stack>
               </CardContent>
             </Card>
           </TabPanel>
         </>
       )}
+
+      <CippRiskSummaryDialog
+        open={riskDialogOpen}
+        onClose={() => setRiskDialogOpen(false)}
+        onConfirm={() => {
+          setRiskDialogOpen(false);
+          executeSave();
+        }}
+        risks={activeRisks.filter((r) => r.severity !== "info")}
+      />
     </Box>
   );
 };
