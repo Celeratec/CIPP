@@ -1,0 +1,326 @@
+import { useEffect } from "react";
+import { Layout as DashboardLayout } from "../../../../layouts/index.js";
+import {
+  Box,
+  Card,
+  CardContent,
+  CardHeader,
+  Chip,
+  Divider,
+  Grid,
+  LinearProgress,
+  Skeleton,
+  Stack,
+  Typography,
+  Button,
+} from "@mui/material";
+import {
+  ShieldOutlined,
+  PeopleOutline,
+  BusinessOutlined,
+  HealthAndSafetyOutlined,
+  CheckCircleOutline,
+  WarningAmberOutlined,
+  ErrorOutline,
+  OpenInNew,
+} from "@mui/icons-material";
+import { useSettings } from "../../../../hooks/use-settings.js";
+import { ApiGetCall } from "../../../../api/ApiCall.jsx";
+import Link from "next/link";
+
+const HealthScoreCard = ({ healthData, isFetching }) => {
+  if (isFetching) {
+    return (
+      <Card>
+        <CardContent>
+          <Skeleton variant="rectangular" height={120} />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const score = healthData?.HealthScore ?? 0;
+  const status = healthData?.HealthStatus ?? "Unknown";
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Healthy":
+        return "success";
+      case "Needs Attention":
+        return "warning";
+      case "At Risk":
+        return "warning";
+      case "Critical":
+        return "error";
+      default:
+        return "default";
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader
+        title="Cross-Tenant Health Score"
+        avatar={<HealthAndSafetyOutlined color={getStatusColor(status)} />}
+      />
+      <CardContent>
+        <Stack spacing={2}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Typography variant="h3" fontWeight="bold">
+              {score}
+            </Typography>
+            <Chip label={status} color={getStatusColor(status)} size="medium" />
+          </Box>
+          <LinearProgress
+            variant="determinate"
+            value={score}
+            color={getStatusColor(status)}
+            sx={{ height: 8, borderRadius: 4 }}
+          />
+          <Stack direction="row" spacing={3}>
+            {healthData?.CriticalCount > 0 && (
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <ErrorOutline color="error" fontSize="small" />
+                <Typography variant="body2">{healthData.CriticalCount} Critical</Typography>
+              </Stack>
+            )}
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <WarningAmberOutlined color="warning" fontSize="small" />
+              <Typography variant="body2">{healthData?.WarningCount ?? 0} Warnings</Typography>
+            </Stack>
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <CheckCircleOutline color="info" fontSize="small" />
+              <Typography variant="body2">{healthData?.InfoCount ?? 0} Info</Typography>
+            </Stack>
+          </Stack>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+};
+
+const PolicySummaryCard = ({ healthData, isFetching }) => {
+  if (isFetching) {
+    return (
+      <Card>
+        <CardContent>
+          <Skeleton variant="rectangular" height={200} />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const summary = healthData?.Summary;
+
+  const getAccessChip = (value) => {
+    if (!value || value === "Not configured") {
+      return <Chip label="Not Configured" size="small" color="default" />;
+    }
+    return (
+      <Chip
+        label={value.charAt(0).toUpperCase() + value.slice(1)}
+        size="small"
+        color={value === "allowed" ? "success" : value === "blocked" ? "error" : "default"}
+      />
+    );
+  };
+
+  return (
+    <Card>
+      <CardHeader title="Policy Summary" avatar={<ShieldOutlined color="primary" />} />
+      <CardContent>
+        <Stack spacing={1.5}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="body2" color="text.secondary">
+              B2B Collaboration (Inbound)
+            </Typography>
+            {getAccessChip(summary?.b2bCollaborationInbound)}
+          </Box>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="body2" color="text.secondary">
+              B2B Collaboration (Outbound)
+            </Typography>
+            {getAccessChip(summary?.b2bCollaborationOutbound)}
+          </Box>
+          <Divider />
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="body2" color="text.secondary">
+              B2B Direct Connect (Inbound)
+            </Typography>
+            {getAccessChip(summary?.b2bDirectConnectInbound)}
+          </Box>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="body2" color="text.secondary">
+              B2B Direct Connect (Outbound)
+            </Typography>
+            {getAccessChip(summary?.b2bDirectConnectOutbound)}
+          </Box>
+          <Divider />
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="body2" color="text.secondary">
+              Trust External MFA
+            </Typography>
+            <Chip
+              label={summary?.trustExternalMFA ? "Enabled" : "Disabled"}
+              size="small"
+              color={summary?.trustExternalMFA ? "success" : "default"}
+            />
+          </Box>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="body2" color="text.secondary">
+              Trust Compliant Devices
+            </Typography>
+            <Chip
+              label={summary?.trustCompliantDevices ? "Enabled" : "Disabled"}
+              size="small"
+              color={summary?.trustCompliantDevices ? "success" : "default"}
+            />
+          </Box>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="body2" color="text.secondary">
+              Trust Hybrid AD Joined
+            </Typography>
+            <Chip
+              label={summary?.trustHybridJoinedDevices ? "Enabled" : "Disabled"}
+              size="small"
+              color={summary?.trustHybridJoinedDevices ? "success" : "default"}
+            />
+          </Box>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+};
+
+const QuickLinksCard = () => {
+  const links = [
+    {
+      title: "Default Policy",
+      description: "Manage B2B Collaboration, Direct Connect, and Tenant Restrictions defaults",
+      href: "/tenant/administration/cross-tenant-access/policy",
+      icon: <ShieldOutlined />,
+    },
+    {
+      title: "Partner Organizations",
+      description: "Configure per-organization cross-tenant access overrides",
+      href: "/tenant/administration/cross-tenant-access/partners",
+      icon: <BusinessOutlined />,
+    },
+    {
+      title: "External Collaboration",
+      description: "Guest invite settings, domain allow/deny lists, and guest permissions",
+      href: "/tenant/administration/cross-tenant-access/external-collaboration",
+      icon: <PeopleOutline />,
+    },
+    {
+      title: "Health Report",
+      description: "Configuration conflict detection and security recommendations",
+      href: "/tenant/administration/cross-tenant-access/health",
+      icon: <HealthAndSafetyOutlined />,
+    },
+    {
+      title: "Security Templates",
+      description: "Create and deploy standardized cross-tenant security baselines",
+      href: "/tenant/administration/cross-tenant-access/templates",
+      icon: <ShieldOutlined />,
+    },
+  ];
+
+  return (
+    <Card>
+      <CardHeader title="Cross-Tenant Access Management" />
+      <CardContent>
+        <Stack spacing={2}>
+          {links.map((link) => (
+            <Link key={link.href} href={link.href} passHref legacyBehavior>
+              <Card
+                variant="outlined"
+                sx={{
+                  cursor: "pointer",
+                  "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
+                  transition: "all 0.2s",
+                }}
+                component="a"
+              >
+                <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Box sx={{ color: "primary.main" }}>{link.icon}</Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle2">{link.title}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {link.description}
+                      </Typography>
+                    </Box>
+                    <OpenInNew fontSize="small" color="action" />
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+};
+
+const Page = () => {
+  const settings = useSettings();
+  const currentTenant = settings.currentTenant;
+
+  const healthReport = ApiGetCall({
+    url: "/api/ListCrossTenantHealth",
+    data: { tenantFilter: currentTenant },
+    queryKey: `CrossTenantHealth-${currentTenant}`,
+    waiting: true,
+  });
+
+  useEffect(() => {
+    if (currentTenant) {
+      healthReport.refetch();
+    }
+  }, [currentTenant]);
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        Cross-Tenant Access & External Collaboration
+      </Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+        Centralized management of Microsoft Entra cross-tenant access policies, B2B collaboration
+        settings, and external identity governance.
+      </Typography>
+
+      {!currentTenant || currentTenant === "AllTenants" ? (
+        <Card>
+          <CardContent>
+            <Typography color="text.secondary">
+              Please select a specific tenant to view cross-tenant access settings.
+            </Typography>
+          </CardContent>
+        </Card>
+      ) : (
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Stack spacing={3}>
+              <HealthScoreCard
+                healthData={healthReport.data?.Results}
+                isFetching={healthReport.isFetching}
+              />
+              <PolicySummaryCard
+                healthData={healthReport.data?.Results}
+                isFetching={healthReport.isFetching}
+              />
+            </Stack>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <QuickLinksCard />
+          </Grid>
+        </Grid>
+      )}
+    </Box>
+  );
+};
+
+Page.getLayout = (page) => <DashboardLayout>{page}</DashboardLayout>;
+
+export default Page;

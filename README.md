@@ -18,7 +18,7 @@
 
 Manage365 is a Microsoft 365 multi-tenant administration portal designed for Microsoft Partners and IT administrators. It provides a centralized interface for managing users, teams, SharePoint, Exchange, security, compliance, Intune, Dynamics 365, and more across all of your Microsoft 365 tenants.
 
-Manage365 inherits the full feature set of CIPP and extends it with additional capabilities focused on deeper Teams, SharePoint, OneDrive, and Dynamics 365 management -- areas where day-to-day administration often requires switching between multiple Microsoft portals.
+Manage365 inherits the full feature set of CIPP and extends it with additional capabilities focused on deeper Teams, SharePoint, OneDrive, and Dynamics 365 management, as well as centralized cross-tenant access governance and external collaboration controls -- areas where day-to-day administration often requires switching between multiple Microsoft portals.
 
 For information about the upstream CIPP project, visit [cipp.app](https://cipp.app) and [docs.cipp.app](https://docs.cipp.app).
 
@@ -227,6 +227,69 @@ When a NinjaOne integration is configured and device data has been synced, Manag
 
 **Graceful degradation:** If NinjaOne is not configured, returns no cached data, or the API call fails, all pages work exactly as before with no NinjaOne UI elements visible.
 
+### Cross-Tenant Access & External Collaboration Management
+
+Centralized governance of Microsoft Entra cross-tenant access policies, B2B collaboration settings, and external identity controls -- settings that are otherwise only manageable directly in the Entra portal and difficult to standardize across clients.
+
+**Overview Dashboard** (`/tenant/administration/cross-tenant-access/`)
+- Health score (0-100) with severity breakdown (Critical / Warning / Info)
+- Policy summary showing B2B Collaboration, Direct Connect, and Inbound Trust status at a glance
+- Quick navigation to all cross-tenant management areas
+
+**Default Policy Editor** (`/tenant/administration/cross-tenant-access/policy`)
+- Tabbed interface for editing all cross-tenant access policy defaults:
+  - **B2B Collaboration** -- inbound and outbound user/application access (allow/block)
+  - **B2B Direct Connect** -- inbound and outbound access for Teams shared channels
+  - **Inbound Trust** -- trust external MFA, compliant devices, hybrid AD joined devices
+  - **Tenant Restrictions v2** -- control which external tenants users can access
+  - **Automatic User Consent** -- auto-redeem inbound and outbound invitations
+
+**Partner Organizations** (`/tenant/administration/cross-tenant-access/partners/`)
+- List all partner-specific cross-tenant configurations with status chips
+- Add new partner organizations with per-partner overrides for B2B Collaboration, Direct Connect, Inbound Trust, and Automatic Consent
+- Edit and delete existing partner configurations
+- Reverse tenant name lookup for partner identification
+
+**External Collaboration Settings** (`/tenant/administration/cross-tenant-access/external-collaboration`)
+- **Guest invite restrictions** -- control who can invite guests (no one, admins only, members, everyone)
+- **Guest user access level** -- same as members, limited (default), or restricted (blocks directory enumeration)
+- **Domain allow/deny lists** -- manage which domains can or cannot be invited for B2B collaboration, with inline domain chip management
+- **Additional controls** -- email-based subscriptions, email-verified user join, block MSN/personal account sign-in
+
+**Configuration Health & Conflict Detection** (`/tenant/administration/cross-tenant-access/health`)
+- Automated analysis of cross-tenant configuration detecting:
+  - Overly permissive B2B Collaboration or Direct Connect defaults
+  - Missing inbound trust configuration
+  - Unconfigured Tenant Restrictions v2
+  - Permissive guest invitation policies
+  - Guest users with member-level access
+  - Partner configuration conflicts (partner overrides that contradict defaults)
+- Health score with visual breakdown and categorized findings with specific recommendations
+
+**Security Baseline Templates** (`/tenant/administration/cross-tenant-access/templates/`)
+- Create reusable security baseline templates capturing the full cross-tenant and external collaboration configuration
+- Templates include: B2B Collaboration defaults, Direct Connect defaults, Inbound Trust, Tenant Restrictions, Automatic Consent, Guest Invite policy, Guest User Role, domain restrictions, and additional external user settings
+- Apply templates to any tenant in a single operation (updates cross-tenant access policy, authorization policy, and domain restrictions)
+- Edit and delete templates; track authorship and update timestamps
+
+**Standards Integration** (9 new standards under "Entra (AAD) Standards")
+
+Cross-tenant settings are also available as individual standards in the existing Standards framework, enabling drift detection, automated remediation, alerting, and BPA integration:
+
+| Standard | What it controls |
+|---|---|
+| `B2BCollaborationInbound` | Default inbound B2B collaboration access (allow/block) |
+| `B2BCollaborationOutbound` | Default outbound B2B collaboration access (allow/block) |
+| `B2BDirectConnectInbound` | Default inbound B2B Direct Connect access (allow/block) |
+| `B2BDirectConnectOutbound` | Default outbound B2B Direct Connect access (allow/block) |
+| `CrossTenantTrustCompliant` | Trust compliant devices from external tenants |
+| `CrossTenantTrustHybridJoin` | Trust hybrid Azure AD joined devices from external tenants |
+| `GuestUserRole` | Guest user access level (member / limited / restricted) |
+| `BlockMSNSignIn` | Block personal Microsoft account sign-in |
+| `AutomaticUserConsent` | Automatic invitation redemption (inbound + outbound) |
+
+These join the existing `ExternalMFATrusted`, `GuestInvite`, and `DisableGuestDirectory` standards for 12 total standards covering the full cross-tenant and external collaboration surface area.
+
 ### Additional Enhancements
 
 - **Background site deletion** -- SharePoint site deletion is offloaded to prevent UI timeouts on large sites, with polling for completion status and toast notifications
@@ -253,6 +316,19 @@ The following API endpoints were created to support Manage365-specific features:
 | `ListDynamicsBusinessUnits` | List Dynamics 365 business unit hierarchy |
 | `ListDynamicsSolutions` | List installed Dataverse solutions with publisher info |
 | `ListNinjaDeviceInfo` | Read NinjaOne parsed device cache and return enrichment fields (CPU, RAM, OS, agent status) keyed by Azure AD device ID |
+| `ListCrossTenantPolicy` | Get default cross-tenant access policy (B2B Collab, Direct Connect, Inbound Trust, Tenant Restrictions) |
+| `EditCrossTenantPolicy` | Update default cross-tenant access policy settings |
+| `ListCrossTenantPartners` | List partner-specific cross-tenant access configurations with tenant name lookup |
+| `ExecAddCrossTenantPartner` | Add a new partner cross-tenant access configuration |
+| `EditCrossTenantPartner` | Update an existing partner configuration |
+| `ExecRemoveCrossTenantPartner` | Remove a partner cross-tenant access configuration |
+| `ListExternalCollaboration` | Get authorization policy, guest settings, and B2B domain allow/deny lists |
+| `EditExternalCollaboration` | Update guest invite, guest role, and domain restriction settings |
+| `ListCrossTenantHealth` | Aggregated health analysis with conflict detection and security scoring |
+| `ListCrossTenantTemplates` | List saved cross-tenant security baseline templates |
+| `ExecAddCrossTenantTemplate` | Create or update a security baseline template |
+| `ExecRemoveCrossTenantTemplate` | Delete a security baseline template |
+| `ExecApplyCrossTenantTemplate` | Apply a template to a tenant (cross-tenant policy + authorization policy + domain restrictions) |
 
 ---
 
@@ -260,7 +336,7 @@ The following API endpoints were created to support Manage365-specific features:
 
 - **Frontend:** React / Next.js with Material-UI (MUI v7)
 - **Backend:** PowerShell Azure Functions
-- **API:** Microsoft Graph API, SharePoint Admin API, Power Platform BAP API, Dataverse Web API, NinjaOne API (via CIPP extension)
+- **API:** Microsoft Graph API (including Cross-Tenant Access Policy and Authorization Policy endpoints), SharePoint Admin API, Power Platform BAP API, Dataverse Web API, NinjaOne API (via CIPP extension)
 - **Hosting:** Azure Static Web Apps + Azure Functions
 - **Data:** React Query for caching and state management
 

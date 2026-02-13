@@ -1,0 +1,365 @@
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { Layout as DashboardLayout } from "../../../../../layouts/index.js";
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Divider,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  Grid,
+  Radio,
+  RadioGroup,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { Save, ArrowBack } from "@mui/icons-material";
+import { useSettings } from "../../../../../hooks/use-settings.js";
+import { ApiGetCall, ApiPostCall } from "../../../../../api/ApiCall.jsx";
+import { CippApiResults } from "../../../../../components/CippComponents/CippApiResults.jsx";
+import Link from "next/link";
+
+const AccessSettingsEditor = ({ title, description, settings, onChange }) => {
+  const usersAccessType = settings?.usersAndGroups?.accessType ?? "allowed";
+  const appsAccessType = settings?.applications?.accessType ?? "allowed";
+
+  const handleUsersAccessChange = (e) => {
+    onChange({
+      ...settings,
+      usersAndGroups: {
+        ...settings?.usersAndGroups,
+        accessType: e.target.value,
+        targets: [{ target: "AllUsers", targetType: "user" }],
+      },
+    });
+  };
+
+  const handleAppsAccessChange = (e) => {
+    onChange({
+      ...settings,
+      applications: {
+        ...settings?.applications,
+        accessType: e.target.value,
+        targets: [{ target: "AllApplications", targetType: "application" }],
+      },
+    });
+  };
+
+  return (
+    <Card variant="outlined" sx={{ mb: 2 }}>
+      <CardHeader title={title} subheader={description} titleTypographyProps={{ variant: "subtitle1" }} />
+      <CardContent>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <FormControl component="fieldset">
+              <FormLabel>Users & Groups</FormLabel>
+              <RadioGroup value={usersAccessType} onChange={handleUsersAccessChange}>
+                <FormControlLabel value="allowed" control={<Radio size="small" />} label="Allow" />
+                <FormControlLabel value="blocked" control={<Radio size="small" />} label="Block" />
+              </RadioGroup>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <FormControl component="fieldset">
+              <FormLabel>Applications</FormLabel>
+              <RadioGroup value={appsAccessType} onChange={handleAppsAccessChange}>
+                <FormControlLabel value="allowed" control={<Radio size="small" />} label="Allow" />
+                <FormControlLabel value="blocked" control={<Radio size="small" />} label="Block" />
+              </RadioGroup>
+            </FormControl>
+          </Grid>
+        </Grid>
+      </CardContent>
+    </Card>
+  );
+};
+
+const Page = () => {
+  const router = useRouter();
+  const { tenantId: editTenantId } = router.query;
+  const isEditing = !!editTenantId;
+
+  const settings = useSettings();
+  const currentTenant = settings.currentTenant;
+
+  const [partnerTenantId, setPartnerTenantId] = useState("");
+  const [partnerData, setPartnerData] = useState({
+    b2bCollaborationInbound: null,
+    b2bCollaborationOutbound: null,
+    b2bDirectConnectInbound: null,
+    b2bDirectConnectOutbound: null,
+    inboundTrust: {
+      isMfaAccepted: false,
+      isCompliantDeviceAccepted: false,
+      isHybridAzureADJoinedDeviceAccepted: false,
+    },
+    automaticUserConsentSettings: {
+      inboundAllowed: false,
+      outboundAllowed: false,
+    },
+  });
+
+  // If editing, fetch existing partner data
+  const partnersQuery = ApiGetCall({
+    url: "/api/ListCrossTenantPartners",
+    data: { tenantFilter: currentTenant },
+    queryKey: `CrossTenantPartners-${currentTenant}`,
+    waiting: isEditing,
+  });
+
+  const savePartner = ApiPostCall({
+    relatedQueryKeys: [`CrossTenantPartners-${currentTenant}`, "CrossTenantPartners"],
+  });
+
+  useEffect(() => {
+    if (isEditing && partnersQuery.data?.Results) {
+      const existing = partnersQuery.data.Results.find((p) => p.tenantId === editTenantId);
+      if (existing) {
+        setPartnerTenantId(existing.tenantId);
+        setPartnerData({
+          b2bCollaborationInbound: existing.b2bCollaborationInbound,
+          b2bCollaborationOutbound: existing.b2bCollaborationOutbound,
+          b2bDirectConnectInbound: existing.b2bDirectConnectInbound,
+          b2bDirectConnectOutbound: existing.b2bDirectConnectOutbound,
+          inboundTrust: existing.inboundTrust ?? {
+            isMfaAccepted: false,
+            isCompliantDeviceAccepted: false,
+            isHybridAzureADJoinedDeviceAccepted: false,
+          },
+          automaticUserConsentSettings: existing.automaticUserConsentSettings ?? {
+            inboundAllowed: false,
+            outboundAllowed: false,
+          },
+        });
+      }
+    }
+  }, [partnersQuery.data, editTenantId]);
+
+  const handleFieldChange = (field, value) => {
+    setPartnerData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSave = () => {
+    const url = isEditing ? "/api/EditCrossTenantPartner" : "/api/ExecAddCrossTenantPartner";
+    savePartner.mutate({
+      url,
+      data: {
+        tenantFilter: currentTenant,
+        partnerTenantId: partnerTenantId,
+        ...partnerData,
+      },
+    });
+  };
+
+  if (!currentTenant || currentTenant === "AllTenants") {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="warning">
+          Please select a specific tenant to manage partner organizations.
+        </Alert>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+        <Box>
+          <Link href="/tenant/administration/cross-tenant-access/partners" passHref>
+            <Button startIcon={<ArrowBack />} size="small" sx={{ mb: 1 }}>
+              Back to Partners
+            </Button>
+          </Link>
+          <Typography variant="h4">
+            {isEditing ? "Edit Partner Organization" : "Add Partner Organization"}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Configure cross-tenant access settings for a specific partner organization.
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<Save />}
+          onClick={handleSave}
+          disabled={!partnerTenantId || savePartner.isPending}
+        >
+          {isEditing ? "Save Changes" : "Add Partner"}
+        </Button>
+      </Stack>
+
+      <CippApiResults apiObject={savePartner} />
+
+      <Stack spacing={3}>
+        {/* Partner Tenant ID */}
+        <Card>
+          <CardHeader title="Partner Identification" />
+          <CardContent>
+            <TextField
+              label="Partner Tenant ID"
+              value={partnerTenantId}
+              onChange={(e) => setPartnerTenantId(e.target.value)}
+              fullWidth
+              disabled={isEditing}
+              placeholder="Enter the partner organization's Azure AD tenant ID (GUID)"
+              helperText="The Azure AD tenant ID of the partner organization"
+            />
+          </CardContent>
+        </Card>
+
+        {/* B2B Collaboration */}
+        <Card>
+          <CardHeader
+            title="B2B Collaboration"
+            subheader="Configure guest access settings for this partner"
+          />
+          <CardContent>
+            <AccessSettingsEditor
+              title="Inbound Access"
+              description="External users from this partner accessing your resources"
+              settings={partnerData.b2bCollaborationInbound}
+              onChange={(val) => handleFieldChange("b2bCollaborationInbound", val)}
+            />
+            <AccessSettingsEditor
+              title="Outbound Access"
+              description="Your users accessing this partner's resources as guests"
+              settings={partnerData.b2bCollaborationOutbound}
+              onChange={(val) => handleFieldChange("b2bCollaborationOutbound", val)}
+            />
+          </CardContent>
+        </Card>
+
+        {/* B2B Direct Connect */}
+        <Card>
+          <CardHeader
+            title="B2B Direct Connect"
+            subheader="Configure Teams shared channel access for this partner"
+          />
+          <CardContent>
+            <AccessSettingsEditor
+              title="Inbound Access"
+              description="External users accessing your Teams shared channels"
+              settings={partnerData.b2bDirectConnectInbound}
+              onChange={(val) => handleFieldChange("b2bDirectConnectInbound", val)}
+            />
+            <AccessSettingsEditor
+              title="Outbound Access"
+              description="Your users accessing this partner's shared channels"
+              settings={partnerData.b2bDirectConnectOutbound}
+              onChange={(val) => handleFieldChange("b2bDirectConnectOutbound", val)}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Inbound Trust */}
+        <Card>
+          <CardHeader
+            title="Inbound Trust Settings"
+            subheader="Trust claims from this partner organization"
+          />
+          <CardContent>
+            <Stack spacing={2}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={partnerData.inboundTrust?.isMfaAccepted ?? false}
+                    onChange={(e) =>
+                      handleFieldChange("inboundTrust", {
+                        ...partnerData.inboundTrust,
+                        isMfaAccepted: e.target.checked,
+                      })
+                    }
+                  />
+                }
+                label="Trust multi-factor authentication from this partner"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={partnerData.inboundTrust?.isCompliantDeviceAccepted ?? false}
+                    onChange={(e) =>
+                      handleFieldChange("inboundTrust", {
+                        ...partnerData.inboundTrust,
+                        isCompliantDeviceAccepted: e.target.checked,
+                      })
+                    }
+                  />
+                }
+                label="Trust compliant devices from this partner"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={
+                      partnerData.inboundTrust?.isHybridAzureADJoinedDeviceAccepted ?? false
+                    }
+                    onChange={(e) =>
+                      handleFieldChange("inboundTrust", {
+                        ...partnerData.inboundTrust,
+                        isHybridAzureADJoinedDeviceAccepted: e.target.checked,
+                      })
+                    }
+                  />
+                }
+                label="Trust hybrid Azure AD joined devices from this partner"
+              />
+            </Stack>
+          </CardContent>
+        </Card>
+
+        {/* Automatic User Consent */}
+        <Card>
+          <CardHeader
+            title="Automatic User Consent"
+            subheader="Control automatic invitation redemption for this partner"
+          />
+          <CardContent>
+            <Stack spacing={2}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={partnerData.automaticUserConsentSettings?.inboundAllowed ?? false}
+                    onChange={(e) =>
+                      handleFieldChange("automaticUserConsentSettings", {
+                        ...partnerData.automaticUserConsentSettings,
+                        inboundAllowed: e.target.checked,
+                      })
+                    }
+                  />
+                }
+                label="Automatically redeem invitations for inbound users"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={partnerData.automaticUserConsentSettings?.outboundAllowed ?? false}
+                    onChange={(e) =>
+                      handleFieldChange("automaticUserConsentSettings", {
+                        ...partnerData.automaticUserConsentSettings,
+                        outboundAllowed: e.target.checked,
+                      })
+                    }
+                  />
+                }
+                label="Automatically redeem invitations for outbound users"
+              />
+            </Stack>
+          </CardContent>
+        </Card>
+      </Stack>
+    </Box>
+  );
+};
+
+Page.getLayout = (page) => <DashboardLayout>{page}</DashboardLayout>;
+
+export default Page;
