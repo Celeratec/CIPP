@@ -46,7 +46,7 @@ Manage365 includes the complete CIPP feature set:
 - Standards alignment and drift detection
 - Best Practice Analyser and Domains Analyser
 - Conditional Access policy management, templates, and vacation mode
-- Licence reporting (including Sherweb CSP)
+- Licence reporting
 
 ### Security & Compliance
 - Incident and alert management (including MDO alerts)

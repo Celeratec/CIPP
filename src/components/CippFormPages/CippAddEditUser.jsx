@@ -462,51 +462,6 @@ const CippAddEditUser = (props) => {
           <Grid size={{ xs: 12 }}>
             <CippFormLicenseSelector label="Licenses" name="licenses" formControl={formControl} />
           </Grid>
-          {integrationSettings?.data?.Sherweb?.Enabled === true && (
-            <CippFormCondition
-              formControl={formControl}
-              field="licenses"
-              compareType="labelContains"
-              compareValue="(0 available)"
-              labelCompare={true}
-            >
-              <Grid size={{ xs: 12 }}>
-                <CippFormComponent
-                  type="switch"
-                  label="0 Licences available. Purchase new licence?"
-                  name="sherweb"
-                  formControl={formControl}
-                />
-              </Grid>
-              <CippFormCondition
-                formControl={formControl}
-                field="sherweb"
-                compareType="is"
-                compareValue={true}
-              >
-                <Grid size={{ xs: 12 }}>
-                  <Alert severity="info" sx={{ mb: 2 }}>
-                    This will Purchase a new Sherweb License for the user, according to the terms
-                    and conditions with Sherweb. When the license becomes available, CIPP will
-                    assign the license to this user.
-                  </Alert>
-                  <CippFormComponent
-                    type="autoComplete"
-                    api={{
-                      queryKey: `SKU-${tenantDomain}`,
-                      url: "/api/ListCSPsku",
-                      data: { currentSkuOnly: true },
-                      labelField: (option) => `${option?.productName} (${option?.sku})`,
-                      valueField: "sku",
-                    }}
-                    label="Sherweb License"
-                    name="sherwebLicense"
-                    formControl={formControl}
-                  />
-                </Grid>
-              </CippFormCondition>
-            </CippFormCondition>
-          )}
         </Grid>
       </FormSection>
 
