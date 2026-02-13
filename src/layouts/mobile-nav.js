@@ -1,3 +1,4 @@
+import { memo } from "react";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import PropTypes from "prop-types";
@@ -79,7 +80,7 @@ const reduceChildRoutes = ({ acc, depth, item, pathname }) => {
   return acc;
 };
 
-export const MobileNav = (props) => {
+export const MobileNav = memo((props) => {
   const { open, onClose, items } = props;
   const pathname = usePathname();
   const settings = useSettings();
@@ -224,7 +225,9 @@ export const MobileNav = (props) => {
       </Scrollbar>
     </Drawer>
   );
-};
+});
+
+MobileNav.displayName = "MobileNav";
 
 MobileNav.propTypes = {
   onClose: PropTypes.func,

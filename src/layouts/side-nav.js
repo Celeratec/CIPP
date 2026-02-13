@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, memo } from "react";
 import { usePathname } from "next/navigation";
 import PropTypes from "prop-types";
 import { Box, Drawer, Stack } from "@mui/material";
@@ -138,7 +138,7 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname, openMenus, on
   return acc;
 };
 
-export const SideNav = (props) => {
+export const SideNav = memo((props) => {
   const { items, onPin, pinned = false } = props;
   const pathname = usePathname();
   const [hovered, setHovered] = useState(false);
@@ -236,7 +236,9 @@ export const SideNav = (props) => {
       </Scrollbar>
     </Drawer>
   );
-};
+});
+
+SideNav.displayName = "SideNav";
 
 SideNav.propTypes = {
   onPin: PropTypes.func,

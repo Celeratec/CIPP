@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useForm, useWatch } from "react-hook-form";
 import { Grid } from "@mui/system";
+import dynamic from "next/dynamic";
 import { useSettings } from "../../hooks/use-settings";
 import { ApiGetCall } from "../../api/ApiCall.jsx";
 import Portals from "../../data/portals";
@@ -12,16 +13,25 @@ import { TabbedLayout } from "../../layouts/TabbedLayout";
 import { Layout as DashboardLayout } from "../../layouts/index.js";
 import tabOptions from "./tabOptions";
 import { dashboardDemoData } from "../../data/dashboardv2-demo-data";
-import { SecureScoreCard } from "../../components/CippComponents/SecureScoreCard";
 import { MFACard } from "../../components/CippComponents/MFACard";
 import { AuthMethodCard } from "../../components/CippComponents/AuthMethodCard";
 import { LicenseCard } from "../../components/CippComponents/LicenseCard";
 import { TenantInfoCard } from "../../components/CippComponents/TenantInfoCard";
 import { TenantMetricsGrid } from "../../components/CippComponents/TenantMetricsGrid";
-import { AssessmentCard } from "../../components/CippComponents/AssessmentCard";
 import { CippChartCard } from "../../components/CippCards/CippChartCard";
 import { CippApiDialog } from "../../components/CippComponents/CippApiDialog";
 import { CippUniversalSearch } from "../../components/CippCards/CippUniversalSearch";
+import { useDashboardPrefetch } from "../../hooks/use-prefetch";
+
+// Lazy-load chart-heavy dashboard cards (Recharts ~300KB)
+const SecureScoreCard = dynamic(
+  () => import("../../components/CippComponents/SecureScoreCard").then((mod) => mod.SecureScoreCard),
+  { ssr: false }
+);
+const AssessmentCard = dynamic(
+  () => import("../../components/CippComponents/AssessmentCard").then((mod) => mod.AssessmentCard),
+  { ssr: false }
+);
 import {
   Devices as DevicesIcon,
   CheckCircle as CheckCircleIcon,
@@ -44,8 +54,7 @@ const Page = () => {
   const [refreshDialog, setRefreshDialog] = useState({ open: false });
 
   // Prefetch commonly accessed data after dashboard loads
-  // Temporarily disabled for debugging
-  // useDashboardPrefetch(currentTenant);
+  useDashboardPrefetch(currentTenant);
 
   // Get reportId from query params or default to "ztna"
   // Only use default if router is ready and reportId is still not present

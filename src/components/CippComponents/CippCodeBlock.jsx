@@ -1,10 +1,17 @@
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { atomDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { CippCopyToClipBoard } from "./CippCopyToClipboard";
-import { styled } from "@mui/system"; // Correct import from @mui/system
-import { Editor } from "@monaco-editor/react";
+import { styled } from "@mui/system";
+import { Skeleton } from "@mui/material";
 import { useSettings } from "../../hooks/use-settings";
+
+// Lazy-load Monaco Editor (~2MB) only when type="editor" is used
+const Editor = dynamic(() => import("@monaco-editor/react").then((mod) => mod.Editor), {
+  ssr: false,
+  loading: () => <Skeleton variant="rectangular" height="500px" />,
+});
 
 const CodeContainer = styled("div")`
   position: relative;

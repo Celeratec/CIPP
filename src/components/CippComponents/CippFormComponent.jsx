@@ -20,19 +20,17 @@ import { formatPhoneE164, formatPhoneDisplay, validatePhoneNumber } from "../../
 import { DateTimePicker } from "@mui/x-date-pickers"; // Make sure to install @mui/x-date-pickers
 import CSVReader from "../CSVReader";
 import get from "lodash/get";
-import {
-  MenuButtonBold,
-  MenuButtonItalic,
-  MenuControlsContainer,
-  MenuDivider,
-  MenuSelectHeading,
-  RichTextEditor,
-} from "mui-tiptap";
-import StarterKit from "@tiptap/starter-kit";
+import dynamic from "next/dynamic";
 import { CippDataTable } from "../CippTable/CippDataTable";
 import React from "react";
 import { CloudUpload } from "@mui/icons-material";
 import { Stack } from "@mui/system";
+
+// Lazy-load TipTap rich text editor only when richText type is used
+const CippRichTextEditor = dynamic(() => import("./CippRichTextEditor"), {
+  ssr: false,
+  loading: () => <Typography variant="body2" color="text.secondary">Loading editor...</Typography>,
+});
 
 // Helper function to convert bracket notation to dot notation
 // Improved to correctly handle nested bracket notations
@@ -565,72 +563,15 @@ export const CippFormComponent = (props) => {
     }
 
     case "richText": {
-      const editorInstanceRef = React.useRef(null);
-      const lastSetValue = React.useRef(null);
-
       return (
-        <>
-          <div>
-            <Controller
-              name={convertedName}
-              control={formControl.control}
-              rules={validators}
-              render={({ field }) => {
-                const { value, onChange, ref } = field;
-
-                // Update content when value changes externally
-                React.useEffect(() => {
-                  if (
-                    editorInstanceRef.current &&
-                    typeof value === "string" &&
-                    value !== lastSetValue.current
-                  ) {
-                    editorInstanceRef.current.commands.setContent(value || "", false);
-                    lastSetValue.current = value;
-                  }
-                }, [value]);
-
-                return (
-                  <>
-                    <Typography variant="subtitle2">{label}</Typography>
-                    <RichTextEditor
-                      {...other}
-                      immediatelyRender={false}
-                      ref={ref}
-                      extensions={[StarterKit]}
-                      content=""
-                      onCreate={({ editor }) => {
-                        editorInstanceRef.current = editor;
-                        // Set initial content when editor is created
-                        if (typeof value === "string") {
-                          editor.commands.setContent(value || "", false);
-                          lastSetValue.current = value;
-                        }
-                      }}
-                      onUpdate={({ editor }) => {
-                        const newValue = editor.getHTML();
-                        lastSetValue.current = newValue;
-                        onChange(newValue);
-                      }}
-                      label={label}
-                      renderControls={() => (
-                        <MenuControlsContainer>
-                          <MenuSelectHeading />
-                          <MenuDivider />
-                          <MenuButtonBold />
-                          <MenuButtonItalic />
-                        </MenuControlsContainer>
-                      )}
-                    />
-                  </>
-                );
-              }}
-            />
-          </div>
-          <Typography variant="subtitle3" color="error">
-            {get(errors, convertedName, {}).message}
-          </Typography>
-        </>
+        <CippRichTextEditor
+          convertedName={convertedName}
+          formControl={formControl}
+          validators={validators}
+          label={label}
+          errors={errors}
+          {...other}
+        />
       );
     }
     case "CSVReader":

@@ -29,7 +29,7 @@ export function ApiGetCall(props) {
     refetchOnWindowFocus = false,
     refetchOnMount = true,
     refetchOnReconnect = true,
-    keepPreviousData = false,
+    keepPreviousData = true,
     refetchInterval = false,
     responseType = "json",
     convertToDataUrl = false,

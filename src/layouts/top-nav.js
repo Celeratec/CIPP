@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, memo } from "react";
 import NextLink from "next/link";
 import PropTypes from "prop-types";
 import Bars3Icon from "@heroicons/react/24/outline/Bars3Icon";
@@ -35,7 +35,7 @@ import { applySort } from "../utils/apply-sort";
 
 const TOP_NAV_HEIGHT = 64;
 
-export const TopNav = (props) => {
+export const TopNav = memo((props) => {
   const searchDialog = useDialog();
   const { onNavOpen } = props;
   const settings = useSettings();
@@ -322,7 +322,9 @@ export const TopNav = (props) => {
       </Stack>
     </Box>
   );
-};
+});
+
+TopNav.displayName = "TopNav";
 
 TopNav.propTypes = {
   onNavOpen: PropTypes.func,

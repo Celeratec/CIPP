@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Accordion,
   AccordionSummary,
@@ -19,8 +19,16 @@ import { PropertyList } from "../property-list";
 import { getCippTranslation } from "../../utils/get-cipp-translation";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 import { CippCodeBlock } from "../CippComponents/CippCodeBlock";
-import intuneCollection from "../../data/intuneCollection.json";
 import { useGuidResolver } from "../../hooks/use-guid-resolver";
+
+// Lazy-load the ~9.4MB intuneCollection JSON only when needed
+let _intuneCollectionCache = null;
+const getIntuneCollection = async () => {
+  if (_intuneCollectionCache) return _intuneCollectionCache;
+  const mod = await import("../../data/intuneCollection.json");
+  _intuneCollectionCache = mod.default;
+  return _intuneCollectionCache;
+};
 
 const cleanObject = (obj) => {
   if (Array.isArray(obj)) {
@@ -196,9 +204,17 @@ function CippJsonView({
   const [viewJson, setViewJson] = useState(false);
   const [accordionOpen, setAccordionOpen] = useState(defaultOpen);
   const [drilldownData, setDrilldownData] = useState([]); // Array of { data, title }
+  const [intuneCollection, setIntuneCollection] = useState([]);
 
   // Use the GUID resolver hook
   const { guidMapping, isLoadingGuids, resolveGuids, isGuid } = useGuidResolver();
+
+  // Lazy-load intune collection when needed
+  useEffect(() => {
+    if (type === "intune" || object?.omaSettings || object?.settings || object?.added) {
+      getIntuneCollection().then(setIntuneCollection);
+    }
+  }, [type, object]);
 
   const renderIntuneItems = (data) => {
     const items = [];

@@ -1,5 +1,17 @@
-import M365LicensesDefault from "../data/M365Licenses.json";
-import M365LicensesAdditional from "../data/M365Licenses-additional.json";
+// Lazy-load the ~2.1MB M365 license JSON files only when needed
+let _m365LicensesCache = null;
+const getM365Licenses = async () => {
+  if (_m365LicensesCache) return _m365LicensesCache;
+  const [defaultMod, additionalMod] = await Promise.all([
+    import("../data/M365Licenses.json"),
+    import("../data/M365Licenses-additional.json"),
+  ]);
+  _m365LicensesCache = [...defaultMod.default, ...additionalMod.default];
+  return _m365LicensesCache;
+};
+
+// Synchronous cache accessor for when data is already loaded
+const getM365LicensesSync = () => _m365LicensesCache || [];
 
 // Helper function to clean up technical license names (skuPartNumber)
 // Converts names like "DEFENDER_ENDPOINT_P2_XPLAT" to "Defender Endpoint P2"
@@ -90,9 +102,11 @@ const formatSkuPartNumber = (skuPartNumber) => {
   return cleaned;
 };
 
+// Pre-warm the cache on module load (non-blocking)
+getM365Licenses();
+
 export const getCippLicenseTranslation = (licenseArray) => {
-  //combine M365LicensesDefault and M365LicensesAdditional to one array
-  const M365Licenses = [...M365LicensesDefault, ...M365LicensesAdditional];
+  const M365Licenses = getM365LicensesSync();
   let licenses = [];
 
   if (Array.isArray(licenseArray) && typeof licenseArray[0] === "string") {

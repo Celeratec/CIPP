@@ -15,7 +15,7 @@ import CippStandardsSideBar from "../../../../components/CippStandards/CippStand
 import { ArrowLeftIcon } from "@mui/x-date-pickers";
 import { useDialog } from "../../../../hooks/use-dialog";
 import { ApiGetCall } from "../../../../api/ApiCall";
-import _ from "lodash";
+import get from "lodash/get";
 import { createDriftManagementActions } from "../../manage/driftManagementActions";
 import { ActionsMenu } from "../../../../components/actions-menu";
 import { useSettings } from "../../../../hooks/use-settings";
@@ -61,16 +61,16 @@ const Page = () => {
   // Check if the template configuration is valid and update currentStep
   useEffect(() => {
     const stepsStatus = {
-      step1: !!_.get(watchForm, "templateName"),
-      step2: isDriftMode || _.get(watchForm, "tenantFilter", []).length > 0, // Skip tenant requirement for drift mode
+      step1: !!get(watchForm, "templateName"),
+      step2: isDriftMode || get(watchForm, "tenantFilter", []).length > 0, // Skip tenant requirement for drift mode
       step3: Object.keys(selectedStandards).length > 0,
       step4:
-        _.get(watchForm, "standards") &&
+        get(watchForm, "standards") &&
         Object.keys(selectedStandards).length > 0 &&
         Object.keys(selectedStandards).every((standardName) => {
-          const standardValues = _.get(watchForm, standardName, {});
+          const standardValues = get(watchForm, standardName, {});
           // Always require an action value which should be an array with at least one element
-          const actionValue = _.get(standardValues, "action");
+          const actionValue = get(standardValues, "action");
           return actionValue && (!Array.isArray(actionValue) || actionValue.length > 0);
         }),
     };
@@ -277,8 +277,8 @@ const Page = () => {
   // Determine if save button should be disabled based on configuration
   const isSaveDisabled = isDriftMode
     ? currentStep < 3 || hasDriftConflict // For drift mode, only require steps 1, 3, and 4 (skip tenant requirement) and no drift conflicts
-    : !_.get(watchForm, "tenantFilter") ||
-      !_.get(watchForm, "tenantFilter").length ||
+    : !get(watchForm, "tenantFilter") ||
+      !get(watchForm, "tenantFilter").length ||
       currentStep < 3;
 
   // Create drift management actions (excluding refresh)

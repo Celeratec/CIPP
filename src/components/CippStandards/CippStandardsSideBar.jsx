@@ -16,7 +16,7 @@ import CheckIcon from "@heroicons/react/24/outline/CheckIcon";
 import CloseIcon from "@mui/icons-material/Close";
 import { useWatch } from "react-hook-form";
 import { useEffect, useState } from "react";
-import _ from "lodash";
+import get from "lodash/get";
 import CippFormComponent from "../CippComponents/CippFormComponent";
 import { CippFormTenantSelector } from "../CippComponents/CippFormTenantSelector";
 import { CippApiDialog } from "../CippComponents/CippApiDialog";
@@ -227,14 +227,14 @@ const CippStandardsSideBar = ({
 
   useEffect(() => {
     const stepsStatus = {
-      step1: !!_.get(watchForm, "templateName"),
-      step2: _.get(watchForm, "tenantFilter", []).length > 0,
+      step1: !!get(watchForm, "templateName"),
+      step2: get(watchForm, "tenantFilter", []).length > 0,
       step3: Object.keys(selectedStandards).length > 0,
       step4:
-        _.get(watchForm, "standards") &&
+        get(watchForm, "standards") &&
         Object.keys(selectedStandards).length > 0 &&
         Object.keys(selectedStandards).every((standardName) => {
-          const standardValues = _.get(watchForm, `${standardName}`, {});
+          const standardValues = get(watchForm, `${standardName}`, {});
           const standard = selectedStandards[standardName];
           // Check if this standard requires an action
           const hasRequiredComponents =
@@ -244,7 +244,7 @@ const CippStandardsSideBar = ({
             );
           const actionRequired = standard?.disabledFeatures !== undefined || hasRequiredComponents;
           // Always require an action value which should be an array with at least one element
-          const actionValue = _.get(standardValues, "action");
+          const actionValue = get(standardValues, "action");
           return actionValue && (!Array.isArray(actionValue) || actionValue.length > 0);
         }),
     };
@@ -255,17 +255,17 @@ const CippStandardsSideBar = ({
 
   // Create a local reference to the stepsStatus from the latest effect run
   const stepsStatus = {
-    step1: !!_.get(watchForm, "templateName"),
-    step2: _.get(watchForm, "tenantFilter", []).length > 0,
+    step1: !!get(watchForm, "templateName"),
+    step2: get(watchForm, "tenantFilter", []).length > 0,
     step3: Object.keys(selectedStandards).length > 0,
     step4:
-      _.get(watchForm, "standards") &&
+      get(watchForm, "standards") &&
       Object.keys(selectedStandards).length > 0 &&
       Object.keys(selectedStandards).every((standardName) => {
-        const standardValues = _.get(watchForm, `${standardName}`, {});
+        const standardValues = get(watchForm, `${standardName}`, {});
         const standard = selectedStandards[standardName];
         // Always require an action for all standards (must be an array with at least one element)
-        const actionValue = _.get(standardValues, "action");
+        const actionValue = get(standardValues, "action");
         return actionValue && (!Array.isArray(actionValue) || actionValue.length > 0);
       }),
   };

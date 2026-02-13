@@ -37,7 +37,7 @@ import {
 import { useWatch } from "react-hook-form";
 import { CippCardTabPanel } from "./CippCardTabPanel";
 import { CippApiResults } from "./CippApiResults";
-import _ from "lodash";
+import isEqual from "lodash/isEqual";
 import { CippCodeBlock } from "./CippCodeBlock";
 import { CippOffCanvas } from "./CippOffCanvas";
 import { FileDropzone } from "../file-dropzone";
@@ -380,7 +380,7 @@ const CippAppPermissionBuilder = ({
           });
           setExpanded("00000003-0000-0000-c000-000000000000"); // Automatically expand Microsoft Graph
         }
-      } else if (!_.isEqual(currentPermissions, initialPermissions)) {
+      } else if (!isEqual(currentPermissions, initialPermissions)) {
         setSelectedApp([]); // Avoid redundant updates
         setNewPermissions(currentPermissions);
         setInitialPermissions(currentPermissions);
@@ -390,7 +390,7 @@ const CippAppPermissionBuilder = ({
           initialAppIds.includes(sp.appId)
         )?.sort((a, b) => a.displayName.localeCompare(b.displayName));
 
-        if (!_.isEqual(selectedApp, newApps)) {
+        if (!isEqual(selectedApp, newApps)) {
           setSelectedApp(newApps); // Prevent unnecessary updates
         }
 

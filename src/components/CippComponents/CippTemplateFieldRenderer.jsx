@@ -1,15 +1,32 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Typography, Divider } from "@mui/material";
 import { Grid } from "@mui/system";
 import CippFormComponent from "./CippFormComponent";
 import { getCippTranslation } from "../../utils/get-cipp-translation";
-import intuneCollection from "../../data/intuneCollection.json";
+
+// Lazy-load the ~9.4MB intuneCollection JSON only when needed
+let _intuneCollectionCache = null;
+const getIntuneCollection = async () => {
+  if (_intuneCollectionCache) return _intuneCollectionCache;
+  const mod = await import("../../data/intuneCollection.json");
+  _intuneCollectionCache = mod.default;
+  return _intuneCollectionCache;
+};
 
 const CippTemplateFieldRenderer = ({
   templateData,
   formControl,
   templateType = "conditionalAccess",
 }) => {
+  const [intuneCollection, setIntuneCollection] = useState([]);
+
+  // Lazy-load intune collection when template type is intune
+  useEffect(() => {
+    if (templateType === "intune") {
+      getIntuneCollection().then(setIntuneCollection);
+    }
+  }, [templateType]);
+
   // Default blacklisted fields with wildcard support
   const defaultBlacklistedFields = [
     "id",

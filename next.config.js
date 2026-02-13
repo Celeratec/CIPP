@@ -14,6 +14,17 @@ const config = {
   },
   output: "export",
   distDir: "./out",
+  experimental: {
+    optimizePackageImports: [
+      "@mui/material",
+      "@mui/icons-material",
+      "@heroicons/react",
+      "lodash",
+      "date-fns",
+      "date-fns/locale",
+      "recharts",
+    ],
+  },
 };
 
 module.exports = config;
