@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Layout as DashboardLayout } from "../../../layouts/index.js";
 import {
   Alert,
@@ -11,7 +11,6 @@ import {
   Divider,
   FormControl,
   FormControlLabel,
-  IconButton,
   InputLabel,
   MenuItem,
   Radio,
@@ -23,11 +22,12 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Add, Delete, Save, Refresh } from "@mui/icons-material";
+import { Add, Save, Refresh } from "@mui/icons-material";
 import { useSettings } from "../../../hooks/use-settings.js";
 import { ApiGetCall, ApiPostCall } from "../../../api/ApiCall.jsx";
 import { CippApiResults } from "../../../components/CippComponents/CippApiResults.jsx";
 import CippRelatedSettings from "../../../components/CippComponents/CippRelatedSettings.jsx";
+import { getCippError } from "../../../utils/get-cipp-error.js";
 
 const DomainListEditor = ({ title, description, domains, onChange }) => {
   const [newDomain, setNewDomain] = useState("");
@@ -94,49 +94,52 @@ const DomainListEditor = ({ title, description, domains, onChange }) => {
   );
 };
 
+const populateForm = (rawData) => {
+  const data = Array.isArray(rawData) ? rawData[0] : rawData;
+  if (!data) return null;
+  return {
+    sharingCapability: data.sharingCapability ?? "disabled",
+    sharingDomainRestrictionMode: data.sharingDomainRestrictionMode ?? "none",
+    sharingAllowedDomainList: data.sharingAllowedDomainList ?? [],
+    sharingBlockedDomainList: data.sharingBlockedDomainList ?? [],
+    isResharingByExternalUsersEnabled: data.isResharingByExternalUsersEnabled ?? false,
+    defaultSharingLinkType: data.defaultSharingLinkType ?? "specificPeople",
+    defaultLinkPermission: data.defaultLinkPermission ?? "view",
+    fileAnonymousLinkType: data.fileAnonymousLinkType ?? "view",
+    folderAnonymousLinkType: data.folderAnonymousLinkType ?? "view",
+    requireAnonymousLinksExpireInDays: data.requireAnonymousLinksExpireInDays ?? 0,
+  };
+};
+
 const Page = () => {
   const settings = useSettings();
   const currentTenant = settings.currentTenant;
   const [formData, setFormData] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
 
+  const tenantReady = currentTenant && currentTenant !== "AllTenants";
+
   const spSettings = ApiGetCall({
     url: "/api/ListSharepointSettings",
     data: { tenantFilter: currentTenant },
     queryKey: `SharepointSettings-${currentTenant}`,
-    waiting: true,
+    waiting: tenantReady,
   });
 
   const updateSettings = ApiPostCall({
     relatedQueryKeys: [`SharepointSettings-${currentTenant}`],
   });
 
+  // Populate form when data arrives (initial load or after refetch)
   useEffect(() => {
-    if (currentTenant) {
-      spSettings.refetch();
-    }
-  }, [currentTenant]);
-
-  useEffect(() => {
-    if (spSettings.data && !formData) {
-      // The ListSharepointSettings endpoint returns an array, take the first item
-      const data = Array.isArray(spSettings.data) ? spSettings.data[0] : spSettings.data;
-      if (data) {
-        setFormData({
-          sharingCapability: data.sharingCapability ?? "disabled",
-          sharingDomainRestrictionMode: data.sharingDomainRestrictionMode ?? "none",
-          sharingAllowedDomainList: data.sharingAllowedDomainList ?? [],
-          sharingBlockedDomainList: data.sharingBlockedDomainList ?? [],
-          isResharingByExternalUsersEnabled: data.isResharingByExternalUsersEnabled ?? false,
-          defaultSharingLinkType: data.defaultSharingLinkType ?? "specificPeople",
-          defaultLinkPermission: data.defaultLinkPermission ?? "view",
-          fileAnonymousLinkType: data.fileAnonymousLinkType ?? "view",
-          folderAnonymousLinkType: data.folderAnonymousLinkType ?? "view",
-          requireAnonymousLinksExpireInDays: data.requireAnonymousLinksExpireInDays ?? 0,
-        });
+    if (spSettings.data) {
+      const populated = populateForm(spSettings.data);
+      if (populated) {
+        setFormData(populated);
+        setHasChanges(false);
       }
     }
-  }, [spSettings.data]);
+  }, [spSettings.data, spSettings.dataUpdatedAt]);
 
   const handleFieldChange = (field, value) => {
     setFormData((prev) => ({
@@ -146,11 +149,11 @@ const Page = () => {
     setHasChanges(true);
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     setFormData(null);
     setHasChanges(false);
     spSettings.refetch();
-  };
+  }, [spSettings.refetch]);
 
   const handleSave = () => {
     const payload = {
@@ -178,7 +181,7 @@ const Page = () => {
     setHasChanges(false);
   };
 
-  if (!currentTenant || currentTenant === "AllTenants") {
+  if (!tenantReady) {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="warning">
@@ -188,15 +191,7 @@ const Page = () => {
     );
   }
 
-  const getSharingCapabilityLabel = (value) => {
-    const labels = {
-      disabled: "Internal only (no external sharing)",
-      existingExternalUserSharingOnly: "Existing guests only",
-      externalUserSharingOnly: "New and existing guests (must sign in)",
-      externalUserAndGuestSharing: "Anyone (including anonymous links)",
-    };
-    return labels[value] ?? value;
-  };
+  const isLoading = spSettings.isFetching || spSettings.isPending;
 
   return (
     <Box sx={{ p: 3 }}>
@@ -215,7 +210,7 @@ const Page = () => {
             variant="outlined"
             startIcon={<Refresh />}
             onClick={handleRefresh}
-            disabled={spSettings.isFetching}
+            disabled={isLoading}
           >
             Refresh
           </Button>
@@ -232,12 +227,18 @@ const Page = () => {
 
       <CippApiResults apiObject={updateSettings} />
 
-      {spSettings.isFetching ? (
+      {isLoading ? (
         <Stack spacing={3}>
           <Skeleton variant="rectangular" height={200} />
           <Skeleton variant="rectangular" height={250} />
           <Skeleton variant="rectangular" height={200} />
         </Stack>
+      ) : spSettings.isError ? (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {spSettings.error
+            ? getCippError(spSettings.error)
+            : "Failed to load SharePoint settings. Please try refreshing the page."}
+        </Alert>
       ) : formData ? (
         <Stack spacing={3}>
           {/* Sharing Capability */}
@@ -535,8 +536,9 @@ const Page = () => {
           </Card>
         </Stack>
       ) : (
-        <Alert severity="error">
-          Failed to load SharePoint settings. Please try refreshing the page.
+        <Alert severity="warning">
+          No SharePoint settings data was returned. Please try refreshing the page or verify that
+          the selected tenant has SharePoint configured.
         </Alert>
       )}
     </Box>
