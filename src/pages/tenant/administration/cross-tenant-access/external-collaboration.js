@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
+import { CippHead } from "../../../../components/CippComponents/CippHead.jsx";
 import {
   Alert,
   Box,
@@ -190,6 +191,7 @@ const Page = () => {
 
   return (
     <Box sx={{ p: 3 }}>
+      <CippHead title="External Collaboration Settings" />
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
         <Box>
           <Typography variant="h4" gutterBottom>

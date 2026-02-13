@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
+import { CippHead } from "../../../../components/CippComponents/CippHead.jsx";
 import {
   Box,
   Card,
@@ -282,6 +283,7 @@ const Page = () => {
 
   return (
     <Box sx={{ p: 3 }}>
+      <CippHead title="Cross-Tenant Access" />
       <Typography variant="h4" gutterBottom>
         Cross-Tenant Access & External Collaboration
       </Typography>
