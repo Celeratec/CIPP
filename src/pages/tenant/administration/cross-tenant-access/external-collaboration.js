@@ -13,11 +13,9 @@ import {
   FormControlLabel,
   Grid,
   IconButton,
-  InputLabel,
   MenuItem,
   Radio,
   RadioGroup,
-  Select,
   Skeleton,
   Stack,
   Switch,
@@ -225,27 +223,26 @@ const Page = () => {
               subheader="Control who can invite guest users to the organization"
             />
             <CardContent>
-              <FormControl fullWidth>
-                <InputLabel>Guest invite restrictions</InputLabel>
-                <Select
-                  value={formData.allowInvitesFrom}
-                  onChange={(e) => handleFieldChange("allowInvitesFrom", e.target.value)}
-                  label="Guest invite restrictions"
-                >
-                  <MenuItem value="none">
-                    No one in the organization can invite guests (most restrictive)
-                  </MenuItem>
-                  <MenuItem value="adminsAndGuestInviters">
-                    Only admins and users in the Guest Inviter role can invite
-                  </MenuItem>
-                  <MenuItem value="adminsGuestInvitersAndAllMembers">
-                    Member users and admins can invite
-                  </MenuItem>
-                  <MenuItem value="everyone">
-                    Anyone can invite, including guests (least restrictive)
-                  </MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                select
+                fullWidth
+                label="Guest invite restrictions"
+                value={formData.allowInvitesFrom}
+                onChange={(e) => handleFieldChange("allowInvitesFrom", e.target.value)}
+              >
+                <MenuItem value="none">
+                  No one in the organization can invite guests (most restrictive)
+                </MenuItem>
+                <MenuItem value="adminsAndGuestInviters">
+                  Only admins and users in the Guest Inviter role can invite
+                </MenuItem>
+                <MenuItem value="adminsGuestInvitersAndAllMembers">
+                  Member users and admins can invite
+                </MenuItem>
+                <MenuItem value="everyone">
+                  Anyone can invite, including guests (least restrictive)
+                </MenuItem>
+              </TextField>
             </CardContent>
           </Card>
 

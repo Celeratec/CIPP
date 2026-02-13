@@ -14,11 +14,9 @@ import {
   FormControlLabel,
   FormLabel,
   Grid,
-  InputLabel,
   MenuItem,
   Radio,
   RadioGroup,
-  Select,
   Stack,
   Switch,
   TextField,
@@ -434,40 +432,38 @@ const Page = () => {
           />
           <CardContent>
             <Stack spacing={3}>
-              <FormControl fullWidth>
-                <InputLabel>Guest invite restrictions</InputLabel>
-                <Select
-                  value={settings.allowInvitesFrom ?? "adminsAndGuestInviters"}
-                  onChange={(e) => handleSettingsChange("allowInvitesFrom", e.target.value)}
-                  label="Guest invite restrictions"
-                >
-                  <MenuItem value="none">No one can invite guests</MenuItem>
-                  <MenuItem value="adminsAndGuestInviters">Admins + Guest Inviter role</MenuItem>
-                  <MenuItem value="adminsGuestInvitersAndAllMembers">Members + Admins</MenuItem>
-                  <MenuItem value="everyone">Anyone including guests</MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                select
+                fullWidth
+                label="Guest invite restrictions"
+                value={settings.allowInvitesFrom ?? "adminsAndGuestInviters"}
+                onChange={(e) => handleSettingsChange("allowInvitesFrom", e.target.value)}
+              >
+                <MenuItem value="none">No one can invite guests</MenuItem>
+                <MenuItem value="adminsAndGuestInviters">Admins + Guest Inviter role</MenuItem>
+                <MenuItem value="adminsGuestInvitersAndAllMembers">Members + Admins</MenuItem>
+                <MenuItem value="everyone">Anyone including guests</MenuItem>
+              </TextField>
 
-              <FormControl fullWidth>
-                <InputLabel>Guest user access level</InputLabel>
-                <Select
-                  value={
-                    settings.guestUserRoleId ?? "10dae51f-b6af-4016-8d66-8c2a99b929b3"
-                  }
-                  onChange={(e) => handleSettingsChange("guestUserRoleId", e.target.value)}
-                  label="Guest user access level"
-                >
-                  <MenuItem value="a0b1b346-4d3e-4e8b-98f8-753987be4970">
-                    Same as members
-                  </MenuItem>
-                  <MenuItem value="10dae51f-b6af-4016-8d66-8c2a99b929b3">
-                    Limited access (default)
-                  </MenuItem>
-                  <MenuItem value="2af84b1e-32c8-42b7-82bc-daa82404023b">
-                    Restricted access
-                  </MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                select
+                fullWidth
+                label="Guest user access level"
+                value={
+                  settings.guestUserRoleId ?? "10dae51f-b6af-4016-8d66-8c2a99b929b3"
+                }
+                onChange={(e) => handleSettingsChange("guestUserRoleId", e.target.value)}
+              >
+                <MenuItem value="a0b1b346-4d3e-4e8b-98f8-753987be4970">
+                  Same as members
+                </MenuItem>
+                <MenuItem value="10dae51f-b6af-4016-8d66-8c2a99b929b3">
+                  Limited access (default)
+                </MenuItem>
+                <MenuItem value="2af84b1e-32c8-42b7-82bc-daa82404023b">
+                  Restricted access
+                </MenuItem>
+              </TextField>
 
               <Stack spacing={1}>
                 <FormControlLabel

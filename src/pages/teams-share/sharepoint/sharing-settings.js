@@ -11,11 +11,9 @@ import {
   Divider,
   FormControl,
   FormControlLabel,
-  InputLabel,
   MenuItem,
   Radio,
   RadioGroup,
-  Select,
   Skeleton,
   Stack,
   Switch,
@@ -447,34 +445,32 @@ const Page = () => {
             />
             <CardContent>
               <Stack spacing={3}>
-                <FormControl fullWidth>
-                  <InputLabel>Default sharing link type</InputLabel>
-                  <Select
-                    value={formData.defaultSharingLinkType}
-                    onChange={(e) => handleFieldChange("defaultSharingLinkType", e.target.value)}
-                    label="Default sharing link type"
-                  >
-                    <MenuItem value="specificPeople">
-                      Specific people (only the people the user specifies)
-                    </MenuItem>
-                    <MenuItem value="organizationMembers">
-                      Only people in your organization
-                    </MenuItem>
-                    <MenuItem value="anyone">Anyone with the link</MenuItem>
-                  </Select>
-                </FormControl>
+                <TextField
+                  select
+                  fullWidth
+                  label="Default sharing link type"
+                  value={formData.defaultSharingLinkType}
+                  onChange={(e) => handleFieldChange("defaultSharingLinkType", e.target.value)}
+                >
+                  <MenuItem value="specificPeople">
+                    Specific people (only the people the user specifies)
+                  </MenuItem>
+                  <MenuItem value="organizationMembers">
+                    Only people in your organization
+                  </MenuItem>
+                  <MenuItem value="anyone">Anyone with the link</MenuItem>
+                </TextField>
 
-                <FormControl fullWidth>
-                  <InputLabel>Default link permission</InputLabel>
-                  <Select
-                    value={formData.defaultLinkPermission}
-                    onChange={(e) => handleFieldChange("defaultLinkPermission", e.target.value)}
-                    label="Default link permission"
-                  >
-                    <MenuItem value="view">View only</MenuItem>
-                    <MenuItem value="edit">Edit</MenuItem>
-                  </Select>
-                </FormControl>
+                <TextField
+                  select
+                  fullWidth
+                  label="Default link permission"
+                  value={formData.defaultLinkPermission}
+                  onChange={(e) => handleFieldChange("defaultLinkPermission", e.target.value)}
+                >
+                  <MenuItem value="view">View only</MenuItem>
+                  <MenuItem value="edit">Edit</MenuItem>
+                </TextField>
 
                 <Divider />
 
@@ -486,33 +482,31 @@ const Page = () => {
                     </Typography>
 
                     <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                      <FormControl fullWidth>
-                        <InputLabel>File anonymous link permission</InputLabel>
-                        <Select
-                          value={formData.fileAnonymousLinkType}
-                          onChange={(e) =>
-                            handleFieldChange("fileAnonymousLinkType", e.target.value)
-                          }
-                          label="File anonymous link permission"
-                        >
-                          <MenuItem value="view">View only</MenuItem>
-                          <MenuItem value="edit">View and edit</MenuItem>
-                        </Select>
-                      </FormControl>
+                      <TextField
+                        select
+                        fullWidth
+                        label="File anonymous link permission"
+                        value={formData.fileAnonymousLinkType}
+                        onChange={(e) =>
+                          handleFieldChange("fileAnonymousLinkType", e.target.value)
+                        }
+                      >
+                        <MenuItem value="view">View only</MenuItem>
+                        <MenuItem value="edit">View and edit</MenuItem>
+                      </TextField>
 
-                      <FormControl fullWidth>
-                        <InputLabel>Folder anonymous link permission</InputLabel>
-                        <Select
-                          value={formData.folderAnonymousLinkType}
-                          onChange={(e) =>
-                            handleFieldChange("folderAnonymousLinkType", e.target.value)
-                          }
-                          label="Folder anonymous link permission"
-                        >
-                          <MenuItem value="view">View only</MenuItem>
-                          <MenuItem value="edit">View and edit</MenuItem>
-                        </Select>
-                      </FormControl>
+                      <TextField
+                        select
+                        fullWidth
+                        label="Folder anonymous link permission"
+                        value={formData.folderAnonymousLinkType}
+                        onChange={(e) =>
+                          handleFieldChange("folderAnonymousLinkType", e.target.value)
+                        }
+                      >
+                        <MenuItem value="view">View only</MenuItem>
+                        <MenuItem value="edit">View and edit</MenuItem>
+                      </TextField>
                     </Stack>
 
                     <TextField

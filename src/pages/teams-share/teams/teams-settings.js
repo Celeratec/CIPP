@@ -12,11 +12,9 @@ import {
   FormControl,
   FormControlLabel,
   IconButton,
-  InputLabel,
   MenuItem,
   Radio,
   RadioGroup,
-  Select,
   Skeleton,
   Stack,
   Switch,
@@ -711,61 +709,58 @@ const Page = () => {
                 />
                 <CardContent>
                   <Stack spacing={3}>
-                    <FormControl fullWidth>
-                      <InputLabel>Who can bypass the lobby?</InputLabel>
-                      <Select
-                        value={formData.autoAdmittedUsers}
-                        onChange={(e) => handleFieldChange("autoAdmittedUsers", e.target.value)}
-                        label="Who can bypass the lobby?"
-                      >
-                        <MenuItem value="OrganizerOnly">Only organizers and co-organizers</MenuItem>
-                        <MenuItem value="InvitedUsers">People who were invited</MenuItem>
-                        <MenuItem value="EveryoneInCompanyExcludingGuests">
-                          People in my organization (excluding guests)
-                        </MenuItem>
-                        <MenuItem value="EveryoneInSameAndFederatedCompany">
-                          People in my org and trusted organizations
-                        </MenuItem>
-                        <MenuItem value="Everyone">Everyone</MenuItem>
-                      </Select>
-                    </FormControl>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Who can bypass the lobby?"
+                      value={formData.autoAdmittedUsers}
+                      onChange={(e) => handleFieldChange("autoAdmittedUsers", e.target.value)}
+                    >
+                      <MenuItem value="OrganizerOnly">Only organizers and co-organizers</MenuItem>
+                      <MenuItem value="InvitedUsers">People who were invited</MenuItem>
+                      <MenuItem value="EveryoneInCompanyExcludingGuests">
+                        People in my organization (excluding guests)
+                      </MenuItem>
+                      <MenuItem value="EveryoneInSameAndFederatedCompany">
+                        People in my org and trusted organizations
+                      </MenuItem>
+                      <MenuItem value="Everyone">Everyone</MenuItem>
+                    </TextField>
 
-                    <FormControl fullWidth>
-                      <InputLabel>Who can present?</InputLabel>
-                      <Select
-                        value={formData.designatedPresenterRoleMode}
-                        onChange={(e) =>
-                          handleFieldChange("designatedPresenterRoleMode", e.target.value)
-                        }
-                        label="Who can present?"
-                      >
-                        <MenuItem value="OrganizerOnlyUserOverride">Only organizer</MenuItem>
-                        <MenuItem value="EveryoneInCompanyUserOverride">
-                          People in my organization
-                        </MenuItem>
-                        <MenuItem value="EveryoneInSameAndFederatedCompanyUserOverride">
-                          People in my org and trusted organizations
-                        </MenuItem>
-                        <MenuItem value="EveryoneUserOverride">Everyone</MenuItem>
-                      </Select>
-                    </FormControl>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Who can present?"
+                      value={formData.designatedPresenterRoleMode}
+                      onChange={(e) =>
+                        handleFieldChange("designatedPresenterRoleMode", e.target.value)
+                      }
+                    >
+                      <MenuItem value="OrganizerOnlyUserOverride">Only organizer</MenuItem>
+                      <MenuItem value="EveryoneInCompanyUserOverride">
+                        People in my organization
+                      </MenuItem>
+                      <MenuItem value="EveryoneInSameAndFederatedCompanyUserOverride">
+                        People in my org and trusted organizations
+                      </MenuItem>
+                      <MenuItem value="EveryoneUserOverride">Everyone</MenuItem>
+                    </TextField>
 
-                    <FormControl fullWidth>
-                      <InputLabel>Meeting chat</InputLabel>
-                      <Select
-                        value={formData.meetingChatEnabledType}
-                        onChange={(e) =>
-                          handleFieldChange("meetingChatEnabledType", e.target.value)
-                        }
-                        label="Meeting chat"
-                      >
-                        <MenuItem value="Enabled">On for everyone</MenuItem>
-                        <MenuItem value="EnabledExceptAnonymous">
-                          On for everyone except anonymous users
-                        </MenuItem>
-                        <MenuItem value="Disabled">Off for everyone</MenuItem>
-                      </Select>
-                    </FormControl>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Meeting chat"
+                      value={formData.meetingChatEnabledType}
+                      onChange={(e) =>
+                        handleFieldChange("meetingChatEnabledType", e.target.value)
+                      }
+                    >
+                      <MenuItem value="Enabled">On for everyone</MenuItem>
+                      <MenuItem value="EnabledExceptAnonymous">
+                        On for everyone except anonymous users
+                      </MenuItem>
+                      <MenuItem value="Disabled">Off for everyone</MenuItem>
+                    </TextField>
                   </Stack>
                 </CardContent>
               </Card>
@@ -837,20 +832,19 @@ const Page = () => {
                 />
                 <CardContent>
                   <Stack spacing={2}>
-                    <FormControl fullWidth>
-                      <InputLabel>Read receipts</InputLabel>
-                      <Select
-                        value={formData.readReceiptsEnabledType}
-                        onChange={(e) =>
-                          handleFieldChange("readReceiptsEnabledType", e.target.value)
-                        }
-                        label="Read receipts"
-                      >
-                        <MenuItem value="UserPreference">User controlled</MenuItem>
-                        <MenuItem value="Everyone">Turned on for everyone</MenuItem>
-                        <MenuItem value="None">Turned off for everyone</MenuItem>
-                      </Select>
-                    </FormControl>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Read receipts"
+                      value={formData.readReceiptsEnabledType}
+                      onChange={(e) =>
+                        handleFieldChange("readReceiptsEnabledType", e.target.value)
+                      }
+                    >
+                      <MenuItem value="UserPreference">User controlled</MenuItem>
+                      <MenuItem value="Everyone">Turned on for everyone</MenuItem>
+                      <MenuItem value="None">Turned off for everyone</MenuItem>
+                    </TextField>
                     <Divider />
                     <FormControlLabel
                       control={
