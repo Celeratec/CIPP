@@ -21,8 +21,11 @@ import { useDispatch } from "react-redux";
 import { showToast } from "../store/toasts";
 import { Box, Container, Grid } from "@mui/system";
 import { CippImageCard } from "../components/CippCards/CippImageCard";
-import Page from "../pages/onboardingv2";
+import dynamic from "next/dynamic";
 import { useDialog } from "../hooks/use-dialog";
+
+// Lazy-load the setup wizard (9 components) only when the dialog is opened
+const OnboardingWizard = dynamic(() => import("../pages/onboardingv2"), { ssr: false });
 import { nativeMenuItems } from "./config";
 import { CippBreadcrumbNav } from "../components/CippComponents/CippBreadcrumbNav";
 import { CippTenantSelector } from "../components/CippComponents/CippTenantSelector";
@@ -313,7 +316,7 @@ export const Layout = (props) => {
           >
             <DialogTitle>Setup Wizard</DialogTitle>
             <DialogContent>
-              <Page />
+              <OnboardingWizard />
             </DialogContent>
           </Dialog>
           {!setupCompleted && (

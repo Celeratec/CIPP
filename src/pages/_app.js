@@ -1,4 +1,5 @@
 import Head from "next/head";
+import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import { Provider as ReduxProvider } from "react-redux";
 import { CacheProvider } from "@emotion/react";
@@ -11,6 +12,13 @@ import { store } from "../store";
 import { createTheme } from "../theme";
 import { createEmotionCache } from "../utils/create-emotion-cache";
 import "../libs/nprogress";
+
+// Self-host Inter font at build time (eliminates render-blocking Google Fonts CSS request)
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
 import { PrivateRoute } from "../components/PrivateRoute";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useMediaPredicate } from "react-media-hook";
@@ -248,6 +256,7 @@ const App = (props) => {
   ];
 
   return (
+    <div className={inter.className}>
     <CacheProvider value={emotionCache}>
       <Head>
         <title>Manage365</title>
@@ -285,6 +294,7 @@ const App = (props) => {
         </QueryClientProvider>
       </ReduxProvider>
     </CacheProvider>
+    </div>
   );
 };
 

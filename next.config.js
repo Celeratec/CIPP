@@ -4,6 +4,11 @@ const config = {
   images: {
     unoptimized: true,
   },
+  compiler: {
+    removeConsole: {
+      exclude: ["error", "warn"],
+    },
+  },
   turbopack: {
     rules: {
       "*.svg": {

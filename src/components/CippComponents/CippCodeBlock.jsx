@@ -1,11 +1,19 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
-import SyntaxHighlighter from "react-syntax-highlighter";
+import json from "react-syntax-highlighter/dist/cjs/languages/prism/json";
+import powershell from "react-syntax-highlighter/dist/cjs/languages/prism/powershell";
 import { CippCopyToClipBoard } from "./CippCopyToClipboard";
 import { styled } from "@mui/system";
 import { Skeleton } from "@mui/material";
 import { useSettings } from "../../hooks/use-settings";
+
+// Register only the languages actually used in the codebase
+// (plain text / unregistered languages render without highlighting by default)
+SyntaxHighlighter.registerLanguage("json", json);
+SyntaxHighlighter.registerLanguage("JSON", json);
+SyntaxHighlighter.registerLanguage("powershell", powershell);
 
 // Lazy-load Monaco Editor (~2MB) only when type="editor" is used
 const Editor = dynamic(() => import("@monaco-editor/react").then((mod) => mod.Editor), {
