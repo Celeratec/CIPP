@@ -228,6 +228,7 @@ const CippGuestInviteDialog = ({
   const [diagLoading, setDiagLoading] = useState(false);
   const [quickFixStatus, setQuickFixStatus] = useState("idle"); // idle | loading | success | error
   const [quickFixMessage, setQuickFixMessage] = useState("");
+  const [quickFixAttempted, setQuickFixAttempted] = useState(false);
 
   const formHook = useForm({
     defaultValues: {
@@ -253,6 +254,7 @@ const CippGuestInviteDialog = ({
       setDiagLoading(false);
       setQuickFixStatus("idle");
       setQuickFixMessage("");
+      setQuickFixAttempted(false);
       formHook.reset({
         displayName: "",
         mail: "",
@@ -263,7 +265,7 @@ const CippGuestInviteDialog = ({
   }, [open]);
 
   const runDiagnostics = useCallback(
-    async (errorMessages, email) => {
+    async (errorMessages, email, fixWasAttempted) => {
       const domain = email?.split("@")[1];
       if (!domain || !isDomainCollaborationError(errorMessages)) return;
 
@@ -271,13 +273,26 @@ const CippGuestInviteDialog = ({
       setDiagLoading(true);
 
       try {
-        // First check if backend already provided diagnostics (non-fallback)
-        // If not, run client-side diagnostics using the proven settings APIs
-        const findings = await runClientDiagnostics(tenantFilter, domain);
-
-        // Filter to only show actionable findings (skip info-level unless it's the only one)
-        const actionable = findings.filter((f) => f.severity !== "info");
-        setDiagnostics(actionable.length > 0 ? actionable : findings);
+        if (fixWasAttempted) {
+          // The Graph API fix was applied but the restriction persists.
+          // This means the real restriction is managed outside the legacy
+          // policies API — direct the user to the Entra admin center.
+          setDiagnostics([
+            {
+              source: "Microsoft Entra Admin Center",
+              issue: `Domain '${domain}' is blocked by an Azure-managed restriction`,
+              detail:
+                "The domain allow-list was updated through the Graph API, but the invitation is still blocked. This means the collaboration restriction for this tenant is managed directly by Azure and cannot be modified through the Graph API. You need to change it in the Microsoft Entra admin center.",
+              fix: `In the Entra admin center, go to External Identities > External collaboration settings > Collaboration restrictions. Change the setting to either 'Allow invitations to any domain' or add '${domain}' to the allowed domains list.`,
+              severity: "error",
+              entraPortalLink: true,
+            },
+          ]);
+        } else {
+          const findings = await runClientDiagnostics(tenantFilter, domain);
+          const actionable = findings.filter((f) => f.severity !== "info");
+          setDiagnostics(actionable.length > 0 ? actionable : findings);
+        }
       } catch {
         setDiagnostics([
           {
@@ -351,6 +366,7 @@ const CippGuestInviteDialog = ({
       );
 
       setQuickFixStatus("success");
+      setQuickFixAttempted(true);
       setQuickFixMessage(
         `Added '${blockedDomain}' to the allowed domains list. You can now retry the invitation.`
       );
@@ -409,13 +425,13 @@ const CippGuestInviteDialog = ({
             backendDiags?.length > 0 &&
             !backendDiags.every((d) => d.source === "Unknown Policy");
 
-          if (hasRealDiag) {
+          if (hasRealDiag && !quickFixAttempted) {
             setDiagnostics(backendDiags);
             setBlockedDomain(responseData?.BlockedDomain);
           } else {
             // Run client-side diagnostics - more reliable since it uses
             // the same API endpoints as the settings pages
-            runDiagnostics(results, data.mail);
+            runDiagnostics(results, data.mail, quickFixAttempted);
           }
         },
       }
@@ -679,7 +695,21 @@ const CippGuestInviteDialog = ({
                             </Alert>
 
                             <Stack direction="row" spacing={1} sx={{ mt: 1 }} flexWrap="wrap" useFlexGap>
-                              {diag.canQuickFix && blockedDomain && (
+                              {diag.entraPortalLink && (
+                                <Button
+                                  href="https://entra.microsoft.com/#view/Microsoft_AAD_IAM/CompanyRelationshipsMenuBlade/~/Settings"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  size="small"
+                                  variant="contained"
+                                  color="primary"
+                                  startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
+                                  sx={{ textTransform: "none", fontSize: "0.75rem" }}
+                                >
+                                  Open Entra Admin Center
+                                </Button>
+                              )}
+                              {diag.canQuickFix && blockedDomain && !quickFixAttempted && (
                                 <Button
                                   size="small"
                                   variant="contained"
