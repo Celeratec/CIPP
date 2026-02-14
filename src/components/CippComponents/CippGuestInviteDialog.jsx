@@ -540,13 +540,62 @@ const CippGuestInviteDialog = ({
                 const isWarning =
                   typeof msg === "string" &&
                   (msg.includes("could not add") || msg.includes("not available for automatic"));
+                const isPermissionIssue =
+                  typeof msg === "string" &&
+                  (msg.includes("Sites.FullControl.All") || msg.includes("app registration"));
                 return (
                   <Alert key={i} severity={isWarning ? "warning" : "success"} icon={isWarning ? <WarningAmber /> : <CheckCircle />}>
-                    <Typography variant="body2">{msg}</Typography>
+                    {isPermissionIssue ? (
+                      <Stack spacing={1}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          Guest invited to tenant, but could not add to site members.
+                        </Typography>
+                        <Typography variant="body2">
+                          The CIPP app registration is missing the SharePoint{" "}
+                          <strong>Sites.FullControl.All</strong> application permission. This is
+                          required for managing members on non-group-connected SharePoint sites.
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          How to fix:
+                        </Typography>
+                        <Typography variant="body2" component="div">
+                          <ol style={{ margin: 0, paddingLeft: "1.2em" }}>
+                            <li>
+                              Open <strong>Azure Portal</strong> &gt;{" "}
+                              <strong>App registrations</strong> &gt; CIPP app
+                            </li>
+                            <li>
+                              <strong>API permissions</strong> &gt;{" "}
+                              <strong>Add a permission</strong> &gt; <strong>SharePoint</strong>
+                            </li>
+                            <li>
+                              <strong>Application permissions</strong> &gt; Sites &gt;{" "}
+                              <strong>Sites.FullControl.All</strong>
+                            </li>
+                            <li>
+                              Click <strong>Grant admin consent</strong>
+                            </li>
+                          </ol>
+                        </Typography>
+                        <Button
+                          href="https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          size="small"
+                          variant="outlined"
+                          startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
+                          sx={{ textTransform: "none", fontSize: "0.75rem", alignSelf: "flex-start" }}
+                        >
+                          Open Azure App Registrations
+                        </Button>
+                      </Stack>
+                    ) : (
+                      <Typography variant="body2">{msg}</Typography>
+                    )}
                   </Alert>
                 );
               })}
-              {nonGroupSiteWarning && webUrl && (
+              {nonGroupSiteWarning && !resultMessages.some((m) => typeof m === "string" && m.includes("Sites.FullControl.All")) && webUrl && (
                 <Alert severity="info" variant="outlined">
                   <Typography variant="body2" sx={{ mb: 1 }}>
                     This is a non-group-connected site, so automatic membership assignment was not

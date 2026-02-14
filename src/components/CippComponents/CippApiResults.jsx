@@ -1,6 +1,7 @@
-import { Close, Download, ExpandMore, ExpandLess } from "@mui/icons-material";
+import { Close, Download, ExpandMore, ExpandLess, OpenInNew } from "@mui/icons-material";
 import {
   Alert,
+  Button,
   CircularProgress,
   Collapse,
   IconButton,
@@ -122,6 +123,66 @@ const extractAllResults = (data) => {
 const FormattedResultText = ({ text, severity }) => {
   if (typeof text !== "string") {
     return <Typography variant="body2">{String(text)}</Typography>;
+  }
+
+  // Pattern: SharePoint permission error — render structured guidance
+  const isSharePointPermissionError =
+    text.includes("Sites.FullControl.All") || (text.includes("SharePoint") && text.includes("app registration"));
+  if (isSharePointPermissionError) {
+    // Extract the preamble (e.g. "Guest invited to tenant, but could not add to site members:")
+    // from the full message, or use a generic one
+    const colonIdx = text.indexOf(":");
+    const preamble =
+      colonIdx > 0 && colonIdx < 80 ? text.slice(0, colonIdx) : null;
+    return (
+      <Stack spacing={1}>
+        {preamble && (
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            {preamble}
+          </Typography>
+        )}
+        <Typography variant="body2">
+          The CIPP app registration is missing the SharePoint{" "}
+          <strong>Sites.FullControl.All</strong> application permission. This is required for
+          managing members on non-group-connected SharePoint sites.
+        </Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
+          How to fix:
+        </Typography>
+        <Typography variant="body2" component="div">
+          <ol style={{ margin: 0, paddingLeft: "1.2em" }}>
+            <li>
+              Open <strong>Azure Portal</strong> &gt; <strong>App registrations</strong> &gt; your
+              CIPP app
+            </li>
+            <li>
+              Go to <strong>API permissions</strong> &gt; <strong>Add a permission</strong> &gt;{" "}
+              <strong>SharePoint</strong>
+            </li>
+            <li>
+              Select <strong>Application permissions</strong> &gt; Sites &gt;{" "}
+              <strong>Sites.FullControl.All</strong>
+            </li>
+            <li>
+              Click <strong>Grant admin consent</strong>
+            </li>
+          </ol>
+        </Typography>
+        <Box>
+          <Button
+            href="https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps"
+            target="_blank"
+            rel="noopener noreferrer"
+            size="small"
+            variant="outlined"
+            startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
+            sx={{ textTransform: "none", fontSize: "0.75rem" }}
+          >
+            Open Azure App Registrations
+          </Button>
+        </Box>
+      </Stack>
+    );
   }
 
   // Pattern: "Failed to X. Error: Y" or "Successfully X. Message: Y"

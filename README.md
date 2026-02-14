@@ -109,6 +109,7 @@ An interactive detail page for individual SharePoint sites, providing at-a-glanc
   - **Domain restriction diagnostics** -- if an invitation fails due to a domain collaboration restriction, the dialog runs a client-side root cause analysis against Entra External Collaboration settings and SharePoint Sharing settings, identifying the specific policy and domain list that is blocking the invitation
   - **Quick-fix** -- one-click "Allow domain & Retry" button that updates the B2B domain allow/block list and retries the invitation; if the restriction is Azure-managed, provides step-by-step instructions and a direct link to the Entra admin center
   - **Invite Another Guest** -- after a successful invitation, reset the form to invite additional guests in succession without closing the dialog
+  - **Permission error detection** -- if the CIPP app registration is missing the SharePoint `Sites.FullControl.All` permission, operations display step-by-step remediation instructions and a direct link to Azure App Registrations instead of a cryptic error
   - Send email invitation toggle is on by default; sync delay guidance shown after successful invitations
 - **Data freshness** -- shows the Microsoft report refresh date so administrators know how current the numbers are
 - **Usage data enrichment** -- automatically fetches site usage data from the API, so the page is fully populated regardless of navigation path
@@ -178,6 +179,7 @@ Improved error and result message display throughout the application:
 - **Entity highlighting** -- quoted names and identifiers are automatically bolded for quick scanning
 - **Word-break handling** -- long error strings wrap properly instead of overflowing
 - **Results management** -- expandable details, CSV export, and table view for bulk operation results
+- **Permission error guidance** -- when SharePoint operations fail due to a missing `Sites.FullControl.All` application permission on the CIPP app registration, the error is detected automatically and replaced with structured step-by-step remediation instructions and a direct link to Azure App Registrations. This applies to guest invitations, member additions, and member removals on non-group-connected SharePoint sites.
 
 ### Card Views
 
