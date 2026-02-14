@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { Stack } from "@mui/system";
-import { WarningAmber } from "@mui/icons-material";
+import { WarningAmber, PersonAdd } from "@mui/icons-material";
 import { CippApiResults } from "./CippApiResults";
 import { ApiGetCall, ApiPostCall } from "../../api/ApiCall";
 import React, { useEffect, useState } from "react";
@@ -31,6 +31,8 @@ export const CippApiDialog = (props) => {
     relatedQueryKeys,
     dialogAfterEffect,
     allowResubmit = false,
+    allowAddAnother = false,
+    addAnotherLabel = "Add Another",
     children,
     defaultvalues,
     onActionSuccess,
@@ -435,11 +437,24 @@ export const CippApiDialog = (props) => {
               <Button color="inherit" onClick={handleClose}>
                 Close
               </Button>
+              {allowAddAnother && isFormSubmitted && (
+                <Button
+                  variant="contained"
+                  startIcon={<PersonAdd />}
+                  onClick={() => {
+                    setIsFormSubmitted(false);
+                    setPartialResults([]);
+                    formHook.reset(defaultvalues || {});
+                  }}
+                >
+                  {addAnotherLabel}
+                </Button>
+              )}
               <Button
                 variant="contained"
                 color={isDanger ? "error" : "primary"}
                 type="submit"
-                disabled={!isValid || (isFormSubmitted && !allowResubmit)}
+                disabled={!isValid || (isFormSubmitted && !allowResubmit && !allowAddAnother)}
               >
                 {isFormSubmitted && allowResubmit ? "Reconfirm" : "Confirm"}
               </Button>

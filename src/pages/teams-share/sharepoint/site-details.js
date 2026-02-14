@@ -572,7 +572,8 @@ const Page = () => {
                     Cell: ({ row }) => {
                       const isAdmin = row.original.fields?.IsSiteAdmin;
                       const email = row.original.fields?.EMail || "";
-                      const isGuest = email.includes("#ext#") || email.includes("_EXT_@");
+                      const emailLower = email.toLowerCase();
+                      const isGuest = emailLower.includes("#ext#") || emailLower.includes("_ext_@");
                       return (
                         <Stack direction="row" alignItems="center" spacing={1}>
                           <Typography variant="body2" sx={{ fontWeight: isAdmin ? 600 : 400 }}>
@@ -654,7 +655,7 @@ const Page = () => {
       </Container>
 
       {/* Dialogs */}
-      <CippApiDialog createDialog={addMemberDialog} title="Add Site Member" fields={userPickerField} api={addMemberApi} row={{}} relatedQueryKeys={[`site-members-${siteId}`]} />
+      <CippApiDialog createDialog={addMemberDialog} title="Add Site Member" fields={userPickerField} api={addMemberApi} row={{}} relatedQueryKeys={[`site-members-${siteId}`]} allowAddAnother addAnotherLabel="Add Another Member" />
       <CippApiDialog createDialog={addAdminDialog} title="Add Site Admin" fields={userPickerField} api={addAdminApi} row={{}} relatedQueryKeys={[`site-members-${siteId}`]} />
       <CippGuestInviteDialog
         open={inviteGuestOpen}
