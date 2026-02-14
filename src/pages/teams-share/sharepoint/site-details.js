@@ -571,9 +571,9 @@ const Page = () => {
                     size: 200,
                     Cell: ({ row }) => {
                       const isAdmin = row.original.fields?.IsSiteAdmin;
-                      const email = row.original.fields?.EMail || "";
-                      const emailLower = email.toLowerCase();
-                      const isGuest = emailLower.includes("#ext#") || emailLower.includes("_ext_@");
+                      const email = (row.original.fields?.EMail || "").toLowerCase();
+                      const loginName = (row.original.fields?.Name || "").toLowerCase();
+                      const isGuest = email.includes("#ext#") || loginName.includes("#ext#") || email.includes("_ext_@");
                       return (
                         <Stack direction="row" alignItems="center" spacing={1}>
                           <Typography variant="body2" sx={{ fontWeight: isAdmin ? 600 : 400 }}>
