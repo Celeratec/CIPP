@@ -272,6 +272,7 @@ const Page = () => {
         URL: `!${webUrl}`,
         SharePointType: `!${rootWebTemplate}`,
         user: "fields.EMail",
+        loginName: "fields.Name",
       },
       confirmText: "Remove this user from the site?",
       category: "danger",
