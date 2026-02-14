@@ -21,6 +21,7 @@ import {
   CheckCircle,
   Search,
   WarningAmber,
+  PersonAdd,
 } from "@mui/icons-material";
 import { useForm } from "react-hook-form";
 import { useEffect, useState, useCallback } from "react";
@@ -235,7 +236,7 @@ const CippGuestInviteDialog = ({
       displayName: "",
       mail: "",
       redirectUri: "",
-      sendInvite: false,
+      sendInvite: true,
     },
     mode: "onChange",
   });
@@ -244,23 +245,27 @@ const CippGuestInviteDialog = ({
     relatedQueryKeys,
   });
 
+  const resetForNewGuest = useCallback(() => {
+    setDiagnostics(null);
+    setBlockedDomain(null);
+    setResultMessages([]);
+    setStatus("idle");
+    setDiagLoading(false);
+    setQuickFixStatus("idle");
+    setQuickFixMessage("");
+    formHook.reset({
+      displayName: "",
+      mail: "",
+      redirectUri: "",
+      sendInvite: true,
+    });
+  }, [formHook]);
+
   // Reset state when dialog opens/closes
   useEffect(() => {
     if (open) {
-      setDiagnostics(null);
-      setBlockedDomain(null);
-      setResultMessages([]);
-      setStatus("idle");
-      setDiagLoading(false);
-      setQuickFixStatus("idle");
-      setQuickFixMessage("");
       setQuickFixAttempted(false);
-      formHook.reset({
-        displayName: "",
-        mail: "",
-        redirectUri: "",
-        sendInvite: false,
-      });
+      resetForNewGuest();
     }
   }, [open]);
 
@@ -779,6 +784,15 @@ const CippGuestInviteDialog = ({
               startIcon={status === "loading" ? <CircularProgress size={16} /> : <Send />}
             >
               {status === "loading" ? "Inviting..." : "Send Invitation"}
+            </Button>
+          )}
+          {status === "success" && (
+            <Button
+              variant="contained"
+              startIcon={<PersonAdd />}
+              onClick={resetForNewGuest}
+            >
+              Invite Another Guest
             </Button>
           )}
           {status === "error" && (
