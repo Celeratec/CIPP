@@ -534,6 +534,12 @@ const CippGuestInviteDialog = ({
                   <Typography variant="body2">{msg}</Typography>
                 </Alert>
               ))}
+              <Alert severity="info" variant="outlined" sx={{ mt: 0.5 }}>
+                <Typography variant="body2">
+                  It may take a minute or two for the guest to appear in the Site Members table while
+                  SharePoint syncs the membership.
+                </Typography>
+              </Alert>
             </Stack>
           </DialogContent>
         </Collapse>

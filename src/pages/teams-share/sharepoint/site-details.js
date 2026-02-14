@@ -571,6 +571,8 @@ const Page = () => {
                     size: 200,
                     Cell: ({ row }) => {
                       const isAdmin = row.original.fields?.IsSiteAdmin;
+                      const email = row.original.fields?.EMail || "";
+                      const isGuest = email.includes("#ext#") || email.includes("_EXT_@");
                       return (
                         <Stack direction="row" alignItems="center" spacing={1}>
                           <Typography variant="body2" sx={{ fontWeight: isAdmin ? 600 : 400 }}>
@@ -582,6 +584,16 @@ const Page = () => {
                               label="Admin"
                               size="small"
                               color="warning"
+                              variant="outlined"
+                              sx={{ height: 22, fontSize: "0.7rem", "& .MuiChip-label": { px: 0.5 } }}
+                            />
+                          )}
+                          {isGuest && (
+                            <Chip
+                              icon={<PersonAdd sx={{ fontSize: 14 }} />}
+                              label="Guest"
+                              size="small"
+                              color="info"
                               variant="outlined"
                               sx={{ height: 22, fontSize: "0.7rem", "& .MuiChip-label": { px: 0.5 } }}
                             />
