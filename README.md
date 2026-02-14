@@ -103,8 +103,13 @@ An interactive detail page for individual SharePoint sites, providing at-a-glanc
 
 - **Site overview** with hero banner showing site type, status badges (inactive, storage critical), and quick-action chips
 - **Storage monitoring** with visual progress bar, percentage, and color-coded status (green/yellow/red)
-- **Member management** -- add and remove site members, add site administrators, with Admin badges displayed inline
-- **Guest invitation** -- invite external guest users directly from the site details page; guests are invited to the tenant and, for group-connected sites, automatically added as site members in a single operation
+- **Member management** -- add and remove site members, add site administrators; works for both group-connected sites (via M365 Group membership) and non-group sites (Communication sites, classic Team sites) via the SharePoint REST API; Admin and Guest badges displayed inline
+- **Guest invitation** -- invite external guest users directly from the site details page with a purpose-built dialog:
+  - Guests are invited to the tenant and automatically added as site members in a single operation -- for group-connected sites via M365 Group, and for non-group sites via the SharePoint REST API (`ensureuser` + `associatedmembergroup`)
+  - **Domain restriction diagnostics** -- if an invitation fails due to a domain collaboration restriction, the dialog runs a client-side root cause analysis against Entra External Collaboration settings and SharePoint Sharing settings, identifying the specific policy and domain list that is blocking the invitation
+  - **Quick-fix** -- one-click "Allow domain & Retry" button that updates the B2B domain allow/block list and retries the invitation; if the restriction is Azure-managed, provides step-by-step instructions and a direct link to the Entra admin center
+  - **Invite Another Guest** -- after a successful invitation, reset the form to invite additional guests in succession without closing the dialog
+  - Send email invitation toggle is on by default; sync delay guidance shown after successful invitations
 - **Data freshness** -- shows the Microsoft report refresh date so administrators know how current the numbers are
 - **Usage data enrichment** -- automatically fetches site usage data from the API, so the page is fully populated regardless of navigation path
 - **Create Team from Site** -- for group-connected sites, one-click team creation from the existing Microsoft 365 Group
@@ -373,7 +378,8 @@ The following API endpoints were created to support Manage365-specific features:
 
 | Endpoint | Purpose |
 |---|---|
-| `ExecSharePointInviteGuest` | Invite an external guest to the tenant and add them to a SharePoint site group |
+| `ExecSharePointInviteGuest` | Invite an external guest to the tenant and add them to a SharePoint site -- via M365 Group for group-connected sites, via SharePoint REST API (`ensureuser` + `associatedmembergroup`) for non-group sites; includes domain restriction diagnostics on failure |
+| `ExecSetSharePointMember` | Add or remove site members -- via M365 Group for group-connected sites, via SharePoint REST API for non-group sites (Communication, classic Team) |
 | `ExecTeamFromGroup` | Team-enable an existing M365 Group from a SharePoint site |
 | `ExecTeamSettings` | Update individual team settings (member, guest, messaging, fun) |
 | `ExecTeamAction` | Archive, unarchive, clone teams; create/delete channels; list/add/remove channel members; remove apps |
@@ -392,7 +398,7 @@ The following API endpoints were created to support Manage365-specific features:
 | `EditCrossTenantPartner` | Update an existing partner configuration |
 | `ExecRemoveCrossTenantPartner` | Remove a partner cross-tenant access configuration |
 | `ListExternalCollaboration` | Get authorization policy, guest settings, and B2B domain allow/deny lists |
-| `EditExternalCollaboration` | Update guest invite, guest role, and domain restriction settings |
+| `EditExternalCollaboration` | Update guest invite, guest role, and domain restriction settings; creates B2B Management Policy if none exists |
 | `ListCrossTenantHealth` | Aggregated health analysis with conflict detection, SharePoint sharing checks, and security scoring |
 | `ListCrossTenantTemplates` | List saved cross-tenant security baseline templates |
 | `ExecAddCrossTenantTemplate` | Create or update a security baseline template |
@@ -408,7 +414,7 @@ The following API endpoints were created to support Manage365-specific features:
 
 - **Frontend:** React / Next.js with Material-UI (MUI v7)
 - **Backend:** PowerShell Azure Functions
-- **API:** Microsoft Graph API (including Cross-Tenant Access Policy, Authorization Policy, and SharePoint Admin Settings endpoints), SharePoint Admin API, Teams PowerShell cmdlets (via `New-TeamsRequest`), Power Platform BAP API, Dataverse Web API, NinjaOne API (via CIPP extension)
+- **API:** Microsoft Graph API (including Cross-Tenant Access Policy, Authorization Policy, and SharePoint Admin Settings endpoints), SharePoint Admin API, SharePoint REST API (`_api/web` for site-level user and group management), Teams PowerShell cmdlets (via `New-TeamsRequest`), Power Platform BAP API, Dataverse Web API, NinjaOne API (via CIPP extension)
 - **Hosting:** Azure Static Web Apps + Azure Functions
 - **Data:** React Query for caching and state management
 
