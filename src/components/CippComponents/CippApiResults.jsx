@@ -127,7 +127,9 @@ const FormattedResultText = ({ text, severity }) => {
 
   // Pattern: SharePoint permission error — render structured guidance
   const isSharePointPermissionError =
-    text.includes("Sites.FullControl.All") || (text.includes("SharePoint") && text.includes("app registration"));
+    text.includes("AllSites.FullControl") ||
+    text.includes("Sites.FullControl.All") ||
+    (text.includes("SharePoint") && text.includes("CPV consent"));
   if (isSharePointPermissionError) {
     // Extract the preamble (e.g. "Guest invited to tenant, but could not add to site members:")
     // from the full message, or use a generic one
@@ -142,9 +144,9 @@ const FormattedResultText = ({ text, severity }) => {
           </Typography>
         )}
         <Typography variant="body2">
-          The CIPP app registration is missing the SharePoint{" "}
-          <strong>Sites.FullControl.All</strong> application permission. This is required for
-          managing members on non-group-connected SharePoint sites.
+          The CIPP SAM app needs the SharePoint <strong>AllSites.FullControl</strong> delegated
+          permission to manage members on non-group-connected SharePoint sites. This permission
+          must be pushed to the client tenant via CPV consent.
         </Typography>
         <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
           How to fix:
@@ -152,33 +154,27 @@ const FormattedResultText = ({ text, severity }) => {
         <Typography variant="body2" component="div">
           <ol style={{ margin: 0, paddingLeft: "1.2em" }}>
             <li>
-              Open <strong>Azure Portal</strong> &gt; <strong>App registrations</strong> &gt; your
-              CIPP app
+              Go to <strong>CIPP Settings</strong> &gt; <strong>Super Admin</strong> &gt;{" "}
+              <strong>SAM App Permissions</strong>
             </li>
             <li>
-              Go to <strong>API permissions</strong> &gt; <strong>Add a permission</strong> &gt;{" "}
-              <strong>SharePoint</strong>
+              Ensure the SharePoint <strong>AllSites.FullControl</strong> delegated permission is
+              included, then sync/update
             </li>
             <li>
-              Select <strong>Application permissions</strong> &gt; Sites &gt;{" "}
-              <strong>Sites.FullControl.All</strong>
-            </li>
-            <li>
-              Click <strong>Grant admin consent</strong>
+              Trigger a <strong>CPV Refresh</strong> to push the permission to client tenants
             </li>
           </ol>
         </Typography>
         <Box>
           <Button
-            href="https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/cipp/super-admin/sam-app-permissions"
             size="small"
             variant="outlined"
             startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
             sx={{ textTransform: "none", fontSize: "0.75rem" }}
           >
-            Open Azure App Registrations
+            Open SAM App Permissions
           </Button>
         </Box>
       </Stack>
