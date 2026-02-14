@@ -230,6 +230,9 @@ const CippGuestInviteDialog = ({
   const [quickFixStatus, setQuickFixStatus] = useState("idle"); // idle | loading | success | error
   const [quickFixMessage, setQuickFixMessage] = useState("");
   const [quickFixAttempted, setQuickFixAttempted] = useState(false);
+  const [nonGroupSiteWarning, setNonGroupSiteWarning] = useState(false);
+
+  const isNonGroupSite = sharePointType && !sharePointType.includes("Group");
 
   const formHook = useForm({
     defaultValues: {
@@ -253,6 +256,7 @@ const CippGuestInviteDialog = ({
     setDiagLoading(false);
     setQuickFixStatus("idle");
     setQuickFixMessage("");
+    setNonGroupSiteWarning(false);
     formHook.reset({
       displayName: "",
       mail: "",
@@ -415,6 +419,9 @@ const CippGuestInviteDialog = ({
           const results = response?.data?.Results || [];
           setResultMessages(results);
           setStatus("success");
+          if (response?.data?.NonGroupSiteWarning) {
+            setNonGroupSiteWarning(true);
+          }
         },
         onError: (error) => {
           const responseData = error?.response?.data;
@@ -496,7 +503,7 @@ const CippGuestInviteDialog = ({
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Invite an external guest user to this SharePoint site. The guest will be invited to the
-            tenant and, for group-connected sites, automatically added as a site member.
+            tenant and automatically added as a site member.
           </Typography>
         </DialogContent>
 
@@ -529,17 +536,44 @@ const CippGuestInviteDialog = ({
         <Collapse in={status === "success"}>
           <DialogContent>
             <Stack spacing={1.5}>
-              {resultMessages.map((msg, i) => (
-                <Alert key={i} severity="success" icon={<CheckCircle />}>
-                  <Typography variant="body2">{msg}</Typography>
+              {resultMessages.map((msg, i) => {
+                const isWarning =
+                  typeof msg === "string" &&
+                  (msg.includes("could not add") || msg.includes("not available for automatic"));
+                return (
+                  <Alert key={i} severity={isWarning ? "warning" : "success"} icon={isWarning ? <WarningAmber /> : <CheckCircle />}>
+                    <Typography variant="body2">{msg}</Typography>
+                  </Alert>
+                );
+              })}
+              {nonGroupSiteWarning && webUrl && (
+                <Alert severity="info" variant="outlined">
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    This is a non-group-connected site, so automatic membership assignment was not
+                    possible. You can add the guest manually using the <strong>Add Member</strong>{" "}
+                    button in the Site Members table, or assign permissions directly in SharePoint.
+                  </Typography>
+                  <Button
+                    href={`${webUrl}/_layouts/15/people.aspx?MembershipGroupId=0`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="small"
+                    variant="outlined"
+                    startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
+                    sx={{ textTransform: "none", fontSize: "0.75rem" }}
+                  >
+                    Open SharePoint Site Permissions
+                  </Button>
                 </Alert>
-              ))}
-              <Alert severity="info" variant="outlined" sx={{ mt: 0.5 }}>
-                <Typography variant="body2">
-                  It may take a minute or two for the guest to appear in the Site Members table while
-                  SharePoint syncs the membership.
-                </Typography>
-              </Alert>
+              )}
+              {!nonGroupSiteWarning && (
+                <Alert severity="info" variant="outlined" sx={{ mt: 0.5 }}>
+                  <Typography variant="body2">
+                    It may take a minute or two for the guest to appear in the Site Members table
+                    while SharePoint syncs the membership.
+                  </Typography>
+                </Alert>
+              )}
             </Stack>
           </DialogContent>
         </Collapse>
