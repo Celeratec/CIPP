@@ -1,6 +1,5 @@
 import {
   Alert,
-  AlertTitle,
   Box,
   Button,
   Chip,
@@ -93,6 +92,7 @@ const runClientDiagnostics = async (tenantFilter, domain) => {
             severity: "error",
             currentList: allowed,
             listType: "allowList",
+            canQuickFix: true,
           });
         }
 
@@ -106,34 +106,37 @@ const runClientDiagnostics = async (tenantFilter, domain) => {
             severity: "error",
             currentList: blocked,
             listType: "blockList",
+            canQuickFix: true,
           });
         }
 
-        // If there's an allow-list and the domain IS on it, or no restrictions at all
+        // Policy exists but empty lists — restriction is somewhere else
         if (allowed.length === 0 && blocked.length === 0) {
           findings.push({
             source: "Entra External Collaboration",
-            issue: "No domain restrictions configured in External Collaboration",
+            issue: "No domain restrictions found in B2B Management Policy",
             detail:
-              "The External Collaboration settings do not have any domain allow-list or block-list configured. The block may be coming from another policy layer.",
-            fix: "Check Cross-Tenant Access Policies, Conditional Access policies, or Azure AD Identity Governance settings.",
+              "The B2B Management Policy exists but has no domain allow-list or block-list configured. The restriction blocking this invitation may be configured directly in the Azure portal under External Identities > External collaboration settings > Collaboration restrictions, or through a Conditional Access policy.",
+            fix: `Open External Collaboration settings and set up an allow-list that includes '${domain}', or check the Azure portal directly.`,
             settingsPage: "/tenant/administration/cross-tenant-access/external-collaboration",
-            severity: "info",
+            severity: "error",
+            canQuickFix: true,
           });
         }
       } else {
-        // No domain policy object at all - this IS likely the cause
-        // The B2B Management Policy doesn't exist, but the block is happening
-        // In this case, domain restrictions might be configured but the legacy
-        // policy API didn't return them
+        // No B2B Management Policy found — the domain restriction is configured
+        // through the Azure portal or another mechanism that the Graph legacy
+        // policies API doesn't expose. This is the most common scenario when
+        // restrictions were set up via the Azure portal UI.
         findings.push({
           source: "Entra External Collaboration",
-          issue: "Domain restriction policy could not be read",
+          issue: `Domain '${domain}' is blocked by a collaboration restriction`,
           detail:
-            "The B2B Management Policy that stores domain allow/deny lists could not be retrieved. Domain restrictions may still be configured through the Azure portal. Check External Collaboration settings directly.",
-          fix: `Open External Collaboration settings and check the 'Collaboration restrictions' section. Ensure '${domain}' is allowed.`,
+            "This tenant has a domain collaboration restriction that is blocking this invitation. The restriction was likely configured in the Azure portal (External Identities > External collaboration settings > Collaboration restrictions) and is not currently managed through CIPP. You can take over management of this setting in CIPP by configuring the domain restrictions below.",
+          fix: `Open External Collaboration settings and configure a domain allow-list that includes '${domain}'. This will create the policy through the Graph API so CIPP can manage it going forward.`,
           settingsPage: "/tenant/administration/cross-tenant-access/external-collaboration",
-          severity: "warning",
+          severity: "error",
+          canQuickFix: true,
         });
       }
     }
@@ -223,6 +226,8 @@ const CippGuestInviteDialog = ({
   const [resultMessages, setResultMessages] = useState([]);
   const [status, setStatus] = useState("idle"); // idle | loading | success | error
   const [diagLoading, setDiagLoading] = useState(false);
+  const [quickFixStatus, setQuickFixStatus] = useState("idle"); // idle | loading | success | error
+  const [quickFixMessage, setQuickFixMessage] = useState("");
 
   const formHook = useForm({
     defaultValues: {
@@ -246,6 +251,8 @@ const CippGuestInviteDialog = ({
       setResultMessages([]);
       setStatus("idle");
       setDiagLoading(false);
+      setQuickFixStatus("idle");
+      setQuickFixMessage("");
       formHook.reset({
         displayName: "",
         mail: "",
@@ -288,6 +295,81 @@ const CippGuestInviteDialog = ({
     },
     [tenantFilter]
   );
+
+  /**
+   * Quick-fix: adds the blocked domain to the External Collaboration allow-list
+   * (or removes it from the block-list), then retries the invitation.
+   */
+  const handleQuickFix = useCallback(async () => {
+    if (!blockedDomain) return;
+
+    setQuickFixStatus("loading");
+    setQuickFixMessage("");
+
+    try {
+      const headers = await buildVersionedHeaders();
+
+      // First, read the current External Collaboration settings
+      const collabResp = await axios.get("/api/ListExternalCollaboration", {
+        params: { tenantFilter },
+        headers,
+      });
+      const collab = collabResp.data?.Results;
+      const domainPolicy =
+        collab?.domainRestrictions?.InvitationsAllowedAndBlockedDomainsPolicy;
+
+      // Determine the fix action
+      let allowedDomains = domainPolicy?.AllowedDomains || [];
+      let blockedDomains = domainPolicy?.BlockedDomains || [];
+
+      if (blockedDomains.includes(blockedDomain)) {
+        // Remove from block list
+        blockedDomains = blockedDomains.filter((d) => d !== blockedDomain);
+      } else if (allowedDomains.length > 0 && !allowedDomains.includes(blockedDomain)) {
+        // Add to existing allow list
+        allowedDomains = [...allowedDomains, blockedDomain];
+      } else {
+        // No existing lists — create an allow-list with this domain
+        // We also need common domains, so let's just add this one and let
+        // the admin review further
+        allowedDomains = [blockedDomain];
+      }
+
+      // Apply the fix
+      await axios.post(
+        "/api/EditExternalCollaboration",
+        {
+          tenantFilter,
+          domainRestrictions: {
+            InvitationsAllowedAndBlockedDomainsPolicy: {
+              AllowedDomains: allowedDomains,
+              BlockedDomains: blockedDomains,
+            },
+          },
+        },
+        { headers }
+      );
+
+      setQuickFixStatus("success");
+      setQuickFixMessage(
+        `Added '${blockedDomain}' to the allowed domains list. You can now retry the invitation.`
+      );
+
+      // Clear the error state so the user can retry
+      setDiagnostics(null);
+      setResultMessages([]);
+      setStatus("idle");
+    } catch (err) {
+      setQuickFixStatus("error");
+      const errMsg =
+        err?.response?.data?.Results ||
+        err?.message ||
+        "Failed to update domain restrictions.";
+      setQuickFixMessage(
+        typeof errMsg === "string" ? errMsg : Array.isArray(errMsg) ? errMsg.join(" ") : String(errMsg)
+      );
+    }
+  }, [blockedDomain, tenantFilter]);
 
   const onSubmit = (data) => {
     setStatus("loading");
@@ -596,8 +678,29 @@ const CippGuestInviteDialog = ({
                               </Typography>
                             </Alert>
 
-                            {diag.settingsPage && (
-                              <Box sx={{ mt: 1 }}>
+                            <Stack direction="row" spacing={1} sx={{ mt: 1 }} flexWrap="wrap" useFlexGap>
+                              {diag.canQuickFix && blockedDomain && (
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  color="primary"
+                                  disabled={quickFixStatus === "loading"}
+                                  startIcon={
+                                    quickFixStatus === "loading" ? (
+                                      <CircularProgress size={14} />
+                                    ) : (
+                                      <Send sx={{ fontSize: 14 }} />
+                                    )
+                                  }
+                                  onClick={handleQuickFix}
+                                  sx={{ textTransform: "none", fontSize: "0.75rem" }}
+                                >
+                                  {quickFixStatus === "loading"
+                                    ? "Updating..."
+                                    : `Allow ${blockedDomain} & Retry`}
+                                </Button>
+                              )}
+                              {diag.settingsPage && (
                                 <Button
                                   component={Link}
                                   href={`${diag.settingsPage}?tenantFilter=${tenantFilter}`}
@@ -609,14 +712,26 @@ const CippGuestInviteDialog = ({
                                 >
                                   Open {diag.source}
                                 </Button>
-                              </Box>
-                            )}
+                              )}
+                            </Stack>
                           </Box>
                         </Stack>
                       </Box>
                     ))}
                   </Stack>
                 </Box>
+              )}
+
+              {/* Quick-fix result */}
+              {quickFixStatus === "success" && quickFixMessage && (
+                <Alert severity="success" icon={<CheckCircle />}>
+                  <Typography variant="body2">{quickFixMessage}</Typography>
+                </Alert>
+              )}
+              {quickFixStatus === "error" && quickFixMessage && (
+                <Alert severity="error" icon={<ErrorOutline />}>
+                  <Typography variant="body2">{quickFixMessage}</Typography>
+                </Alert>
               )}
             </Stack>
           </DialogContent>
