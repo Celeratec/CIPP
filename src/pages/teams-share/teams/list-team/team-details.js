@@ -1017,6 +1017,7 @@ const Page = () => {
                   <CippDataTable
                     title="Owners"
                     data={owners}
+                    isFetching={teamDetails.isFetching}
                     columnsFromApi={false}
                     columns={[
                       {
@@ -1078,6 +1079,7 @@ const Page = () => {
                   <CippDataTable
                     title="Members"
                     data={members}
+                    isFetching={teamDetails.isFetching}
                     columnsFromApi={false}
                     columns={[
                       {
@@ -1168,6 +1170,7 @@ const Page = () => {
                   <CippDataTable
                     title="Installed Apps"
                     data={appsData}
+                    isFetching={teamDetails.isFetching}
                     simpleColumns={["displayName", "version", "publishingState"]}
                     actions={appActions}
                     queryKey={`team-apps-${teamId}`}
