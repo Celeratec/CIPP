@@ -45,11 +45,12 @@ const isDomainCollaborationError = (messages) => {
 };
 
 /**
- * Client-side diagnostic engine. Fetches External Collaboration and SharePoint
- * settings using the same proven API endpoints the settings pages use, then
+ * Client-side diagnostic engine. Fetches External Collaboration settings and
+ * context-specific settings (SharePoint sharing or Teams guest access), then
  * analyzes them against the blocked domain.
+ * @param {"sharepoint"|"teams"} context - Which resource type we're inviting to
  */
-const runClientDiagnostics = async (tenantFilter, domain) => {
+const runClientDiagnostics = async (tenantFilter, domain, context = "sharepoint") => {
   const findings = [];
   const headers = await buildVersionedHeaders();
 
@@ -154,59 +155,84 @@ const runClientDiagnostics = async (tenantFilter, domain) => {
     });
   }
 
-  // --- Fetch SharePoint Sharing settings ---
-  try {
-    const spResp = await axios.get("/api/ListSharepointSettings", {
-      params: { tenantFilter },
-      headers,
-    });
-    const spData = Array.isArray(spResp.data) ? spResp.data[0] : spResp.data;
+  if (context === "teams") {
+    // --- Fetch Teams guest access settings ---
+    try {
+      const teamsResp = await axios.get("/api/ListTeamsSettings", {
+        params: { tenantFilter },
+        headers,
+      });
+      const teamsData = teamsResp.data;
 
-    if (spData) {
-      if (spData.sharingCapability === "disabled") {
+      if (teamsData && teamsData.allowGuestUser === false) {
         findings.push({
-          source: "SharePoint Sharing Settings",
-          issue: "External sharing is completely disabled for SharePoint",
+          source: "Teams Guest Access",
+          issue: "Guest access is disabled for Microsoft Teams",
           detail:
-            "SharePoint external sharing is set to 'Only people in your organization'. Even if the guest is invited to the tenant, they cannot access SharePoint content.",
-          fix: "Enable external sharing in SharePoint Sharing Settings. At minimum, set it to 'Existing guests' or 'New and existing guests'.",
-          settingsPage: "/teams-share/sharepoint/sharing-settings",
-          severity: "warning",
+            "The Teams tenant setting 'Allow guest access' is currently disabled. Guests cannot be added to any teams until this is enabled.",
+          fix: "Enable guest access in Teams Settings > Guest & Cloud Storage, or use the CIPP Teams Settings page.",
+          settingsPage: "/teams-share/teams/teams-settings",
+          severity: "error",
         });
       }
+    } catch {
+      // Teams settings not available - non-critical
+    }
+  } else {
+    // --- Fetch SharePoint Sharing settings ---
+    try {
+      const spResp = await axios.get("/api/ListSharepointSettings", {
+        params: { tenantFilter },
+        headers,
+      });
+      const spData = Array.isArray(spResp.data) ? spResp.data[0] : spResp.data;
 
-      if (spData.sharingDomainRestrictionMode === "allowList") {
-        const spAllowed = spData.sharingAllowedDomainList || [];
-        if (spAllowed.length > 0 && !spAllowed.includes(domain)) {
+      if (spData) {
+        if (spData.sharingCapability === "disabled") {
           findings.push({
             source: "SharePoint Sharing Settings",
-            issue: `Domain '${domain}' is not in the SharePoint allowed domains list`,
-            detail: `SharePoint uses a separate domain allow-list for external sharing. The domain '${domain}' is not on this list, so even if the guest is invited to the tenant, they won't be able to access SharePoint content.`,
-            fix: `Add '${domain}' to the SharePoint sharing allowed domains list.`,
+            issue: "External sharing is completely disabled for SharePoint",
+            detail:
+              "SharePoint external sharing is set to 'Only people in your organization'. Even if the guest is invited to the tenant, they cannot access SharePoint content.",
+            fix: "Enable external sharing in SharePoint Sharing Settings. At minimum, set it to 'Existing guests' or 'New and existing guests'.",
             settingsPage: "/teams-share/sharepoint/sharing-settings",
             severity: "warning",
-            currentList: spAllowed,
-            listType: "allowList",
           });
         }
-      } else if (spData.sharingDomainRestrictionMode === "blockList") {
-        const spBlocked = spData.sharingBlockedDomainList || [];
-        if (spBlocked.length > 0 && spBlocked.includes(domain)) {
-          findings.push({
-            source: "SharePoint Sharing Settings",
-            issue: `Domain '${domain}' is blocked in SharePoint sharing settings`,
-            detail: `The domain '${domain}' appears in the SharePoint blocked domains list.`,
-            fix: `Remove '${domain}' from the SharePoint sharing blocked domains list.`,
-            settingsPage: "/teams-share/sharepoint/sharing-settings",
-            severity: "warning",
-            currentList: spBlocked,
-            listType: "blockList",
-          });
+
+        if (spData.sharingDomainRestrictionMode === "allowList") {
+          const spAllowed = spData.sharingAllowedDomainList || [];
+          if (spAllowed.length > 0 && !spAllowed.includes(domain)) {
+            findings.push({
+              source: "SharePoint Sharing Settings",
+              issue: `Domain '${domain}' is not in the SharePoint allowed domains list`,
+              detail: `SharePoint uses a separate domain allow-list for external sharing. The domain '${domain}' is not on this list, so even if the guest is invited to the tenant, they won't be able to access SharePoint content.`,
+              fix: `Add '${domain}' to the SharePoint sharing allowed domains list.`,
+              settingsPage: "/teams-share/sharepoint/sharing-settings",
+              severity: "warning",
+              currentList: spAllowed,
+              listType: "allowList",
+            });
+          }
+        } else if (spData.sharingDomainRestrictionMode === "blockList") {
+          const spBlocked = spData.sharingBlockedDomainList || [];
+          if (spBlocked.length > 0 && spBlocked.includes(domain)) {
+            findings.push({
+              source: "SharePoint Sharing Settings",
+              issue: `Domain '${domain}' is blocked in SharePoint sharing settings`,
+              detail: `The domain '${domain}' appears in the SharePoint blocked domains list.`,
+              fix: `Remove '${domain}' from the SharePoint sharing blocked domains list.`,
+              settingsPage: "/teams-share/sharepoint/sharing-settings",
+              severity: "warning",
+              currentList: spBlocked,
+              listType: "blockList",
+            });
+          }
         }
       }
+    } catch {
+      // SharePoint settings not available - non-critical
     }
-  } catch {
-    // SharePoint settings not available - non-critical
   }
 
   return findings;
@@ -219,6 +245,8 @@ const CippGuestInviteDialog = ({
   groupId,
   webUrl,
   sharePointType,
+  teamId,
+  teamName,
   relatedQueryKeys = [],
 }) => {
   const theme = useTheme();
@@ -231,8 +259,11 @@ const CippGuestInviteDialog = ({
   const [quickFixMessage, setQuickFixMessage] = useState("");
   const [quickFixAttempted, setQuickFixAttempted] = useState(false);
   const [nonGroupSiteWarning, setNonGroupSiteWarning] = useState(false);
+  const [teamsAddWarning, setTeamsAddWarning] = useState(false);
 
-  const isNonGroupSite = sharePointType && !sharePointType.includes("Group");
+  const isTeamsMode = Boolean(teamId);
+  const diagContext = isTeamsMode ? "teams" : "sharepoint";
+  const isNonGroupSite = !isTeamsMode && sharePointType && !sharePointType.includes("Group");
 
   const formHook = useForm({
     defaultValues: {
@@ -257,6 +288,7 @@ const CippGuestInviteDialog = ({
     setQuickFixStatus("idle");
     setQuickFixMessage("");
     setNonGroupSiteWarning(false);
+    setTeamsAddWarning(false);
     formHook.reset({
       displayName: "",
       mail: "",
@@ -281,11 +313,10 @@ const CippGuestInviteDialog = ({
       setBlockedDomain(domain);
       setDiagLoading(true);
 
+      const contextLabel = isTeamsMode ? "Teams Settings" : "SharePoint Sharing settings";
+
       try {
         if (fixWasAttempted) {
-          // The Graph API fix was applied but the restriction persists.
-          // This means the real restriction is managed outside the legacy
-          // policies API — direct the user to the Entra admin center.
           setDiagnostics([
             {
               source: "Microsoft Entra Admin Center",
@@ -298,7 +329,7 @@ const CippGuestInviteDialog = ({
             },
           ]);
         } else {
-          const findings = await runClientDiagnostics(tenantFilter, domain);
+          const findings = await runClientDiagnostics(tenantFilter, domain, diagContext);
           const actionable = findings.filter((f) => f.severity !== "info");
           setDiagnostics(actionable.length > 0 ? actionable : findings);
         }
@@ -308,7 +339,7 @@ const CippGuestInviteDialog = ({
             source: "Diagnostic Engine",
             issue: "Diagnostics failed",
             detail: "Could not retrieve tenant settings to diagnose the issue.",
-            fix: "Check External Collaboration settings and SharePoint Sharing settings manually.",
+            fix: `Check External Collaboration settings and ${contextLabel} manually.`,
             settingsPage: "/tenant/administration/cross-tenant-access/external-collaboration",
             severity: "warning",
           },
@@ -317,7 +348,7 @@ const CippGuestInviteDialog = ({
         setDiagLoading(false);
       }
     },
-    [tenantFilter]
+    [tenantFilter, isTeamsMode, diagContext]
   );
 
   /**
@@ -402,17 +433,16 @@ const CippGuestInviteDialog = ({
     setBlockedDomain(null);
     setResultMessages([]);
     setDiagLoading(false);
+    setTeamsAddWarning(false);
+
+    const payload = isTeamsMode
+      ? { tenantFilter, TeamID: teamId, ...data }
+      : { tenantFilter, groupId, URL: webUrl, SharePointType: sharePointType, ...data };
 
     inviteApi.mutate(
       {
         url: "/api/ExecSharePointInviteGuest",
-        data: {
-          tenantFilter,
-          groupId,
-          URL: webUrl,
-          SharePointType: sharePointType,
-          ...data,
-        },
+        data: payload,
       },
       {
         onSuccess: (response) => {
@@ -421,6 +451,9 @@ const CippGuestInviteDialog = ({
           setStatus("success");
           if (response?.data?.NonGroupSiteWarning) {
             setNonGroupSiteWarning(true);
+          }
+          if (response?.data?.TeamsAddWarning) {
+            setTeamsAddWarning(true);
           }
         },
         onError: (error) => {
@@ -502,8 +535,9 @@ const CippGuestInviteDialog = ({
 
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Invite an external guest user to this SharePoint site. The guest will be invited to the
-            tenant and automatically added as a site member.
+            {isTeamsMode
+              ? `Invite an external guest user to this Team${teamName ? ` (${teamName})` : ""}. The guest will be invited to the tenant and automatically added as a team member.`
+              : "Invite an external guest user to this SharePoint site. The guest will be invited to the tenant and automatically added as a site member."}
           </Typography>
         </DialogContent>
 
@@ -592,6 +626,15 @@ const CippGuestInviteDialog = ({
                   </Alert>
                 );
               })}
+              {teamsAddWarning && (
+                <Alert severity="info" variant="outlined">
+                  <Typography variant="body2">
+                    The guest was invited to the tenant but could not be added to the Team
+                    automatically. You can add them manually using the <strong>Add Member</strong>{" "}
+                    button in the Members section.
+                  </Typography>
+                </Alert>
+              )}
               {nonGroupSiteWarning && !resultMessages.some((m) => typeof m === "string" && (m.includes("AllSites.FullControl") || m.includes("Sites.FullControl.All") || m.includes("CPV consent"))) && webUrl && (
                 <Alert severity="info" variant="outlined">
                   <Typography variant="body2" sx={{ mb: 1 }}>
@@ -612,11 +655,12 @@ const CippGuestInviteDialog = ({
                   </Button>
                 </Alert>
               )}
-              {!nonGroupSiteWarning && (
+              {!nonGroupSiteWarning && !teamsAddWarning && (
                 <Alert severity="info" variant="outlined" sx={{ mt: 0.5 }}>
                   <Typography variant="body2">
-                    It may take a minute or two for the guest to appear in the Site Members table
-                    while SharePoint syncs the membership.
+                    {isTeamsMode
+                      ? "It may take a minute or two for the guest to appear in the Members list while Teams syncs the membership."
+                      : "It may take a minute or two for the guest to appear in the Site Members table while SharePoint syncs the membership."}
                   </Typography>
                 </Alert>
               )}

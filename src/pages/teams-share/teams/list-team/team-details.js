@@ -62,8 +62,10 @@ import { useSettings } from "../../../../hooks/use-settings";
 import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall";
 import { CippHead } from "../../../../components/CippComponents/CippHead";
 import { CippApiDialog } from "../../../../components/CippComponents/CippApiDialog";
+import CippGuestInviteDialog from "../../../../components/CippComponents/CippGuestInviteDialog";
 import { useDialog } from "../../../../hooks/use-dialog";
 import { showToast } from "../../../../store/toasts";
+import { Send } from "@mui/icons-material";
 
 // Risk metadata for settings that could reduce security or cause data loss
 const settingsRiskInfo = {
@@ -582,6 +584,7 @@ const Page = () => {
   const addMemberDialog = useDialog();
   const addOwnerDialog = useDialog();
   const addChannelDialog = useDialog();
+  const [inviteGuestOpen, setInviteGuestOpen] = useState(false);
 
   const userPickerField = [
     {
@@ -1014,7 +1017,35 @@ const Page = () => {
                   <CippDataTable
                     title="Owners"
                     data={owners}
-                    simpleColumns={["displayName", "email"]}
+                    columnsFromApi={false}
+                    columns={[
+                      {
+                        header: "Name",
+                        id: "displayName",
+                        accessorKey: "displayName",
+                        size: 200,
+                        Cell: ({ row }) => {
+                          const email = (row.original.email || "").toLowerCase();
+                          const isGuest = email.includes("#ext#") || email.includes("_ext_@");
+                          return (
+                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                              <Typography variant="body2">{row.original.displayName}</Typography>
+                              {isGuest && (
+                                <Chip
+                                  icon={<PersonAdd sx={{ fontSize: 14 }} />}
+                                  label="Guest"
+                                  size="small"
+                                  color="info"
+                                  variant="outlined"
+                                  sx={{ height: 22, fontSize: "0.7rem", "& .MuiChip-label": { px: 0.5 } }}
+                                />
+                              )}
+                            </Stack>
+                          );
+                        },
+                      },
+                      { header: "Email", id: "email", accessorKey: "email" },
+                    ]}
                     actions={ownerActions}
                     queryKey={`team-owners-${teamId}`}
                     refreshFunction={() => teamDetails.refetch()}
@@ -1034,15 +1065,48 @@ const Page = () => {
                       Members ({members.length})
                     </Typography>
                   </Stack>
-                  <Button size="small" startIcon={<PersonAdd />} onClick={() => addMemberDialog.handleOpen()}>
-                    Add
-                  </Button>
+                  <Stack direction="row" spacing={0.5}>
+                    <Button size="small" startIcon={<Send sx={{ fontSize: 14 }} />} onClick={() => setInviteGuestOpen(true)}>
+                      Invite Guest
+                    </Button>
+                    <Button size="small" startIcon={<PersonAdd />} onClick={() => addMemberDialog.handleOpen()}>
+                      Add
+                    </Button>
+                  </Stack>
                 </Stack>
                 <Box sx={{ px: 0 }}>
                   <CippDataTable
                     title="Members"
                     data={members}
-                    simpleColumns={["displayName", "email"]}
+                    columnsFromApi={false}
+                    columns={[
+                      {
+                        header: "Name",
+                        id: "displayName",
+                        accessorKey: "displayName",
+                        size: 200,
+                        Cell: ({ row }) => {
+                          const email = (row.original.email || "").toLowerCase();
+                          const isGuest = email.includes("#ext#") || email.includes("_ext_@");
+                          return (
+                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                              <Typography variant="body2">{row.original.displayName}</Typography>
+                              {isGuest && (
+                                <Chip
+                                  icon={<PersonAdd sx={{ fontSize: 14 }} />}
+                                  label="Guest"
+                                  size="small"
+                                  color="info"
+                                  variant="outlined"
+                                  sx={{ height: 22, fontSize: "0.7rem", "& .MuiChip-label": { px: 0.5 } }}
+                                />
+                              )}
+                            </Stack>
+                          );
+                        },
+                      },
+                      { header: "Email", id: "email", accessorKey: "email" },
+                    ]}
                     actions={memberActions}
                     queryKey={`team-members-${teamId}`}
                     refreshFunction={() => teamDetails.refetch()}
@@ -1204,6 +1268,14 @@ const Page = () => {
       <CippApiDialog createDialog={addMemberDialog} title="Add Member" fields={userPickerField} api={addMemberApi} row={{}} relatedQueryKeys={[`TeamDetails-${teamId}`]} />
       <CippApiDialog createDialog={addOwnerDialog} title="Add Owner" fields={userPickerField} api={addOwnerApi} row={{}} relatedQueryKeys={[`TeamDetails-${teamId}`]} />
       <CippApiDialog createDialog={addChannelDialog} title="Add Channel" fields={channelFields} api={addChannelApi} row={{}} relatedQueryKeys={[`TeamDetails-${teamId}`]} />
+      <CippGuestInviteDialog
+        open={inviteGuestOpen}
+        onClose={() => setInviteGuestOpen(false)}
+        tenantFilter={tenantFilter}
+        teamId={teamId}
+        teamName={teamName}
+        relatedQueryKeys={[`TeamDetails-${teamId}`]}
+      />
 
       {/* Settings Confirmation Dialog */}
       <Dialog open={settingsDialog.open} onClose={handleSettingsDialogClose} maxWidth="sm" fullWidth>
