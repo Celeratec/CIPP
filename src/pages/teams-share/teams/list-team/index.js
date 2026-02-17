@@ -308,10 +308,8 @@ const Page = () => {
         { field: "mailNickname", icon: <Mail />, label: "Mail Nickname" },
       ],
       cardGridProps: {
-        xs: 12,
-        sm: 6,
-        md: 4,
-        lg: 3,
+        md: 6,
+        lg: 4,
       },
       mobileQuickActions: ["View Details", "Add Member", "Archive Team"],
     }),

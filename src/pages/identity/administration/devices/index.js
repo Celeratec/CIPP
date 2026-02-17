@@ -115,6 +115,14 @@ const Page = () => {
     subtitle: "operatingSystem",
     avatar: {
       field: "displayName",
+      icon: (item) => {
+        const os = (item.operatingSystem || "").toLowerCase();
+        if (os.includes("android")) return <PhoneAndroid />;
+        if (os.includes("ios") || os.includes("iphone") || os.includes("ipad")) return <PhoneIphone />;
+        if (os.includes("mac")) return <Laptop />;
+        if (os.includes("windows")) return <Computer />;
+        return <Devices />;
+      },
     },
     // Color-code left border by enabled/disabled status
     cardSx: (item) => {
@@ -213,12 +221,10 @@ const Page = () => {
     ],
     desktopFieldsMax: 4,
     desktopFieldsLayout: "column",
-    cardGridProps: {
-      xs: 12,
-      sm: 6,
-      md: 4,
-      lg: 3,
-    },
+      cardGridProps: {
+        md: 6,
+        lg: 4,
+      },
     mobileQuickActions: [
       "Enable Device",
       "Disable Device",

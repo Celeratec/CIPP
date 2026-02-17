@@ -121,12 +121,10 @@ const Page = () => {
       "Create Team from Group",
     ],
     // Grid sizing for consistent card widths
-    cardGridProps: {
-      xs: 12,
-      sm: 6,
-      md: 4,
-      lg: 3,
-    },
+      cardGridProps: {
+        md: 6,
+        lg: 4,
+      },
   };
   const actions = [
     {

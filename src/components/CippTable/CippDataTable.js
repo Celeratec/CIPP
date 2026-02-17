@@ -816,6 +816,32 @@ const CardView = ({
                     }}
                     onClick={onCardClick ? () => onCardClick(item) : undefined}
                   />
+                ) : config.avatar?.customRender ? (
+                  <Box
+                    onClick={onCardClick ? () => onCardClick(item) : undefined}
+                    sx={{
+                      flexShrink: 0,
+                      cursor: onCardClick ? "pointer" : "default",
+                      "& .MuiAvatar-root": { width: 48, height: 48 },
+                    }}
+                  >
+                    {config.avatar.customRender(avatarField, item)}
+                  </Box>
+                ) : config.avatar?.icon ? (
+                  <Avatar
+                    onClick={onCardClick ? () => onCardClick(item) : undefined}
+                    sx={{
+                      bgcolor: stringToColor(avatarField),
+                      width: 48,
+                      height: 48,
+                      flexShrink: 0,
+                      cursor: onCardClick ? "pointer" : "default",
+                    }}
+                  >
+                    {typeof config.avatar.icon === "function"
+                      ? config.avatar.icon(item)
+                      : config.avatar.icon}
+                  </Avatar>
                 ) : (
                   <Avatar
                     onClick={onCardClick ? () => onCardClick(item) : undefined}

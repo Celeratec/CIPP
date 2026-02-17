@@ -732,8 +732,29 @@ export const nativeMenuItems = [
           },
           {
             title: "Business Voice",
-            path: "/teams-share/teams/business-voice",
             permissions: ["Teams.Voice.*"],
+            items: [
+              {
+                title: "Phone Numbers",
+                path: "/teams-share/teams/business-voice",
+                permissions: ["Teams.Voice.*"],
+              },
+              {
+                title: "Call Queues",
+                path: "/teams-share/teams/business-voice/call-queues",
+                permissions: ["Teams.Voice.*"],
+              },
+              {
+                title: "Auto Attendants",
+                path: "/teams-share/teams/business-voice/auto-attendants",
+                permissions: ["Teams.Voice.*"],
+              },
+              {
+                title: "Dial Plans",
+                path: "/teams-share/teams/business-voice/dial-plans",
+                permissions: ["Teams.Voice.*"],
+              },
+            ],
           },
         ],
       },

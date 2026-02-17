@@ -21,9 +21,6 @@ import {
   CheckCircle,
   Warning,
   Flag,
-  Wifi,
-  CalendarToday,
-  Info,
   PhoneEnabled,
   PhoneDisabled,
   SyncAlt,
@@ -75,6 +72,7 @@ const Page = () => {
         ],
         confirmText: "Select the User to assign the phone number '[TelephoneNumber]' to.",
         category: "edit",
+        quickAction: true,
       },
       {
         label: "Unassign User",
@@ -89,6 +87,7 @@ const Page = () => {
         confirmText:
           "Are you sure you want to remove the assignment for '[TelephoneNumber]' from '[AssignedTo]'?",
         category: "edit",
+        quickAction: true,
       },
       {
         label: "Set Emergency Location",
@@ -113,6 +112,7 @@ const Page = () => {
         ],
         confirmText: "Select the Emergency Location for '[TelephoneNumber]'.",
         category: "security",
+        quickAction: true,
       },
     ],
     []
@@ -148,6 +148,7 @@ const Page = () => {
     () => ({
       title: "TelephoneNumber",
       subtitle: "AssignedTo",
+      subtitleFormatter: (value) => getAssignedToDisplay(value) || "Unassigned",
       avatar: {
         field: "TelephoneNumber",
         icon: (item) =>
@@ -194,17 +195,24 @@ const Page = () => {
           label: "Assigned To",
           formatter: (value) => getAssignedToDisplay(value) || "Unassigned",
         },
+        [
+          { field: "NumberType", icon: <Phone />, label: "Type" },
+          { field: "IsoCountryCode", icon: <Flag />, label: "Country", align: "right" },
+        ],
       ],
       desktopFields: [
-        { field: "NumberType", icon: <Phone />, label: "Type" },
-        { field: "IsoCountryCode", icon: <Flag />, label: "Country" },
+        { field: "PlaceName", icon: <LocationOn />, label: "Location" },
       ],
       cardGridProps: {
-        xs: 12,
-        sm: 6,
-        md: 4,
-        lg: 3,
+        md: 6,
+        lg: 4,
       },
+      mobileQuickActions: [
+        "Assign User",
+        "Unassign User",
+        "Set Emergency Location",
+      ],
+      maxQuickActions: 8,
     }),
     []
   );
@@ -250,6 +258,14 @@ const Page = () => {
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25 }}>
                   {row.TelephoneNumber}
                 </Typography>
+                {isAssigned && (
+                  <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 0.5 }}>
+                    <Person sx={{ fontSize: 16, color: "text.secondary" }} />
+                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                      {getAssignedToDisplay(row.AssignedTo)}
+                    </Typography>
+                  </Stack>
+                )}
                 <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                   <Chip
                     label={isAssigned ? "Assigned" : "Unassigned"}
@@ -257,6 +273,9 @@ const Page = () => {
                     color={isAssigned ? "success" : "warning"}
                     variant="outlined"
                   />
+                  {row.NumberType && (
+                    <Chip label={row.NumberType} size="small" variant="outlined" />
+                  )}
                   {isOperatorConnect && (
                     <Chip
                       icon={<SyncAlt fontSize="small" />}
