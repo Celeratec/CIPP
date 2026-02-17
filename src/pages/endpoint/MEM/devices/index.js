@@ -38,6 +38,8 @@ import {
   Cancel,
   Warning,
   Help,
+  VerifiedUser,
+  GppBad,
   Person,
   CalendarToday,
   Info as InfoIcon,
@@ -48,13 +50,19 @@ import {
   Memory,
   Storage,
 } from "@mui/icons-material";
+import { useRouter } from "next/router";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import { getInitials, stringToColor } from "../../../../utils/get-initials";
 
 const Page = () => {
   const pageTitle = "Devices";
+  const router = useRouter();
   const tenantFilter = useSettings().currentTenant;
   const theme = useTheme();
+
+  const handleCardClick = useCallback((device) => {
+    router.push(`/endpoint/MEM/devices/view?deviceId=${encodeURIComponent(device.id || "")}`);
+  }, [router]);
 
   // Fetch NinjaOne enrichment data (runs in parallel with the Intune fetch)
   const ninjaDevices = ApiGetCall({
@@ -114,11 +122,12 @@ const Page = () => {
     badges: [
       {
         field: "complianceState",
+        iconOnly: true,
         conditions: {
-          compliant: { icon: "check", color: "success", label: "Compliant" },
-          noncompliant: { icon: "cancel", color: "error", label: "Non-Compliant" },
-          unknown: { label: "Unknown", color: "default", icon: <Help fontSize="small" /> },
-          inGracePeriod: { label: "Grace Period", color: "warning" },
+          compliant: { icon: <VerifiedUser fontSize="small" />, color: "success", label: "Compliant" },
+          noncompliant: { icon: <GppBad fontSize="small" />, color: "error", label: "Non-Compliant" },
+          unknown: { label: "Unknown Compliance", color: "default", icon: <Help fontSize="small" /> },
+          inGracePeriod: { label: "Grace Period", color: "warning", icon: <Warning fontSize="small" /> },
         },
       },
       {
@@ -210,6 +219,14 @@ const Page = () => {
       md: 4,
       lg: 3,
     },
+    mobileQuickActions: [
+      "Sync Device",
+      "Reboot Device",
+      "Rename Device",
+      "Retrieve LAPS password",
+      "Retrieve BitLocker Keys",
+    ],
+    maxQuickActions: 8,
   };
 
   const actions = [
@@ -290,6 +307,7 @@ const Page = () => {
         },
       ],
       category: "edit",
+      quickAction: true,
     },
     {
       label: "Sync Device",
@@ -302,6 +320,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to sync [deviceName]?",
       category: "manage",
+      quickAction: true,
     },
     {
       label: "Reboot Device",
@@ -314,6 +333,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to reboot [deviceName]?",
       category: "manage",
+      quickAction: true,
     },
     {
       label: "Locate Device",
@@ -338,6 +358,7 @@ const Page = () => {
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to retrieve the local admin password for [deviceName]?",
       category: "security",
+      quickAction: true,
     },
     {
       label: "Rotate Local Admin Password",
@@ -364,6 +385,7 @@ const Page = () => {
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to retrieve the BitLocker keys for [deviceName]?",
       category: "security",
+      quickAction: true,
     },
     {
       label: "Retrieve FileVault Key",
@@ -1033,6 +1055,7 @@ const Page = () => {
       offCanvas={offCanvas}
       simpleColumns={simpleColumns}
       cardConfig={cardConfig}
+      onCardClick={handleCardClick}
       offCanvasOnRowClick={true}
     />
   );

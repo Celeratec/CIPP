@@ -23,6 +23,8 @@ import {
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { Box, Stack } from "@mui/system";
+import { useCallback } from "react";
+import { useRouter } from "next/router";
 import { useSettings } from "../../../../hooks/use-settings.js";
 import { useDialog } from "../../../../hooks/use-dialog.js";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
@@ -53,6 +55,11 @@ const Page = () => {
   const syncDialog = useDialog();
   const tenant = useSettings().currentTenant;
   const theme = useTheme();
+  const router = useRouter();
+
+  const handleCardClick = useCallback((app) => {
+    router.push(`/endpoint/applications/list/view?appId=${encodeURIComponent(app.id || "")}`);
+  }, [router]);
 
   // Card view configuration (works for both mobile and desktop)
   const cardConfig = {
@@ -86,6 +93,13 @@ const Page = () => {
       md: 4,
       lg: 3,
     },
+    mobileQuickActions: [
+      "Assign to All Users",
+      "Assign to All Devices",
+      "Assign to Custom Group",
+      "Delete Application",
+    ],
+    maxQuickActions: 8,
   };
 
   const actions = [
@@ -122,6 +136,7 @@ const Page = () => {
       icon: <UserIcon />,
       color: "info",
       category: "manage",
+      quickAction: true,
     },
     {
       label: "Assign to All Devices",
@@ -156,6 +171,7 @@ const Page = () => {
       icon: <LaptopMac />,
       color: "info",
       category: "manage",
+      quickAction: true,
     },
     {
       label: "Assign Globally (All Users / All Devices)",
@@ -261,6 +277,7 @@ const Page = () => {
         };
       },
       category: "manage",
+      quickAction: true,
     },
     {
       label: "Delete Application",
@@ -273,6 +290,7 @@ const Page = () => {
       icon: <TrashIcon />,
       color: "danger",
       category: "danger",
+      quickAction: true,
     },
   ];
 
@@ -509,6 +527,7 @@ const Page = () => {
           </Box>
         }
         cardConfig={cardConfig}
+        onCardClick={handleCardClick}
         offCanvasOnRowClick={true}
       />
       <CippApiDialog

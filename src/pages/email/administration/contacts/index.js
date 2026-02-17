@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
+import { useRouter } from "next/router";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
 import { CloudSync, Edit, Business, Work, Badge } from "@mui/icons-material";
@@ -9,6 +10,11 @@ import { CippDeployContactTemplateDrawer } from "../../../../components/CippComp
 const Page = () => {
   const pageTitle = "Contacts";
   const cardButtonPermissions = ["Exchange.Contact.ReadWrite"];
+  const router = useRouter();
+
+  const handleCardClick = useCallback((contact) => {
+    router.push(`/email/administration/contacts/edit?id=${encodeURIComponent(contact.Guid || contact.id || "")}`);
+  }, [router]);
 
   // Card view configuration (works for both mobile and desktop)
   const cardConfig = {
@@ -41,6 +47,11 @@ const Page = () => {
       md: 4,
       lg: 3,
     },
+    mobileQuickActions: [
+      "Edit Contact",
+      "Remove Contact",
+    ],
+    maxQuickActions: 8,
   };
 
   const actions = useMemo(
@@ -54,6 +65,7 @@ const Page = () => {
         color: "warning",
         condition: (row) => !row.IsDirSynced,
         category: "edit",
+        quickAction: true,
       },
       {
         label: "Set Source of Authority",
@@ -96,6 +108,7 @@ const Page = () => {
         icon: <TrashIcon />,
         condition: (row) => !row.IsDirSynced,
         category: "danger",
+        quickAction: true,
       },
     ],
     []
@@ -115,6 +128,7 @@ const Page = () => {
         </>
       }
       cardConfig={cardConfig}
+      onCardClick={handleCardClick}
       offCanvasOnRowClick={true}
     />
   );

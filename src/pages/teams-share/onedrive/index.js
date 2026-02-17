@@ -369,9 +369,9 @@ const Page = () => {
         {
           field: "storageStatus",
           conditions: {
-            critical: { icon: "warning", color: "error", label: "Storage Critical (>90%)" },
-            high: { icon: "warning", color: "warning", label: "Storage High (>75%)" },
-            normal: { icon: "check", color: "success", label: "Storage OK" },
+            critical: { icon: <Storage fontSize="small" />, color: "error", label: "Storage Critical (>90%)" },
+            high: { icon: <Storage fontSize="small" />, color: "warning", label: "Storage High (>75%)" },
+            normal: { icon: <Storage fontSize="small" />, color: "success", label: "Storage OK" },
           },
           transform: (value, item) => {
             const pct = getStoragePercentage(

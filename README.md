@@ -392,6 +392,60 @@ A redesigned group management interface replacing the form-based edit page with 
 - **Dynamic membership rule display** -- for dynamic groups, the current membership rule is displayed in a monospace code block below the settings section
 - **Dialog-based actions** -- all add and remove operations use immediate feedback dialogs instead of batched form submissions, consistent with the Teams and SharePoint detail page patterns
 
+### Card Design Standardization
+
+A comprehensive overhaul of card views across all list pages, establishing consistent patterns for navigation, badges, quick actions, and inline editing:
+
+- **Title links** -- clicking a card title or avatar navigates directly to the entity's detail page across all card types: Users, Groups, Teams, SharePoint Sites, Mailboxes, Contacts, Entra Devices, MEM Devices, and Applications
+- **Meaningful badge icons** -- replaced generic check/cancel string icons with context-specific MUI icons throughout the application:
+  - Account enabled/disabled: `ToggleOn` / `ToggleOff` (Users, Entra Devices)
+  - Compliance state: `VerifiedUser` / `GppBad` (MEM Devices)
+  - Storage status: `Storage` icon with color variants (SharePoint, OneDrive)
+  - All icon-only badges include descriptive tooltips
+- **Quick action buttons** -- added `mobileQuickActions` to Mailboxes (edit permissions, convert, GAL visibility, archive, delete), Entra Devices (enable, disable, BitLocker, delete), MEM Devices (sync, reboot, rename, LAPS, BitLocker), Applications (assign to users/devices/group, delete), and Contacts (edit, remove)
+- **Design rules** -- codified card design patterns in `.cursor/rules/card-design.mdc` for consistent future development
+
+### New Detail Pages
+
+Five new entity detail pages following the established hero-section + stats + sections layout pattern, providing dedicated management interfaces that replace generic off-canvas panels:
+
+**Mailbox Detail Page** (`/email/administration/mailboxes/view`)
+- Hero with mailbox type badge (User, Shared, Room, Equipment), archive and litigation hold chips, GAL visibility status
+- Email information with primary address, UPN, recipient type, Exchange GUID
+- Aliases list with count
+- Direct link to full Exchange settings for the associated user
+
+**Contact Detail Page** (`/email/administration/contacts/edit` -- rewritten)
+- Hero with contact name, email, on-premises sync status, company and job title chips
+- Editable properties form with display name, email, company info, address, and phone numbers
+- On-premises sync awareness with warning banner and disabled form when directory-synced
+- Replaced the previous form-only CippFormPage with a proper detail page layout
+
+**Entra Device Detail Page** (`/identity/administration/devices/view`)
+- Hero with device name, OS, enabled/disabled status, trust type, compliance, and managed badges
+- Source presence chips (Entra, Intune, NinjaOne) with active/inactive styling
+- Device information (manufacturer, model, OS, enrollment type, profile type)
+- NinjaOne hardware section (CPU, RAM, OS, architecture, domain, last boot) when NinjaOne data is available
+- Timeline (last sign-in, registration date, device ID)
+- Quick action buttons: Enable/Disable, Retrieve BitLocker Keys, Delete Device -- all with confirmation dialogs
+
+**MEM Device Detail Page** (`/endpoint/MEM/devices/view`)
+- Compliance-colored hero with device name, user, compliance state, ownership, and encryption badges
+- Source presence chips (Entra, Intune, NinjaOne)
+- Device information (OS, version, manufacturer, model, serial number)
+- User & Enrollment section (primary user, enrollment type, join type, ownership)
+- NinjaOne hardware section (same as Entra device page)
+- Timeline (enrolled, last sync, device ID)
+- Categorized quick actions: Sync, Reboot, Rename, LAPS Password, BitLocker Keys, Retire, Delete -- with OS-conditional actions (LAPS and BitLocker only for Windows)
+
+**Application Detail Page** (`/endpoint/applications/list/view`)
+- Hero with app name, publishing state, assigned/unassigned status, and featured badge
+- Assignments section showing assigned-to groups, exclusions, and dependency count
+- Install Experience section (run-as account, restart behavior)
+- Detection Rules section (rule type, path, file/folder details)
+- Timeline (created, last modified, application ID)
+- Quick action buttons: Assign to All Users, Assign to All Devices, Assign to Custom Group, Delete Application
+
 ### Additional Enhancements
 
 - **Background site deletion** -- SharePoint site deletion is offloaded to prevent UI timeouts on large sites, with polling for completion status and toast notifications

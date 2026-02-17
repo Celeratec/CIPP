@@ -53,6 +53,8 @@ import {
   AccountTree,
   GppBad,
   Devices,
+  ToggleOn,
+  ToggleOff,
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import CippUserAvatar from "../../../../components/CippComponents/CippUserAvatar";
@@ -396,11 +398,12 @@ const Page = () => {
     badges: [
       {
         field: "accountEnabled",
+        iconOnly: true,
         conditions: {
-          true: { icon: "check", color: "success", label: "Account Enabled" },
-          false: { icon: "cancel", color: "error", label: "Account Disabled" },
-          Yes: { icon: "check", color: "success", label: "Account Enabled" },
-          No: { icon: "cancel", color: "error", label: "Account Disabled" },
+          true: { icon: <ToggleOn fontSize="small" />, color: "success", label: "Account Enabled" },
+          false: { icon: <ToggleOff fontSize="small" />, color: "error", label: "Account Disabled" },
+          Yes: { icon: <ToggleOn fontSize="small" />, color: "success", label: "Account Enabled" },
+          No: { icon: <ToggleOff fontSize="small" />, color: "error", label: "Account Disabled" },
         },
       },
       {

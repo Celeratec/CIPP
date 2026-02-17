@@ -1,3 +1,5 @@
+import { useCallback } from "react";
+import { useRouter } from "next/router";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
 import CippExchangeActions from "../../../../components/CippComponents/CippExchangeActions";
@@ -27,6 +29,11 @@ import { getInitials, stringToColor } from "../../../../utils/get-initials";
 const Page = () => {
   const pageTitle = "Mailboxes";
   const theme = useTheme();
+  const router = useRouter();
+
+  const handleCardClick = useCallback((mailbox) => {
+    router.push(`/email/administration/mailboxes/view?mailboxId=${encodeURIComponent(mailbox.ExternalDirectoryObjectId || mailbox.Guid || mailbox.UPN || "")}`);
+  }, [router]);
 
   // Card view configuration (works for both mobile and desktop)
   const cardConfig = {
@@ -61,6 +68,14 @@ const Page = () => {
       md: 4,
       lg: 3,
     },
+    mobileQuickActions: [
+      "Edit permissions",
+      "Convert Mailbox",
+      "Set Global Address List visibility",
+      "Enable Online Archive",
+      "Delete Mailbox",
+    ],
+    maxQuickActions: 8,
   };
 
   // Helper function to get mailbox type info
@@ -263,6 +278,7 @@ const Page = () => {
         </>
       }
       cardConfig={cardConfig}
+      onCardClick={handleCardClick}
       offCanvasOnRowClick={true}
     />
   );

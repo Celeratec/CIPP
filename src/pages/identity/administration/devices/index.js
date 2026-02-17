@@ -35,6 +35,8 @@ import {
   Warning,
   Help,
   Info as InfoIcon,
+  ToggleOn,
+  ToggleOff,
   CalendarToday,
   Dns,
   WifiOff,
@@ -42,12 +44,18 @@ import {
   Memory,
   Storage,
 } from "@mui/icons-material";
+import { useRouter } from "next/router";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import { stringToColor } from "../../../../utils/get-initials";
 
 const Page = () => {
   const pageTitle = "Devices";
   const tenantFilter = useSettings().currentTenant;
+  const router = useRouter();
+
+  const handleCardClick = useCallback((device) => {
+    router.push(`/identity/administration/devices/view?deviceId=${encodeURIComponent(device.id || "")}`);
+  }, [router]);
   const theme = useTheme();
 
   // Fetch NinjaOne enrichment data (runs in parallel with the Entra fetch)
@@ -118,9 +126,10 @@ const Page = () => {
     badges: [
       {
         field: "accountEnabled",
+        iconOnly: true,
         conditions: {
-          true: { icon: "check", color: "success", label: "Enabled" },
-          false: { icon: "cancel", color: "error", label: "Disabled" },
+          true: { icon: <ToggleOn fontSize="small" />, color: "success", label: "Device Enabled" },
+          false: { icon: <ToggleOff fontSize="small" />, color: "error", label: "Device Disabled" },
         },
       },
       {
@@ -210,6 +219,13 @@ const Page = () => {
       md: 4,
       lg: 3,
     },
+    mobileQuickActions: [
+      "Enable Device",
+      "Disable Device",
+      "Retrieve BitLocker Keys",
+      "Delete Device",
+    ],
+    maxQuickActions: 8,
   };
 
   const actions = [
@@ -246,6 +262,7 @@ const Page = () => {
       condition: (row) => !row.accountEnabled,
       icon: <CheckCircleOutline />,
       category: "edit",
+      quickAction: true,
     },
     {
       label: "Disable Device",
@@ -260,6 +277,7 @@ const Page = () => {
       condition: (row) => row.accountEnabled,
       icon: <Block />,
       category: "edit",
+      quickAction: true,
     },
     {
       label: "Retrieve BitLocker Keys",
@@ -272,6 +290,7 @@ const Page = () => {
       multiPost: false,
       icon: <VpnKey />,
       category: "security",
+      quickAction: true,
     },
     {
       label: "Delete Device",
@@ -285,6 +304,7 @@ const Page = () => {
       multiPost: false,
       icon: <DeleteForever />,
       category: "danger",
+      quickAction: true,
     },
   ];
 
@@ -679,6 +699,7 @@ const Page = () => {
       offCanvas={offCanvas}
       simpleColumns={simpleColumns}
       cardConfig={cardConfig}
+      onCardClick={handleCardClick}
       offCanvasOnRowClick={true}
     />
   );

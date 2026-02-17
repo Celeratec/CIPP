@@ -47,6 +47,7 @@ import {
   Groups,
 } from "@mui/icons-material";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { CippDataTable } from "../../../components/CippTable/CippDataTable";
 import { useSettings } from "../../../hooks/use-settings";
 import { getCippFormatting } from "../../../utils/get-cipp-formatting";
@@ -127,6 +128,25 @@ const Page = () => {
   const tenantFilter = useSettings().currentTenant;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const router = useRouter();
+
+  const handleCardClick = useCallback((site) => {
+    const params = new URLSearchParams({
+      siteId: site.siteId || "",
+      displayName: site.displayName || "",
+      webUrl: site.webUrl || "",
+      rootWebTemplate: site.rootWebTemplate || "",
+      ownerPrincipalName: site.ownerPrincipalName || "",
+      ownerDisplayName: site.ownerDisplayName || "",
+      storageUsedInGigabytes: String(site.storageUsedInGigabytes || 0),
+      storageAllocatedInGigabytes: String(site.storageAllocatedInGigabytes || 0),
+      fileCount: String(site.fileCount || 0),
+      lastActivityDate: site.lastActivityDate || "",
+      createdDateTime: site.createdDateTime || "",
+      reportRefreshDate: site.reportRefreshDate || "",
+    });
+    router.push(`/teams-share/sharepoint/site-details?${params.toString()}`);
+  }, [router]);
 
   const actions = useMemo(
     () => [
@@ -528,9 +548,9 @@ const Page = () => {
         {
           field: "storageStatus",
           conditions: {
-            critical: { icon: "warning", color: "error", label: "Storage Critical (>90%)" },
-            high: { icon: "warning", color: "warning", label: "Storage High (>75%)" },
-            normal: { icon: "check", color: "success", label: "Storage OK" },
+            critical: { icon: <Storage fontSize="small" />, color: "error", label: "Storage Critical (>90%)" },
+            high: { icon: <Storage fontSize="small" />, color: "warning", label: "Storage High (>75%)" },
+            normal: { icon: <Storage fontSize="small" />, color: "success", label: "Storage OK" },
           },
           transform: (value, item) => {
             const pct = getStoragePercentage(item.storageUsedInGigabytes, item.storageAllocatedInGigabytes);
@@ -894,6 +914,7 @@ const Page = () => {
       simpleColumns={simpleColumns}
       filters={filters}
       cardConfig={cardConfig}
+      onCardClick={handleCardClick}
       dataFreshnessField="reportRefreshDate"
       cardButton={
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>

@@ -37,7 +37,8 @@ import {
   Sync,
   Badge,
 } from "@mui/icons-material";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useRouter } from "next/router";
 import { useSettings } from "../../../../hooks/use-settings";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import { getInitials, stringToColor } from "../../../../utils/get-initials";
@@ -47,6 +48,11 @@ const Page = () => {
   const [showMembers, setShowMembers] = useState(false);
   const { currentTenant } = useSettings();
   const theme = useTheme();
+  const router = useRouter();
+
+  const handleCardClick = useCallback((group) => {
+    router.push(`/identity/administration/groups/edit?groupId=${group.id}&groupType=${encodeURIComponent(group.groupType || "")}`);
+  }, [router]);
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleMembersToggle = () => {
@@ -111,7 +117,6 @@ const Page = () => {
     maxQuickActions: 8,
     // Mobile quick actions: 7 buttons (no delete on mobile)
     mobileQuickActions: [
-      "View Members",
       "Edit Group",
       "Set Global Address List Visibility",
       "Only allow messages from people inside the organisation",
@@ -128,15 +133,6 @@ const Page = () => {
     },
   };
   const actions = [
-    {
-      label: "View Members",
-      link: "/identity/administration/groups/edit?groupId=[id]&groupType=[groupType]",
-      multiPost: false,
-      icon: <People />,
-      color: "info",
-      quickAction: true,
-      category: "view",
-    },
     {
       label: "Edit Group",
       link: "/identity/administration/groups/edit?groupId=[id]&groupType=[groupType]",
@@ -230,6 +226,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to change the source of authority for '[displayName]'? Setting it to On-Premises Managed will take until the next sync cycle to show the change.",
       multiPost: false,
+      quickAction: true,
       category: "manage",
     },
     {
@@ -740,6 +737,7 @@ const Page = () => {
       ]}
       cardConfig={cardConfig}
       offCanvasOnRowClick={true}
+      onCardClick={handleCardClick}
     />
   );
 };

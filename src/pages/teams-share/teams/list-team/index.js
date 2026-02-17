@@ -36,6 +36,7 @@ import {
   SupervisorAccount,
 } from "@mui/icons-material";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { CippDataTable } from "../../../../components/CippTable/CippDataTable";
 import { useSettings } from "../../../../hooks/use-settings";
 import { useMemo, useCallback } from "react";
@@ -45,6 +46,11 @@ const Page = () => {
   const tenantFilter = useSettings().currentTenant;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const router = useRouter();
+
+  const handleCardClick = useCallback((team) => {
+    router.push(`/teams-share/teams/list-team/team-details?teamId=${team.id}&name=${encodeURIComponent(team.displayName || "")}`);
+  }, [router]);
 
   const actions = useMemo(
     () => [
@@ -492,6 +498,7 @@ const Page = () => {
       simpleColumns={simpleColumns}
       filters={filters}
       cardConfig={cardConfig}
+      onCardClick={handleCardClick}
       cardButton={
         <Button component={Link} href="/teams-share/teams/list-team/add" startIcon={<GroupAdd />}>
           {isMobile ? "" : "Add Team"}
