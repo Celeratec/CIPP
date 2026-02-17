@@ -391,24 +391,39 @@ const Page = () => {
       <CippApiDialog
         title="Sync Device"
         createDialog={syncDialog}
-        url="/api/ExecDeviceAction"
-        data={{ GUID: device?.id, Action: "syncDevice", tenantFilter: tenant }}
+        api={{
+          url: "/api/ExecDeviceAction",
+          type: "POST",
+          data: { GUID: device?.id, Action: "syncDevice", tenantFilter: tenant },
+          confirmText: "Are you sure you want to sync this device?",
+          multiPost: false,
+        }}
         row={device || {}}
         relatedQueryKeys={[`MEMDevice-${deviceId}-${tenant}`]}
       />
       <CippApiDialog
         title="Reboot Device"
         createDialog={rebootDialog}
-        url="/api/ExecDeviceAction"
-        data={{ GUID: device?.id, Action: "rebootNow", tenantFilter: tenant }}
+        api={{
+          url: "/api/ExecDeviceAction",
+          type: "POST",
+          data: { GUID: device?.id, Action: "rebootNow", tenantFilter: tenant },
+          confirmText: "Are you sure you want to reboot this device?",
+          multiPost: false,
+        }}
         row={device || {}}
         relatedQueryKeys={[`MEMDevice-${deviceId}-${tenant}`]}
       />
       <CippApiDialog
         title="Rename Device"
         createDialog={renameDialog}
-        url="/api/ExecDeviceAction"
-        data={{ GUID: device?.id, Action: "setDeviceName", tenantFilter: tenant }}
+        api={{
+          url: "/api/ExecDeviceAction",
+          type: "POST",
+          data: { GUID: device?.id, Action: "setDeviceName", tenantFilter: tenant },
+          confirmText: "Enter the new name for the device.",
+          multiPost: false,
+        }}
         row={device || {}}
         fields={[{ type: "textField", name: "input", label: "New Device Name", required: true }]}
         relatedQueryKeys={[`MEMDevice-${deviceId}-${tenant}`]}
@@ -416,32 +431,52 @@ const Page = () => {
       <CippApiDialog
         title="Retrieve LAPS Password"
         createDialog={lapsDialog}
-        url="/api/ExecGetLocalAdminPassword"
-        data={{ GUID: device?.azureADDeviceId, tenantFilter: tenant }}
+        api={{
+          url: "/api/ExecGetLocalAdminPassword",
+          type: "POST",
+          data: { GUID: device?.azureADDeviceId, tenantFilter: tenant },
+          confirmText: "Are you sure you want to retrieve the local admin password?",
+          multiPost: false,
+        }}
         row={device || {}}
         relatedQueryKeys={[`MEMDevice-${deviceId}-${tenant}`]}
       />
       <CippApiDialog
         title="Retrieve BitLocker Keys"
         createDialog={bitlockerDialog}
-        url="/api/ExecGetRecoveryKey"
-        data={{ GUID: device?.azureADDeviceId, RecoveryKeyType: "BitLocker", tenantFilter: tenant }}
+        api={{
+          url: "/api/ExecGetRecoveryKey",
+          type: "POST",
+          data: { GUID: device?.azureADDeviceId, RecoveryKeyType: "BitLocker", tenantFilter: tenant },
+          confirmText: "Are you sure you want to retrieve the BitLocker keys?",
+          multiPost: false,
+        }}
         row={device || {}}
         relatedQueryKeys={[`MEMDevice-${deviceId}-${tenant}`]}
       />
       <CippApiDialog
         title="Retire Device"
         createDialog={retireDialog}
-        url="/api/ExecDeviceAction"
-        data={{ GUID: device?.id, Action: "retire", tenantFilter: tenant }}
+        api={{
+          url: "/api/ExecDeviceAction",
+          type: "POST",
+          data: { GUID: device?.id, Action: "retire", tenantFilter: tenant },
+          confirmText: "Are you sure you want to retire this device?",
+          multiPost: false,
+        }}
         row={device || {}}
         relatedQueryKeys={[`MEMDevice-${deviceId}-${tenant}`]}
       />
       <CippApiDialog
         title="Delete Device"
         createDialog={deleteDialog}
-        url="/api/ExecDeviceAction"
-        data={{ GUID: device?.id, Action: "delete", tenantFilter: tenant }}
+        api={{
+          url: "/api/ExecDeviceAction",
+          type: "POST",
+          data: { GUID: device?.id, Action: "delete", tenantFilter: tenant },
+          confirmText: "Are you sure you want to delete this device? This action cannot be undone.",
+          multiPost: false,
+        }}
         row={device || {}}
         relatedQueryKeys={[`MEMDevice-${deviceId}-${tenant}`]}
       />

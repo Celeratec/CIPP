@@ -70,36 +70,32 @@ const Page = () => {
       {
         field: "calculatedGroupType",
         conditions: {
-          // Microsoft 365 groups
-          m365: { label: "Microsoft 365 Group", color: "primary", icon: <GroupSharp fontSize="small" /> },
-          M365: { label: "Microsoft 365 Group", color: "primary", icon: <GroupSharp fontSize="small" /> },
-          // Regular Security groups (no mail)
-          generic: { label: "Security Group", color: "warning", icon: <Security fontSize="small" /> },
-          Generic: { label: "Security Group", color: "warning", icon: <Security fontSize="small" /> },
-          // Mail-Enabled Security groups
-          security: { label: "Mail-Enabled Security Group", color: "warning", icon: <Security fontSize="small" /> },
-          Security: { label: "Mail-Enabled Security Group", color: "warning", icon: <Security fontSize="small" /> },
-          // Distribution Lists
-          distributionList: { label: "Distribution List", color: "default", icon: <Email fontSize="small" /> },
-          DistributionList: { label: "Distribution List", color: "default", icon: <Email fontSize="small" /> },
-          distribution: { label: "Distribution List", color: "default", icon: <Email fontSize="small" /> },
-          Distribution: { label: "Distribution List", color: "default", icon: <Email fontSize="small" /> },
+          m365: { label: "Microsoft 365", color: "primary", icon: <GroupSharp fontSize="small" /> },
+          M365: { label: "Microsoft 365", color: "primary", icon: <GroupSharp fontSize="small" /> },
+          generic: { label: "Security", color: "warning", icon: <Security fontSize="small" /> },
+          Generic: { label: "Security", color: "warning", icon: <Security fontSize="small" /> },
+          security: { label: "Mail Security", color: "warning", icon: <Security fontSize="small" />, tooltip: "Mail-enabled security group" },
+          Security: { label: "Mail Security", color: "warning", icon: <Security fontSize="small" />, tooltip: "Mail-enabled security group" },
+          distributionList: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
+          DistributionList: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
+          distribution: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
+          Distribution: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
         },
       },
       {
         field: "dynamicGroupBool",
         conditions: {
-          true: { label: "Dynamic Membership - Members auto-assigned by rules", color: "info", icon: <DynamicFeed fontSize="small" /> },
+          true: { label: "Dynamic", color: "info", icon: <DynamicFeed fontSize="small" />, tooltip: "Members auto-assigned by rules" },
         },
       },
       {
         field: "visibility",
         iconOnly: true,
         conditions: {
-          Public: { label: "Public - Anyone can join", icon: <Public fontSize="small" sx={{ display: "block" }} />, color: "success" },
-          public: { label: "Public - Anyone can join", icon: <Public fontSize="small" sx={{ display: "block" }} />, color: "success" },
-          Private: { label: "Private - Invite only", icon: <PublicOff fontSize="small" sx={{ display: "block" }} />, color: "warning" },
-          private: { label: "Private - Invite only", icon: <PublicOff fontSize="small" sx={{ display: "block" }} />, color: "warning" },
+          Public: { label: "Public", tooltip: "Anyone can join", icon: <Public fontSize="small" sx={{ display: "block" }} />, color: "success" },
+          public: { label: "Public", tooltip: "Anyone can join", icon: <Public fontSize="small" sx={{ display: "block" }} />, color: "success" },
+          Private: { label: "Private", tooltip: "Invite only", icon: <PublicOff fontSize="small" sx={{ display: "block" }} />, color: "warning" },
+          private: { label: "Private", tooltip: "Invite only", icon: <PublicOff fontSize="small" sx={{ display: "block" }} />, color: "warning" },
         },
       },
     ],

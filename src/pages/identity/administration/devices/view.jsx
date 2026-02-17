@@ -401,32 +401,52 @@ const Page = () => {
       <CippApiDialog
         title="Enable Device"
         createDialog={enableDialog}
-        url="/api/ExecDeviceDelete"
-        data={{ ID: device?.id, action: "!Enable", tenantFilter: tenant }}
+        api={{
+          url: "/api/ExecDeviceDelete",
+          type: "POST",
+          data: { ID: device?.id, action: "!Enable", tenantFilter: tenant },
+          confirmText: "Are you sure you want to enable this device?",
+          multiPost: false,
+        }}
         row={device || {}}
         relatedQueryKeys={[`EntraDevice-${deviceId}-${tenant}`]}
       />
       <CippApiDialog
         title="Disable Device"
         createDialog={disableDialog}
-        url="/api/ExecDeviceDelete"
-        data={{ ID: device?.id, action: "!Disable", tenantFilter: tenant }}
+        api={{
+          url: "/api/ExecDeviceDelete",
+          type: "POST",
+          data: { ID: device?.id, action: "!Disable", tenantFilter: tenant },
+          confirmText: "Are you sure you want to disable this device?",
+          multiPost: false,
+        }}
         row={device || {}}
         relatedQueryKeys={[`EntraDevice-${deviceId}-${tenant}`]}
       />
       <CippApiDialog
         title="Retrieve BitLocker Keys"
         createDialog={bitlockerDialog}
-        url="/api/ExecGetRecoveryKey"
-        data={{ GUID: device?.deviceId, tenantFilter: tenant }}
+        api={{
+          url: "/api/ExecGetRecoveryKey",
+          type: "POST",
+          data: { GUID: device?.deviceId, tenantFilter: tenant },
+          confirmText: "Are you sure you want to retrieve the BitLocker keys for this device?",
+          multiPost: false,
+        }}
         row={device || {}}
         relatedQueryKeys={[`EntraDevice-${deviceId}-${tenant}`]}
       />
       <CippApiDialog
         title="Delete Device"
         createDialog={deleteDialog}
-        url="/api/ExecDeviceDelete"
-        data={{ ID: device?.id, action: "!Delete", tenantFilter: tenant }}
+        api={{
+          url: "/api/ExecDeviceDelete",
+          type: "POST",
+          data: { ID: device?.id, action: "!Delete", tenantFilter: tenant },
+          confirmText: "Are you sure you want to delete this device? This action cannot be undone.",
+          multiPost: false,
+        }}
         row={device || {}}
         relatedQueryKeys={[`EntraDevice-${deviceId}-${tenant}`]}
       />

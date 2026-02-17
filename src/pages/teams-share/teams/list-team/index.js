@@ -274,12 +274,14 @@ const Page = () => {
           field: "visibility",
           conditions: {
             Public: {
-              label: "Public - Anyone can join",
+              label: "Public",
+              tooltip: "Anyone can join this team",
               color: "success",
               icon: <Public fontSize="small" />,
             },
             Private: {
-              label: "Private - Invite only",
+              label: "Private",
+              tooltip: "Invite only",
               color: "warning",
               icon: <PublicOff fontSize="small" />,
             },

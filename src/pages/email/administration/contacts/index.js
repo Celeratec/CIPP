@@ -27,8 +27,8 @@ const Page = () => {
       {
         field: "IsDirSynced",
         conditions: {
-          true: { label: "Synced from On-Premises", color: "info", icon: <CloudSync fontSize="small" /> },
-          false: { label: "Cloud-Only Contact", color: "default" },
+          true: { label: "On-Prem Synced", color: "info", icon: <CloudSync fontSize="small" />, tooltip: "Synced from on-premises Active Directory" },
+          false: { label: "Cloud", color: "default", tooltip: "Cloud-only contact" },
         },
       },
     ],

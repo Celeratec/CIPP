@@ -308,11 +308,12 @@ const Page = () => {
       <CippApiDialog
         title="Assign to All Users"
         createDialog={assignAllUsersDialog}
-        url="/api/ExecAssignApp"
-        data={{
-          AssignTo: "allLicensedUsers",
-          appId: app?.id,
-          tenantFilter: tenant,
+        api={{
+          url: "/api/ExecAssignApp",
+          type: "POST",
+          data: { AssignTo: "allLicensedUsers", appId: app?.id, tenantFilter: tenant },
+          confirmText: "Are you sure you want to assign this application to all licensed users?",
+          multiPost: false,
         }}
         row={app || {}}
         relatedQueryKeys={[`App-${appId}-${tenant}`]}
@@ -320,11 +321,12 @@ const Page = () => {
       <CippApiDialog
         title="Assign to All Devices"
         createDialog={assignAllDevicesDialog}
-        url="/api/ExecAssignApp"
-        data={{
-          AssignTo: "AllDevices",
-          appId: app?.id,
-          tenantFilter: tenant,
+        api={{
+          url: "/api/ExecAssignApp",
+          type: "POST",
+          data: { AssignTo: "AllDevices", appId: app?.id, tenantFilter: tenant },
+          confirmText: "Are you sure you want to assign this application to all devices?",
+          multiPost: false,
         }}
         row={app || {}}
         relatedQueryKeys={[`App-${appId}-${tenant}`]}
@@ -332,10 +334,12 @@ const Page = () => {
       <CippApiDialog
         title="Assign to Custom Group"
         createDialog={assignGroupDialog}
-        url="/api/ExecAssignApp"
-        data={{
-          appId: app?.id,
-          tenantFilter: tenant,
+        api={{
+          url: "/api/ExecAssignApp",
+          type: "POST",
+          data: { appId: app?.id, tenantFilter: tenant },
+          confirmText: "Select a group to assign this application to.",
+          multiPost: false,
         }}
         row={app || {}}
         fields={[
@@ -359,10 +363,12 @@ const Page = () => {
       <CippApiDialog
         title="Delete Application"
         createDialog={deleteDialog}
-        url="/api/RemoveApp"
-        data={{
-          ID: app?.id,
-          tenantFilter: tenant,
+        api={{
+          url: "/api/RemoveApp",
+          type: "POST",
+          data: { ID: app?.id, tenantFilter: tenant },
+          confirmText: "Are you sure you want to delete this application? This action cannot be undone.",
+          multiPost: false,
         }}
         row={app || {}}
         relatedQueryKeys={[`App-${appId}-${tenant}`]}

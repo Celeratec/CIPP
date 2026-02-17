@@ -46,10 +46,10 @@ const Page = () => {
       {
         field: "recipientTypeDetails",
         conditions: {
-          UserMailbox: { label: "User Mailbox", color: "primary", icon: <Person fontSize="small" /> },
-          SharedMailbox: { label: "Shared Mailbox - Multiple users can access", color: "info", icon: <Group fontSize="small" /> },
-          RoomMailbox: { label: "Room Mailbox - Bookable meeting room", color: "warning", icon: <MeetingRoom fontSize="small" /> },
-          EquipmentMailbox: { label: "Equipment Mailbox - Bookable equipment", color: "default", icon: <Devices fontSize="small" /> },
+          UserMailbox: { label: "User", color: "primary", icon: <Person fontSize="small" /> },
+          SharedMailbox: { label: "Shared", color: "info", icon: <Group fontSize="small" />, tooltip: "Multiple users can access this mailbox" },
+          RoomMailbox: { label: "Room", color: "warning", icon: <MeetingRoom fontSize="small" />, tooltip: "Bookable meeting room" },
+          EquipmentMailbox: { label: "Equipment", color: "default", icon: <Devices fontSize="small" />, tooltip: "Bookable equipment" },
         },
       },
     ],
