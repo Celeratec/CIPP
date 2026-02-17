@@ -57,6 +57,11 @@ import { useQueryClient } from "@tanstack/react-query";
 const formatCapability = (cap) =>
   cap.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2");
 
+const formatNumberType = (value) => {
+  if (!value || typeof value !== "string") return value;
+  return value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2");
+};
+
 const parseCapabilities = (value) => {
   if (!value) return [];
   if (Array.isArray(value)) return value.map(formatCapability);
@@ -820,7 +825,7 @@ const Page = () => {
                       {phoneNumber.NumberType && (
                         <Chip
                           icon={<Phone fontSize="small" />}
-                          label={phoneNumber.NumberType}
+                          label={formatNumberType(phoneNumber.NumberType)}
                           size="small"
                           variant="outlined"
                         />
@@ -883,7 +888,7 @@ const Page = () => {
                   />
                   <StatBox
                     label="Type"
-                    value={phoneNumber.NumberType || "—"}
+                    value={formatNumberType(phoneNumber.NumberType) || "—"}
                     color="info"
                   />
                 </Stack>
@@ -948,7 +953,7 @@ const Page = () => {
                     label="Assigned To"
                     value={assignedUser || "Unassigned"}
                   />
-                  <InfoRow label="Number Type" value={phoneNumber.NumberType} />
+                  <InfoRow label="Number Type" value={formatNumberType(phoneNumber.NumberType)} />
                   <InfoRow
                     label="Activation State"
                     value={phoneNumber.ActivationState}
