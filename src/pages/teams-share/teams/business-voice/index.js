@@ -26,6 +26,7 @@ import {
   SyncAlt,
 } from "@mui/icons-material";
 import { useSettings } from "../../../../hooks/use-settings";
+import { useRouter } from "next/router";
 import { useMemo, useCallback } from "react";
 
 // Helper to safely extract a display string from AssignedTo (may be string or object)
@@ -41,8 +42,18 @@ const getAssignedToDisplay = (value) => {
 const Page = () => {
   const pageTitle = "Teams Business Voice";
   const tenantFilter = useSettings().currentTenant;
+  const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const handleCardClick = useCallback(
+    (item) => {
+      router.push(
+        `/teams-share/teams/business-voice/number?number=${encodeURIComponent(item.TelephoneNumber)}`
+      );
+    },
+    [router]
+  );
 
   const actions = useMemo(
     () => [
@@ -474,6 +485,7 @@ const Page = () => {
       simpleColumns={simpleColumns}
       filters={filters}
       cardConfig={cardConfig}
+      onCardClick={handleCardClick}
     />
   );
 };
