@@ -36,33 +36,51 @@ export const nativeMenuItems = [
         items: [
           {
             title: "Tenants",
-            path: "/tenant/administration/tenants",
             permissions: ["Tenant.Administration.*"],
+            items: [
+              {
+                title: "Tenants",
+                path: "/tenant/administration/tenants",
+                permissions: ["Tenant.Administration.*"],
+              },
+              {
+                title: "Manage Tenant",
+                path: "/tenant/manage/edit",
+                permissions: ["Tenant.Administration.*"],
+              },
+            ],
           },
           {
-            title: "Manage Tenant",
-            path: "/tenant/manage/edit",
-            permissions: ["Tenant.Administration.*"],
-          },
-          {
-            title: "Alert Configuration",
-            path: "/tenant/administration/alert-configuration",
-            permissions: ["Tenant.Alert.*"],
-          },
-          {
-            title: "Audit Logs",
-            path: "/tenant/administration/audit-logs",
-            permissions: ["Identity.AuditLog.*"],
+            title: "Monitoring",
+            permissions: ["Tenant.Alert.*", "Identity.AuditLog.*"],
+            items: [
+              {
+                title: "Alert Configuration",
+                path: "/tenant/administration/alert-configuration",
+                permissions: ["Tenant.Alert.*"],
+              },
+              {
+                title: "Audit Logs",
+                path: "/tenant/administration/audit-logs",
+                permissions: ["Identity.AuditLog.*"],
+              },
+            ],
           },
           {
             title: "Applications",
-            path: "/tenant/administration/applications/enterprise-apps",
             permissions: ["Tenant.Application.*"],
-          },
-          {
-            title: "App Consent Requests",
-            path: "/tenant/administration/app-consent-requests",
-            permissions: ["Tenant.Application.*"],
+            items: [
+              {
+                title: "Applications",
+                path: "/tenant/administration/applications/enterprise-apps",
+                permissions: ["Tenant.Application.*"],
+              },
+              {
+                title: "App Consent Requests",
+                path: "/tenant/administration/app-consent-requests",
+                permissions: ["Tenant.Application.*"],
+              },
+            ],
           },
           {
             title: "Secure Score",
@@ -181,23 +199,40 @@ export const nativeMenuItems = [
         items: [
           {
             title: "Users",
-            path: "/identity/administration/users",
             permissions: ["Identity.User.*"],
-          },
-          {
-            title: "Risky Users",
-            path: "/identity/administration/risky-users",
-            permissions: ["Identity.User.*"],
+            items: [
+              {
+                title: "Users",
+                path: "/identity/administration/users",
+                permissions: ["Identity.User.*"],
+              },
+              {
+                title: "Risky Users",
+                path: "/identity/administration/risky-users",
+                permissions: ["Identity.User.*"],
+              },
+              {
+                title: "Offboarding Wizard",
+                path: "/identity/administration/offboarding-wizard",
+                permissions: ["Identity.User.*"],
+              },
+            ],
           },
           {
             title: "Groups",
-            path: "/identity/administration/groups",
             permissions: ["Identity.Group.*"],
-          },
-          {
-            title: "Group Templates",
-            path: "/identity/administration/group-templates",
-            permissions: ["Identity.Group.*"],
+            items: [
+              {
+                title: "Groups",
+                path: "/identity/administration/groups",
+                permissions: ["Identity.Group.*"],
+              },
+              {
+                title: "Group Templates",
+                path: "/identity/administration/group-templates",
+                permissions: ["Identity.Group.*"],
+              },
+            ],
           },
           {
             title: "Entra Devices",
@@ -216,18 +251,19 @@ export const nativeMenuItems = [
           },
           {
             title: "JIT Admin",
-            path: "/identity/administration/jit-admin",
             permissions: ["Identity.Role.*"],
-          },
-          {
-            title: "JIT Admin Templates",
-            path: "/identity/administration/jit-admin-templates",
-            permissions: ["Identity.Role.*"],
-          },
-          {
-            title: "Offboarding Wizard",
-            path: "/identity/administration/offboarding-wizard",
-            permissions: ["Identity.User.*"],
+            items: [
+              {
+                title: "JIT Admin",
+                path: "/identity/administration/jit-admin",
+                permissions: ["Identity.Role.*"],
+              },
+              {
+                title: "JIT Admin Templates",
+                path: "/identity/administration/jit-admin-templates",
+                permissions: ["Identity.Role.*"],
+              },
+            ],
           },
         ],
       },
@@ -367,28 +403,40 @@ export const nativeMenuItems = [
         items: [
           {
             title: "Mailboxes",
-            path: "/email/administration/mailboxes",
             permissions: ["Exchange.Mailbox.*"],
-          },
-          {
-            title: "Deleted Mailboxes",
-            path: "/email/administration/deleted-mailboxes",
-            permissions: ["Exchange.Mailbox.*"],
-          },
-          {
-            title: "Mailbox Rules",
-            path: "/email/administration/mailbox-rules",
-            permissions: ["Exchange.Mailbox.*"],
+            items: [
+              {
+                title: "Mailboxes",
+                path: "/email/administration/mailboxes",
+                permissions: ["Exchange.Mailbox.*"],
+              },
+              {
+                title: "Deleted Mailboxes",
+                path: "/email/administration/deleted-mailboxes",
+                permissions: ["Exchange.Mailbox.*"],
+              },
+              {
+                title: "Mailbox Rules",
+                path: "/email/administration/mailbox-rules",
+                permissions: ["Exchange.Mailbox.*"],
+              },
+            ],
           },
           {
             title: "Contacts",
-            path: "/email/administration/contacts",
             permissions: ["Exchange.Contact.*"],
-          },
-          {
-            title: "Contact Templates",
-            path: "/email/administration/contacts-template",
-            permissions: ["Exchange.Contact.*"],
+            items: [
+              {
+                title: "Contacts",
+                path: "/email/administration/contacts",
+                permissions: ["Exchange.Contact.*"],
+              },
+              {
+                title: "Contact Templates",
+                path: "/email/administration/contacts-template",
+                permissions: ["Exchange.Contact.*"],
+              },
+            ],
           },
           {
             title: "Quarantine",
@@ -418,23 +466,35 @@ export const nativeMenuItems = [
         items: [
           {
             title: "Transport Rules",
-            path: "/email/transport/list-rules",
             permissions: ["Exchange.TransportRule.*"],
-          },
-          {
-            title: "Transport Templates",
-            path: "/email/transport/list-templates",
-            permissions: ["Exchange.TransportRule.*"],
+            items: [
+              {
+                title: "Transport Rules",
+                path: "/email/transport/list-rules",
+                permissions: ["Exchange.TransportRule.*"],
+              },
+              {
+                title: "Transport Templates",
+                path: "/email/transport/list-templates",
+                permissions: ["Exchange.TransportRule.*"],
+              },
+            ],
           },
           {
             title: "Connectors",
-            path: "/email/transport/list-connectors",
             permissions: ["Exchange.Connector.*"],
-          },
-          {
-            title: "Connector Templates",
-            path: "/email/transport/list-connector-templates",
-            permissions: ["Exchange.Connector.*"],
+            items: [
+              {
+                title: "Connectors",
+                path: "/email/transport/list-connectors",
+                permissions: ["Exchange.Connector.*"],
+              },
+              {
+                title: "Connector Templates",
+                path: "/email/transport/list-connector-templates",
+                permissions: ["Exchange.Connector.*"],
+              },
+            ],
           },
         ],
       },
@@ -443,24 +503,36 @@ export const nativeMenuItems = [
         permissions: ["Exchange.SpamFilter.*"],
         items: [
           {
-            title: "Spam Filter Policies",
-            path: "/email/spamfilter/list-spamfilter",
+            title: "Spam Filters",
             permissions: ["Exchange.SpamFilter.*"],
+            items: [
+              {
+                title: "Spam Filter Policies",
+                path: "/email/spamfilter/list-spamfilter",
+                permissions: ["Exchange.SpamFilter.*"],
+              },
+              {
+                title: "Spam Filter Templates",
+                path: "/email/spamfilter/list-templates",
+                permissions: ["Exchange.SpamFilter.*"],
+              },
+            ],
           },
           {
-            title: "Spam Filter Templates",
-            path: "/email/spamfilter/list-templates",
-            permissions: ["Exchange.SpamFilter.*"],
-          },
-          {
-            title: "Connection Filter",
-            path: "/email/spamfilter/list-connectionfilter",
+            title: "Connection Filters",
             permissions: ["Exchange.ConnectionFilter.*"],
-          },
-          {
-            title: "Connection Filter Templates",
-            path: "/email/spamfilter/list-connectionfilter-templates",
-            permissions: ["Exchange.ConnectionFilter.*"],
+            items: [
+              {
+                title: "Connection Filter",
+                path: "/email/spamfilter/list-connectionfilter",
+                permissions: ["Exchange.ConnectionFilter.*"],
+              },
+              {
+                title: "Connection Filter Templates",
+                path: "/email/spamfilter/list-connectionfilter-templates",
+                permissions: ["Exchange.ConnectionFilter.*"],
+              },
+            ],
           },
           {
             title: "Quarantine Policies",
@@ -516,44 +588,56 @@ export const nativeMenuItems = [
         ],
         items: [
           {
-            title: "Mailbox Statistics",
-            path: "/email/reports/mailbox-statistics",
+            title: "Mailbox Reports",
             permissions: ["Exchange.Mailbox.*"],
+            items: [
+              {
+                title: "Mailbox Statistics",
+                path: "/email/reports/mailbox-statistics",
+                permissions: ["Exchange.Mailbox.*"],
+              },
+              {
+                title: "Mailbox Activity",
+                path: "/email/reports/mailbox-activity",
+                permissions: ["Exchange.Mailbox.*"],
+              },
+              {
+                title: "Client Access Settings",
+                path: "/email/reports/mailbox-cas-settings",
+                permissions: ["Exchange.Mailbox.*"],
+              },
+              {
+                title: "Mailbox Permissions",
+                path: "/email/reports/mailbox-permissions",
+                permissions: ["Exchange.Mailbox.*"],
+              },
+              {
+                title: "Calendar Permissions",
+                path: "/email/reports/calendar-permissions",
+                permissions: ["Exchange.Mailbox.*"],
+              },
+            ],
           },
           {
-            title: "Mailbox Activity",
-            path: "/email/reports/mailbox-activity",
-            permissions: ["Exchange.Mailbox.*"],
-          },
-          {
-            title: "Mailbox Client Access Settings",
-            path: "/email/reports/mailbox-cas-settings",
-            permissions: ["Exchange.Mailbox.*"],
-          },
-          {
-            title: "Mailbox Permissions",
-            path: "/email/reports/mailbox-permissions",
-            permissions: ["Exchange.Mailbox.*"],
-          },
-          {
-            title: "Calendar Permissions",
-            path: "/email/reports/calendar-permissions",
-            permissions: ["Exchange.Mailbox.*"],
-          },
-          {
-            title: "Anti-Phishing Filters",
-            path: "/email/reports/antiphishing-filters",
-            permissions: ["Exchange.SpamFilter.*"],
-          },
-          {
-            title: "Malware Filters",
-            path: "/email/reports/malware-filters",
-            permissions: ["Exchange.SpamFilter.*"],
-          },
-          {
-            title: "Safe Attachments Filters",
-            path: "/email/reports/safeattachments-filters",
-            permissions: ["Exchange.SafeLinks.*"],
+            title: "Security Reports",
+            permissions: ["Exchange.SpamFilter.*", "Exchange.SafeLinks.*"],
+            items: [
+              {
+                title: "Anti-Phishing Filters",
+                path: "/email/reports/antiphishing-filters",
+                permissions: ["Exchange.SpamFilter.*"],
+              },
+              {
+                title: "Malware Filters",
+                path: "/email/reports/malware-filters",
+                permissions: ["Exchange.SpamFilter.*"],
+              },
+              {
+                title: "Safe Attachments Filters",
+                path: "/email/reports/safeattachments-filters",
+                permissions: ["Exchange.SafeLinks.*"],
+              },
+            ],
           },
           {
             title: "Shared Mailbox with Enabled Account",
@@ -723,34 +807,46 @@ export const nativeMenuItems = [
             permissions: ["Endpoint.Device.*"],
           },
           {
-            title: "Configuration Policies",
-            path: "/endpoint/MEM/list-policies",
+            title: "Policies",
             permissions: ["Endpoint.MEM.*"],
-          },
-          {
-            title: "Compliance Policies",
-            path: "/endpoint/MEM/list-compliance-policies",
-            permissions: ["Endpoint.MEM.*"],
-          },
-          {
-            title: "App Policies",
-            path: "/endpoint/MEM/list-appprotection-policies",
-            permissions: ["Endpoint.MEM.*"],
-          },
-          {
-            title: "Policy Templates",
-            path: "/endpoint/MEM/list-templates",
-            permissions: ["Endpoint.MEM.*"],
+            items: [
+              {
+                title: "Configuration Policies",
+                path: "/endpoint/MEM/list-policies",
+                permissions: ["Endpoint.MEM.*"],
+              },
+              {
+                title: "Compliance Policies",
+                path: "/endpoint/MEM/list-compliance-policies",
+                permissions: ["Endpoint.MEM.*"],
+              },
+              {
+                title: "App Policies",
+                path: "/endpoint/MEM/list-appprotection-policies",
+                permissions: ["Endpoint.MEM.*"],
+              },
+              {
+                title: "Policy Templates",
+                path: "/endpoint/MEM/list-templates",
+                permissions: ["Endpoint.MEM.*"],
+              },
+            ],
           },
           {
             title: "Assignment Filters",
-            path: "/endpoint/MEM/assignment-filters",
             permissions: ["Endpoint.MEM.*"],
-          },
-          {
-            title: "Assignment Filter Templates",
-            path: "/endpoint/MEM/assignment-filter-templates",
-            permissions: ["Endpoint.MEM.*"],
+            items: [
+              {
+                title: "Assignment Filters",
+                path: "/endpoint/MEM/assignment-filters",
+                permissions: ["Endpoint.MEM.*"],
+              },
+              {
+                title: "Filter Templates",
+                path: "/endpoint/MEM/assignment-filter-templates",
+                permissions: ["Endpoint.MEM.*"],
+              },
+            ],
           },
           {
             title: "Scripts",
