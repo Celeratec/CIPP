@@ -131,8 +131,15 @@ A comprehensive management interface for individual Microsoft Teams, consolidati
   - Messaging settings (edit/delete messages, team/channel mentions)
   - Fun settings (Giphy with rating dropdown, stickers, custom memes)
 - **Risk-aware confirmations** -- high-risk settings (e.g., allowing channel deletion) trigger a warning dialog explaining the security implications before the change is applied
+- **Guest invitation** -- invite external guest users directly from the team details page using the same purpose-built dialog as SharePoint, with Teams-specific diagnostics:
+  - Guests are invited to the tenant and automatically added as team members in a single operation via M365 Group membership
+  - **Teams guest access diagnostics** -- if an invitation fails, the dialog checks the tenant-level `AllowGuestUser` setting (via `Get-CsTeamsClientConfiguration`) and surfaces a clear message if guest access is disabled
+  - **Domain restriction diagnostics** -- same B2B domain allow/block list analysis as the SharePoint guest invitation flow
+  - **Quick-fix** -- same one-click domain allow and retry capability
+  - **Fallback guidance** -- if automatic team addition fails (e.g., propagation delay), the dialog guides the user to add the guest manually via the Add Member button
+  - Guest badges displayed inline on both the Owners and Members tables, detecting `#ext#` and `_ext_@` patterns in email addresses
 - **Cross-linking** -- direct navigation chip to the associated SharePoint site detail page, plus "Open in Teams" deep link
-- **Refresh** -- all data tables support refresh to re-fetch live data from the API
+- **Refresh** -- all data tables support refresh to re-fetch live data from the API with loading indicators
 
 ### OneDrive File Browser
 
@@ -366,6 +373,25 @@ Manage365 includes an inline risk coaching system that alerts administrators to 
 - Info-level alerts are shown inline for awareness but do not block saves
 - Each alert includes a specific recommendation for the safer alternative
 
+### Groups Detail Page
+
+A redesigned group management interface replacing the form-based edit page with a visual detail page consistent with the Teams and SharePoint detail page patterns:
+
+- **Group overview** with hero banner showing group type badge (Microsoft 365, Security, Distribution List, Mail-Enabled Security), visibility status, dynamic membership indicator, on-premises sync status, mail address, and description -- color-coded by group type
+- **Stats at a glance** -- owners, members, and contacts (for Distribution and Mail-Enabled Security groups) counts displayed prominently
+- **Member and owner management** -- side-by-side tables with add buttons opening user picker dialogs; remove members and owners via row-level actions with confirmation; guest badges displayed inline
+- **Contact management** -- conditional contacts table for Distribution List and Mail-Enabled Security groups, with add (contact picker dialog) and remove row actions
+- **Group properties** -- editable form card for display name, description, mail nickname, and dynamic membership rules, with a dedicated save button that submits only changed fields
+- **Interactive settings** -- toggle settings directly from the page using clickable chip buttons (not form switches):
+  - Visibility (Public/Private toggle) -- M365 groups
+  - Allow external senders -- M365 and Distribution groups
+  - Send copies to team member inboxes -- M365 groups
+  - Hide from Outlook -- M365 groups
+  - Security enabled -- M365 groups
+- **On-premises sync awareness** -- warning banner for on-prem synced groups; settings chips disabled with explanatory note
+- **Dynamic membership rule display** -- for dynamic groups, the current membership rule is displayed in a monospace code block below the settings section
+- **Dialog-based actions** -- all add and remove operations use immediate feedback dialogs instead of batched form submissions, consistent with the Teams and SharePoint detail page patterns
+
 ### Additional Enhancements
 
 - **Background site deletion** -- SharePoint site deletion is offloaded to prevent UI timeouts on large sites, with polling for completion status and toast notifications
@@ -380,12 +406,12 @@ The following API endpoints were created to support Manage365-specific features:
 
 | Endpoint | Purpose |
 |---|---|
-| `ExecSharePointInviteGuest` | Invite an external guest to the tenant and add them to a SharePoint site -- via M365 Group for group-connected sites, via SharePoint REST API with delegated auth (`ensureuser` + `associatedmembergroup`) for non-group sites; includes domain restriction diagnostics and permission error detection on failure |
+| `ExecSharePointInviteGuest` | Invite an external guest to the tenant and add them to a SharePoint site or Team -- via M365 Group for group-connected sites and Teams, via SharePoint REST API with delegated auth (`ensureuser` + `associatedmembergroup`) for non-group sites; includes domain restriction diagnostics, Teams guest access diagnostics (`AllowGuestUser` check), and permission error detection on failure |
 | `ExecSetSharePointMember` | Add or remove site members -- via M365 Group for group-connected sites, via SharePoint REST API with delegated auth for non-group sites (Communication, classic Team); includes permission error detection with remediation guidance |
 | `ExecTeamFromGroup` | Team-enable an existing M365 Group from a SharePoint site |
 | `ExecTeamSettings` | Update individual team settings (member, guest, messaging, fun) |
 | `ExecTeamAction` | Archive, unarchive, clone teams; create/delete channels; list/add/remove channel members; remove apps |
-| `ExecTeamMember` | Add/remove team members and owners; change roles |
+| `ExecTeamMember` | Add/remove team members and owners; change roles; uses M365 Group membership API for reliable guest user addition |
 | `ExecOneDriveFileAction` | OneDrive file operations (download, rename, move, copy, delete, create folder) and cross-drive transfers between OneDrive and SharePoint |
 | `ListDynamicsEnvironments` | List Power Platform / Dynamics 365 environments via BAP Admin API |
 | `ListDynamicsUsers` | List Dataverse system users with security role expansion |
