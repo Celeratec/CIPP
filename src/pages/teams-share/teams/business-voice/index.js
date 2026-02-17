@@ -7,7 +7,6 @@ import {
   Chip,
   Divider,
   useTheme,
-  Tooltip,
   useMediaQuery,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -21,13 +20,45 @@ import {
   CheckCircle,
   Warning,
   Flag,
-  PhoneEnabled,
-  PhoneDisabled,
   SyncAlt,
 } from "@mui/icons-material";
 import { useSettings } from "../../../../hooks/use-settings";
 import { useRouter } from "next/router";
 import { useMemo, useCallback } from "react";
+
+const parseCapabilityString = (value) => {
+  if (!value || typeof value !== "string") return [];
+  const known = [
+    "FirstPartyAppAssignment", "Geographic", "InboundCalling", "Office365",
+    "OutboundCalling", "SharedCalling", "AzureConferenceAssignment",
+    "InboundA2PSms", "OutboundA2PSms", "ThirdPartyAppAssignment",
+    "UserAssignment", "ConferenceAssignment", "VoiceAppAssignment", "PrivateLineAssignment",
+  ];
+  const caps = [];
+  let remaining = value;
+  while (remaining.length > 0) {
+    let matched = false;
+    for (const cap of known) {
+      if (remaining.startsWith(cap)) {
+        caps.push(cap.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2"));
+        remaining = remaining.slice(cap.length);
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      const match = remaining.match(/^([A-Z][a-z]+(?:[A-Z][a-z]+)*)/);
+      if (match) {
+        caps.push(match[1].replace(/([a-z])([A-Z])/g, "$1 $2"));
+        remaining = remaining.slice(match[1].length);
+      } else {
+        caps.push(remaining);
+        break;
+      }
+    }
+  }
+  return caps;
+};
 
 // Helper to safely extract a display string from AssignedTo (may be string or object)
 const getAssignedToDisplay = (value) => {
@@ -162,12 +193,7 @@ const Page = () => {
       subtitleFormatter: (value) => getAssignedToDisplay(value) || "Unassigned",
       avatar: {
         field: "TelephoneNumber",
-        icon: (item) =>
-          item.AssignmentStatus === "Assigned" ? (
-            <PhoneEnabled />
-          ) : (
-            <PhoneDisabled />
-          ),
+        icon: () => <Phone />,
       },
       badges: [
         {
@@ -263,7 +289,7 @@ const Page = () => {
                   height: 56,
                 }}
               >
-                {isAssigned ? <PhoneEnabled sx={{ fontSize: 28 }} /> : <PhoneDisabled sx={{ fontSize: 28 }} />}
+                <Phone sx={{ fontSize: 28 }} />
               </Avatar>
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25 }}>
@@ -344,26 +370,21 @@ const Page = () => {
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
               Capabilities
             </Typography>
-            <Stack spacing={1}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="body2" color="text.secondary">
-                  Acquired Capabilities
+            <Stack spacing={1.5}>
+              <Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
+                  Acquired
                 </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: 500,
-                    maxWidth: 200,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  <Tooltip title={row.AcquiredCapabilities || "—"}>
-                    <span>{row.AcquiredCapabilities || "—"}</span>
-                  </Tooltip>
-                </Typography>
-              </Stack>
+                <Stack direction="row" flexWrap="wrap" useFlexGap spacing={0.5}>
+                  {parseCapabilityString(row.AcquiredCapabilities).length > 0 ? (
+                    parseCapabilityString(row.AcquiredCapabilities).map((cap, i) => (
+                      <Chip key={i} label={cap} size="small" color="success" variant="outlined" />
+                    ))
+                  ) : (
+                    <Typography variant="body2" color="text.disabled">None</Typography>
+                  )}
+                </Stack>
+              </Box>
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Typography variant="body2" color="text.secondary">
                   Activation State

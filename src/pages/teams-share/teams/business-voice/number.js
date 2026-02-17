@@ -22,8 +22,7 @@ import { Box, Grid, Stack } from "@mui/system";
 import {
   ArrowBack,
   Phone,
-  PhoneEnabled,
-  PhoneDisabled,
+  Phone as PhoneIcon,
   Person,
   PersonAdd,
   PersonRemove,
@@ -37,6 +36,51 @@ import {
   Shield,
 } from "@mui/icons-material";
 import Link from "next/link";
+
+const parseCapabilityString = (value) => {
+  if (!value) return [];
+  if (typeof value !== "string") return [];
+  const known = [
+    "FirstPartyAppAssignment",
+    "Geographic",
+    "InboundCalling",
+    "Office365",
+    "OutboundCalling",
+    "SharedCalling",
+    "AzureConferenceAssignment",
+    "InboundA2PSms",
+    "OutboundA2PSms",
+    "ThirdPartyAppAssignment",
+    "UserAssignment",
+    "ConferenceAssignment",
+    "VoiceAppAssignment",
+    "PrivateLineAssignment",
+  ];
+  const caps = [];
+  let remaining = value;
+  while (remaining.length > 0) {
+    let matched = false;
+    for (const cap of known) {
+      if (remaining.startsWith(cap)) {
+        caps.push(cap.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2"));
+        remaining = remaining.slice(cap.length);
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      const match = remaining.match(/^([A-Z][a-z]+(?:[A-Z][a-z]+)*)/);
+      if (match) {
+        caps.push(match[1].replace(/([a-z])([A-Z])/g, "$1 $2"));
+        remaining = remaining.slice(match[1].length);
+      } else {
+        caps.push(remaining);
+        break;
+      }
+    }
+  }
+  return caps;
+};
 
 const getAssignedToDisplay = (value) => {
   if (!value) return "";
@@ -195,11 +239,7 @@ const Page = () => {
                       height: 64,
                     }}
                   >
-                    {isAssigned ? (
-                      <PhoneEnabled sx={{ fontSize: 32 }} />
-                    ) : (
-                      <PhoneDisabled sx={{ fontSize: 32 }} />
-                    )}
+                    <PhoneIcon sx={{ fontSize: 32 }} />
                   </Avatar>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.25 }}>
@@ -409,15 +449,35 @@ const Page = () => {
                     Capabilities
                   </Typography>
                 </Stack>
-                <Stack spacing={0.5}>
-                  <InfoRow
-                    label="Acquired Capabilities"
-                    value={phoneNumber.AcquiredCapabilities}
-                  />
-                  <InfoRow
-                    label="Available Capabilities"
-                    value={phoneNumber.AvailableCapabilities}
-                  />
+                <Stack spacing={2}>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Acquired Capabilities
+                    </Typography>
+                    <Stack direction="row" flexWrap="wrap" useFlexGap spacing={0.75}>
+                      {parseCapabilityString(phoneNumber.AcquiredCapabilities).length > 0 ? (
+                        parseCapabilityString(phoneNumber.AcquiredCapabilities).map((cap, i) => (
+                          <Chip key={i} label={cap} size="small" color="success" variant="outlined" />
+                        ))
+                      ) : (
+                        <Typography variant="body2" color="text.disabled">None</Typography>
+                      )}
+                    </Stack>
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Available Capabilities
+                    </Typography>
+                    <Stack direction="row" flexWrap="wrap" useFlexGap spacing={0.75}>
+                      {parseCapabilityString(phoneNumber.AvailableCapabilities).length > 0 ? (
+                        parseCapabilityString(phoneNumber.AvailableCapabilities).map((cap, i) => (
+                          <Chip key={i} label={cap} size="small" variant="outlined" />
+                        ))
+                      ) : (
+                        <Typography variant="body2" color="text.disabled">None</Typography>
+                      )}
+                    </Stack>
+                  </Box>
                 </Stack>
               </Paper>
             </Grid>
