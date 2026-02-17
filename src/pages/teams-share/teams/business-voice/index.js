@@ -66,6 +66,12 @@ const parseCapabilities = (value) => {
   return caps;
 };
 
+// Format NumberType values like "CallingPlan" -> "Calling Plan", "DirectRouting" -> "Direct Routing"
+const formatNumberType = (value) => {
+  if (!value || typeof value !== "string") return value;
+  return value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2");
+};
+
 // Helper to safely extract a display string from AssignedTo (may be string or object)
 const getAssignedToDisplay = (value) => {
   if (!value) return "";
@@ -239,7 +245,7 @@ const Page = () => {
           formatter: (value) => getAssignedToDisplay(value) || "Unassigned",
         },
         [
-          { field: "NumberType", icon: <Phone />, label: "Type" },
+          { field: "NumberType", icon: <Phone />, label: "Type", formatter: formatNumberType },
           { field: "IsoCountryCode", icon: <Flag />, label: "Country", align: "right" },
         ],
       ],
@@ -317,7 +323,7 @@ const Page = () => {
                     variant="outlined"
                   />
                   {row.NumberType && (
-                    <Chip label={row.NumberType} size="small" variant="outlined" />
+                    <Chip label={formatNumberType(row.NumberType)} size="small" variant="outlined" />
                   )}
                   {isOperatorConnect && (
                     <Chip
@@ -363,7 +369,7 @@ const Page = () => {
                   Number Type
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {row.NumberType || "—"}
+                  {formatNumberType(row.NumberType) || "—"}
                 </Typography>
               </Stack>
             </Stack>
