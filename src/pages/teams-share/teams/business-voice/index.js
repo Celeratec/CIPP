@@ -26,8 +26,14 @@ import { useSettings } from "../../../../hooks/use-settings";
 import { useRouter } from "next/router";
 import { useMemo, useCallback } from "react";
 
-const parseCapabilityString = (value) => {
-  if (!value || typeof value !== "string") return [];
+const formatCapability = (cap) =>
+  cap.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2");
+
+const parseCapabilities = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map(formatCapability);
+  if (typeof value !== "string") return [String(value)];
+  if (value.includes(",")) return value.split(",").map((s) => formatCapability(s.trim())).filter(Boolean);
   const known = [
     "FirstPartyAppAssignment", "Geographic", "InboundCalling", "Office365",
     "OutboundCalling", "SharedCalling", "AzureConferenceAssignment",
@@ -40,7 +46,7 @@ const parseCapabilityString = (value) => {
     let matched = false;
     for (const cap of known) {
       if (remaining.startsWith(cap)) {
-        caps.push(cap.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2"));
+        caps.push(formatCapability(cap));
         remaining = remaining.slice(cap.length);
         matched = true;
         break;
@@ -49,7 +55,7 @@ const parseCapabilityString = (value) => {
     if (!matched) {
       const match = remaining.match(/^([A-Z][a-z]+(?:[A-Z][a-z]+)*)/);
       if (match) {
-        caps.push(match[1].replace(/([a-z])([A-Z])/g, "$1 $2"));
+        caps.push(formatCapability(match[1]));
         remaining = remaining.slice(match[1].length);
       } else {
         caps.push(remaining);
@@ -376,8 +382,8 @@ const Page = () => {
                   Acquired
                 </Typography>
                 <Stack direction="row" flexWrap="wrap" useFlexGap spacing={0.5}>
-                  {parseCapabilityString(row.AcquiredCapabilities).length > 0 ? (
-                    parseCapabilityString(row.AcquiredCapabilities).map((cap, i) => (
+                  {parseCapabilities(row.AcquiredCapabilities).length > 0 ? (
+                    parseCapabilities(row.AcquiredCapabilities).map((cap, i) => (
                       <Chip key={i} label={cap} size="small" color="success" variant="outlined" />
                     ))
                   ) : (

@@ -37,24 +37,21 @@ import {
 } from "@mui/icons-material";
 import Link from "next/link";
 
-const parseCapabilityString = (value) => {
+const formatCapability = (cap) =>
+  cap.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2");
+
+const parseCapabilities = (value) => {
   if (!value) return [];
-  if (typeof value !== "string") return [];
+  if (Array.isArray(value)) return value.map(formatCapability);
+  if (typeof value !== "string") return [String(value)];
+  // If it's a comma-separated string, split on commas
+  if (value.includes(",")) return value.split(",").map((s) => formatCapability(s.trim())).filter(Boolean);
+  // Otherwise try to split a concatenated camelCase string
   const known = [
-    "FirstPartyAppAssignment",
-    "Geographic",
-    "InboundCalling",
-    "Office365",
-    "OutboundCalling",
-    "SharedCalling",
-    "AzureConferenceAssignment",
-    "InboundA2PSms",
-    "OutboundA2PSms",
-    "ThirdPartyAppAssignment",
-    "UserAssignment",
-    "ConferenceAssignment",
-    "VoiceAppAssignment",
-    "PrivateLineAssignment",
+    "FirstPartyAppAssignment", "Geographic", "InboundCalling", "Office365",
+    "OutboundCalling", "SharedCalling", "AzureConferenceAssignment",
+    "InboundA2PSms", "OutboundA2PSms", "ThirdPartyAppAssignment",
+    "UserAssignment", "ConferenceAssignment", "VoiceAppAssignment", "PrivateLineAssignment",
   ];
   const caps = [];
   let remaining = value;
@@ -62,7 +59,7 @@ const parseCapabilityString = (value) => {
     let matched = false;
     for (const cap of known) {
       if (remaining.startsWith(cap)) {
-        caps.push(cap.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2"));
+        caps.push(formatCapability(cap));
         remaining = remaining.slice(cap.length);
         matched = true;
         break;
@@ -71,7 +68,7 @@ const parseCapabilityString = (value) => {
     if (!matched) {
       const match = remaining.match(/^([A-Z][a-z]+(?:[A-Z][a-z]+)*)/);
       if (match) {
-        caps.push(match[1].replace(/([a-z])([A-Z])/g, "$1 $2"));
+        caps.push(formatCapability(match[1]));
         remaining = remaining.slice(match[1].length);
       } else {
         caps.push(remaining);
@@ -455,8 +452,8 @@ const Page = () => {
                       Acquired Capabilities
                     </Typography>
                     <Stack direction="row" flexWrap="wrap" useFlexGap spacing={0.75}>
-                      {parseCapabilityString(phoneNumber.AcquiredCapabilities).length > 0 ? (
-                        parseCapabilityString(phoneNumber.AcquiredCapabilities).map((cap, i) => (
+                      {parseCapabilities(phoneNumber.AcquiredCapabilities).length > 0 ? (
+                        parseCapabilities(phoneNumber.AcquiredCapabilities).map((cap, i) => (
                           <Chip key={i} label={cap} size="small" color="success" variant="outlined" />
                         ))
                       ) : (
@@ -469,8 +466,8 @@ const Page = () => {
                       Available Capabilities
                     </Typography>
                     <Stack direction="row" flexWrap="wrap" useFlexGap spacing={0.75}>
-                      {parseCapabilityString(phoneNumber.AvailableCapabilities).length > 0 ? (
-                        parseCapabilityString(phoneNumber.AvailableCapabilities).map((cap, i) => (
+                      {parseCapabilities(phoneNumber.AvailableCapabilities).length > 0 ? (
+                        parseCapabilities(phoneNumber.AvailableCapabilities).map((cap, i) => (
                           <Chip key={i} label={cap} size="small" variant="outlined" />
                         ))
                       ) : (
