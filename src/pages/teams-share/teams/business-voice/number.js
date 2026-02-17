@@ -212,16 +212,106 @@ const DiagnosticsPanel = ({
               {diag.detail}
             </Typography>
 
+            {/* Structured capability display */}
+            {(diag.acquiredCapabilities?.length > 0 || diag.availableCapabilities?.length > 0) && (
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 1.5,
+                  borderRadius: 1,
+                  bgcolor: (theme) => alpha(theme.palette.background.default, 0.5),
+                }}
+              >
+                <Stack spacing={1.5}>
+                  {diag.numberType && (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, minWidth: 80 }}>
+                        Number Type
+                      </Typography>
+                      <Chip label={formatNumberType(diag.numberType)} size="small" variant="outlined" />
+                    </Stack>
+                  )}
+                  {diag.acquiredCapabilities?.length > 0 && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.5 }}>
+                        Acquired Capabilities
+                      </Typography>
+                      <Stack direction="row" flexWrap="wrap" useFlexGap spacing={0.5}>
+                        {diag.acquiredCapabilities.map((cap, ci) => (
+                          <Chip
+                            key={ci}
+                            label={formatCapability(cap)}
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                            sx={{ fontSize: "0.7rem" }}
+                          />
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
+                  {diag.acquiredCapabilities?.length === 0 && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.5 }}>
+                        Acquired Capabilities
+                      </Typography>
+                      <Typography variant="caption" color="text.disabled">None</Typography>
+                    </Box>
+                  )}
+                  {diag.availableCapabilities?.length > 0 && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: "block", mb: 0.5 }}>
+                        Available Capabilities
+                      </Typography>
+                      <Stack direction="row" flexWrap="wrap" useFlexGap spacing={0.5}>
+                        {diag.availableCapabilities.map((cap, ci) => (
+                          <Chip
+                            key={ci}
+                            label={formatCapability(cap)}
+                            size="small"
+                            color={cap === "UserAssignment" ? "warning" : "default"}
+                            variant="outlined"
+                            sx={{
+                              fontSize: "0.7rem",
+                              ...(cap === "UserAssignment" && { fontWeight: 600, borderStyle: "dashed" }),
+                            }}
+                          />
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
+                </Stack>
+              </Paper>
+            )}
+
             <Alert
               severity="info"
               variant="outlined"
               icon={false}
-              sx={{ py: 0.5, "& .MuiAlert-message": { py: 0.5 } }}
+              sx={{ py: 0.5, "& .MuiAlert-message": { py: 0.5, width: "100%" } }}
             >
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
                 Recommended fix:
               </Typography>
-              <Typography variant="body2">{diag.fix}</Typography>
+              {/^\d\)/.test(diag.fix) ? (
+                <Box
+                  component="ol"
+                  sx={{
+                    m: 0,
+                    pl: 2.5,
+                    "& li": { fontSize: "0.875rem", mb: 0.25 },
+                  }}
+                >
+                  {diag.fix
+                    .split(/\d\)\s*/)
+                    .filter(Boolean)
+                    .map((step, si) => (
+                      <li key={si}>{step.trim().replace(/\.$/, "")}</li>
+                    ))}
+                </Box>
+              ) : (
+                <Typography variant="body2">{diag.fix}</Typography>
+              )}
             </Alert>
 
             {/* Risk warning + quick-fix button */}
