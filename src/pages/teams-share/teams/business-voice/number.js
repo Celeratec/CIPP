@@ -1,21 +1,30 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { useRouter } from "next/router";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { useSettings } from "../../../../hooks/use-settings";
-import { ApiGetCall } from "../../../../api/ApiCall";
+import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall";
 import { useDialog } from "../../../../hooks/use-dialog";
 import { CippApiDialog } from "../../../../components/CippComponents/CippApiDialog";
 import {
   Avatar,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
+  Collapse,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
+  FormControlLabel,
+  IconButton,
   Paper,
   Tooltip,
   Typography,
   Alert,
+  AlertTitle,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { Box, Grid, Stack } from "@mui/system";
@@ -27,15 +36,23 @@ import {
   PersonAdd,
   PersonRemove,
   LocationOn,
-  Flag,
   CheckCircle,
   Warning,
   SyncAlt,
-  CalendarToday,
   Speed,
   Shield,
+  ErrorOutline,
+  Build,
+  OpenInNew,
+  Replay,
+  ExpandMore,
+  ExpandLess,
+  Code,
 } from "@mui/icons-material";
 import Link from "next/link";
+import CippFormComponent from "../../../../components/CippComponents/CippFormComponent";
+import { useForm } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formatCapability = (cap) =>
   cap.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2");
@@ -44,9 +61,7 @@ const parseCapabilities = (value) => {
   if (!value) return [];
   if (Array.isArray(value)) return value.map(formatCapability);
   if (typeof value !== "string") return [String(value)];
-  // If it's a comma-separated string, split on commas
   if (value.includes(",")) return value.split(",").map((s) => formatCapability(s.trim())).filter(Boolean);
-  // Otherwise try to split a concatenated camelCase string
   const known = [
     "FirstPartyAppAssignment", "Geographic", "InboundCalling", "Office365",
     "OutboundCalling", "SharedCalling", "AzureConferenceAssignment",
@@ -123,13 +138,541 @@ const StatBox = ({ label, value, color = "primary" }) => (
   </Box>
 );
 
+const severityMap = {
+  error: "error",
+  warning: "warning",
+  info: "info",
+  success: "success",
+};
+
+const riskColorMap = {
+  high: "error",
+  medium: "warning",
+  low: "info",
+};
+
+/**
+ * Renders the diagnostics panel when the backend returns a Diagnostics array.
+ * Shows structured root cause findings with risk-gated quick-fix buttons.
+ * Includes a collapsible "Technical Details" section with the raw error.
+ */
+const DiagnosticsPanel = ({
+  diagnostics,
+  rawError,
+  onQuickFix,
+  quickFixStatus,
+  quickFixMessage,
+}) => {
+  const [riskAcknowledged, setRiskAcknowledged] = useState({});
+  const [showTechnical, setShowTechnical] = useState(false);
+
+  if (!diagnostics || diagnostics.length === 0) return null;
+
+  return (
+    <Stack spacing={1.5} sx={{ mt: 1 }}>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Build sx={{ fontSize: 18, color: "text.secondary" }} />
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          Root Cause Analysis
+        </Typography>
+      </Stack>
+
+      {diagnostics.map((diag, idx) => (
+        <Paper
+          key={idx}
+          variant="outlined"
+          sx={{
+            p: 2,
+            borderRadius: 1.5,
+            borderLeft: (theme) =>
+              `3px solid ${theme.palette[severityMap[diag.severity] || "info"].main}`,
+          }}
+        >
+          <Stack spacing={1.5}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip
+                label={diag.source}
+                size="small"
+                color={severityMap[diag.severity] || "info"}
+                variant="outlined"
+                sx={{ fontWeight: 600, fontSize: "0.7rem" }}
+              />
+            </Stack>
+
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {diag.issue}
+            </Typography>
+
+            <Typography variant="body2" color="text.secondary">
+              {diag.detail}
+            </Typography>
+
+            <Alert
+              severity="info"
+              variant="outlined"
+              icon={false}
+              sx={{ py: 0.5, "& .MuiAlert-message": { py: 0.5 } }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                Recommended fix:
+              </Typography>
+              <Typography variant="body2">{diag.fix}</Typography>
+            </Alert>
+
+            {/* Risk warning + quick-fix button */}
+            {diag.canQuickFix && (
+              <Box>
+                {diag.riskLevel === "high" && (
+                  <Collapse in={true}>
+                    <Alert severity="error" variant="outlined" sx={{ mb: 1.5 }}>
+                      <AlertTitle>High Risk Action</AlertTitle>
+                      <Typography variant="body2">{diag.riskWarning}</Typography>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            size="small"
+                            checked={!!riskAcknowledged[idx]}
+                            onChange={(e) =>
+                              setRiskAcknowledged((prev) => ({
+                                ...prev,
+                                [idx]: e.target.checked,
+                              }))
+                            }
+                          />
+                        }
+                        label={
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            I understand the consequences
+                          </Typography>
+                        }
+                        sx={{ mt: 1 }}
+                      />
+                    </Alert>
+                  </Collapse>
+                )}
+
+                {diag.riskLevel === "medium" && (
+                  <Alert severity="warning" variant="outlined" sx={{ mb: 1.5 }}>
+                    <Typography variant="body2">{diag.riskWarning}</Typography>
+                  </Alert>
+                )}
+
+                {diag.riskLevel === "low" && (
+                  <Alert severity="info" variant="outlined" sx={{ mb: 1.5 }}>
+                    <Typography variant="body2">{diag.riskWarning}</Typography>
+                  </Alert>
+                )}
+
+                <Button
+                  size="small"
+                  variant="contained"
+                  color={riskColorMap[diag.riskLevel] || "primary"}
+                  disabled={
+                    quickFixStatus === "loading" ||
+                    quickFixStatus === "success" ||
+                    (diag.riskLevel === "high" && !riskAcknowledged[idx])
+                  }
+                  startIcon={
+                    quickFixStatus === "loading" ? (
+                      <CircularProgress size={14} />
+                    ) : (
+                      <Replay sx={{ fontSize: 14 }} />
+                    )
+                  }
+                  onClick={() => onQuickFix(diag)}
+                  sx={{ textTransform: "none", fontSize: "0.75rem" }}
+                >
+                  {quickFixStatus === "loading"
+                    ? "Fixing..."
+                    : diag.riskLevel === "low"
+                    ? "Auto-fix & Retry"
+                    : "Fix & Retry"}
+                </Button>
+              </Box>
+            )}
+
+            {/* Settings page link */}
+            {!diag.canQuickFix && diag.settingsPage && (
+              <Box>
+                <Button
+                  component={Link}
+                  href={diag.settingsPage}
+                  size="small"
+                  variant="outlined"
+                  startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
+                  sx={{ textTransform: "none", fontSize: "0.75rem" }}
+                >
+                  Go to Settings
+                </Button>
+              </Box>
+            )}
+          </Stack>
+        </Paper>
+      ))}
+
+      {/* Quick-fix result */}
+      {quickFixStatus === "success" && quickFixMessage && (
+        <Alert severity="success" icon={<CheckCircle />}>
+          <Typography variant="body2">{quickFixMessage}</Typography>
+        </Alert>
+      )}
+      {quickFixStatus === "error" && quickFixMessage && (
+        <Alert severity="error" icon={<ErrorOutline />}>
+          <Typography variant="body2">{quickFixMessage}</Typography>
+        </Alert>
+      )}
+
+      {/* Collapsible Technical Details */}
+      {rawError && (
+        <Box>
+          <Button
+            size="small"
+            variant="text"
+            color="inherit"
+            startIcon={<Code sx={{ fontSize: 14 }} />}
+            endIcon={showTechnical ? <ExpandLess sx={{ fontSize: 14 }} /> : <ExpandMore sx={{ fontSize: 14 }} />}
+            onClick={() => setShowTechnical((prev) => !prev)}
+            sx={{
+              textTransform: "none",
+              fontSize: "0.75rem",
+              color: "text.secondary",
+              px: 1,
+            }}
+          >
+            Technical Details
+          </Button>
+          <Collapse in={showTechnical} unmountOnExit>
+            <Paper
+              variant="outlined"
+              sx={{
+                mt: 0.5,
+                p: 1.5,
+                borderRadius: 1,
+                bgcolor: (theme) => alpha(theme.palette.text.primary, 0.03),
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  fontFamily: "monospace",
+                  fontSize: "0.75rem",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-all",
+                  color: "text.secondary",
+                }}
+              >
+                {rawError}
+              </Typography>
+            </Paper>
+          </Collapse>
+        </Box>
+      )}
+    </Stack>
+  );
+};
+
+/**
+ * Custom dialog for assign/unassign that integrates diagnostics panel.
+ * Follows the pattern from CippGuestInviteDialog.
+ */
+const VoiceActionDialog = ({
+  open,
+  onClose,
+  title,
+  confirmText,
+  fields,
+  apiUrl,
+  apiData,
+  phoneNumber,
+  tenant,
+  queryKey,
+  isDanger = false,
+}) => {
+  const formHook = useForm();
+  const queryClient = useQueryClient();
+  const [status, setStatus] = useState("idle");
+  const [resultMessages, setResultMessages] = useState([]);
+  const [diagnostics, setDiagnostics] = useState(null);
+  const [rawError, setRawError] = useState(null);
+  const [quickFixStatus, setQuickFixStatus] = useState("idle");
+  const [quickFixMessage, setQuickFixMessage] = useState("");
+
+  const actionPost = ApiPostCall({
+    urlFromData: true,
+    relatedQueryKeys: [queryKey],
+  });
+
+  const quickFixPost = ApiPostCall({
+    urlFromData: true,
+    relatedQueryKeys: [queryKey],
+  });
+
+  const resetState = useCallback(() => {
+    setStatus("idle");
+    setResultMessages([]);
+    setDiagnostics(null);
+    setRawError(null);
+    setQuickFixStatus("idle");
+    setQuickFixMessage("");
+    formHook.reset();
+  }, [formHook]);
+
+  const handleClose = useCallback(() => {
+    onClose();
+    setTimeout(resetState, 300);
+  }, [onClose, resetState]);
+
+  const handleSubmitAction = useCallback(
+    (formData, overrideData = {}) => {
+      setStatus("loading");
+      setDiagnostics(null);
+      setRawError(null);
+      setQuickFixStatus("idle");
+      setQuickFixMessage("");
+
+      const payload = {
+        tenantFilter: tenant,
+        ...apiData,
+        ...formData,
+        ...overrideData,
+      };
+
+      actionPost.mutate(
+        { url: apiUrl, data: payload },
+        {
+          onSuccess: (response) => {
+            const data = response?.data;
+            const resultText = data?.Results || data?.results || "Operation completed.";
+            setResultMessages([
+              {
+                text: typeof resultText === "string" ? resultText : JSON.stringify(resultText),
+                severity: "success",
+              },
+            ]);
+            setStatus("success");
+            queryClient.invalidateQueries({ queryKey: [queryKey] });
+          },
+          onError: (error) => {
+            const responseData = error?.response?.data;
+            const resultText =
+              responseData?.Results ||
+              responseData?.results ||
+              error?.message ||
+              "Operation failed.";
+            setResultMessages([
+              {
+                text: typeof resultText === "string" ? resultText : JSON.stringify(resultText),
+                severity: "error",
+              },
+            ]);
+            setStatus("error");
+
+            if (responseData?.Diagnostics?.length > 0) {
+              setDiagnostics(responseData.Diagnostics);
+            }
+            if (responseData?.RawError) {
+              setRawError(responseData.RawError);
+            }
+          },
+        }
+      );
+    },
+    [apiUrl, apiData, tenant, queryKey, actionPost, queryClient]
+  );
+
+  const handleQuickFix = useCallback(
+    (diag) => {
+      setQuickFixStatus("loading");
+      setQuickFixMessage("");
+
+      const action = diag.quickFixAction;
+      const data = diag.quickFixData || {};
+      const formData = formHook.getValues();
+
+      const executeRetry = (overrideData = {}) => {
+        setQuickFixMessage("Fix applied. Retrying original action...");
+        handleSubmitAction(formData, overrideData);
+      };
+
+      if (action === "unassignAndRetry") {
+        quickFixPost.mutate(
+          {
+            url: "/api/ExecRemoveTeamsVoicePhoneNumberAssignment",
+            data: {
+              tenantFilter: tenant,
+              PhoneNumber: data.phoneNumber,
+              AssignedTo: data.currentAssignee,
+              PhoneNumberType: data.phoneNumberType,
+            },
+          },
+          {
+            onSuccess: () => {
+              setQuickFixStatus("success");
+              setQuickFixMessage(
+                `Unassigned from ${data.currentAssigneeDisplay}. Retrying assignment...`
+              );
+              setTimeout(() => executeRetry(), 2000);
+            },
+            onError: (err) => {
+              setQuickFixStatus("error");
+              setQuickFixMessage(
+                `Failed to unassign from ${data.currentAssigneeDisplay}: ${
+                  err?.response?.data?.Results || err?.message || "Unknown error"
+                }`
+              );
+            },
+          }
+        );
+      } else if (action === "removeUserNumberAndRetry") {
+        quickFixPost.mutate(
+          {
+            url: "/api/ExecRemoveTeamsVoicePhoneNumberAssignment",
+            data: {
+              tenantFilter: tenant,
+              PhoneNumber: data.currentNumber,
+              AssignedTo: data.userIdentity,
+              PhoneNumberType: data.currentNumberType,
+            },
+          },
+          {
+            onSuccess: () => {
+              setQuickFixStatus("success");
+              setQuickFixMessage(
+                `Removed ${data.currentNumber} from ${data.userDisplay}. Retrying assignment...`
+              );
+              setTimeout(() => executeRetry(), 2000);
+            },
+            onError: (err) => {
+              setQuickFixStatus("error");
+              setQuickFixMessage(
+                `Failed to remove number from ${data.userDisplay}: ${
+                  err?.response?.data?.Results || err?.message || "Unknown error"
+                }`
+              );
+            },
+          }
+        );
+      } else if (action === "retryWithCorrectType") {
+        setQuickFixStatus("success");
+        setQuickFixMessage(`Retrying with correct type: ${data.correctType}...`);
+        setTimeout(() => executeRetry({ PhoneNumberType: data.correctType }), 500);
+      } else if (action === "unassignFromCorrectUser") {
+        quickFixPost.mutate(
+          {
+            url: "/api/ExecRemoveTeamsVoicePhoneNumberAssignment",
+            data: {
+              tenantFilter: tenant,
+              PhoneNumber: data.phoneNumber,
+              AssignedTo: data.actualAssignee,
+              PhoneNumberType: data.phoneNumberType,
+            },
+          },
+          {
+            onSuccess: () => {
+              setQuickFixStatus("success");
+              setQuickFixMessage(
+                `Unassigned from ${data.actualAssigneeDisplay}. The number is now available.`
+              );
+              queryClient.invalidateQueries({ queryKey: [queryKey] });
+            },
+            onError: (err) => {
+              setQuickFixStatus("error");
+              setQuickFixMessage(
+                `Failed to unassign from ${data.actualAssigneeDisplay}: ${
+                  err?.response?.data?.Results || err?.message || "Unknown error"
+                }`
+              );
+            },
+          }
+        );
+      } else {
+        setQuickFixStatus("error");
+        setQuickFixMessage("Unknown quick-fix action.");
+      }
+    },
+    [tenant, queryKey, formHook, handleSubmitAction, quickFixPost, queryClient]
+  );
+
+  const onSubmit = (formData) => handleSubmitAction(formData);
+
+  return (
+    <Dialog fullWidth maxWidth="sm" open={open} onClose={handleClose} disableRestoreFocus>
+      <form onSubmit={formHook.handleSubmit(onSubmit)}>
+        <DialogTitle>{title}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2}>
+            <Typography variant="body2">{confirmText}</Typography>
+          </Stack>
+        </DialogContent>
+        {fields && fields.length > 0 && (
+          <DialogContent>
+            <Stack spacing={2}>
+              {fields.map((fieldProps, i) => (
+                <Box key={i} sx={{ width: "100%" }}>
+                  <CippFormComponent formControl={formHook} {...fieldProps} />
+                </Box>
+              ))}
+            </Stack>
+          </DialogContent>
+        )}
+
+        {/* Results section */}
+        <Collapse in={resultMessages.length > 0 || status === "loading"}>
+          <DialogContent>
+            <Stack spacing={1.5}>
+              {status === "loading" && (
+                <Alert severity="info" variant="outlined">
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <CircularProgress size={16} />
+                    <Typography variant="body2">Processing...</Typography>
+                  </Stack>
+                </Alert>
+              )}
+              {resultMessages.map((msg, i) => (
+                <Alert key={i} severity={msg.severity} variant="filled">
+                  <Typography variant="body2" sx={{ wordBreak: "break-word" }}>
+                    {msg.text}
+                  </Typography>
+                </Alert>
+              ))}
+
+              {/* Diagnostics panel */}
+              <DiagnosticsPanel
+                diagnostics={diagnostics}
+                rawError={rawError}
+                onQuickFix={handleQuickFix}
+                quickFixStatus={quickFixStatus}
+                quickFixMessage={quickFixMessage}
+              />
+            </Stack>
+          </DialogContent>
+        </Collapse>
+
+        <DialogActions>
+          <Button color="inherit" onClick={handleClose}>
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            color={isDanger ? "error" : "primary"}
+            type="submit"
+            disabled={status === "loading" || status === "success"}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+};
+
 const Page = () => {
   const router = useRouter();
   const { number } = router.query;
   const tenant = useSettings().currentTenant;
 
-  const assignDialog = useDialog();
-  const unassignDialog = useDialog();
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [unassignOpen, setUnassignOpen] = useState(false);
   const locationDialog = useDialog();
 
   const phoneData = ApiGetCall({
@@ -360,7 +903,7 @@ const Page = () => {
                 variant="outlined"
                 size="small"
                 startIcon={<PersonAdd />}
-                onClick={() => assignDialog.handleOpen()}
+                onClick={() => setAssignOpen(true)}
               >
                 Assign User
               </Button>
@@ -370,7 +913,7 @@ const Page = () => {
                   size="small"
                   color="warning"
                   startIcon={<PersonRemove />}
-                  onClick={() => unassignDialog.handleOpen()}
+                  onClick={() => setUnassignOpen(true)}
                 >
                   Unassign User
                 </Button>
@@ -511,20 +1054,17 @@ const Page = () => {
         </Stack>
       </Container>
 
-      {/* Assign User Dialog */}
-      <CippApiDialog
+      {/* Assign User Dialog with Diagnostics */}
+      <VoiceActionDialog
+        open={assignOpen}
+        onClose={() => setAssignOpen(false)}
         title="Assign User"
-        createDialog={assignDialog}
-        api={{
-          url: "/api/ExecTeamsVoicePhoneNumberAssignment",
-          type: "POST",
-          data: {
-            PhoneNumber: phoneNumber.TelephoneNumber,
-            PhoneNumberType: phoneNumber.NumberType,
-            locationOnly: false,
-          },
-          confirmText: `Select the User to assign the phone number '${phoneNumber.TelephoneNumber}' to.`,
-          multiPost: false,
+        confirmText={`Select the User to assign the phone number '${phoneNumber.TelephoneNumber}' to.`}
+        apiUrl="/api/ExecTeamsVoicePhoneNumberAssignment"
+        apiData={{
+          PhoneNumber: phoneNumber.TelephoneNumber,
+          PhoneNumberType: phoneNumber.NumberType,
+          locationOnly: false,
         }}
         fields={[
           {
@@ -541,30 +1081,31 @@ const Page = () => {
             },
           },
         ]}
-        row={phoneNumber}
-        relatedQueryKeys={[`TeamsVoice-${tenant}`]}
+        phoneNumber={phoneNumber}
+        tenant={tenant}
+        queryKey={`TeamsVoice-${tenant}`}
       />
 
-      {/* Unassign User Dialog */}
-      <CippApiDialog
+      {/* Unassign User Dialog with Diagnostics */}
+      <VoiceActionDialog
+        open={unassignOpen}
+        onClose={() => setUnassignOpen(false)}
         title="Unassign User"
-        createDialog={unassignDialog}
-        api={{
-          url: "/api/ExecRemoveTeamsVoicePhoneNumberAssignment",
-          type: "POST",
-          data: {
-            PhoneNumber: phoneNumber.TelephoneNumber,
-            AssignedTo: phoneNumber.AssignedTo,
-            PhoneNumberType: phoneNumber.NumberType,
-          },
-          confirmText: `Are you sure you want to remove the assignment for '${phoneNumber.TelephoneNumber}' from '${assignedUser}'?`,
-          multiPost: false,
+        confirmText={`Are you sure you want to remove the assignment for '${phoneNumber.TelephoneNumber}' from '${assignedUser}'?`}
+        apiUrl="/api/ExecRemoveTeamsVoicePhoneNumberAssignment"
+        apiData={{
+          PhoneNumber: phoneNumber.TelephoneNumber,
+          AssignedTo: phoneNumber.AssignedTo,
+          PhoneNumberType: phoneNumber.NumberType,
         }}
-        row={phoneNumber}
-        relatedQueryKeys={[`TeamsVoice-${tenant}`]}
+        fields={[]}
+        phoneNumber={phoneNumber}
+        tenant={tenant}
+        queryKey={`TeamsVoice-${tenant}`}
+        isDanger
       />
 
-      {/* Set Emergency Location Dialog */}
+      {/* Set Emergency Location Dialog -- uses standard CippApiDialog (no diagnostics needed) */}
       <CippApiDialog
         title="Set Emergency Location"
         createDialog={locationDialog}
