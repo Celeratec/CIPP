@@ -297,18 +297,33 @@ const DiagnosticsPanel = ({
             )}
 
             {/* Settings page link */}
-            {!diag.canQuickFix && diag.settingsPage && (
+            {diag.settingsPage && (
               <Box>
-                <Button
-                  component={Link}
-                  href={diag.settingsPage}
-                  size="small"
-                  variant="outlined"
-                  startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
-                  sx={{ textTransform: "none", fontSize: "0.75rem" }}
-                >
-                  Go to Settings
-                </Button>
+                {diag.settingsPage.startsWith("http") ? (
+                  <Button
+                    component="a"
+                    href={diag.settingsPage}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="small"
+                    variant="outlined"
+                    startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
+                    sx={{ textTransform: "none", fontSize: "0.75rem" }}
+                  >
+                    Open Teams Admin Center
+                  </Button>
+                ) : (
+                  <Button
+                    component={Link}
+                    href={diag.settingsPage}
+                    size="small"
+                    variant="outlined"
+                    startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
+                    sx={{ textTransform: "none", fontSize: "0.75rem" }}
+                  >
+                    Go to Settings
+                  </Button>
+                )}
               </Box>
             )}
           </Stack>
