@@ -533,6 +533,7 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
         fields={channelMemberFields}
         api={addChannelMemberApi}
         row={{}}
+        allowAddAnother
         relatedQueryKeys={[`TeamDetails-${teamId}`]}
         onActionSuccess={() => {
           setTimeout(() => handleRefreshMembers(), 1000);
