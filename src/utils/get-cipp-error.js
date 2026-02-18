@@ -1,24 +1,28 @@
 export const getCippError = (data) => {
-  if (data.response?.data?.result) {
-    return data.response.data.result;
+  const d = data.response?.data;
+
+  if (d?.result) {
+    return d.result;
   }
-  if (data.response?.data?.error) {
-    return data.response.data.error;
+  // Backend PowerShell hashtables serialize with PascalCase keys ("Error"),
+  // while some endpoints use lowercase ("error"). Check both.
+  if (d?.error || d?.Error) {
+    return d.error || d.Error;
   }
-  if (data.response?.data?.message) {
-    return data.response.data.message;
+  if (d?.message) {
+    return d.message;
   }
 
-  if (typeof data.response?.data === "string" && data.response.data.includes("<!DOCTYPE html>")) {
+  if (typeof d === "string" && d.includes("<!DOCTYPE html>")) {
     return data.message;
   }
 
-  if (data.response?.data?.Results) {
-    return data.response.data.Results;
+  if (d?.Results) {
+    return d.Results;
   }
-  
-  if (data.response?.data) {
-    return data.response.data;
+
+  if (d) {
+    return d;
   }
 
   // CORS-blocked auth redirect: network error on /api/ call with no response
