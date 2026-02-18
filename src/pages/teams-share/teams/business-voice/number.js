@@ -167,11 +167,21 @@ const DiagnosticsPanel = ({
   onQuickFix,
   quickFixStatus,
   quickFixMessage,
+  tenantInfo,
 }) => {
   const [riskAcknowledged, setRiskAcknowledged] = useState({});
   const [showTechnical, setShowTechnical] = useState(false);
 
   if (!diagnostics || diagnostics.length === 0) return null;
+
+  const buildDelegatedUrl = (baseUrl) => {
+    if (!baseUrl || typeof baseUrl !== "string") return baseUrl;
+    if (!baseUrl.startsWith("http")) return baseUrl;
+    const initialDomain = tenantInfo?.addedFields?.initialDomainName;
+    if (!initialDomain) return baseUrl;
+    const separator = baseUrl.includes("?") ? "&" : "?";
+    return `${baseUrl}${separator}delegatedOrg=${initialDomain}`;
+  };
 
   return (
     <Stack spacing={1.5} sx={{ mt: 1 }}>
@@ -392,7 +402,7 @@ const DiagnosticsPanel = ({
                 {diag.settingsPage.startsWith("http") ? (
                   <Button
                     component="a"
-                    href={diag.settingsPage}
+                    href={buildDelegatedUrl(diag.settingsPage)}
                     target="_blank"
                     rel="noopener noreferrer"
                     size="small"
@@ -505,6 +515,21 @@ const VoiceActionDialog = ({
   const [diagnostics, setDiagnostics] = useState(null);
   const [rawError, setRawError] = useState(null);
   const [quickFixStatus, setQuickFixStatus] = useState("idle");
+
+  const tenantInfo = useMemo(() => {
+    const cached = queryClient.getQueryData(["TenantSelector"]);
+    if (!cached || !tenant) return null;
+    const match = (Array.isArray(cached) ? cached : []).find(
+      (t) => t.defaultDomainName === tenant
+    );
+    if (!match) return null;
+    return {
+      addedFields: {
+        initialDomainName: match.initialDomainName,
+        customerId: match.customerId,
+      },
+    };
+  }, [queryClient, tenant]);
   const [quickFixMessage, setQuickFixMessage] = useState("");
 
   const actionPost = ApiPostCall({
@@ -753,6 +778,7 @@ const VoiceActionDialog = ({
                 onQuickFix={handleQuickFix}
                 quickFixStatus={quickFixStatus}
                 quickFixMessage={quickFixMessage}
+                tenantInfo={tenantInfo}
               />
             </Stack>
           </DialogContent>
