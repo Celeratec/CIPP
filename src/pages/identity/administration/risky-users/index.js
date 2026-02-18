@@ -186,13 +186,18 @@ const Page = () => {
       data: { ID: "userPrincipalName", displayName: "userDisplayName" },
       fields: [
         {
+          type: "password",
+          name: "password",
+          label: "Password (leave blank to auto-generate)",
+        },
+        {
           type: "switch",
           name: "MustChange",
           label: "Must Change Password at Next Logon",
         },
       ],
-      confirmText: "Are you sure you want to reset the password for [userPrincipalName]?",
-      multiPost: false,
+      confirmText: "Are you sure you want to reset the password for the selected user(s)?",
+      multiPost: true,
       category: "security",
       quickAction: true,
       color: "warning",
