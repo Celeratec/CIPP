@@ -215,7 +215,7 @@ const EditGroup = () => {
       tenantFilter,
       groupId,
       groupType: computedGroupType,
-      displayName: groupName,
+      groupName,
       AddMember: [formData.UserID],
     }),
     confirmText: "Select a user to add as a member to this group.",
@@ -229,7 +229,7 @@ const EditGroup = () => {
       tenantFilter,
       groupId,
       groupType: computedGroupType,
-      displayName: groupName,
+      groupName,
       AddOwner: [formData.UserID],
     }),
     confirmText:
@@ -244,7 +244,7 @@ const EditGroup = () => {
       tenantFilter,
       groupId,
       groupType: computedGroupType,
-      displayName: groupName,
+      groupName,
       AddContact: [formData.ContactID],
     }),
     confirmText: "Select a contact to add to this group.",
@@ -262,7 +262,7 @@ const EditGroup = () => {
         tenantFilter,
         groupId,
         groupType: computedGroupType,
-        displayName: groupName,
+        groupName,
         RemoveOwner: [
           {
             value: row.id,
@@ -291,7 +291,7 @@ const EditGroup = () => {
         tenantFilter,
         groupId,
         groupType: computedGroupType,
-        displayName: groupName,
+        groupName,
         RemoveMember: [
           {
             value: row.id,
@@ -320,7 +320,7 @@ const EditGroup = () => {
         tenantFilter,
         groupId,
         groupType: computedGroupType,
-        displayName: groupName,
+        groupName,
         RemoveContact: [{ value: row.mail, addedFields: { id: row.id } }],
       }),
       confirmText: "Remove this contact from the group?",
