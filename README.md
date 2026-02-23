@@ -10,7 +10,7 @@
 
 ---
 
-> **Last updated:** February 2026
+> **Last synced with upstream:** February 2026 (CIPP v10.1.0 / CIPP-API v10.1.0)
 >
 > Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. This document reflects the state of both projects as of the date above.
 
@@ -29,35 +29,46 @@ For information about the upstream CIPP project, visit [cipp.app](https://cipp.a
 Manage365 includes the complete CIPP feature set:
 
 ### Identity Management
-- User administration (create, edit, delete, offboard)
+- User administration (create, edit, delete, offboard with orchestrator-based batch processing)
+- Bulk guest invitation
 - Risky users monitoring
-- Group management with templates
+- Group management with templates and group detail page
 - Device management (Entra ID devices with NinjaOne enrichment, cross-linked to Intune)
 - Per-user device view with hardware details and NinjaOne agent status
 - Role management and JIT Admin
-- Reports: MFA, inactive users, sign-in logs, Entra Connect, risk detections
+- Reports: MFA, inactive users, sign-in logs, Entra Connect, risk detections, BEC remediation
 
 ### Tenant Administration
 - Multi-tenant management and configuration
-- Alert configuration and audit logs
+- Upgraded tenant onboarding experience with type selection
+- Alert configuration and audit logs (group membership change, Defender severity filtering, inactive users)
 - Secure Score monitoring
 - Application management and consent requests
-- GDAP relationship management
+- GDAP relationship management with GDAP trace
 - Standards alignment and drift detection
-- Best Practice Analyser and Domains Analyser
+- Best Practice Analyser and Domains Analyser (with DKIM selector rotation)
 - Conditional Access policy management, templates, and vacation mode
-- Licence reporting
+- Licence reporting and management with granular control
+- Feature flags
+- Reusable settings standards with templates
+- Configuration backup with preview drawer and JSON viewer
+- Log retention settings
 
 ### Security & Compliance
 - Incident and alert management (including MDO alerts)
 - Defender status, deployment, and TVM vulnerabilities
+- Defender alerts with severity filtering
 - Device compliance reporting
+- Customer Lockbox
 
 ### Endpoint Management
-- Application management and deployment queue
+- Application management and deployment queue (including Win32/custom apps)
 - Managed device administration with NinjaOne hardware enrichment (CPU, RAM, agent status)
+- Device detail page
+- DEP sync
 - Autopilot device management, profiles, and status pages
 - Configuration and compliance policies with templates
+- Intune reusable settings deployment and templates
 - App protection policies and assignment filters
 - Script management
 - Reports: device score analytics, work from anywhere, autopilot deployments, discovered apps
@@ -71,11 +82,14 @@ Manage365 includes the complete CIPP feature set:
 - Transport rules and connectors with templates
 - Safe Links policies and templates
 - Spam filter and connection filter management
+- SendFromAlias standard (enable/disable)
 - Resource management (rooms, equipment, room lists)
 - Reports: mailbox statistics, activity, CAS settings, permissions, calendar permissions, anti-phishing, malware filters, safe attachments, GAL
+- Queue tracking for report generation
 
 ### Tools
-- Graph Explorer
+- Graph Explorer with simple filter UI
+- Universal Search v2 with user and group search
 - Application approval workflow
 - Tenant and IP lookup
 - Domain health checks
@@ -86,6 +100,7 @@ Manage365 includes the complete CIPP feature set:
 
 ### Settings & Administration
 - Application settings and integrations
+- SAM service principal lock configuration
 - Setup wizard and onboarding
 - Logbook and diagnostics
 - Custom data / directory extensions
@@ -101,17 +116,21 @@ The following capabilities have been developed specifically for Manage365 and ar
 
 CIPP uses table-only views for listing data. Manage365 adds card view alternatives across every major list page -- Users, Groups, Teams, Mailboxes, Contacts, Devices, Applications, SharePoint Sites, OneDrive, and more. Cards surface key status badges, metadata, and up to 8 quick-action buttons directly on each item, so common tasks are one click away without opening a detail page. Standardized card widths, meaningful icons (OS-aware device icons, entity-type icons), and consistent badge design provide a polished, scannable interface.
 
-### Dedicated Detail Pages
+### Mobile-Responsive Design
 
-Manage365 replaces generic off-canvas panels and form-only pages with rich, purpose-built detail pages for key entities:
+Comprehensive mobile responsiveness throughout the application: responsive data tables that adapt to screen size, mobile-friendly toolbars with compact controls, sticky wizard step buttons, a mobile tenant selector in the top navigation, and card views optimized for touch. The entire interface is usable on tablets and phones without horizontal scrolling.
+
+### Enhanced Detail Pages
+
+Manage365 extends upstream's detail pages with significantly richer, purpose-built interfaces for key entities:
 
 - **SharePoint Sites** -- storage monitoring, member and administrator management (including non-group-connected sites), guest invitation with domain restriction diagnostics and one-click quick-fix, cross-linking to Teams, and Create Team from Site
 - **Teams** -- member/owner management, channel management (including private/shared channel members), app management, interactive toggle-chip settings for member permissions, guest permissions, messaging, and fun settings, plus guest invitation with Teams-specific diagnostics
-- **Groups** -- hero overview by group type, member/owner/contact management, editable properties, interactive toggle-chip settings, dynamic membership rule display, and on-premises sync awareness
+- **Groups** -- hero overview by group type, member/owner/contact management, editable properties, interactive toggle-chip settings, dynamic membership rule display, and on-premises sync awareness (extends upstream's group page)
 - **Mailboxes** -- mailbox type identification, aliases, archive and litigation hold status, and direct link to Exchange settings
 - **Contacts** -- editable properties form with on-premises sync awareness
 - **Entra Devices** -- OS-aware hero, source presence chips (Entra, Intune, NinjaOne), NinjaOne hardware enrichment, quick actions (enable/disable, BitLocker, delete)
-- **MEM Devices** -- compliance-colored hero, NinjaOne hardware enrichment, categorized quick actions (sync, reboot, rename, LAPS, BitLocker, retire, delete)
+- **MEM Devices** -- compliance-colored hero, NinjaOne hardware enrichment, categorized quick actions (sync, reboot, rename, LAPS, BitLocker, retire, delete), NinjaOne data merged into device listings (extends upstream's device page)
 - **Applications** -- assignment details, install experience, detection rules, and assignment quick actions
 
 ### Teams Business Voice Management
@@ -169,21 +188,28 @@ Read-only visibility into Power Platform / Dynamics 365 environments, users, sec
 
 ### NinjaOne Device Enrichment
 
-When NinjaOne integration is configured, device views across the application are automatically enriched with hardware data (CPU, RAM, OS, agent status, last contact). Works across MEM Devices, Entra Devices, and per-user device views, with graceful degradation when NinjaOne is not available.
+When NinjaOne integration is configured, device views across the application are automatically enriched with hardware data (CPU, RAM, OS, agent status, last contact). Works across MEM Devices, Entra Devices, and per-user device views, with graceful degradation when NinjaOne is not available. Backend sync includes Entra-only fallback for non-Intune tenants, O(1) serial number indexing for device matching, and memory-optimized processing.
 
 ### Enhanced Error Messages & Permission Guidance
 
-Structured error formatting throughout the application, with automatic detection of permission and consent issues replaced by step-by-step remediation instructions and direct links to the relevant settings page.
+Structured error formatting throughout the application, with automatic detection of permission and consent issues replaced by step-by-step remediation instructions and direct links to the relevant settings page. SharePoint-specific error classification provides targeted diagnostics for token acquisition and access issues.
 
 ### Organized Navigation
 
 Deeply nested navigation menus that group related pages together, reducing menu length and making features easier to find -- Groups with Group Templates, Users with Offboarding Wizard and Risky Users, Business Voice with Phone Numbers, Call Queues, Auto Attendants, and Dial Plans, and more.
 
+### Backend Enhancements
+
+- **Stack overflow protection** in Intune policy comparison with depth-tracking recursion
+- **Thorough mailNickname sanitization** in group creation (M365 spec compliance: extracts local part, removes forbidden characters, enforces 64-char limit)
+- **Enhanced CippEntrypoints** with function-existence validation before invocation and detailed error logging with stack traces
+- **Power Platform Administrator** role included in GDAP role sets
+
 ---
 
 ## Technology Stack
 
-- **Frontend:** React / Next.js with Material-UI (MUI v7)
+- **Frontend:** React / Next.js 16 with Material-UI (MUI v7)
 - **Backend:** PowerShell Azure Functions
 - **API:** Microsoft Graph API, SharePoint Admin API, SharePoint REST API, Teams PowerShell cmdlets (via `New-TeamsRequest`), Power Platform BAP API, Dataverse Web API, NinjaOne API (via CIPP extension)
 - **Hosting:** Azure Static Web Apps + Azure Functions

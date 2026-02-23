@@ -5,21 +5,28 @@ import {
   Typography,
   Card,
   CardContent,
-  CardHeader,
-  Skeleton,
   Button,
   Link,
   CircularProgress,
   InputAdornment,
   Alert,
+  ToggleButton,
+  ToggleButtonGroup,
+  Chip,
 } from "@mui/material";
-import { Search as SearchIcon } from "@mui/icons-material";
+import {
+  Search as SearchIcon,
+  Person as PersonIcon,
+  Group as GroupIcon,
+} from "@mui/icons-material";
 import { Grid } from "@mui/system";
 import { ApiGetCall } from "../../api/ApiCall";
 
 export const CippUniversalSearch = React.forwardRef(
-  ({ onConfirm = () => {}, onChange = () => {}, maxResults = 7, value = "" }, ref) => {
+  ({ onConfirm = () => {}, onChange = () => {}, maxResults = 10, value = "" }, ref) => {
     const [searchValue, setSearchValue] = useState(value);
+    const [searchType, setSearchType] = useState("Users");
+
     const handleChange = (event) => {
       const newValue = event.target.value;
       setSearchValue(newValue);
@@ -27,44 +34,102 @@ export const CippUniversalSearch = React.forwardRef(
     };
 
     const search = ApiGetCall({
-      url: `/api/ExecUniversalSearch?name=${searchValue}`,
-      queryKey: `search-${searchValue}`,
+      url: "/api/ExecUniversalSearchV2",
+      data: {
+        searchTerms: searchValue,
+        limit: maxResults,
+        type: searchType,
+      },
+      queryKey: `searchV2-${searchType}-${searchValue}`,
       waiting: false,
     });
-    const handleKeyDown = async (event) => {
-      if (event.key === "Enter") {
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Enter" && searchValue.length > 0) {
         search.refetch();
       }
     };
 
+    const handleSearch = () => {
+      if (searchValue.length > 0) {
+        search.refetch();
+      }
+    };
+
+    const handleTypeChange = (_event, newType) => {
+      if (newType !== null) {
+        setSearchType(newType);
+      }
+    };
+
+    const label =
+      searchType === "Users"
+        ? "Search users by UPN or Display Name"
+        : "Search groups by Display Name";
+
     return (
       <Box sx={{ p: 0.5 }}>
-        <TextField
-          ref={ref}
-          fullWidth
-          size="small"
-          type="text"
-          label="Search users in any tenant by UPN or Display Name"
-          placeholder="Press Enter to search..."
-          onKeyDown={handleKeyDown}
-          onChange={handleChange}
-          value={searchValue}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: 20, height: 20 }}>
-                    {search.isFetching ? (
-                      <CircularProgress size={16} />
-                    ) : (
-                      <SearchIcon fontSize="small" color="action" />
-                    )}
-                  </Box>
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+          <ToggleButtonGroup
+            value={searchType}
+            exclusive
+            onChange={handleTypeChange}
+            size="small"
+            sx={{ flexShrink: 0 }}
+          >
+            <ToggleButton value="Users" sx={{ px: 1.5, textTransform: "none", gap: 0.5 }}>
+              <PersonIcon sx={{ fontSize: 18 }} />
+              Users
+            </ToggleButton>
+            <ToggleButton value="Groups" sx={{ px: 1.5, textTransform: "none", gap: 0.5 }}>
+              <GroupIcon sx={{ fontSize: 18 }} />
+              Groups
+            </ToggleButton>
+          </ToggleButtonGroup>
+          <TextField
+            ref={ref}
+            fullWidth
+            size="small"
+            type="text"
+            label={label}
+            placeholder="Press Enter to search..."
+            onKeyDown={handleKeyDown}
+            onChange={handleChange}
+            value={searchValue}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: 20,
+                        height: 20,
+                      }}
+                    >
+                      {search.isFetching ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        <SearchIcon fontSize="small" color="action" />
+                      )}
+                    </Box>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+          <Button
+            variant="contained"
+            onClick={handleSearch}
+            disabled={searchValue.length === 0 || search.isFetching}
+            size="small"
+            sx={{ flexShrink: 0, textTransform: "none", minWidth: "auto", px: 2 }}
+          >
+            <SearchIcon sx={{ fontSize: 20 }} />
+          </Button>
+        </Box>
 
         {search.isFetching && (
           <Box display="flex" alignItems="center" gap={1} mt={1}>
@@ -80,10 +145,11 @@ export const CippUniversalSearch = React.forwardRef(
             </Typography>
           </Alert>
         )}
-        {search.isSuccess && search?.data?.length > 0 ? (
-          <Results items={search.data} searchValue={searchValue} />
+        {search.isSuccess && Array.isArray(search.data) && search.data.length > 0 ? (
+          <Results items={search.data} searchValue={searchValue} searchType={searchType} />
         ) : (
-          search.isSuccess && !search.isFetching && (
+          search.isSuccess &&
+          !search.isFetching && (
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
               No results found.
             </Typography>
@@ -96,9 +162,9 @@ export const CippUniversalSearch = React.forwardRef(
 
 CippUniversalSearch.displayName = "CippUniversalSearch";
 
-const Results = ({ items = [], searchValue }) => {
+const Results = ({ items = [], searchValue, searchType }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const resultsPerPage = 6; // Number of results per page
+  const resultsPerPage = 6;
   const totalResults = items.length;
   const totalPages = Math.ceil(totalResults / resultsPerPage);
 
@@ -152,8 +218,8 @@ const Results = ({ items = [], searchValue }) => {
       </Box>
       <Grid container spacing={1}>
         {displayedResults.map((item, key) => (
-          <Grid size={{ lg: 4, md: 6, xs: 12 }} key={key}>
-            <ResultsRow match={item} searchValue={searchValue} />
+          <Grid size={{ lg: 4, md: 6, xs: 12 }} key={item.RowKey || key}>
+            <ResultCard match={item} searchValue={searchValue} searchType={searchType} />
           </Grid>
         ))}
       </Grid>
@@ -161,82 +227,117 @@ const Results = ({ items = [], searchValue }) => {
   );
 };
 
-const ResultsRow = ({ match, searchValue }) => {
-  const highlightMatch = (text) => {
-    if (!text || !searchValue) return text;
-    try {
-      const escapedSearch = searchValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const parts = text.split(new RegExp(`(${escapedSearch})`, "gi"));
-      return parts.map((part, index) =>
-        part.toLowerCase() === searchValue.toLowerCase() ? (
-          <Typography component="span" fontWeight="bold" key={index} sx={{ color: "primary.main" }}>
-            {part}
-          </Typography>
-        ) : (
-          part
-        )
-      );
-    } catch {
-      return text;
-    }
-  };
+const highlightMatch = (text, searchValue) => {
+  if (!text || !searchValue) return text;
+  try {
+    const escapedSearch = searchValue.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const parts = text.split(new RegExp(`(${escapedSearch})`, "gi"));
+    return parts.map((part, index) =>
+      part.toLowerCase() === searchValue.toLowerCase() ? (
+        <Typography
+          component="span"
+          fontWeight="bold"
+          key={index}
+          sx={{ color: "primary.main" }}
+        >
+          {part}
+        </Typography>
+      ) : (
+        part
+      )
+    );
+  } catch {
+    return text;
+  }
+};
 
-  const currentTenantInfo = ApiGetCall({
-    url: "/api/ListTenants",
-    queryKey: `ListTenants`,
-  });
+const ResultCard = ({ match, searchValue, searchType }) => {
+  const itemData = match.Data || {};
+  const tenantDomain = match.Tenant || "";
 
-  const tenantDomain = currentTenantInfo.data?.find(
-    (tenant) => tenant.customerId === match._tenantId
-  )?.defaultDomainName || match._tenantId;
+  const isUser = searchType === "Users";
+  const displayName = itemData.displayName || "";
+  const subtitle = isUser ? itemData.userPrincipalName : itemData.mail;
+  const detailUrl = isUser
+    ? `identity/administration/users/user?tenantFilter=${tenantDomain}&userId=${itemData.id}`
+    : `identity/administration/groups/group?groupId=${itemData.id}&tenantFilter=${tenantDomain}`;
+  const tenantUrl = isUser
+    ? `identity/administration/users?tenantFilter=${tenantDomain}`
+    : `identity/administration/groups?tenantFilter=${tenantDomain}`;
 
   return (
-    <Card 
-      variant="outlined" 
-      sx={{ 
+    <Card
+      variant="outlined"
+      sx={{
         height: "100%",
-        "&:hover": { 
+        "&:hover": {
           borderColor: "primary.main",
-          boxShadow: 1
-        }
+          boxShadow: 1,
+        },
       }}
     >
       <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
-        <Typography 
-          variant="subtitle2" 
-          fontWeight={600}
-          sx={{ 
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap"
-          }}
-          title={match.displayName}
-        >
-          {highlightMatch(match.displayName)}
-        </Typography>
-        <Typography 
-          variant="caption" 
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.25 }}>
+          {isUser ? (
+            <PersonIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+          ) : (
+            <GroupIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+          )}
+          <Typography
+            variant="subtitle2"
+            fontWeight={600}
+            sx={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              flex: 1,
+            }}
+            title={displayName}
+          >
+            {highlightMatch(displayName, searchValue)}
+          </Typography>
+        </Box>
+        {subtitle && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              display: "block",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              mb: 0.5,
+            }}
+            title={subtitle}
+          >
+            {highlightMatch(subtitle, searchValue)}
+          </Typography>
+        )}
+        {!isUser && itemData.description && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              display: "block",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              mb: 0.5,
+            }}
+            title={itemData.description}
+          >
+            {highlightMatch(itemData.description, searchValue)}
+          </Typography>
+        )}
+        <Typography
+          variant="caption"
           color="text.secondary"
-          sx={{ 
+          sx={{
             display: "block",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
-            mb: 0.5
-          }}
-          title={match.userPrincipalName}
-        >
-          {highlightMatch(match.userPrincipalName)}
-        </Typography>
-        <Typography 
-          variant="caption" 
-          color="text.secondary"
-          sx={{ 
-            display: "block",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            mb: 1
+            mb: 1,
           }}
           title={tenantDomain}
         >
@@ -245,30 +346,30 @@ const ResultsRow = ({ match, searchValue }) => {
         <Box display="flex" gap={0.5}>
           <Button
             component={Link}
-            href={`identity/administration/users/user?tenantFilter=${tenantDomain}&userId=${match.id}`}
+            href={detailUrl}
             variant="contained"
             color="primary"
             size="small"
-            sx={{ 
+            sx={{
               flex: 1,
               fontSize: "0.7rem",
               py: 0.5,
-              textTransform: "none"
+              textTransform: "none",
             }}
           >
-            View User
+            {isUser ? "View User" : "View Group"}
           </Button>
           <Button
             component={Link}
-            href={`identity/administration/users?tenantFilter=${tenantDomain}`}
+            href={tenantUrl}
             variant="outlined"
             color="primary"
             size="small"
-            sx={{ 
+            sx={{
               flex: 1,
               fontSize: "0.7rem",
               py: 0.5,
-              textTransform: "none"
+              textTransform: "none",
             }}
           >
             View Tenant
