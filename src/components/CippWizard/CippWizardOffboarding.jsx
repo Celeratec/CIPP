@@ -188,6 +188,12 @@ export const CippWizardOffboarding = (props) => {
                     formControl={formControl}
                   />
                   <CippFormComponent
+                    name="removeCalendarPermissions"
+                    label="Remove user's calendar permissions"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                  <CippFormComponent
                     name="RemoveRules"
                     label="Remove all Rules"
                     type="switch"

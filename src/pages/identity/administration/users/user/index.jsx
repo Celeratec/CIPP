@@ -108,28 +108,38 @@ const Page = () => {
     urlFromData: true,
   });
 
-  // Memoized refresh function to avoid unnecessary re-creations
   const refreshFunction = useCallback(() => {
+    const userPrincipalName = userRequest.data?.[0]?.userPrincipalName;
+    const requests = [
+      {
+        id: "userMemberOf",
+        url: `/users/${userId}/memberOf`,
+        method: "GET",
+      },
+      {
+        id: "mfaDevices",
+        url: `/users/${userId}/authentication/methods?$top=99`,
+        method: "GET",
+      },
+      {
+        id: "signInLogs",
+        url: `/auditLogs/signIns?$filter=(userId eq '${userId}')&$top=1`,
+        method: "GET",
+      },
+    ];
+
+    if (userPrincipalName) {
+      requests.push({
+        id: "managedDevices",
+        url: `/deviceManagement/managedDevices?$filter=userPrincipalName eq '${userPrincipalName}'`,
+        method: "GET",
+      });
+    }
+
     userBulkRequest.mutate({
       url: "/api/ListGraphBulkRequest",
       data: {
-        Requests: [
-          {
-            id: "userMemberOf",
-            url: `/users/${userId}/memberOf`,
-            method: "GET",
-          },
-          {
-            id: "mfaDevices",
-            url: `/users/${userId}/authentication/methods?$top=99`,
-            method: "GET",
-          },
-          {
-            id: "signInLogs",
-            url: `/auditLogs/signIns?$filter=(userId eq '${userId}')&$top=1`,
-            method: "GET",
-          },
-        ],
+        Requests: requests,
         tenantFilter: userSettingsDefaults.currentTenant,
         noPaginateIds: ["signInLogs"],
       },
@@ -137,25 +147,27 @@ const Page = () => {
   }, [userId, userSettingsDefaults.currentTenant, userBulkRequest]);
 
   useEffect(() => {
-    if (userId && userSettingsDefaults.currentTenant && !userBulkRequest.isSuccess) {
+    if (userId && userSettingsDefaults.currentTenant && userRequest.isSuccess && !userBulkRequest.isSuccess) {
       refreshFunction();
     }
-  }, [userId, userSettingsDefaults.currentTenant, userBulkRequest.isSuccess]);
+  }, [userId, userSettingsDefaults.currentTenant, userRequest.isSuccess, userBulkRequest.isSuccess]);
 
-  // Memoize bulk data parsing to avoid recalculation on every render
-  const { signInLogsData, userMemberOfData, mfaDevicesData, signInLogs, userMemberOf, mfaDevices } = useMemo(() => {
+  const { signInLogsData, userMemberOfData, mfaDevicesData, managedDevicesData, signInLogs, userMemberOf, mfaDevices, managedDevices } = useMemo(() => {
     const bulkData = userBulkRequest?.data?.data ?? [];
     const signInLogsData = bulkData?.find((item) => item.id === "signInLogs");
     const userMemberOfData = bulkData?.find((item) => item.id === "userMemberOf");
     const mfaDevicesData = bulkData?.find((item) => item.id === "mfaDevices");
+    const managedDevicesData = bulkData?.find((item) => item.id === "managedDevices");
 
     return {
       signInLogsData,
       userMemberOfData,
       mfaDevicesData,
+      managedDevicesData,
       signInLogs: signInLogsData?.body?.value || [],
       userMemberOf: userMemberOfData?.body?.value || [],
       mfaDevices: mfaDevicesData?.body?.value || [],
+      managedDevices: managedDevicesData?.body?.value || [],
     };
   }, [userBulkRequest?.data?.data]);
 
@@ -595,6 +607,57 @@ const Page = () => {
     ];
   }, [userMemberOf, refreshFunction]);
 
+  const ownedDevicesItems = managedDevices.length > 0
+    ? [
+        {
+          id: 1,
+          cardLabelBox: {
+            cardLabelBoxHeader: <Devices />,
+          },
+          text: "Managed Devices",
+          subtext: "List of devices managed for this user",
+          statusText: `${managedDevices.length} Device(s)`,
+          statusColor: "info.main",
+          table: {
+            title: "Managed Devices",
+            hideTitle: true,
+            data: managedDevices,
+            refreshFunction: refreshFunction,
+            simpleColumns: ["deviceName", "operatingSystem", "osVersion", "managementType"],
+            actions: [
+              {
+                icon: <EyeIcon />,
+                label: "View Device",
+                link: `/endpoint/MEM/devices/device?deviceId=[id]&tenantFilter=${userSettingsDefaults.currentTenant}`,
+              },
+            ],
+          },
+        },
+      ]
+    : managedDevicesData?.status !== 200
+    ? [
+        {
+          id: 1,
+          cardLabelBox: "!",
+          text: "Error loading devices",
+          subtext: managedDevicesData?.error?.message || "Unknown error",
+          statusColor: "error.main",
+          statusText: "Error",
+          propertyItems: [],
+        },
+      ]
+    : [
+        {
+          id: 1,
+          cardLabelBox: "-",
+          text: "No devices",
+          subtext: "This user does not have any managed devices.",
+          statusColor: "warning.main",
+          statusText: "No Devices",
+          propertyItems: [],
+        },
+      ];
+
   return (
     <HeaderedTabbedLayout
       tabOptions={tabOptions}
@@ -668,6 +731,12 @@ const Page = () => {
                 <CippBannerListCard
                   isFetching={userBulkRequest.isPending}
                   items={roleMembershipItems}
+                  isCollapsible={true}
+                />
+                <Typography variant="h6">Managed Devices</Typography>
+                <CippBannerListCard
+                  isFetching={userBulkRequest.isPending}
+                  items={ownedDevicesItems}
                   isCollapsible={true}
                 />
               </Stack>

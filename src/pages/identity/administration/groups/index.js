@@ -15,7 +15,7 @@ import { Box, Stack } from "@mui/system";
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import Link from "next/link";
-import { TrashIcon } from "@heroicons/react/24/outline";
+import { TrashIcon, EyeIcon } from "@heroicons/react/24/outline";
 import {
   Visibility,
   VisibilityOff,
@@ -127,6 +127,13 @@ const Page = () => {
       },
   };
   const actions = [
+    {
+      label: "View Group",
+      link: `/identity/administration/groups/group?groupId=[id]&tenantFilter=${currentTenant}`,
+      color: "info",
+      icon: <EyeIcon />,
+      multiPost: false,
+    },
     {
       label: "Edit Group",
       link: "/identity/administration/groups/edit?groupId=[id]&groupType=[groupType]",

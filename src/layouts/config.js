@@ -854,6 +854,16 @@ export const nativeMenuItems = [
             ],
           },
           {
+            title: "Reusable Settings",
+            path: "/endpoint/MEM/reusable-settings",
+            permissions: ["Endpoint.MEM.*"],
+          },
+          {
+            title: "Reusable Settings Templates",
+            path: "/endpoint/MEM/reusable-settings-templates",
+            permissions: ["Endpoint.MEM.*"],
+          },
+          {
             title: "Assignment Filters",
             permissions: ["Endpoint.MEM.*"],
             items: [

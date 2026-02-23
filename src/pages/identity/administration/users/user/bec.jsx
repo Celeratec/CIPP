@@ -99,6 +99,7 @@ const BecCheckCard = memo(({
 });
 
 BecCheckCard.displayName = "BecCheckCard";
+import { BECRemediationReportButton } from "../../../../../components/BECRemediationReportButton";
 
 const Page = () => {
   const userSettingsDefaults = useSettings();
@@ -180,6 +181,8 @@ const Page = () => {
   // Combine loading states
   const isFetching =
     userRequest.isLoading || becInitialCall.isLoading || becPollingCall.isLoading || isLoading;
+
+
 
   const subtitle = userRequest.isSuccess
     ? [
@@ -537,32 +540,40 @@ const Page = () => {
                   }
                 >
                   <Typography variant="body2" gutterBottom>
-                    Click this button to download a report of all the data found during this
-                    research to perform your own analysis.
+                    Generate a comprehensive PDF report for documentation, compliance, or end-user
+                    review. The report includes detailed explanations suitable for non-technical
+                    users, managers, and compliance requirements (ISO/CMMC/SOC).
                   </Typography>
                   {becPollingCall.data && (
                     <Box sx={{ mt: 2 }}>
-                      <Button
-                        onClick={() => {
-                          const blob = new Blob([JSON.stringify(becPollingCall.data, null, 2)], {
-                            type: "application/json",
-                          });
-                          const url = URL.createObjectURL(blob);
-                          const link = document.createElement("a");
-                          link.href = url;
-                          link.download = `BEC_Report_${userRequest.data[0].userPrincipalName}.json`;
-                          link.click();
-                          URL.revokeObjectURL(url);
-                        }}
-                        variant="contained"
-                        startIcon={
-                          <SvgIcon fontSize="small">
-                            <Download />
-                          </SvgIcon>
-                        }
-                      >
-                        Download Report
-                      </Button>
+                      <Stack direction="row" spacing={2}>
+                        <BECRemediationReportButton
+                          userData={userRequest.data[0]}
+                          becData={becPollingCall.data}
+                          tenantName={userSettingsDefaults.currentTenant}
+                        />
+                        <Button
+                          onClick={() => {
+                            const blob = new Blob([JSON.stringify(becPollingCall.data, null, 2)], {
+                              type: "application/json",
+                            });
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement("a");
+                            link.href = url;
+                            link.download = `BEC_Report_${userRequest.data[0].userPrincipalName}.json`;
+                            link.click();
+                            URL.revokeObjectURL(url);
+                          }}
+                          variant="outlined"
+                          startIcon={
+                            <SvgIcon fontSize="small">
+                              <Download />
+                            </SvgIcon>
+                          }
+                        >
+                          Download JSON
+                        </Button>
+                      </Stack>
                     </Box>
                   )}
                 </CippButtonCard>

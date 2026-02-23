@@ -2,19 +2,23 @@ import { useCallback, useMemo } from "react";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
 import { ApiGetCall } from "../../../../api/ApiCall.jsx";
+import { CippApiDialog } from "../../../../components/CippComponents/CippApiDialog.jsx";
 import { useSettings } from "../../../../hooks/use-settings";
+import { useDialog } from "../../../../hooks/use-dialog.js";
 import { EyeIcon } from "@heroicons/react/24/outline";
 import {
+  Box,
+  Button,
   Paper,
   Avatar,
   Typography,
   Chip,
   Divider,
   Tooltip,
+  Stack,
   useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { Box, Stack } from "@mui/system";
 import {
   Sync,
   RestartAlt,
@@ -60,6 +64,7 @@ const Page = () => {
   const router = useRouter();
   const tenantFilter = useSettings().currentTenant;
   const theme = useTheme();
+  const depSyncDialog = useDialog();
 
   const handleCardClick = useCallback((device) => {
     router.push(`/endpoint/MEM/devices/view?deviceId=${encodeURIComponent(device.id || "")}`);
@@ -237,6 +242,13 @@ const Page = () => {
   };
 
   const actions = [
+    {
+      label: "View Device",
+      link: `/endpoint/MEM/devices/device?deviceId=[id]`,
+      color: "info",
+      icon: <EyeIcon />,
+      multiPost: false,
+    },
     {
       label: "View in Intune",
       link: `https://intune.microsoft.com/${tenantFilter}/#view/Microsoft_Intune_Devices/DeviceSettingsMenuBlade/~/overview/mdmDeviceId/[id]`,
@@ -1049,22 +1061,41 @@ const Page = () => {
   }, [hasNinjaData]);
 
   return (
-    <CippTablePage
-      title={pageTitle}
-      apiUrl="/api/ListGraphRequest"
-      apiData={{
-        Endpoint: "deviceManagement/managedDevices",
-      }}
-      apiDataKey="Results"
-      apiDataFilter={mergeNinjaData}
-      actions={actions}
-      queryKey={`MEMDevices-${tenantFilter}`}
-      offCanvas={offCanvas}
-      simpleColumns={simpleColumns}
-      cardConfig={cardConfig}
-      onCardClick={handleCardClick}
-      offCanvasOnRowClick={true}
-    />
+    <>
+      <CippTablePage
+        title={pageTitle}
+        apiUrl="/api/ListGraphRequest"
+        apiData={{
+          Endpoint: "deviceManagement/managedDevices",
+        }}
+        apiDataKey="Results"
+        apiDataFilter={mergeNinjaData}
+        actions={actions}
+        queryKey={`MEMDevices-${tenantFilter}`}
+        offCanvas={offCanvas}
+        simpleColumns={simpleColumns}
+        cardConfig={cardConfig}
+        onCardClick={handleCardClick}
+        offCanvasOnRowClick={true}
+        cardButton={
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button onClick={depSyncDialog.handleOpen} startIcon={<Sync />}>
+              Sync DEP
+            </Button>
+          </Box>
+        }
+      />
+      <CippApiDialog
+        title="Sync DEP Tokens"
+        createDialog={depSyncDialog}
+        api={{
+          type: "POST",
+          url: "/api/ExecSyncDEP",
+          data: {},
+          confirmText: `Are you sure you want to sync Apple Device Enrollment Program (DEP) tokens? This will sync all DEP tokens for ${tenantFilter}. This may take several minutes to complete in the background, and can only be done every 15 minutes.`,
+        }}
+      />
+    </>
   );
 };
 

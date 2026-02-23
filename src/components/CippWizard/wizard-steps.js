@@ -10,6 +10,7 @@ import {
   SvgIcon,
   Typography,
   useMediaQuery,
+  CircularProgress,
 } from "@mui/material";
 import { styled, useTheme } from "@mui/material/styles";
 import { ClearIcon } from "@mui/x-date-pickers";
@@ -31,10 +32,30 @@ const WizardStepConnector = styled(StepConnector)(({ theme }) => ({
 }));
 
 const WizardStepIcon = (props) => {
-  const { active, completed, error, compact = false } = props;
+  const { active, completed, error, compact = false, loading } = props;
   const size = compact ? 28 : 36;
   const innerSize = compact ? 8 : 12;
 
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          alignItems: "center",
+          borderColor: "primary.main",
+          borderRadius: "50%",
+          borderStyle: "solid",
+          borderWidth: 2,
+          color: "primary.main",
+          display: "flex",
+          height: 36,
+          justifyContent: "center",
+          width: 36,
+        }}
+      >
+        <CircularProgress size={20} />
+      </Box>
+    );
+  }
   if (error) {
     return (
       <Box
@@ -177,6 +198,7 @@ export const WizardSteps = (props) => {
             <StepLabel 
               error={step.error ?? false} 
               slots={{ stepIcon: CompactStepIcon }}
+              slotProps={{ stepIcon: { loading: step.loading ?? false } }}
               sx={{
                 '& .MuiStepLabel-labelContainer': {
                   ...(isHorizontal && {

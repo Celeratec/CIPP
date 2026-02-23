@@ -171,6 +171,7 @@ const Page = () => {
         // Partial match - permission identifier starts with group display name (handles timestamps)
         (group.displayName &&
           typeof identifier === "string" &&
+          typeof group.displayName === "string" &&
           identifier.startsWith(group.displayName))
       );
     });

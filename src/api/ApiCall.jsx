@@ -204,7 +204,7 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
         for (let i = 0; i < data.length; i++) {
           let element = data[i];
           const response = await axios.post(url, element, requestConfig);
-          results.push(response);
+          results.push(response.data);
           if (onResult) {
             onResult(response.data); // Emit each result as it arrives
           }

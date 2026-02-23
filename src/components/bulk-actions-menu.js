@@ -12,6 +12,7 @@ import {
   ShieldMoon, 
   PrecisionManufacturing, 
   BarChart,
+  Group,
   Visibility,
   Edit,
   Security,

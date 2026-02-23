@@ -4,6 +4,7 @@ import { useSettings } from "../../../../hooks/use-settings.js";
 import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall";
 import { PermissionButton } from "../../../../utils/permissions";
 import { CippInviteGuestDrawer } from "../../../../components/CippComponents/CippInviteGuestDrawer.jsx";
+import { CippBulkInviteGuestDrawer } from "../../../../components/CippComponents/CippBulkInviteGuestDrawer.jsx";
 import { CippBulkUserDrawer } from "../../../../components/CippComponents/CippBulkUserDrawer.jsx";
 import { CippAddUserDrawer } from "../../../../components/CippComponents/CippAddUserDrawer.jsx";
 import { CippApiLogsDrawer } from "../../../../components/CippComponents/CippApiLogsDrawer.jsx";
@@ -923,6 +924,12 @@ const Page = () => {
             </Tooltip>
           ) : (
             <CippInviteGuestDrawer
+              requiredPermissions={cardButtonPermissions}
+              PermissionButton={PermissionButton}
+            />
+          )}
+          {!isMobile && (
+            <CippBulkInviteGuestDrawer
               requiredPermissions={cardButtonPermissions}
               PermissionButton={PermissionButton}
             />

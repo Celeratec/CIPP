@@ -768,8 +768,8 @@ export const CIPPTableToptoolbar = ({
               getRequestData?.isFetchNextPageError
                 ? "Could not retrieve all data. Click to try again."
                 : getRequestData?.isFetching
-                ? "Retrieving more data..."
-                : "Refresh data"
+                  ? "Retrieving more data..."
+                  : "Refresh data"
             }
           >
             <RefreshButton
@@ -1229,7 +1229,7 @@ export const CIPPTableToptoolbar = ({
               <MenuItem
                 onClick={() => {
                   // Trigger CSV export
-                  const csvButton = document.querySelector("[data-csv-export]");
+                  const csvButton = document.querySelector(`[data-csv-export="${title}"]`);
                   if (csvButton) csvButton.click();
                   setExportAnchor(null);
                 }}
@@ -1242,7 +1242,7 @@ export const CIPPTableToptoolbar = ({
               <MenuItem
                 onClick={() => {
                   // Trigger PDF export
-                  const pdfButton = document.querySelector("[data-pdf-export]");
+                  const pdfButton = document.querySelector(`[data-pdf-export="${title}"]`);
                   if (pdfButton) pdfButton.click();
                   setExportAnchor(null);
                 }}
@@ -1398,14 +1398,14 @@ export const CIPPTableToptoolbar = ({
               columns={usedColumns}
               reportName={title}
               columnVisibility={columnVisibility}
-              data-pdf-export
+              data-pdf-export={title}
             />
             <CSVExportButton
               reportName={title}
               columnVisibility={columnVisibility}
               rows={table.getFilteredRowModel().rows}
               columns={usedColumns}
-              data-csv-export
+              data-csv-export={title}
             />
           </Box>
         )}
@@ -1562,10 +1562,20 @@ export const CIPPTableToptoolbar = ({
         title="Edit Filters"
         visible={filterCanvasVisible}
         onClose={() => setFilterCanvasVisible(!filterCanvasVisible)}
+        contentPadding={1}
+        keepMounted={true}
       >
         <CippGraphExplorerFilter
           endpointFilter={api?.data?.Endpoint}
           relatedQueryKeys={[queryKey, currentEffectiveQueryKey].filter(Boolean)}
+          selectedPreset={
+            activeFilterName ? filterList.find((f) => f.filterName === activeFilterName) : null
+          }
+          onPresetSelect={(preset) => {
+            if (preset?.value && preset?.type === "graph") {
+              setTableFilter(preset.value, preset.type, preset.filterName);
+            }
+          }}
           onSubmitFilter={(filter) => {
             setTableFilter(filter, "graph", "Custom Filter");
             if (filter?.$select) {
