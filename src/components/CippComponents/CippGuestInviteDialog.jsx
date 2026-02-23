@@ -574,51 +574,36 @@ const CippGuestInviteDialog = ({
                 const isWarning =
                   typeof msg === "string" &&
                   (msg.includes("could not add") || msg.includes("not available for automatic"));
-                const isPermissionIssue =
+                const isSharePointAccessError =
                   typeof msg === "string" &&
-                  (msg.includes("AllSites.FullControl") || msg.includes("Sites.FullControl.All") || msg.includes("CPV consent"));
+                  (msg.includes("Failed to obtain a SharePoint token") || msg.includes("SharePoint denied access"));
                 return (
                   <Alert key={i} severity={isWarning ? "warning" : "success"} icon={isWarning ? <WarningAmber /> : <CheckCircle />}>
-                    {isPermissionIssue ? (
+                    {isSharePointAccessError ? (
                       <Stack spacing={1}>
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
                           Guest invited to tenant, but could not add to site members.
                         </Typography>
-                        <Typography variant="body2">
-                          The CIPP SAM app needs the SharePoint{" "}
-                          <strong>AllSites.FullControl</strong> delegated permission to manage
-                          members on non-group-connected SharePoint sites. This permission must be
-                          pushed to the client tenant via CPV consent.
-                        </Typography>
+                        <Typography variant="body2">{msg}</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          How to fix:
+                          Suggested steps:
                         </Typography>
                         <Typography variant="body2" component="div">
                           <ol style={{ margin: 0, paddingLeft: "1.2em" }}>
                             <li>
-                              Go to <strong>CIPP Settings</strong> &gt;{" "}
-                              <strong>Super Admin</strong> &gt;{" "}
-                              <strong>SAM App Permissions</strong>
+                              Run a <strong>CPV Refresh</strong> for this tenant from the tenant
+                              overview page
                             </li>
                             <li>
-                              Ensure the SharePoint <strong>AllSites.FullControl</strong> delegated
-                              permission is included, then sync/update
+                              Verify the site does not have restricted or unique permissions in
+                              SharePoint
                             </li>
                             <li>
-                              Trigger a <strong>CPV Refresh</strong> to push permissions to client
-                              tenants
+                              If the issue persists, check that the CIPP SAM app has the necessary
+                              SharePoint delegated permissions
                             </li>
                           </ol>
                         </Typography>
-                        <Button
-                          href="/cipp/super-admin/sam-app-permissions"
-                          size="small"
-                          variant="outlined"
-                          startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
-                          sx={{ textTransform: "none", fontSize: "0.75rem", alignSelf: "flex-start" }}
-                        >
-                          Open SAM App Permissions
-                        </Button>
                       </Stack>
                     ) : (
                       <Typography variant="body2">{msg}</Typography>
@@ -635,7 +620,7 @@ const CippGuestInviteDialog = ({
                   </Typography>
                 </Alert>
               )}
-              {nonGroupSiteWarning && !resultMessages.some((m) => typeof m === "string" && (m.includes("AllSites.FullControl") || m.includes("Sites.FullControl.All") || m.includes("CPV consent"))) && webUrl && (
+              {nonGroupSiteWarning && !resultMessages.some((m) => typeof m === "string" && (m.includes("Failed to obtain a SharePoint token") || m.includes("SharePoint denied access"))) && webUrl && (
                 <Alert severity="info" variant="outlined">
                   <Typography variant="body2" sx={{ mb: 1 }}>
                     This is a non-group-connected site, so automatic membership assignment was not

@@ -1,7 +1,6 @@
-import { Close, Download, ExpandMore, ExpandLess, OpenInNew } from "@mui/icons-material";
+import { Close, Download, ExpandMore, ExpandLess } from "@mui/icons-material";
 import {
   Alert,
-  Button,
   CircularProgress,
   Collapse,
   IconButton,
@@ -125,17 +124,15 @@ const FormattedResultText = ({ text, severity }) => {
     return <Typography variant="body2">{String(text)}</Typography>;
   }
 
-  // Pattern: SharePoint permission error — render structured guidance
-  const isSharePointPermissionError =
-    text.includes("AllSites.FullControl") ||
-    text.includes("Sites.FullControl.All") ||
-    (text.includes("SharePoint") && text.includes("CPV consent"));
-  if (isSharePointPermissionError) {
-    // Extract the preamble (e.g. "Guest invited to tenant, but could not add to site members:")
-    // from the full message, or use a generic one
+  // Pattern: SharePoint token / CPV error — render structured guidance
+  const isSharePointTokenError =
+    text.includes("Failed to obtain a SharePoint token") ||
+    text.includes("SharePoint denied access");
+  if (isSharePointTokenError) {
     const colonIdx = text.indexOf(":");
     const preamble =
       colonIdx > 0 && colonIdx < 80 ? text.slice(0, colonIdx) : null;
+    const detail = preamble ? text.slice(colonIdx + 1).trim() : text;
     return (
       <Stack spacing={1}>
         {preamble && (
@@ -143,40 +140,22 @@ const FormattedResultText = ({ text, severity }) => {
             {preamble}
           </Typography>
         )}
-        <Typography variant="body2">
-          The CIPP SAM app needs the SharePoint <strong>AllSites.FullControl</strong> delegated
-          permission to manage members on non-group-connected SharePoint sites. This permission
-          must be pushed to the client tenant via CPV consent.
-        </Typography>
+        <Typography variant="body2">{detail}</Typography>
         <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
-          How to fix:
+          Suggested steps:
         </Typography>
         <Typography variant="body2" component="div">
           <ol style={{ margin: 0, paddingLeft: "1.2em" }}>
             <li>
-              Go to <strong>CIPP Settings</strong> &gt; <strong>Super Admin</strong> &gt;{" "}
-              <strong>SAM App Permissions</strong>
+              Run a <strong>CPV Refresh</strong> for this tenant from the tenant overview page
             </li>
+            <li>Verify the site does not have restricted or unique permissions in SharePoint</li>
             <li>
-              Ensure the SharePoint <strong>AllSites.FullControl</strong> delegated permission is
-              included, then sync/update
-            </li>
-            <li>
-              Trigger a <strong>CPV Refresh</strong> to push the permission to client tenants
+              If the issue persists, check that the CIPP SAM app has the necessary SharePoint
+              delegated permissions
             </li>
           </ol>
         </Typography>
-        <Box>
-          <Button
-            href="/cipp/super-admin/sam-app-permissions"
-            size="small"
-            variant="outlined"
-            startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
-            sx={{ textTransform: "none", fontSize: "0.75rem" }}
-          >
-            Open SAM App Permissions
-          </Button>
-        </Box>
       </Stack>
     );
   }
