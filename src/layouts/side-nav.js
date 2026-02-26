@@ -159,13 +159,11 @@ export const SideNav = memo((props) => {
   const handleMenuToggle = useCallback((title, depth) => {
     setOpenMenus((prev) => {
       if (depth === 0) {
-        // Top-level: accordion behavior - close all others (including nested), toggle this one
         if (prev.includes(title)) {
-          return []; // Close everything if clicking open top-level menu
+          return [];
         }
-        return [title]; // Open only this top-level menu
+        return [title];
       } else {
-        // Nested: toggle independently
         if (prev.includes(title)) {
           return prev.filter((t) => t !== title);
         }
