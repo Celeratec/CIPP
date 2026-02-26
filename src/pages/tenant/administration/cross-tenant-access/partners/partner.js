@@ -32,46 +32,35 @@ import CippRiskSummaryDialog from "../../../../../components/CippComponents/Cipp
 import Link from "next/link";
 
 const AccessSettingsEditor = ({ title, description, settings, onChange }) => {
-  const isInherited = !settings?.usersAndGroups?.accessType && !settings?.applications?.accessType;
-  const usersAccessType = isInherited ? "inherited" : (settings?.usersAndGroups?.accessType ?? "inherited");
-  const appsAccessType = isInherited ? "inherited" : (settings?.applications?.accessType ?? "inherited");
+  const usersAccessType = settings?.usersAndGroups?.accessType ?? "inherited";
+  const appsAccessType = settings?.applications?.accessType ?? "inherited";
 
   const handleUsersAccessChange = (e) => {
     const val = e.target.value;
-    if (val === "inherited") {
+    if (val === "inherited" && appsAccessType === "inherited") {
       onChange(null);
       return;
     }
     onChange({
-      ...settings,
-      usersAndGroups: {
-        ...settings?.usersAndGroups,
+      ...(settings ?? {}),
+      usersAndGroups: val === "inherited" ? undefined : {
         accessType: val,
         targets: [{ target: "AllUsers", targetType: "user" }],
-      },
-      applications: settings?.applications ?? {
-        accessType: val,
-        targets: [{ target: "AllApplications", targetType: "application" }],
       },
     });
   };
 
   const handleAppsAccessChange = (e) => {
     const val = e.target.value;
-    if (val === "inherited") {
+    if (val === "inherited" && usersAccessType === "inherited") {
       onChange(null);
       return;
     }
     onChange({
-      ...settings,
-      applications: {
-        ...settings?.applications,
+      ...(settings ?? {}),
+      applications: val === "inherited" ? undefined : {
         accessType: val,
         targets: [{ target: "AllApplications", targetType: "application" }],
-      },
-      usersAndGroups: settings?.usersAndGroups ?? {
-        accessType: val,
-        targets: [{ target: "AllUsers", targetType: "user" }],
       },
     });
   };
@@ -290,16 +279,30 @@ const Page = () => {
     }
   }, [domainInput]);
 
+  const normalizeAccessSection = (section) => {
+    if (!section) return null;
+    const users = section.usersAndGroups;
+    const apps = section.applications;
+    if (!users && !apps) return null;
+    return {
+      usersAndGroups: users ?? { accessType: apps.accessType, targets: [{ target: "AllUsers", targetType: "user" }] },
+      applications: apps ?? { accessType: users.accessType, targets: [{ target: "AllApplications", targetType: "application" }] },
+    };
+  };
+
   const executeSave = () => {
     const url = isEditing ? "/api/EditCrossTenantPartner" : "/api/ExecAddCrossTenantPartner";
-    savePartner.mutate({
-      url,
-      data: {
-        tenantFilter: currentTenant,
-        partnerTenantId: partnerTenantId,
-        ...partnerData,
-      },
-    });
+    const payload = {
+      tenantFilter: currentTenant,
+      partnerTenantId: partnerTenantId,
+      b2bCollaborationInbound: normalizeAccessSection(partnerData.b2bCollaborationInbound),
+      b2bCollaborationOutbound: normalizeAccessSection(partnerData.b2bCollaborationOutbound),
+      b2bDirectConnectInbound: normalizeAccessSection(partnerData.b2bDirectConnectInbound),
+      b2bDirectConnectOutbound: normalizeAccessSection(partnerData.b2bDirectConnectOutbound),
+      inboundTrust: partnerData.inboundTrust,
+      automaticUserConsentSettings: partnerData.automaticUserConsentSettings,
+    };
+    savePartner.mutate({ url, data: payload });
   };
 
   const handleSave = () => {

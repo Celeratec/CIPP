@@ -45,45 +45,53 @@ const Page = () => {
 
   const columns = [
     {
+      id: "partnerName",
       header: "Partner Name",
       accessorKey: "partnerName",
       size: 200,
     },
     {
+      id: "partnerDomain",
       header: "Domain",
       accessorKey: "partnerDomain",
       size: 200,
     },
     {
+      id: "tenantId",
       header: "Tenant ID",
       accessorKey: "tenantId",
       size: 280,
     },
     {
+      id: "b2bCollaborationInbound",
       header: "B2B Collab In",
       accessorKey: "b2bCollaborationInbound",
       size: 120,
       Cell: ({ cell }) => accessChip(cell.getValue()),
     },
     {
+      id: "b2bCollaborationOutbound",
       header: "B2B Collab Out",
       accessorKey: "b2bCollaborationOutbound",
       size: 120,
       Cell: ({ cell }) => accessChip(cell.getValue()),
     },
     {
+      id: "b2bDirectConnectInbound",
       header: "Direct Connect In",
       accessorKey: "b2bDirectConnectInbound",
       size: 130,
       Cell: ({ cell }) => accessChip(cell.getValue()),
     },
     {
+      id: "b2bDirectConnectOutbound",
       header: "Direct Connect Out",
       accessorKey: "b2bDirectConnectOutbound",
       size: 130,
       Cell: ({ cell }) => accessChip(cell.getValue()),
     },
     {
+      id: "inboundTrust",
       header: "Trust MFA",
       accessorKey: "inboundTrust",
       size: 100,
