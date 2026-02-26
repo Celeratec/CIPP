@@ -29,6 +29,10 @@ const Page = () => {
   ];
 
   const accessChip = (val) => {
+    const hasExplicit = val?.usersAndGroups?.accessType || val?.applications?.accessType;
+    if (!hasExplicit) {
+      return <Chip label="Inherited" size="small" variant="outlined" color="default" />;
+    }
     const access = val?.usersAndGroups?.accessType ?? "inherited";
     return (
       <Chip

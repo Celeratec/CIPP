@@ -32,27 +32,46 @@ import CippRiskSummaryDialog from "../../../../../components/CippComponents/Cipp
 import Link from "next/link";
 
 const AccessSettingsEditor = ({ title, description, settings, onChange }) => {
-  const usersAccessType = settings?.usersAndGroups?.accessType ?? "allowed";
-  const appsAccessType = settings?.applications?.accessType ?? "allowed";
+  const isInherited = !settings?.usersAndGroups?.accessType && !settings?.applications?.accessType;
+  const usersAccessType = isInherited ? "inherited" : (settings?.usersAndGroups?.accessType ?? "inherited");
+  const appsAccessType = isInherited ? "inherited" : (settings?.applications?.accessType ?? "inherited");
 
   const handleUsersAccessChange = (e) => {
+    const val = e.target.value;
+    if (val === "inherited") {
+      onChange(null);
+      return;
+    }
     onChange({
       ...settings,
       usersAndGroups: {
         ...settings?.usersAndGroups,
-        accessType: e.target.value,
+        accessType: val,
         targets: [{ target: "AllUsers", targetType: "user" }],
+      },
+      applications: settings?.applications ?? {
+        accessType: val,
+        targets: [{ target: "AllApplications", targetType: "application" }],
       },
     });
   };
 
   const handleAppsAccessChange = (e) => {
+    const val = e.target.value;
+    if (val === "inherited") {
+      onChange(null);
+      return;
+    }
     onChange({
       ...settings,
       applications: {
         ...settings?.applications,
-        accessType: e.target.value,
+        accessType: val,
         targets: [{ target: "AllApplications", targetType: "application" }],
+      },
+      usersAndGroups: settings?.usersAndGroups ?? {
+        accessType: val,
+        targets: [{ target: "AllUsers", targetType: "user" }],
       },
     });
   };
@@ -66,6 +85,15 @@ const AccessSettingsEditor = ({ title, description, settings, onChange }) => {
             <FormControl component="fieldset">
               <FormLabel>Users & Groups</FormLabel>
               <RadioGroup value={usersAccessType} onChange={handleUsersAccessChange}>
+                <FormControlLabel
+                  value="inherited"
+                  control={<Radio size="small" />}
+                  label={
+                    <Typography variant="body2">
+                      Inherit from default policy
+                    </Typography>
+                  }
+                />
                 <FormControlLabel value="allowed" control={<Radio size="small" />} label="Allow" />
                 <FormControlLabel value="blocked" control={<Radio size="small" />} label="Block" />
               </RadioGroup>
@@ -75,6 +103,15 @@ const AccessSettingsEditor = ({ title, description, settings, onChange }) => {
             <FormControl component="fieldset">
               <FormLabel>Applications</FormLabel>
               <RadioGroup value={appsAccessType} onChange={handleAppsAccessChange}>
+                <FormControlLabel
+                  value="inherited"
+                  control={<Radio size="small" />}
+                  label={
+                    <Typography variant="body2">
+                      Inherit from default policy
+                    </Typography>
+                  }
+                />
                 <FormControlLabel value="allowed" control={<Radio size="small" />} label="Allow" />
                 <FormControlLabel value="blocked" control={<Radio size="small" />} label="Block" />
               </RadioGroup>
