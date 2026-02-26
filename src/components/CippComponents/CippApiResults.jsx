@@ -1,6 +1,7 @@
 import { Close, Download, ExpandMore, ExpandLess } from "@mui/icons-material";
 import {
   Alert,
+  AlertTitle,
   Button,
   Chip,
   CircularProgress,
@@ -181,10 +182,23 @@ const FormattedResultText = ({ text, severity }) => {
       const catMatch = item.match(/^\[([^\]]+)\]\s*/);
       const category = catMatch ? catMatch[1] : null;
       const rest = catMatch ? item.slice(catMatch[0].length) : item;
+
+      const riskMatch = rest.match(/\s*Risk\((error|warning|info)\):\s*(.*?)(?:\s*CIPP Settings:\s*(\S+)\s*)?$/s);
+      if (riskMatch) {
+        const message = rest.slice(0, riskMatch.index).trim();
+        return {
+          category,
+          message,
+          riskSeverity: riskMatch[1],
+          riskText: riskMatch[2].trim(),
+          settingsPath: riskMatch[3] || null,
+        };
+      }
+
       const settingsMatch = rest.match(/\s*CIPP Settings:\s*(\S+)\s*$/);
       const message = settingsMatch ? rest.slice(0, settingsMatch.index).trim() : rest.trim();
       const settingsPath = settingsMatch ? settingsMatch[1] : null;
-      return { category, message, settingsPath };
+      return { category, message, settingsPath, riskSeverity: null, riskText: null };
     };
 
     return (
@@ -206,7 +220,8 @@ const FormattedResultText = ({ text, severity }) => {
             </Typography>
             <Stack spacing={1.5}>
               {diagItems.map((item, i) => {
-                const { category, message, settingsPath } = parseDiagItem(item);
+                const { category, message, settingsPath, riskSeverity, riskText } =
+                  parseDiagItem(item);
                 return (
                   <Box key={i}>
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.25 }}>
@@ -222,6 +237,22 @@ const FormattedResultText = ({ text, severity }) => {
                     <Typography variant="body2" sx={{ mt: 0.5 }}>
                       {message}
                     </Typography>
+                    {riskSeverity && riskText && (
+                      <Alert
+                        severity={riskSeverity}
+                        variant="outlined"
+                        sx={{ mt: 1, mb: 0.5 }}
+                      >
+                        <AlertTitle>
+                          {riskSeverity === "error"
+                            ? "High Risk"
+                            : riskSeverity === "warning"
+                              ? "Security Consideration"
+                              : "Note"}
+                        </AlertTitle>
+                        <Typography variant="body2">{riskText}</Typography>
+                      </Alert>
+                    )}
                     {settingsPath && (
                       <Button
                         href={settingsPath}
