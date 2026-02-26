@@ -333,7 +333,7 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
     {
       type: "autoComplete",
       name: "UserID",
-      label: isSharedChannel ? "Select User or Enter Guest Email" : "Select User",
+      label: isSharedChannel ? "Select User or Enter External Email" : "Select User",
       multiple: false,
       creatable: isSharedChannel,
       api: {
@@ -354,7 +354,7 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
         valueField: "id",
       },
       placeholder: isSharedChannel
-        ? "Search users or type a guest email address..."
+        ? "Search users or type an external email address..."
         : "Search users...",
       validators: {
         validate: (value) => (!value ? "Please select a user" : true),
@@ -381,9 +381,10 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
       Action: "AddChannelMember",
       ChannelID: channel.id,
       ChannelName: channel.displayName,
+      ChannelType: channel.membershipType,
     },
     confirmText: isSharedChannel
-      ? `Add a user or guest to the '${channel.displayName}' shared channel.`
+      ? `Add a user or external member to the '${channel.displayName}' shared channel. External users are added via B2B direct connect — no guest invitation is created.`
       : `Add a user to the '${channel.displayName}' channel.`,
     relatedQueryKeys: [`TeamDetails-${teamId}`],
   };
