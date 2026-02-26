@@ -127,6 +127,16 @@ const POLICY_RISK_RULES = [
       "Consider enabling trust only for specific partner organizations via per-partner policies rather than in the defaults.",
   },
   {
+    id: "b2b-direct-connect-inbound-open",
+    test: (d) => d?.b2bDirectConnectInbound?.usersAndGroups?.accessType === "allowed",
+    severity: "warning",
+    title: "B2B Direct Connect Inbound Allowed for All Organizations",
+    description:
+      "The default policy allows B2B direct connect inbound from every external organization. Direct connect users access Teams shared channels without guest accounts -- they have no footprint in your directory and are not subject to your Conditional Access policies unless inbound trust is configured. Consider using partner-specific policies to allow direct connect only for trusted organizations.",
+    recommendation:
+      "Block B2B direct connect in the default policy and create partner-specific policies for organizations that need shared channel access.",
+  },
+  {
     id: "b2b-defaults-all-open",
     test: (d) =>
       d?.b2bCollaborationInbound?.usersAndGroups?.accessType === "allowed" &&
@@ -288,13 +298,21 @@ const Page = () => {
           <TabPanel value={tabValue} index={1}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               B2B Direct Connect enables seamless collaboration through Teams shared channels without
-              requiring guest accounts.
+              requiring guest accounts. Unlike B2B collaboration (guest access), direct connect users
+              have no directory footprint in your tenant.
             </Typography>
             <AccessSettingsEditor
               title="Inbound Access"
               description="External users accessing your Teams shared channels"
               settings={policyData?.b2bDirectConnectInbound}
               onChange={(val) => handleFieldChange("b2bDirectConnectInbound", val)}
+            />
+            <CippRiskAlert
+              visible={policyData?.b2bDirectConnectInbound?.usersAndGroups?.accessType === "allowed"}
+              severity="warning"
+              title="Direct Connect Inbound Open to All Organizations"
+              description="Allowing B2B direct connect inbound in the default policy means users from ANY external organization can be added to Teams shared channels. These users access resources without guest accounts, so they are not visible in your directory and are not subject to your Conditional Access policies unless you configure inbound trust."
+              recommendation="Block direct connect inbound in the default policy and create partner-specific policies for trusted organizations that need shared channel access."
             />
             <AccessSettingsEditor
               title="Outbound Access"

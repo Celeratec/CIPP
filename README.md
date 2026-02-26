@@ -176,11 +176,11 @@ External access in Microsoft 365 is controlled by multiple independent settings 
 
 ### Risk Coaching & Settings Safety
 
-An inline risk coaching system that alerts administrators to potentially dangerous settings as they make changes. Over 30 risk rules across External Collaboration, Cross-Tenant Policy, SharePoint Sharing, Teams Settings, Offboarding Wizard, Transport Rules, and Alert Configuration highlight dangerous options, recommend safer alternatives, and require explicit confirmation before saving high-risk configurations.
+An inline risk coaching system that alerts administrators to potentially dangerous settings as they make changes. Over 30 risk rules across External Collaboration, Cross-Tenant Policy, SharePoint Sharing, Teams Settings, Offboarding Wizard, Transport Rules, and Alert Configuration highlight dangerous options, recommend safer alternatives, and require explicit confirmation before saving high-risk configurations. B2B direct connect settings include dedicated risk coaching that explains the security model -- direct connect users have no directory footprint and are not subject to Conditional Access unless inbound trust is configured -- and recommends partner-specific policies over opening the default.
 
-### Guest Invitation with Diagnostics
+### Guest Invitation & Channel Member Diagnostics
 
-Invite external guests directly from SharePoint site and Teams detail pages. If an invitation fails, the system automatically diagnoses the root cause -- checking B2B domain restrictions, Teams guest access settings, and SharePoint permissions -- and provides specific remediation steps or a one-click quick-fix to allow the domain and retry.
+Invite external guests directly from SharePoint site and Teams detail pages. Add external members to shared channels via B2B direct connect. If an operation fails, the system automatically diagnoses the root cause -- checking cross-tenant access policies (B2B direct connect inbound/outbound), B2B domain restrictions, Teams guest access settings, Entra external collaboration settings, and SharePoint permissions -- and provides categorized, structured guidance with direct links to the relevant CIPP settings page. Microsoft internal error codes (e.g., "xTap") are translated to human-readable descriptions.
 
 ### Dynamics 365 Management
 
@@ -192,7 +192,7 @@ When NinjaOne integration is configured, device views across the application are
 
 ### Enhanced Error Messages & Permission Guidance
 
-Structured error formatting throughout the application, with automatic detection of permission and consent issues replaced by step-by-step remediation instructions and direct links to the relevant settings page. SharePoint-specific error classification provides targeted diagnostics for token acquisition and access issues.
+Structured error formatting throughout the application. The `FormattedResultText` renderer automatically detects and formats common error patterns: backend `Diagnostics:` sections are parsed into categorized items with `[Category]` chips and `CIPP Settings:` paths become clickable navigation buttons. SharePoint-specific error classification provides targeted diagnostics for token acquisition and access issues without misdirecting users to superadmin settings.
 
 ### Organized Navigation
 

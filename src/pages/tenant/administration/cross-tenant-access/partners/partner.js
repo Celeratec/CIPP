@@ -119,6 +119,16 @@ const PARTNER_RISK_RULES = [
       "Ensure you have verified this partner's security practices before trusting all claims.",
   },
   {
+    id: "b2b-direct-connect-inbound-open",
+    test: (d) => d.b2bDirectConnectInbound?.usersAndGroups?.accessType === "allowed",
+    severity: "info",
+    title: "B2B Direct Connect Inbound Allowed",
+    description:
+      "B2B direct connect is allowed inbound from this partner. Their users can be added to Teams shared channels without guest accounts -- they will have no footprint in your directory and are not subject to your Conditional Access policies unless inbound trust is configured for this partner.",
+    recommendation:
+      "Enable inbound trust settings for this partner if you want Conditional Access policies to apply to their direct connect users.",
+  },
+  {
     id: "all-access-open",
     test: (d) =>
       d.b2bCollaborationInbound?.usersAndGroups?.accessType === "allowed" &&
@@ -308,7 +318,7 @@ const Page = () => {
         <Card>
           <CardHeader
             title="B2B Direct Connect"
-            subheader="Configure Teams shared channel access for this partner"
+            subheader="Configure Teams shared channel access for this partner. Unlike B2B collaboration (guest access), direct connect users have no directory footprint in your tenant."
           />
           <CardContent>
             <AccessSettingsEditor
@@ -316,6 +326,13 @@ const Page = () => {
               description="External users accessing your Teams shared channels"
               settings={partnerData.b2bDirectConnectInbound}
               onChange={(val) => handleFieldChange("b2bDirectConnectInbound", val)}
+            />
+            <CippRiskAlert
+              visible={partnerData.b2bDirectConnectInbound?.usersAndGroups?.accessType === "allowed"}
+              severity="info"
+              title="Direct Connect Users Are Not Covered by Conditional Access"
+              description="B2B direct connect users access shared channels without guest accounts. They are not visible in your directory and are not subject to your Conditional Access policies unless inbound trust is enabled for this partner."
+              recommendation="Enable inbound trust settings below if you want your Conditional Access policies to apply to this partner's direct connect users."
             />
             <AccessSettingsEditor
               title="Outbound Access"
