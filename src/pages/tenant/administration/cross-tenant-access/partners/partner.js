@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/router";
 import { Layout as DashboardLayout } from "../../../../../layouts/index.js";
 import { CippHead } from "../../../../../components/CippComponents/CippHead.jsx";
@@ -9,11 +9,13 @@ import {
   Card,
   CardContent,
   CardHeader,
+  CircularProgress,
   Divider,
   FormControl,
   FormControlLabel,
   FormLabel,
   Grid,
+  InputAdornment,
   Radio,
   RadioGroup,
   Stack,
@@ -21,7 +23,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Save, ArrowBack } from "@mui/icons-material";
+import { Save, ArrowBack, Search } from "@mui/icons-material";
 import { useSettings } from "../../../../../hooks/use-settings.js";
 import { ApiGetCall, ApiPostCall } from "../../../../../api/ApiCall.jsx";
 import { CippApiResults } from "../../../../../components/CippComponents/CippApiResults.jsx";
@@ -151,6 +153,8 @@ const Page = () => {
   const currentTenant = settings.currentTenant;
 
   const [partnerTenantId, setPartnerTenantId] = useState("");
+  const [domainInput, setDomainInput] = useState("");
+  const [domainLookupState, setDomainLookupState] = useState({ loading: false, error: null, resolvedDomain: null });
   const [riskDialogOpen, setRiskDialogOpen] = useState(false);
   const [partnerData, setPartnerData] = useState({
     b2bCollaborationInbound: null,
@@ -214,6 +218,40 @@ const Page = () => {
       [field]: value,
     }));
   };
+
+  const MSA_TENANT_ID = "9188040d-6c67-4c5b-b112-36a304b66dad";
+
+  const handleDomainLookup = useCallback(async () => {
+    const domain = domainInput.trim().toLowerCase();
+    if (!domain) return;
+
+    setDomainLookupState({ loading: true, error: null, resolvedDomain: null });
+    try {
+      const res = await fetch(
+        `https://login.microsoftonline.com/${encodeURIComponent(domain)}/.well-known/openid-configuration`
+      );
+      if (!res.ok) throw new Error(`Could not resolve domain '${domain}'`);
+      const data = await res.json();
+      const tenantId = data.issuer?.split("/")[3];
+      if (!tenantId) throw new Error(`No tenant ID found for '${domain}'`);
+      if (tenantId === MSA_TENANT_ID) {
+        setDomainLookupState({
+          loading: false,
+          error: `'${domain}' is a consumer domain (personal Microsoft accounts), not a Microsoft 365 organization.`,
+          resolvedDomain: null,
+        });
+        return;
+      }
+      setPartnerTenantId(tenantId);
+      setDomainLookupState({ loading: false, error: null, resolvedDomain: domain });
+    } catch (e) {
+      setDomainLookupState({
+        loading: false,
+        error: `Could not resolve '${domain}'. Ensure this is a valid domain belonging to a Microsoft 365 organization.`,
+        resolvedDomain: null,
+      });
+    }
+  }, [domainInput]);
 
   const executeSave = () => {
     const url = isEditing ? "/api/EditCrossTenantPartner" : "/api/ExecAddCrossTenantPartner";
@@ -280,15 +318,65 @@ const Page = () => {
         <Card>
           <CardHeader title="Partner Identification" />
           <CardContent>
-            <TextField
-              label="Partner Tenant ID"
-              value={partnerTenantId}
-              onChange={(e) => setPartnerTenantId(e.target.value)}
-              fullWidth
-              disabled={isEditing}
-              placeholder="Enter the partner organization's Azure AD tenant ID (GUID)"
-              helperText="The Azure AD tenant ID of the partner organization"
-            />
+            <Stack spacing={2}>
+              {!isEditing && (
+                <>
+                  <Stack direction="row" spacing={1} alignItems="flex-start">
+                    <TextField
+                      label="Look up by domain"
+                      value={domainInput}
+                      onChange={(e) => setDomainInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleDomainLookup();
+                        }
+                      }}
+                      fullWidth
+                      placeholder="e.g. oracle.com"
+                      helperText="Enter a domain name to resolve its tenant ID automatically"
+                      InputProps={{
+                        endAdornment: domainLookupState.loading ? (
+                          <InputAdornment position="end">
+                            <CircularProgress size={20} />
+                          </InputAdornment>
+                        ) : null,
+                      }}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={handleDomainLookup}
+                      disabled={!domainInput.trim() || domainLookupState.loading}
+                      startIcon={<Search />}
+                      sx={{ mt: "8px", minWidth: 100 }}
+                    >
+                      Resolve
+                    </Button>
+                  </Stack>
+                  {domainLookupState.error && (
+                    <Alert severity="error" variant="outlined">
+                      {domainLookupState.error}
+                    </Alert>
+                  )}
+                  {domainLookupState.resolvedDomain && (
+                    <Alert severity="success" variant="outlined">
+                      Resolved <strong>{domainLookupState.resolvedDomain}</strong> to tenant ID{" "}
+                      <strong>{partnerTenantId}</strong>
+                    </Alert>
+                  )}
+                  <Divider>or enter directly</Divider>
+                </>
+              )}
+              <TextField
+                label="Partner Tenant ID"
+                value={partnerTenantId}
+                onChange={(e) => setPartnerTenantId(e.target.value)}
+                fullWidth
+                disabled={isEditing}
+                placeholder="Azure AD tenant ID (GUID)"
+                helperText={isEditing ? "Tenant ID cannot be changed" : "The Azure AD tenant ID of the partner organization"}
+              />
+            </Stack>
           </CardContent>
         </Card>
 
