@@ -10,7 +10,7 @@
 
 ---
 
-> **Last synced with upstream:** February 2026 (CIPP v10.1.0 / CIPP-API v10.1.0)
+> **Last synced with upstream:** February 2026 (CIPP v10.1.1 / CIPP-API v10.1.1)
 >
 > Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. This document reflects the state of both projects as of the date above.
 
@@ -45,7 +45,7 @@ Manage365 includes the complete CIPP feature set:
 - Secure Score monitoring
 - Application management and consent requests
 - GDAP relationship management with GDAP trace
-- Standards alignment and drift detection
+- Standards alignment and drift detection (including device registration local admin controls)
 - Best Practice Analyser and Domains Analyser (with DKIM selector rotation)
 - Conditional Access policy management, templates, and vacation mode
 - Licence reporting and management with granular control
