@@ -327,13 +327,15 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
     [teamId, channel.id, channel.displayName, tenantFilter, removeMemberMutation, dispatch, handleRefreshMembers]
   );
 
+  const isSharedChannel = channel.membershipType === "shared";
+
   const channelMemberFields = [
     {
       type: "autoComplete",
       name: "UserID",
-      label: "Select User",
+      label: isSharedChannel ? "Select User or Enter Guest Email" : "Select User",
       multiple: false,
-      creatable: false,
+      creatable: isSharedChannel,
       api: {
         url: "/api/ListGraphRequest",
         data: {
@@ -342,12 +344,18 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
           $top: 999,
           $count: true,
           $orderby: "displayName",
-          $select: "id,displayName,userPrincipalName",
+          $select: "id,displayName,userPrincipalName,userType",
         },
         dataKey: "Results",
-        labelField: (user) => `${user.displayName} (${user.userPrincipalName})`,
+        labelField: (user) => {
+          const guestTag = user.userType === "Guest" ? " [Guest]" : "";
+          return `${user.displayName} (${user.userPrincipalName})${guestTag}`;
+        },
         valueField: "id",
       },
+      placeholder: isSharedChannel
+        ? "Search users or type a guest email address..."
+        : "Search users...",
       validators: {
         validate: (value) => (!value ? "Please select a user" : true),
       },
@@ -374,7 +382,9 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
       ChannelID: channel.id,
       ChannelName: channel.displayName,
     },
-    confirmText: `Add a user to the '${channel.displayName}' channel.`,
+    confirmText: isSharedChannel
+      ? `Add a user or guest to the '${channel.displayName}' shared channel.`
+      : `Add a user to the '${channel.displayName}' channel.`,
     relatedQueryKeys: [`TeamDetails-${teamId}`],
   };
 
