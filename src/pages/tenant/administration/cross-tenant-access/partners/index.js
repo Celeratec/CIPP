@@ -28,88 +28,56 @@ const Page = () => {
     },
   ];
 
+  const accessChip = (val) => {
+    const access = val?.usersAndGroups?.accessType ?? "inherited";
+    return (
+      <Chip
+        label={access.charAt(0).toUpperCase() + access.slice(1)}
+        size="small"
+        color={access === "allowed" ? "success" : access === "blocked" ? "error" : "default"}
+      />
+    );
+  };
+
   const columns = [
-    {
-      header: "Partner Tenant ID",
-      accessorKey: "tenantId",
-      size: 300,
-    },
     {
       header: "Partner Name",
       accessorKey: "partnerName",
       size: 200,
     },
     {
-      header: "Service Provider",
-      accessorKey: "isServiceProvider",
-      size: 120,
-      Cell: ({ cell }) => (
-        <Chip
-          label={cell.getValue() ? "Yes" : "No"}
-          size="small"
-          color={cell.getValue() ? "info" : "default"}
-        />
-      ),
+      header: "Domain",
+      accessorKey: "partnerDomain",
+      size: 200,
     },
     {
-      header: "Multi-Tenant Org",
-      accessorKey: "isInMultiTenantOrganization",
-      size: 120,
-      Cell: ({ cell }) => (
-        <Chip
-          label={cell.getValue() ? "Yes" : "No"}
-          size="small"
-          color={cell.getValue() ? "info" : "default"}
-        />
-      ),
+      header: "Tenant ID",
+      accessorKey: "tenantId",
+      size: 280,
     },
     {
-      header: "B2B Collab Inbound",
+      header: "B2B Collab In",
       accessorKey: "b2bCollaborationInbound",
-      size: 150,
-      Cell: ({ cell }) => {
-        const val = cell.getValue();
-        const access = val?.usersAndGroups?.accessType ?? "inherited";
-        return (
-          <Chip
-            label={access.charAt(0).toUpperCase() + access.slice(1)}
-            size="small"
-            color={access === "allowed" ? "success" : access === "blocked" ? "error" : "default"}
-          />
-        );
-      },
+      size: 120,
+      Cell: ({ cell }) => accessChip(cell.getValue()),
     },
     {
-      header: "B2B Collab Outbound",
+      header: "B2B Collab Out",
       accessorKey: "b2bCollaborationOutbound",
-      size: 150,
-      Cell: ({ cell }) => {
-        const val = cell.getValue();
-        const access = val?.usersAndGroups?.accessType ?? "inherited";
-        return (
-          <Chip
-            label={access.charAt(0).toUpperCase() + access.slice(1)}
-            size="small"
-            color={access === "allowed" ? "success" : access === "blocked" ? "error" : "default"}
-          />
-        );
-      },
+      size: 120,
+      Cell: ({ cell }) => accessChip(cell.getValue()),
     },
     {
-      header: "B2B Direct Connect In",
+      header: "Direct Connect In",
       accessorKey: "b2bDirectConnectInbound",
-      size: 150,
-      Cell: ({ cell }) => {
-        const val = cell.getValue();
-        const access = val?.usersAndGroups?.accessType ?? "inherited";
-        return (
-          <Chip
-            label={access.charAt(0).toUpperCase() + access.slice(1)}
-            size="small"
-            color={access === "allowed" ? "success" : access === "blocked" ? "error" : "default"}
-          />
-        );
-      },
+      size: 130,
+      Cell: ({ cell }) => accessChip(cell.getValue()),
+    },
+    {
+      header: "Direct Connect Out",
+      accessorKey: "b2bDirectConnectOutbound",
+      size: 130,
+      Cell: ({ cell }) => accessChip(cell.getValue()),
     },
     {
       header: "Trust MFA",
