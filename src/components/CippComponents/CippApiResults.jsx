@@ -1,6 +1,8 @@
 import { Close, Download, ExpandMore, ExpandLess } from "@mui/icons-material";
 import {
   Alert,
+  Button,
+  Chip,
   CircularProgress,
   Collapse,
   IconButton,
@@ -11,6 +13,7 @@ import {
   Tooltip,
   keyframes,
 } from "@mui/material";
+import { OpenInNew } from "@mui/icons-material";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { getCippError } from "../../utils/get-cipp-error";
 import { CippCopyToClipBoard } from "./CippCopyToClipboard";
@@ -156,6 +159,90 @@ const FormattedResultText = ({ text, severity }) => {
             </li>
           </ol>
         </Typography>
+      </Stack>
+    );
+  }
+
+  // Pattern: error with Diagnostics section from backend policy checks
+  if (text.includes("Diagnostics:")) {
+    const [prelude, ...diagParts] = text.split(/Diagnostics:\s*/);
+    const diagText = diagParts.join("Diagnostics: ");
+
+    const preludeMatch = prelude.trim().match(/^(.+?)\.\s*Error:\s*(.+)$/s);
+    const heading = preludeMatch ? preludeMatch[1] : null;
+    const errorDetail = preludeMatch ? preludeMatch[2].trim() : prelude.trim();
+
+    const diagItems = diagText
+      .split(/\n\n|\r?\n(?=\[)/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const parseDiagItem = (item) => {
+      const catMatch = item.match(/^\[([^\]]+)\]\s*/);
+      const category = catMatch ? catMatch[1] : null;
+      const rest = catMatch ? item.slice(catMatch[0].length) : item;
+      const settingsMatch = rest.match(/\s*CIPP Settings:\s*(\S+)\s*$/);
+      const message = settingsMatch ? rest.slice(0, settingsMatch.index).trim() : rest.trim();
+      const settingsPath = settingsMatch ? settingsMatch[1] : null;
+      return { category, message, settingsPath };
+    };
+
+    return (
+      <Stack spacing={1.5}>
+        {heading && (
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            {heading}
+          </Typography>
+        )}
+        {errorDetail && (
+          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+            {errorDetail}
+          </Typography>
+        )}
+        {diagItems.length > 0 && (
+          <>
+            <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
+              Diagnostics:
+            </Typography>
+            <Stack spacing={1.5}>
+              {diagItems.map((item, i) => {
+                const { category, message, settingsPath } = parseDiagItem(item);
+                return (
+                  <Box key={i}>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.25 }}>
+                      {category && (
+                        <Chip
+                          label={category}
+                          size="small"
+                          variant="outlined"
+                          sx={{ fontSize: "0.7rem", height: 20 }}
+                        />
+                      )}
+                    </Stack>
+                    <Typography variant="body2" sx={{ mt: 0.5 }}>
+                      {message}
+                    </Typography>
+                    {settingsPath && (
+                      <Button
+                        href={settingsPath}
+                        size="small"
+                        variant="outlined"
+                        startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
+                        sx={{
+                          textTransform: "none",
+                          fontSize: "0.75rem",
+                          mt: 0.5,
+                        }}
+                      >
+                        Open CIPP Settings
+                      </Button>
+                    )}
+                  </Box>
+                );
+              })}
+            </Stack>
+          </>
+        )}
       </Stack>
     );
   }
