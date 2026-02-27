@@ -113,6 +113,8 @@ export const CippUserInfoCard = (props) => {
   const [selectedLicenseToAdd, setSelectedLicenseToAdd] = useState("");
   const [isAddingLicense, setIsAddingLicense] = useState(false);
   const [addLicenseError, setAddLicenseError] = useState(null);
+  const [addLicenseSuccess, setAddLicenseSuccess] = useState(null);
+  const [removeLicenseSuccess, setRemoveLicenseSuccess] = useState(null);
   
   // Fetch user's registered devices
   const registeredDevicesRequest = ApiGetCall({
@@ -211,13 +213,11 @@ export const CippUserInfoCard = (props) => {
   // License removal API
   const removeLicenseMutation = ApiPostCall({
     urlFromData: true,
-    relatedQueryKeys: [`ListUsers-${user?.id}`],
   });
   
   // License add API
   const addLicenseMutation = ApiPostCall({
     urlFromData: true,
-    relatedQueryKeys: [`ListUsers-${user?.id}`],
   });
   
   // Handle license chip click for removal
@@ -247,7 +247,7 @@ export const CippUserInfoCard = (props) => {
     setLicenseError(null);
     
     try {
-      await removeLicenseMutation.mutateAsync({
+      const response = await removeLicenseMutation.mutateAsync({
         url: "/api/ExecBulkLicense",
         data: [{
           tenantFilter: tenant,
@@ -257,15 +257,28 @@ export const CippUserInfoCard = (props) => {
         }],
       });
       
-      // Invalidate user queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: [`ListUsers-${user?.id}`] });
+      const results = response?.data?.Results || [];
+      const hasError = results.some((r) => typeof r === "string" && r.toLowerCase().includes("fail"));
       
-      // Call onRefresh if provided
+      if (hasError) {
+        setLicenseError(results.join(" "));
+        return;
+      }
+      
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = String(query.queryKey?.[0] || "");
+          return key.startsWith(`ListUsers-${user?.id}`);
+        },
+      });
+      
       if (onRefresh) {
         onRefresh();
       }
       
+      setRemoveLicenseSuccess(results[0] || "License removed successfully.");
       handleLicenseDialogClose();
+      setTimeout(() => setRemoveLicenseSuccess(null), 6000);
     } catch (error) {
       console.error("Failed to remove license:", error);
       setLicenseError(error.message || "Failed to remove license");
@@ -287,6 +300,7 @@ export const CippUserInfoCard = (props) => {
     setAddLicenseDialogOpen(true);
     setSelectedLicenseToAdd("");
     setAddLicenseError(null);
+    setAddLicenseSuccess(null);
   };
   
   // Handle add license dialog close
@@ -294,6 +308,7 @@ export const CippUserInfoCard = (props) => {
     setAddLicenseDialogOpen(false);
     setSelectedLicenseToAdd("");
     setAddLicenseError(null);
+    setAddLicenseSuccess(null);
   };
   
   // Handle adding a license
@@ -302,9 +317,10 @@ export const CippUserInfoCard = (props) => {
     
     setIsAddingLicense(true);
     setAddLicenseError(null);
+    setAddLicenseSuccess(null);
     
     try {
-      await addLicenseMutation.mutateAsync({
+      const response = await addLicenseMutation.mutateAsync({
         url: "/api/ExecBulkLicense",
         data: [{
           tenantFilter: tenant,
@@ -314,16 +330,27 @@ export const CippUserInfoCard = (props) => {
         }],
       });
       
-      // Invalidate queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: [`ListUsers-${user?.id}`] });
+      const results = response?.data?.Results || [];
+      const hasError = results.some((r) => typeof r === "string" && r.toLowerCase().includes("fail"));
+      
+      if (hasError) {
+        setAddLicenseError(results.join(" "));
+        return;
+      }
+      
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = String(query.queryKey?.[0] || "");
+          return key.startsWith(`ListUsers-${user?.id}`);
+        },
+      });
       queryClient.invalidateQueries({ queryKey: [`Licenses-${tenant}`] });
       
-      // Call onRefresh if provided
       if (onRefresh) {
         onRefresh();
       }
       
-      handleAddLicenseClose();
+      setAddLicenseSuccess(results[0] || "License added successfully.");
     } catch (error) {
       console.error("Failed to add license:", error);
       setAddLicenseError(error.message || "Failed to add license");
@@ -823,6 +850,11 @@ export const CippUserInfoCard = (props) => {
                 </Button>
               )}
             </Stack>
+            {removeLicenseSuccess && (
+              <Alert severity="success" sx={{ mb: 1 }} onClose={() => setRemoveLicenseSuccess(null)}>
+                {removeLicenseSuccess}
+              </Alert>
+            )}
             {!user?.assignedLicenses || user?.assignedLicenses.length === 0 ? (
               <Paper 
                 variant="outlined" 
@@ -1043,7 +1075,7 @@ export const CippUserInfoCard = (props) => {
             </Select>
           </FormControl>
           
-          {selectedLicenseToAdd && (
+          {selectedLicenseToAdd && !addLicenseSuccess && (
             <Alert severity="info" sx={{ mt: 2 }}>
               <Typography variant="body2">
                 <strong>{getSelectedLicenseDisplayName()}</strong> will be assigned to this user.
@@ -1051,21 +1083,29 @@ export const CippUserInfoCard = (props) => {
             </Alert>
           )}
           
-          <Alert 
-            severity="info" 
-            icon={<Lightbulb fontSize="small" />}
-            sx={{ 
-              mt: 2,
-              backgroundColor: (theme) => alpha(theme.palette.info.main, 0.08),
-              '& .MuiAlert-icon': {
-                color: 'info.main',
-              },
-            }}
-          >
-            <Typography variant="body2">
-              <strong>Tip:</strong> If you do not see the license you need, you will need to add it to the tenant first.
-            </Typography>
-          </Alert>
+          {!addLicenseSuccess && (
+            <Alert 
+              severity="info" 
+              icon={<Lightbulb fontSize="small" />}
+              sx={{ 
+                mt: 2,
+                backgroundColor: (theme) => alpha(theme.palette.info.main, 0.08),
+                '& .MuiAlert-icon': {
+                  color: 'info.main',
+                },
+              }}
+            >
+              <Typography variant="body2">
+                <strong>Tip:</strong> If you do not see the license you need, you will need to add it to the tenant first.
+              </Typography>
+            </Alert>
+          )}
+          
+          {addLicenseSuccess && (
+            <Alert severity="success" sx={{ mt: 2 }}>
+              {addLicenseSuccess}
+            </Alert>
+          )}
           
           {addLicenseError && (
             <Alert severity="error" sx={{ mt: 2 }}>
@@ -1074,18 +1114,20 @@ export const CippUserInfoCard = (props) => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleAddLicenseClose} disabled={isAddingLicense}>
-            Cancel
+          <Button onClick={handleAddLicenseClose}>
+            {addLicenseSuccess ? "Close" : "Cancel"}
           </Button>
-          <Button
-            onClick={handleAddLicense}
-            color="primary"
-            variant="contained"
-            disabled={isAddingLicense || !selectedLicenseToAdd}
-            startIcon={isAddingLicense ? <CircularProgress size={16} color="inherit" /> : <Add />}
-          >
-            {isAddingLicense ? "Adding..." : "Add License"}
-          </Button>
+          {!addLicenseSuccess && (
+            <Button
+              onClick={handleAddLicense}
+              color="primary"
+              variant="contained"
+              disabled={isAddingLicense || !selectedLicenseToAdd}
+              startIcon={isAddingLicense ? <CircularProgress size={16} color="inherit" /> : <Add />}
+            >
+              {isAddingLicense ? "Adding..." : "Add License"}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Card>

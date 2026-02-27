@@ -151,6 +151,9 @@ const Page = () => {
       tabOptions={tabOptions}
       title={title}
       subtitle={subtitle}
+      copyItems={userRequest.isSuccess ? [
+        { text: userRequest.data?.[0]?.userPrincipalName },
+      ] : []}
       actions={userActions}
       actionsData={userRequest.data?.[0]}
       isFetching={userRequest.isLoading}

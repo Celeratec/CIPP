@@ -441,6 +441,7 @@ export const useCippUserActions = () => {
       data: { userIds: "id" },
       multiPost: true,
       allowResubmit: true,
+      relatedQueryKeys: ["ListUsers*", `Licenses-${tenant}`],
       children: ({ formHook: formControl }) => (
         <ManageLicensesForm formControl={formControl} tenant={tenant} />
       ),

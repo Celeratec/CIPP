@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import { ActionsMenu } from "../components/actions-menu";
 import { useMediaQuery } from "@mui/material";
+import { CippCopyToClipBoard } from "../components/CippComponents/CippCopyToClipboard";
 
 export const HeaderedTabbedLayout = (props) => {
   const {
@@ -28,6 +29,7 @@ export const HeaderedTabbedLayout = (props) => {
     actionsData,
     isFetching = false,
     backUrl,
+    copyItems,
   } = props;
 
   const mdDown = useMediaQuery((theme) => theme.breakpoints.down("md"));
@@ -84,6 +86,14 @@ export const HeaderedTabbedLayout = (props) => {
                   >
                     {title}
                   </Typography>
+                  {title && !isFetching && (
+                    <CippCopyToClipBoard text={title} type="button" />
+                  )}
+                  {!isFetching && copyItems?.map((item, index) => (
+                    item.text && (
+                      <CippCopyToClipBoard key={index} text={item.text} type="chip" />
+                    )
+                  ))}
                 </Stack>
                 {isFetching ? (
                   <Skeleton variant="text" width={200} />
