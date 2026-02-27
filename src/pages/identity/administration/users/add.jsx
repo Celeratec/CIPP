@@ -39,6 +39,12 @@ const Page = () => {
       newFields.tenantFilter = userSettingsDefaults.currentTenant;
       newFields.disableLegacyProtocols = formControl.getValues("disableLegacyProtocols") ?? true;
 
+      // Preserve the currently selected template when copying properties
+      const currentTemplate = formControl.getValues("userTemplate");
+      if (currentTemplate) {
+        newFields.userTemplate = currentTemplate;
+      }
+
       formControl.reset(newFields);
     }
   }, [formValues]);

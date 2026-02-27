@@ -1780,7 +1780,8 @@ const Page = () => {
                               </Box>
                             ) : (
                               <Alert severity="info">
-                                This data has not yet been collected. Collect the data by selecting Refresh Data from the Actions dropdown on the top of the page.
+                                This data has not yet been collected. Collect the data by selecting
+                                Refresh Data from the Actions dropdown on the top of the page.
                               </Alert>
                             )}
 
@@ -2188,7 +2189,7 @@ const Page = () => {
                                                   textTransform: "uppercase",
                                                   letterSpacing: 0.5,
                                                   display: "block",
-                                                  mb: 1,
+                                                  mb: 2,
                                                 }}
                                               >
                                                 Current Configuration
@@ -2482,13 +2483,7 @@ const Page = () => {
                                       standard.currentTenantValue.CurrentValue !== null ? (
                                         <Stack
                                           spacing={2}
-                                          sx={{
-                                            mt:
-                                              standard.currentTenantValue?.Value === false ||
-                                              standard.currentTenantValue === false
-                                                ? 1
-                                                : 2,
-                                          }}
+                                          
                                         >
                                           <Typography
                                             variant="caption"
@@ -2598,15 +2593,7 @@ const Page = () => {
                                           })}
                                         </Stack>
                                       ) : (
-                                        <Box
-                                          sx={{
-                                            mt:
-                                              standard.currentTenantValue?.Value === false ||
-                                              standard.currentTenantValue === false
-                                                ? 1
-                                                : 2,
-                                          }}
-                                        >
+                                        <Box>
                                           <Typography
                                             variant="caption"
                                             sx={{
@@ -2615,7 +2602,7 @@ const Page = () => {
                                               textTransform: "uppercase",
                                               letterSpacing: 0.5,
                                               display: "block",
-                                              mb: 1,
+                                              mb: 2,
                                             }}
                                           >
                                             Current Configuration

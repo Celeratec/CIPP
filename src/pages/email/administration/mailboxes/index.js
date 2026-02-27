@@ -12,6 +12,10 @@ import {
   Chip, 
   Divider,
   useTheme,
+  Button,
+  SvgIcon,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { Box, Stack } from "@mui/system";
@@ -23,19 +27,34 @@ import {
   Person,
   Inbox,
   AlternateEmail,
+  Sync,
+  Info,
 } from "@mui/icons-material";
 import { getInitials, stringToColor } from "../../../../utils/get-initials";
+import { useSettings } from "../../../../hooks/use-settings";
+import { useDialog } from "../../../../hooks/use-dialog";
+import { CippApiDialog } from "../../../../components/CippComponents/CippApiDialog";
+import { useState } from "react";
+import { CippQueueTracker } from "../../../../components/CippTable/CippQueueTracker";
 
 const Page = () => {
   const pageTitle = "Mailboxes";
   const theme = useTheme();
   const router = useRouter();
+  const currentTenant = useSettings().currentTenant;
+  const syncDialog = useDialog();
+  const [syncQueueId, setSyncQueueId] = useState(null);
+
+  const isAllTenants = currentTenant === "AllTenants";
+
+  const apiData = {
+    UseReportDB: true,
+  };
 
   const handleCardClick = useCallback((mailbox) => {
     router.push(`/email/administration/mailboxes/view?mailboxId=${encodeURIComponent(mailbox.ExternalDirectoryObjectId || mailbox.Guid || mailbox.UPN || "")}`);
   }, [router]);
 
-  // Card view configuration (works for both mobile and desktop)
   const cardConfig = {
     title: "displayName",
     subtitle: "primarySmtpAddress",
@@ -56,16 +75,14 @@ const Page = () => {
     extraFields: [
       { field: "UPN", icon: <Person />, maxLines: 1 },
     ],
-    // Additional fields shown only on desktop cards
     desktopFields: [
       { field: "recipientType", label: "Type", icon: <Inbox /> },
       { field: "AdditionalEmailAddresses", label: "Aliases", icon: <AlternateEmail /> },
     ],
-    // Grid sizing for consistent card widths
-      cardGridProps: {
-        md: 6,
-        lg: 4,
-      },
+    cardGridProps: {
+      md: 6,
+      lg: 4,
+    },
     mobileQuickActions: [
       "Edit permissions",
       "Convert Mailbox",
@@ -76,7 +93,6 @@ const Page = () => {
     maxQuickActions: 8,
   };
 
-  // Helper function to get mailbox type info
   const getMailboxTypeInfo = (type) => {
     switch (type) {
       case "SharedMailbox":
@@ -252,36 +268,92 @@ const Page = () => {
   ];
 
   // Simplified columns for the table
-  const simpleColumns = [
-    "displayName", // Display Name
-    "recipientTypeDetails", // Recipient Type Details
-    "UPN", // User Principal Name
-    "primarySmtpAddress", // Primary Email Address
-    "recipientType", // Recipient Type
-    "AdditionalEmailAddresses", // Additional Email Addresses
-  ];
+  const simpleColumns = isAllTenants
+    ? [
+        "Tenant", // Tenant
+        "displayName", // Display Name
+        "recipientTypeDetails", // Recipient Type Details
+        "UPN", // User Principal Name
+        "primarySmtpAddress", // Primary Email Address
+        "recipientType", // Recipient Type
+        "AdditionalEmailAddresses", // Additional Email Addresses
+        "CacheTimestamp", // Cache Timestamp
+      ]
+    : [
+        "displayName", // Display Name
+        "recipientTypeDetails", // Recipient Type Details
+        "UPN", // User Principal Name
+        "primarySmtpAddress", // Primary Email Address
+        "recipientType", // Recipient Type
+        "AdditionalEmailAddresses", // Additional Email Addresses
+        "CacheTimestamp", // Cache Timestamp
+      ];
 
   return (
-    <CippTablePage
-      title={pageTitle}
-      apiUrl="/api/ListMailboxes"
-      actions={CippExchangeActions()}
-      offCanvas={offCanvas}
-      simpleColumns={simpleColumns}
-      filters={filterList}
-      cardButton={
-        <>
-          <CippSharedMailboxDrawer />
-          <CippHVEUserDrawer />
-        </>
-      }
-      cardConfig={cardConfig}
-      onCardClick={handleCardClick}
-      offCanvasOnRowClick={true}
-    />
+    <>
+      <CippTablePage
+        title={pageTitle}
+        apiUrl="/api/ListMailboxes"
+        apiData={apiData}
+        queryKey={`ListMailboxes-${currentTenant}`}
+        actions={CippExchangeActions()}
+        offCanvas={offCanvas}
+        simpleColumns={simpleColumns}
+        filters={filterList}
+        cardButton={
+          <Stack direction="row" spacing={1} alignItems="center">
+            <CippSharedMailboxDrawer />
+            <CippHVEUserDrawer />
+            <CippQueueTracker
+              queueId={syncQueueId}
+              queryKey={`ListMailboxes-${currentTenant}`}
+              title="Mailboxes Sync"
+            />
+            <Tooltip title="This report displays cached data from the CIPP reporting database. Click the Sync button to update the cache for the current tenant.">
+              <IconButton size="small">
+                <Info fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Button
+              startIcon={
+                <SvgIcon fontSize="small">
+                  <Sync />
+                </SvgIcon>
+              }
+              size="xs"
+              onClick={syncDialog.handleOpen}
+            >
+              Sync
+            </Button>
+          </Stack>
+        }
+        cardConfig={cardConfig}
+        onCardClick={handleCardClick}
+        offCanvasOnRowClick={true}
+      />
+      <CippApiDialog
+        createDialog={syncDialog}
+        title="Sync Mailboxes"
+        fields={[]}
+        api={{
+          type: "GET",
+          url: "/api/ExecCIPPDBCache",
+          confirmText: `Run mailboxes cache sync for ${currentTenant}? This will update mailbox data immediately.`,
+          relatedQueryKeys: [`ListMailboxes-${currentTenant}`],
+          data: {
+            Name: "Mailboxes",
+          },
+          onSuccess: (response) => {
+            if (response?.QueueId) {
+              setSyncQueueId(response.QueueId);
+            }
+          },
+        }}
+      />
+    </>
   );
 };
 
-Page.getLayout = (page) => <DashboardLayout allTenantsSupport={false}>{page}</DashboardLayout>;
+Page.getLayout = (page) => <DashboardLayout allTenantsSupport={true}>{page}</DashboardLayout>;
 
 export default Page;
