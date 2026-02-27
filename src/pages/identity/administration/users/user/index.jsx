@@ -27,7 +27,7 @@ import { CippBannerListCard } from "../../../../../components/CippCards/CippBann
 import { CippTimeAgo } from "../../../../../components/CippComponents/CippTimeAgo";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useCippUserActions } from "../../../../../components/CippComponents/CippUserActions";
-import { EyeIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { EyeIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { CippDataTable } from "../../../../../components/CippTable/CippDataTable";
 import dynamic from "next/dynamic";
 const CippMap = dynamic(() => import("../../../../../components/CippComponents/CippMap"), {
@@ -602,10 +602,27 @@ const Page = () => {
           data: roles,
           simpleColumns: ["displayName", "description"],
           refreshFunction: refreshFunction,
+          actions: [
+            {
+              label: "Remove Role",
+              type: "POST",
+              url: "/api/ExecRoleAssignment",
+              icon: <TrashIcon />,
+              dataFunction: (row) => ({
+                userId: data?.id,
+                userPrincipalName: data?.userPrincipalName,
+                displayName: data?.displayName,
+                tenantFilter: tenant,
+                action: "Remove",
+                roles: [{ label: row.displayName, value: row.roleTemplateId }],
+              }),
+              confirmText: "Are you sure you want to remove the [displayName] role from this user?",
+            },
+          ],
         },
       },
     ];
-  }, [userMemberOf, refreshFunction]);
+  }, [userMemberOf, refreshFunction, data, tenant]);
 
   const ownedDevicesItems = managedDevices.length > 0
     ? [

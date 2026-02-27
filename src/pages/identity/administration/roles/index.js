@@ -38,6 +38,7 @@ import {
   Info,
   VerifiedUser,
   Shield,
+  PersonAdd,
 } from "@mui/icons-material";
 import {
   ShieldCheckIcon,
@@ -50,6 +51,126 @@ import { useState, useMemo, useCallback } from "react";
 import { ApiPostCall } from "../../../../api/ApiCall";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSettings } from "../../../../hooks/use-settings";
+import { useForm, useWatch } from "react-hook-form";
+import CippFormComponent from "../../../../components/CippComponents/CippFormComponent";
+import { CippApiResults } from "../../../../components/CippComponents/CippApiResults";
+
+const AddMemberForm = ({ role, tenant, onClose, onSuccess, mutation }) => {
+  const formControl = useForm({ mode: "onChange" });
+  const assignmentType = useWatch({
+    control: formControl.control,
+    name: "assignmentType",
+  });
+  const assignmentTypeValue = assignmentType?.value || assignmentType;
+  const isTemporary = assignmentTypeValue === "Temporary";
+
+  const handleSubmit = formControl.handleSubmit((formData) => {
+    const actionType = isTemporary ? "AddTemporary" : "Add";
+    const user = formData.user;
+    mutation.mutate(
+      {
+        url: "/api/ExecRoleAssignment",
+        data: {
+          tenantFilter: tenant,
+          userId: user.value,
+          userPrincipalName: user.addedFields?.userPrincipalName || user.value,
+          displayName: user.label,
+          roles: [{ label: role.DisplayName, value: role.roleTemplateId }],
+          action: actionType,
+          expiration: formData.expiration
+            ? Math.floor(new Date(formData.expiration).getTime() / 1000)
+            : undefined,
+          reason: formData.reason || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          onSuccess();
+        },
+      }
+    );
+  });
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <Stack spacing={2} sx={{ mt: 1 }}>
+        <CippFormComponent
+          type="autoComplete"
+          name="user"
+          label="Select User"
+          multiple={false}
+          creatable={false}
+          formControl={formControl}
+          validators={{ required: "Please select a user" }}
+          api={{
+            url: "/api/ListGraphRequest",
+            data: {
+              Endpoint: "users",
+              $select: "id,displayName,userPrincipalName",
+              $top: 999,
+              $count: true,
+            },
+            queryKey: `ListUsersAutoComplete-${tenant}`,
+            dataKey: "Results",
+            labelField: (user) => `${user.displayName} (${user.userPrincipalName})`,
+            valueField: "id",
+            addedField: {
+              userPrincipalName: "userPrincipalName",
+              displayName: "displayName",
+            },
+          }}
+        />
+        <CippFormComponent
+          type="radio"
+          name="assignmentType"
+          label="Assignment Type"
+          formControl={formControl}
+          options={[
+            { label: "Permanent", value: "Permanent" },
+            { label: "Temporary", value: "Temporary" },
+          ]}
+          validators={{ required: "Please select an assignment type" }}
+        />
+        {isTemporary && (
+          <CippFormComponent
+            type="datePicker"
+            name="expiration"
+            label="Expiration Date/Time"
+            dateTimeType="datetime"
+            formControl={formControl}
+            validators={{ required: "Please select an expiration date" }}
+          />
+        )}
+        <CippFormComponent
+          type="textField"
+          name="reason"
+          label="Reason (optional)"
+          formControl={formControl}
+        />
+        <CippApiResults apiObject={mutation} />
+        <DialogActions sx={{ px: 0, pb: 0 }}>
+          <Button onClick={onClose} disabled={mutation.isPending}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={mutation.isPending}
+            startIcon={
+              mutation.isPending ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <PersonAdd />
+              )
+            }
+          >
+            {mutation.isPending ? "Adding..." : "Add Member"}
+          </Button>
+        </DialogActions>
+      </Stack>
+    </form>
+  );
+};
 
 const Page = () => {
   const pageTitle = "Roles";
@@ -63,11 +184,20 @@ const Page = () => {
     member: null,
     role: null,
   });
+  const [addMemberDialog, setAddMemberDialog] = useState({
+    open: false,
+    role: null,
+  });
   const [isRemoving, setIsRemoving] = useState(false);
   const [removeError, setRemoveError] = useState(null);
 
   // API mutation for removing members
   const removeMemberMutation = ApiPostCall({
+    urlFromData: true,
+    relatedQueryKeys: ["ListRoles"],
+  });
+
+  const addMemberMutation = ApiPostCall({
     urlFromData: true,
     relatedQueryKeys: ["ListRoles"],
   });
@@ -334,6 +464,16 @@ const Page = () => {
                   </Typography>
                 </Stack>
               }
+              action={
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<PersonAdd />}
+                  onClick={() => setAddMemberDialog({ open: true, role: row })}
+                >
+                  Add Member
+                </Button>
+              }
               sx={{ py: 1.5, px: 2 }}
             />
             <Divider />
@@ -553,6 +693,33 @@ const Page = () => {
             {isRemoving ? "Removing..." : "Remove Member"}
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Add Member Dialog */}
+      <Dialog
+        open={addMemberDialog.open}
+        onClose={() => !addMemberMutation.isPending && setAddMemberDialog({ open: false, role: null })}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <PersonAdd sx={{ color: theme.palette.primary.main }} />
+          Add Member to {addMemberDialog.role?.DisplayName}
+        </DialogTitle>
+        <DialogContent>
+          {addMemberDialog.open && (
+            <AddMemberForm
+              role={addMemberDialog.role}
+              tenant={tenant}
+              onClose={() => setAddMemberDialog({ open: false, role: null })}
+              onSuccess={() => {
+                queryClient.invalidateQueries({ queryKey: ["ListRoles"] });
+                setAddMemberDialog({ open: false, role: null });
+              }}
+              mutation={addMemberMutation}
+            />
+          )}
+        </DialogContent>
       </Dialog>
     </>
   );

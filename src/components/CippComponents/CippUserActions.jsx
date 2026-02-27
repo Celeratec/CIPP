@@ -23,6 +23,7 @@ import {
   CloudSync,
   Block,
   SettingsEthernet,
+  AdminPanelSettings,
 } from "@mui/icons-material";
 import { getCippLicenseTranslation } from "../../utils/get-cipp-license-translation";
 import { useSettings } from "../../hooks/use-settings.js";
@@ -30,6 +31,7 @@ import { usePermissions } from "../../hooks/use-permissions";
 import { Tooltip, Box } from "@mui/material";
 import CippFormComponent from "./CippFormComponent";
 import { useWatch } from "react-hook-form";
+import gdaproles from "../../data/GDAPRoles.json";
 
 // Separate component for Manage Licenses form to avoid hook issues
 const ManageLicensesForm = ({ formControl, tenant }) => {
@@ -265,6 +267,58 @@ const OutOfOfficeForm = ({ formControl }) => {
   );
 };
 
+const ManageAdminRolesForm = ({ formControl }) => {
+  const assignmentType = useWatch({
+    control: formControl.control,
+    name: "assignmentType",
+  });
+
+  const assignmentTypeValue = assignmentType?.value || assignmentType;
+  const isTemporary = assignmentTypeValue === "Temporary";
+
+  return (
+    <>
+      <CippFormComponent
+        type="autoComplete"
+        name="roles"
+        label="Select Admin Roles"
+        multiple={true}
+        creatable={false}
+        formControl={formControl}
+        options={gdaproles.map((role) => ({ label: role.Name, value: role.ObjectId }))}
+        validators={{ required: "Please select at least one role" }}
+      />
+      <CippFormComponent
+        type="radio"
+        name="assignmentType"
+        label="Assignment Type"
+        formControl={formControl}
+        options={[
+          { label: "Permanent", value: "Permanent" },
+          { label: "Temporary", value: "Temporary" },
+        ]}
+        validators={{ required: "Please select an assignment type" }}
+      />
+      {isTemporary && (
+        <CippFormComponent
+          type="datePicker"
+          name="expiration"
+          label="Expiration Date/Time"
+          dateTimeType="datetime"
+          formControl={formControl}
+          validators={{ required: "Please select an expiration date" }}
+        />
+      )}
+      <CippFormComponent
+        type="textField"
+        name="reason"
+        label="Reason (optional)"
+        formControl={formControl}
+      />
+    </>
+  );
+};
+
 export const useCippUserActions = () => {
   const tenant = useSettings().currentTenant;
 
@@ -272,6 +326,7 @@ export const useCippUserActions = () => {
   const canWriteUser = checkPermissions(["Identity.User.ReadWrite"]);
   const canWriteMailbox = checkPermissions(["Exchange.Mailbox.ReadWrite"]);
   const canWriteGroup = checkPermissions(["Identity.Group.ReadWrite"]);
+  const canWriteRole = checkPermissions(["Identity.Role.ReadWrite"]);
 
   return [
     // ====== VIEW ACTIONS ======
@@ -815,6 +870,43 @@ export const useCippUserActions = () => {
       multiPost: false,
       allowResubmit: true,
       condition: () => canWriteGroup,
+      category: "manage",
+      quickAction: true,
+    },
+    {
+      label: "Manage Admin Roles",
+      type: "POST",
+      url: "/api/ExecRoleAssignment",
+      icon: <AdminPanelSettings />,
+      data: {
+        userId: "id",
+        userPrincipalName: "userPrincipalName",
+        displayName: "displayName",
+      },
+      multiPost: true,
+      relatedQueryKeys: ["ListRoles", "ListUsers*"],
+      children: ({ formHook: formControl }) => (
+        <ManageAdminRolesForm formControl={formControl} />
+      ),
+      customDataformatter: (users, action, formData) => {
+        const userList = Array.isArray(users) ? users : [users];
+        const assignmentType = formData?.assignmentType?.value || formData?.assignmentType;
+        const actionType = assignmentType === "Temporary" ? "AddTemporary" : "Add";
+        return userList.map((user) => ({
+          userId: user.id,
+          userPrincipalName: user.userPrincipalName,
+          displayName: user.displayName,
+          tenantFilter: user.Tenant || undefined,
+          roles: formData.roles,
+          action: actionType,
+          expiration: formData.expiration
+            ? Math.floor(new Date(formData.expiration).getTime() / 1000)
+            : undefined,
+          reason: formData.reason || undefined,
+        }));
+      },
+      confirmText: "Are you sure you want to manage admin roles for the selected user(s)?",
+      condition: () => canWriteRole,
       category: "manage",
       quickAction: true,
     },
