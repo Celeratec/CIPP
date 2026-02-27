@@ -1,9 +1,25 @@
 import { useState, useCallback, useEffect, memo } from "react";
 import { usePathname } from "next/navigation";
+import NextLink from "next/link";
 import PropTypes from "prop-types";
-import { Box, Drawer, Stack } from "@mui/material";
+import {
+  Box,
+  ButtonBase,
+  Collapse,
+  Divider,
+  Drawer,
+  Stack,
+  SvgIcon,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import ChevronRightIcon from "@heroicons/react/24/outline/ChevronRightIcon";
+import ChevronDownIcon from "@heroicons/react/24/outline/ChevronDownIcon";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import { Scrollbar } from "../components/scrollbar";
 import { SideNavItem } from "./side-nav-item";
+import { useSettings } from "../hooks/use-settings";
 
 const SIDE_NAV_WIDTH = 270;
 const SIDE_NAV_COLLAPSED_WIDTH = 73; // icon size + padding + border right
@@ -143,6 +159,8 @@ export const SideNav = memo((props) => {
   const pathname = usePathname();
   const [hovered, setHovered] = useState(false);
   const collapse = !(pinned || hovered);
+  const { bookmarks = [] } = useSettings();
+  const [quickAccessOpen, setQuickAccessOpen] = useState(true);
 
   // Track open menus - initialized empty, updated by effect when path changes
   const [openMenus, setOpenMenus] = useState([]);
@@ -221,6 +239,168 @@ export const SideNav = memo((props) => {
               p: 0,
             }}
           >
+            <li>
+              <ButtonBase
+                onClick={() => setQuickAccessOpen((prev) => !prev)}
+                sx={{
+                  alignItems: "center",
+                  borderRadius: 1,
+                  display: "flex",
+                  fontFamily: (theme) => theme.typography.fontFamily,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  justifyContent: "flex-start",
+                  px: "6px",
+                  py: "12px",
+                  textAlign: "left",
+                  whiteSpace: "nowrap",
+                  width: "100%",
+                  transition: "all 0.2s ease-in-out",
+                  "&:hover": {
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === "dark"
+                        ? "rgba(255, 255, 255, 0.08)"
+                        : "rgba(0, 0, 0, 0.04)",
+                    transform: "translateX(4px)",
+                  },
+                }}
+              >
+                <Box
+                  component="span"
+                  sx={{
+                    alignItems: "center",
+                    color: "neutral.400",
+                    display: "inline-flex",
+                    flexGrow: 0,
+                    flexShrink: 0,
+                    height: 24,
+                    justifyContent: "center",
+                    width: 24,
+                  }}
+                >
+                  <SvgIcon fontSize="small">
+                    <BookmarkIcon />
+                  </SvgIcon>
+                </Box>
+                <Box
+                  component="span"
+                  sx={{
+                    color: "text.primary",
+                    flexGrow: 1,
+                    fontSize: 14,
+                    mx: "12px",
+                    transition: "opacity 250ms ease-in-out",
+                    ...(collapse && { opacity: 0 }),
+                  }}
+                >
+                  Quick Access
+                </Box>
+                <Tooltip
+                  title="Hover over any menu item and click the bookmark icon to add it here"
+                  arrow
+                  placement="right"
+                >
+                  <SvgIcon
+                    sx={{
+                      color: "neutral.500",
+                      fontSize: 16,
+                      transition: "opacity 250ms ease-in-out",
+                      mr: 0.5,
+                      cursor: "default",
+                      "&:hover": { color: "primary.main" },
+                      ...(collapse && { opacity: 0 }),
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <InfoOutlined />
+                  </SvgIcon>
+                </Tooltip>
+                <SvgIcon
+                  sx={{
+                    color: "neutral.500",
+                    fontSize: 16,
+                    transition: "opacity 250ms ease-in-out",
+                    ...(collapse && { opacity: 0 }),
+                  }}
+                >
+                  {quickAccessOpen ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                </SvgIcon>
+              </ButtonBase>
+              <Collapse in={!collapse && quickAccessOpen} unmountOnExit>
+                <Stack
+                  component="ul"
+                  spacing={0.5}
+                  sx={{ listStyle: "none", m: 0, p: 0 }}
+                >
+                  {bookmarks.length === 0 ? (
+                    <li>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ px: "18px", py: "8px", fontSize: 13 }}
+                      >
+                        No items yet
+                      </Typography>
+                    </li>
+                  ) : (
+                    bookmarks.map((bookmark, idx) => (
+                      <li key={bookmark.path || idx}>
+                        <ButtonBase
+                          component={NextLink}
+                          href={bookmark.path}
+                          sx={{
+                            alignItems: "center",
+                            borderRadius: 1,
+                            display: "flex",
+                            fontFamily: (theme) => theme.typography.fontFamily,
+                            fontSize: 13,
+                            fontWeight: 500,
+                            justifyContent: "flex-start",
+                            textAlign: "left",
+                            whiteSpace: "nowrap",
+                            width: "100%",
+                            px: "9px",
+                            py: "8px",
+                            ml: "24px",
+                            transition: "all 0.2s ease-in-out",
+                            "&:hover": {
+                              backgroundColor: (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? "rgba(255, 255, 255, 0.08)"
+                                  : "rgba(0, 0, 0, 0.04)",
+                              transform: "translateX(4px)",
+                            },
+                            ...(pathname === bookmark.path && {
+                              backgroundColor: (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? "rgba(83, 165, 219, 0.12)"
+                                  : "rgba(83, 165, 219, 0.08)",
+                            }),
+                          }}
+                        >
+                          <Box
+                            component="span"
+                            sx={{
+                              color:
+                                pathname === bookmark.path
+                                  ? "primary.main"
+                                  : "text.secondary",
+                              flexGrow: 1,
+                              fontSize: 13,
+                              transition: "opacity 250ms ease-in-out",
+                              ...(collapse && { opacity: 0 }),
+                            }}
+                          >
+                            {bookmark.label}
+                          </Box>
+                        </ButtonBase>
+                      </li>
+                    ))
+                  )}
+                </Stack>
+              </Collapse>
+            </li>
+            <Divider sx={{ my: 1, transition: "opacity 250ms ease-in-out", ...(collapse && { opacity: 0 }) }} />
             {renderItems({
               collapse,
               depth: 0,
