@@ -18,14 +18,19 @@ import {
   Search as SearchIcon,
   Person as PersonIcon,
   Group as GroupIcon,
+  Business as BusinessIcon,
+  Language as LanguageIcon,
 } from "@mui/icons-material";
 import { Grid } from "@mui/system";
 import { ApiGetCall } from "../../api/ApiCall";
+import { useSettings } from "../../hooks/use-settings";
 
 export const CippUniversalSearch = React.forwardRef(
   ({ onConfirm = () => {}, onChange = () => {}, maxResults = 10, value = "" }, ref) => {
     const [searchValue, setSearchValue] = useState(value);
     const [searchType, setSearchType] = useState("Users");
+    const [searchScope, setSearchScope] = useState("currentTenant");
+    const { currentTenant } = useSettings();
 
     const handleChange = (event) => {
       const newValue = event.target.value;
@@ -33,14 +38,19 @@ export const CippUniversalSearch = React.forwardRef(
       onChange(newValue);
     };
 
+    const searchData = {
+      searchTerms: searchValue,
+      limit: maxResults,
+      type: searchType,
+    };
+    if (searchScope === "currentTenant" && currentTenant) {
+      searchData.tenantFilter = currentTenant;
+    }
+
     const search = ApiGetCall({
       url: "/api/ExecUniversalSearchV2",
-      data: {
-        searchTerms: searchValue,
-        limit: maxResults,
-        type: searchType,
-      },
-      queryKey: `searchV2-${searchType}-${searchValue}`,
+      data: searchData,
+      queryKey: `searchV2-${searchType}-${searchScope}-${searchScope === "currentTenant" ? currentTenant : "all"}-${searchValue}`,
       waiting: false,
     });
 
@@ -62,6 +72,12 @@ export const CippUniversalSearch = React.forwardRef(
       }
     };
 
+    const handleScopeChange = (_event, newScope) => {
+      if (newScope !== null) {
+        setSearchScope(newScope);
+      }
+    };
+
     const label =
       searchType === "Users"
         ? "Search users by UPN or Display Name"
@@ -69,7 +85,7 @@ export const CippUniversalSearch = React.forwardRef(
 
     return (
       <Box sx={{ p: 0.5 }}>
-        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+        <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
           <ToggleButtonGroup
             value={searchType}
             exclusive
@@ -84,6 +100,22 @@ export const CippUniversalSearch = React.forwardRef(
             <ToggleButton value="Groups" sx={{ px: 1.5, textTransform: "none", gap: 0.5 }}>
               <GroupIcon sx={{ fontSize: 18 }} />
               Groups
+            </ToggleButton>
+          </ToggleButtonGroup>
+          <ToggleButtonGroup
+            value={searchScope}
+            exclusive
+            onChange={handleScopeChange}
+            size="small"
+            sx={{ flexShrink: 0 }}
+          >
+            <ToggleButton value="currentTenant" sx={{ px: 1.5, textTransform: "none", gap: 0.5 }}>
+              <BusinessIcon sx={{ fontSize: 18 }} />
+              Current Tenant
+            </ToggleButton>
+            <ToggleButton value="allTenants" sx={{ px: 1.5, textTransform: "none", gap: 0.5 }}>
+              <LanguageIcon sx={{ fontSize: 18 }} />
+              All Tenants
             </ToggleButton>
           </ToggleButtonGroup>
           <TextField
@@ -134,7 +166,9 @@ export const CippUniversalSearch = React.forwardRef(
         {search.isFetching && (
           <Box display="flex" alignItems="center" gap={1} mt={1}>
             <Typography variant="caption" color="text.secondary">
-              Searching across all tenants...
+              {searchScope === "currentTenant"
+                ? `Searching ${currentTenant}...`
+                : "Searching across all tenants..."}
             </Typography>
           </Box>
         )}

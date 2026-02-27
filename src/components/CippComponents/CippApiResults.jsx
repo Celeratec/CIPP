@@ -247,6 +247,86 @@ const FormattedResultText = ({ text, severity }) => {
     );
   }
 
+  // Pattern: UPN/email conflict with identified conflicting object
+  const conflictMatch = text.match(
+    /^(.+?Another object with the same value for property \S+ already exists\.)\s*Conflict:\s*(.+)$/s
+  );
+  if (conflictMatch) {
+    const errorMsg = conflictMatch[1];
+    const conflictDetail = conflictMatch[2];
+
+    const nameMatch = conflictDetail.match(/Conflicting ([^:]+):\s*'([^']+)'/);
+    const upnMatch = conflictDetail.match(/\(UPN:\s*([^)]+)\)/);
+    const mailMatch = conflictDetail.match(/\(Mail:\s*([^)]+)\)/);
+    const idMatch = conflictDetail.match(/\[ID:\s*([^\]]+)\]/);
+    const statusMatch = conflictDetail.match(/Account is (enabled|disabled)/);
+
+    return (
+      <Stack spacing={1}>
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {errorMsg}
+        </Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
+          Conflicting object details:
+        </Typography>
+        <Box component="ul" sx={{ m: 0, pl: "1.2em" }}>
+          {nameMatch && (
+            <li>
+              <Typography variant="body2">
+                <strong>Type:</strong> {nameMatch[1]} &mdash; <strong>Name:</strong>{" "}
+                {nameMatch[2]}
+              </Typography>
+            </li>
+          )}
+          {upnMatch && (
+            <li>
+              <Typography variant="body2">
+                <strong>UPN:</strong> {upnMatch[1]}
+              </Typography>
+            </li>
+          )}
+          {mailMatch && (
+            <li>
+              <Typography variant="body2">
+                <strong>Email:</strong> {mailMatch[1]}
+              </Typography>
+            </li>
+          )}
+          {idMatch && (
+            <li>
+              <Typography variant="body2">
+                <strong>Object ID:</strong> {idMatch[1]}
+              </Typography>
+            </li>
+          )}
+          {statusMatch && (
+            <li>
+              <Typography variant="body2">
+                <strong>Status:</strong> Account is {statusMatch[1]}
+              </Typography>
+            </li>
+          )}
+        </Box>
+        <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
+          To resolve this conflict:
+        </Typography>
+        <Typography variant="body2" component="div">
+          <ol style={{ margin: 0, paddingLeft: "1.2em" }}>
+            <li>
+              Rename or remove the conflicting object listed above
+            </li>
+            <li>
+              If the conflicting account is disabled or no longer needed, consider deleting it
+            </li>
+            <li>
+              If it is a soft-deleted object, purge it from the Entra ID recycle bin
+            </li>
+          </ol>
+        </Typography>
+      </Stack>
+    );
+  }
+
   // Pattern: "Failed to X. Error: Y" or "Successfully X. Message: Y"
   const errorSplit = text.match(/^(.+?)\.\s*Error:\s*(.+)$/s);
   if (errorSplit) {

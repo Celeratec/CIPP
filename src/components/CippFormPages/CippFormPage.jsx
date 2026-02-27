@@ -9,6 +9,7 @@ import {
   Card,
   CardContent,
   CardActions,
+  Tooltip,
 } from "@mui/material";
 import ArrowLeftIcon from "@mui/icons-material/ArrowLeft";
 import { ApiPostCall } from "../../api/ApiCall";
@@ -16,6 +17,26 @@ import { CippApiResults } from "../CippComponents/CippApiResults";
 import { useEffect } from "react";
 import { useFormState } from "react-hook-form";
 import { CippHead } from "../CippComponents/CippHead";
+
+const getSubmitTooltip = ({ isPending, isValid, isDirty, allowResubmit }) => {
+  if (isPending) return "Submitting...";
+  if (!isValid) return "Please fix the validation errors before submitting";
+  if (!allowResubmit && !isDirty) return "Make a change to the form to enable submission";
+  return "";
+};
+
+const SubmitButton = ({ disabled, isPending, isValid, isDirty, allowResubmit, onClick }) => {
+  const tooltip = getSubmitTooltip({ isPending, isValid, isDirty, allowResubmit });
+  return (
+    <Tooltip title={tooltip} arrow disableHoverListener={!disabled}>
+      <span>
+        <Button disabled={disabled} onClick={onClick} type="submit" variant="contained">
+          Submit
+        </Button>
+      </span>
+    </Tooltip>
+  );
+};
 
 const CippFormPage = (props) => {
   const {
@@ -123,14 +144,14 @@ const CippFormPage = (props) => {
                 <CardActions sx={{ justifyContent: "flex-end" }}>
                   <Stack spacing={2} direction="row">
                     {addedButtons && addedButtons}
-                    <Button
+                    <SubmitButton
                       disabled={postCall.isPending || !isValid || (!allowResubmit && !isDirty)}
+                      isPending={postCall.isPending}
+                      isValid={isValid}
+                      isDirty={isDirty}
+                      allowResubmit={allowResubmit}
                       onClick={formControl.handleSubmit(handleSubmit)}
-                      type="submit"
-                      variant="contained"
-                    >
-                      Submit
-                    </Button>
+                    />
                   </Stack>
                 </CardActions>
               )}
