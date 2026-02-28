@@ -254,7 +254,7 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
         }),
       });
       const data = await response.json();
-      setMembers(data?.Results || []);
+      setMembers(Array.isArray(data?.Results) ? data.Results : []);
       setLoaded(true);
     } catch (err) {
       dispatch(showToast({ message: "Failed to load channel members", title: "Error", toastError: { message: err.message } }));
@@ -286,7 +286,7 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
     })
       .then((res) => res.json())
       .then((data) => {
-        setMembers(data?.Results || []);
+        setMembers(Array.isArray(data?.Results) ? data.Results : []);
         setLoaded(true);
         setLoading(false);
       })
