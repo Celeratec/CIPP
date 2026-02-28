@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Alert,
   Box,
@@ -28,7 +28,7 @@ import { ApiGetCall, ApiPostCall } from "../../api/ApiCall";
 import { CippApiResults } from "./CippApiResults";
 import { useSettings } from "../../hooks/use-settings";
 import CippFormComponent from "./CippFormComponent";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 export const CippDomainMigrationDialog = ({ open, onClose, targetDomain }) => {
   const [sourceDomain, setSourceDomain] = useState(null);
@@ -39,6 +39,20 @@ export const CippDomainMigrationDialog = ({ open, onClose, targetDomain }) => {
   const userSettings = useSettings();
   const tenantFilter = userSettings.currentTenant;
   const formControl = useForm({ mode: "onChange" });
+
+  const watchedSourceDomain = useWatch({
+    control: formControl.control,
+    name: "sourceDomain",
+  });
+
+  useEffect(() => {
+    const newValue = watchedSourceDomain?.value || null;
+    if (newValue !== sourceDomain) {
+      setSourceDomain(newValue);
+      setSelectedUserIds(new Set());
+      setSelectedGroupIds(new Set());
+    }
+  }, [watchedSourceDomain]);
 
   const domainListQuery = ApiGetCall({
     url: "/api/ListGraphRequest",
@@ -116,6 +130,7 @@ export const CippDomainMigrationDialog = ({ open, onClose, targetDomain }) => {
     setSelectedUserIds(new Set());
     setSelectedGroupIds(new Set());
     setIncludeGroups(false);
+    formControl.reset();
     migrationRequest.reset();
     onClose();
   };
@@ -221,11 +236,6 @@ export const CippDomainMigrationDialog = ({ open, onClose, targetDomain }) => {
             creatable={false}
             options={availableDomains}
             isFetching={domainListQuery.isFetching}
-            onChange={(e, value) => {
-              setSourceDomain(value?.value || null);
-              setSelectedUserIds(new Set());
-              setSelectedGroupIds(new Set());
-            }}
           />
 
           {sourceDomain && (
