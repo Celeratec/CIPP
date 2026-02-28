@@ -481,9 +481,6 @@ export const useCippUserActions = () => {
             url: "/api/ListGraphRequest",
             data: {
               Endpoint: "domains",
-              $select: "id,isVerified,isInitial",
-              $filter: "isVerified eq true",
-              $count: true,
             },
             queryKey: "ListDomainsAutoComplete",
             dataKey: "Results",
@@ -504,6 +501,7 @@ export const useCippUserActions = () => {
         const userPayload = userList.map((user) => ({
           id: user.id,
           userPrincipalName: user.userPrincipalName,
+          mail: user.mail,
           displayName: user.displayName,
         }));
 

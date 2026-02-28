@@ -45,7 +45,6 @@ export const CippDomainMigrationDialog = ({ open, onClose, targetDomain }) => {
     data: {
       Endpoint: "domains",
       tenantFilter: tenantFilter,
-      $select: "id,isVerified,isInitial",
     },
     queryKey: `DomainMigration-Domains-${tenantFilter}`,
     waiting: open,
@@ -57,8 +56,8 @@ export const CippDomainMigrationDialog = ({ open, onClose, targetDomain }) => {
       Endpoint: "users",
       tenantFilter: tenantFilter,
       $count: true,
-      $select: "id,displayName,userPrincipalName,mail,accountEnabled",
-      $filter: `endsWith(userPrincipalName,'@${sourceDomain}')`,
+      $select: "id,displayName,userPrincipalName,mail,accountEnabled,proxyAddresses",
+      $filter: `endsWith(userPrincipalName,'@${sourceDomain}') or endsWith(mail,'@${sourceDomain}')`,
     },
     queryKey: `DomainMigration-Users-${tenantFilter}-${sourceDomain}`,
     waiting: !!sourceDomain,
@@ -92,9 +91,13 @@ export const CippDomainMigrationDialog = ({ open, onClose, targetDomain }) => {
   const users = useMemo(() => {
     if (!userListQuery.data?.Results) return [];
     return userListQuery.data.Results.filter(
-      (u) => u.userPrincipalName && !u.userPrincipalName.includes("#EXT#")
+      (u) =>
+        u.userPrincipalName &&
+        !u.userPrincipalName.includes("#EXT#") &&
+        (u.userPrincipalName.endsWith(`@${sourceDomain}`) ||
+          u.mail?.endsWith(`@${sourceDomain}`))
     );
-  }, [userListQuery.data]);
+  }, [userListQuery.data, sourceDomain]);
 
   const groups = useMemo(() => {
     if (!groupListQuery.data?.Results) return [];
@@ -157,6 +160,7 @@ export const CippDomainMigrationDialog = ({ open, onClose, targetDomain }) => {
       .map((u) => ({
         id: u.id,
         userPrincipalName: u.userPrincipalName,
+        mail: u.mail,
         displayName: u.displayName,
       }));
 
@@ -251,6 +255,7 @@ export const CippDomainMigrationDialog = ({ open, onClose, targetDomain }) => {
                         </TableCell>
                         <TableCell>Display Name</TableCell>
                         <TableCell>Current UPN</TableCell>
+                        <TableCell>Primary Email</TableCell>
                         <TableCell>Status</TableCell>
                       </TableRow>
                     </TableHead>
@@ -267,6 +272,7 @@ export const CippDomainMigrationDialog = ({ open, onClose, targetDomain }) => {
                           </TableCell>
                           <TableCell>{user.displayName}</TableCell>
                           <TableCell>{user.userPrincipalName}</TableCell>
+                          <TableCell>{user.mail}</TableCell>
                           <TableCell>
                             <Chip
                               label={user.accountEnabled ? "Active" : "Disabled"}
