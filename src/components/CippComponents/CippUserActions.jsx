@@ -19,6 +19,7 @@ import {
   PhonelinkLock,
   PhonelinkSetup,
   Shortcut,
+  SwapHoriz,
   EditAttributes,
   CloudSync,
   Block,
@@ -460,6 +461,61 @@ export const useCippUserActions = () => {
       ],
       confirmText: "Set manager for selected users?",
       multiPost: true,
+      condition: () => canWriteUser,
+      category: "edit",
+    },
+    {
+      label: "Change Domain",
+      type: "POST",
+      icon: <SwapHoriz />,
+      url: "/api/ExecDomainMigration",
+      multiPost: true,
+      fields: [
+        {
+          type: "autoComplete",
+          name: "targetDomain",
+          label: "Target Domain",
+          multiple: false,
+          creatable: false,
+          api: {
+            url: "/api/ListGraphRequest",
+            data: {
+              Endpoint: "domains",
+              $select: "id,isVerified,isInitial",
+              $filter: "isVerified eq true",
+              $count: true,
+            },
+            queryKey: "ListDomainsAutoComplete",
+            dataKey: "Results",
+            labelField: (domain) => domain.id,
+            valueField: "id",
+            addedField: {
+              isVerified: "isVerified",
+              isInitial: "isInitial",
+            },
+          },
+        },
+      ],
+      customDataformatter: (users, action, formData) => {
+        const userList = Array.isArray(users) ? users : [users];
+        const targetDomain = formData?.targetDomain?.value || formData?.targetDomain;
+        if (!targetDomain) return [];
+
+        const userPayload = userList.map((user) => ({
+          id: user.id,
+          userPrincipalName: user.userPrincipalName,
+          displayName: user.displayName,
+        }));
+
+        return {
+          tenantFilter: userList[0]?.Tenant || tenant,
+          targetDomain: targetDomain,
+          users: userPayload,
+          groups: [],
+        };
+      },
+      confirmText:
+        "This will change the primary email and sign-in for the selected users to the new domain. Existing email addresses will be kept as aliases to preserve mail delivery.",
       condition: () => canWriteUser,
       category: "edit",
     },

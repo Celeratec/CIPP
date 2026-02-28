@@ -1,17 +1,20 @@
+import { useState } from "react";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
-import { 
-  CheckCircle, 
-  Star, 
+import {
+  CheckCircle,
+  Star,
   Delete,
   Language,
   VerifiedUser,
   AdminPanelSettings,
   Cancel,
+  SwapHoriz,
 } from "@mui/icons-material";
 import { CippAddDomainDrawer } from "../../../../components/CippComponents/CippAddDomainDrawer.jsx";
 import { CippDomainVerificationRecords } from "../../../../components/CippComponents/CippDomainVerificationRecords.jsx";
 import { CippDomainServiceConfigurationRecords } from "../../../../components/CippComponents/CippDomainServiceConfigurationRecords.jsx";
+import { CippDomainMigrationDialog } from "../../../../components/CippComponents/CippDomainMigrationDialog.jsx";
 import { Box, Typography, Divider, Paper, Avatar, Chip, useTheme } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { Stack } from "@mui/system";
@@ -23,6 +26,7 @@ const Page = () => {
   const pageTitle = "Domains";
   const apiUrl = "/api/ListGraphRequest";
   const theme = useTheme();
+  const [migrationTarget, setMigrationTarget] = useState(null);
 
   // API Data configuration for the request
   const apiData = {
@@ -163,6 +167,7 @@ const Page = () => {
   };
 
   return (
+    <>
     <CippTablePage
       title={pageTitle}
       apiUrl={apiUrl}
@@ -201,6 +206,15 @@ const Page = () => {
           hideBulk: true,
         },
         {
+          label: "Migrate Users to This Domain",
+          condition: (row) => row.isVerified && !row.isInitial,
+          icon: <SwapHoriz />,
+          noConfirm: true,
+          customFunction: (row) => {
+            setMigrationTarget(row.id);
+          },
+        },
+        {
           label: "Delete Domain",
           condition: (row) => !row.isDefault && !row.isInitial,
           type: "POST",
@@ -213,6 +227,14 @@ const Page = () => {
         },
       ]}
     />
+    {migrationTarget && (
+      <CippDomainMigrationDialog
+        open={!!migrationTarget}
+        onClose={() => setMigrationTarget(null)}
+        targetDomain={migrationTarget}
+      />
+    )}
+    </>
   );
 };
 
