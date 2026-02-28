@@ -198,6 +198,15 @@ Structured error formatting throughout the application. The `FormattedResultText
 
 Deeply nested navigation menus that group related pages together, reducing menu length and making features easier to find -- Groups with Group Templates, Users with Offboarding Wizard and Risky Users, Business Voice with Phone Numbers, Call Queues, Auto Attendants, and Dial Plans, and more.
 
+### Bulk Domain Migration
+
+Migrate users and groups from one domain to another in bulk -- a common need when clients rebrand or consolidate domains. Available from two entry points:
+
+- **Users page** -- select users, choose "Change Domain" from bulk actions, pick the target domain, and migrate
+- **Domains page** -- click "Migrate Users to This Domain" on any verified domain, select a source domain, then pick which users and groups to migrate
+
+The migration changes each user's UPN and primary email to the new domain while automatically preserving the old email address as an alias so inbound mail delivery is not disrupted. Groups (M365 Groups, Distribution Lists, Mail-Enabled Security Groups) are supported with an opt-in toggle. Conflict detection checks for address collisions before making changes, and per-object results report exactly which items succeeded or failed.
+
 ### Backend Enhancements
 
 - **Stack overflow protection** in Intune policy comparison with depth-tracking recursion
