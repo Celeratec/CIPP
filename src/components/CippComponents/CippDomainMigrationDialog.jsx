@@ -391,16 +391,24 @@ export const CippDomainMigrationDialog = ({ open, onClose, targetDomain }) => {
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={totalSelected === 0 || migrationRequest.isPending}
-        >
-          {migrationRequest.isPending
-            ? "Migrating..."
-            : `Migrate ${totalSelected} item${totalSelected !== 1 ? "s" : ""}`}
-        </Button>
+        {migrationRequest.isSuccess ? (
+          <Button variant="contained" onClick={handleClose}>
+            OK
+          </Button>
+        ) : (
+          <>
+            <Button onClick={handleClose}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+              disabled={totalSelected === 0 || migrationRequest.isPending}
+            >
+              {migrationRequest.isPending
+                ? "Migrating..."
+                : `Migrate ${totalSelected} item${totalSelected !== 1 ? "s" : ""}`}
+            </Button>
+          </>
+        )}
       </DialogActions>
     </Dialog>
   );
