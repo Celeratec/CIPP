@@ -251,6 +251,7 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
           TeamID: teamId,
           Action: "ListChannelMembers",
           ChannelID: channel.id,
+          ChannelType: channel.membershipType,
         }),
       });
       const data = await response.json();
@@ -261,7 +262,7 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
     } finally {
       setLoading(false);
     }
-  }, [teamId, channel.id, tenantFilter, loaded, members.length, dispatch]);
+  }, [teamId, channel.id, channel.membershipType, tenantFilter, loaded, members.length, dispatch]);
 
   const handleExpand = useCallback(() => {
     if (!expanded && isPrivateOrShared) {
@@ -282,6 +283,7 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
         TeamID: teamId,
         Action: "ListChannelMembers",
         ChannelID: channel.id,
+        ChannelType: channel.membershipType,
       }),
     })
       .then((res) => res.json())
@@ -291,7 +293,7 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [teamId, channel.id, tenantFilter]);
+  }, [teamId, channel.id, channel.membershipType, tenantFilter]);
 
   const removeMemberMutation = ApiPostCall({ relatedQueryKeys: [`TeamDetails-${teamId}`] });
 
@@ -307,6 +309,7 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
             Action: "RemoveChannelMember",
             ChannelID: channel.id,
             ChannelName: channel.displayName,
+            ChannelType: channel.membershipType,
             MembershipID: member.id,
             MemberName: member.displayName,
           },
