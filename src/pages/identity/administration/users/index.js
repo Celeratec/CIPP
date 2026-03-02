@@ -1,7 +1,7 @@
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { useSettings } from "../../../../hooks/use-settings.js";
-import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall";
+import { ApiGetCall, ApiPostCall, STALE_TIMES } from "../../../../api/ApiCall";
 import { PermissionButton } from "../../../../utils/permissions";
 import { CippInviteGuestDrawer } from "../../../../components/CippComponents/CippInviteGuestDrawer.jsx";
 import { CippBulkInviteGuestDrawer } from "../../../../components/CippComponents/CippBulkInviteGuestDrawer.jsx";
@@ -26,11 +26,13 @@ import {
   DialogActions,
   Button,
   CircularProgress,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { Stack } from "@mui/system";
 import { useRouter } from "next/router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Email,
   Phone,
@@ -92,18 +94,43 @@ const Page = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const userActions = useCippUserActions();
+  const [enrichmentReady, setEnrichmentReady] = useState(false);
+  const [advancedBadgesEnabled, setAdvancedBadgesEnabled] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("users-advanced-badges") === "true";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("users-advanced-badges", String(advancedBadgesEnabled));
+    }
+  }, [advancedBadgesEnabled]);
+
+  // Defer enrichment calls so the main user list can render first.
+  useEffect(() => {
+    if (!tenant || tenant === "AllTenants") {
+      setEnrichmentReady(false);
+      return;
+    }
+    const timer = setTimeout(() => setEnrichmentReady(true), 1500);
+    return () => clearTimeout(timer);
+  }, [tenant]);
 
   const mailboxRequest = ApiGetCall({
     url: `/api/ListMailboxes?tenantFilter=${tenant}`,
     queryKey: `ListMailboxes-${tenant}`,
-    waiting: !!tenant && tenant !== "AllTenants",
+    waiting: advancedBadgesEnabled && enrichmentReady && !!tenant && tenant !== "AllTenants",
+    staleTime: STALE_TIMES.STABLE,
+    retry: 1,
   });
 
   // Get CAS mailbox settings to detect legacy protocols (IMAP/POP)
   const casMailboxRequest = ApiGetCall({
     url: `/api/ListCASMailboxes?tenantFilter=${tenant}`,
     queryKey: `ListCASMailboxes-${tenant}`,
-    waiting: !!tenant && tenant !== "AllTenants",
+    waiting: advancedBadgesEnabled && enrichmentReady && !!tenant && tenant !== "AllTenants",
+    staleTime: STALE_TIMES.STABLE,
+    retry: 0,
   });
 
   // Fetch Intune managed devices to build per-user device presence (lightweight)
@@ -116,7 +143,9 @@ const Page = () => {
       tenantFilter: tenant,
     },
     queryKey: `IntuneDevicesForUsers-${tenant}`,
-    waiting: !!tenant && tenant !== "AllTenants",
+    waiting: advancedBadgesEnabled && enrichmentReady && !!tenant && tenant !== "AllTenants",
+    staleTime: STALE_TIMES.STABLE,
+    retry: 1,
   });
 
   // Fetch NinjaOne device info for enrichment
@@ -124,7 +153,9 @@ const Page = () => {
     url: "/api/ListNinjaDeviceInfo",
     data: { TenantFilter: tenant },
     queryKey: `NinjaDevicesForUsers-${tenant}`,
-    waiting: !!tenant && tenant !== "AllTenants",
+    waiting: advancedBadgesEnabled && enrichmentReady && !!tenant && tenant !== "AllTenants",
+    staleTime: STALE_TIMES.STABLE,
+    retry: 1,
   });
 
   // Build per-user device presence map: UPN → { deviceCount, hasIntune, hasNinja }
@@ -256,6 +287,8 @@ const Page = () => {
 
   // Memoized custom content renderer for device presence badges + legacy protocol warnings
   const customContentRenderer = useCallback((item) => {
+    if (!advancedBadgesEnabled) return null;
+
     const upn = (item?.userPrincipalName || "").toLowerCase();
     const deviceInfo = upn ? userDevicePresence.get(upn) : null;
 
@@ -380,7 +413,7 @@ const Page = () => {
         )}
       </Stack>
     );
-  }, [hasLegacyProtocols, userDevicePresence]);
+  }, [advancedBadgesEnabled, hasLegacyProtocols, userDevicePresence]);
 
   // Memoized shared mailbox transform function
   const sharedMailboxTransform = useCallback(
@@ -884,6 +917,17 @@ const Page = () => {
       apiUrl="/api/ListGraphRequest"
       cardButton={
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          <FormControlLabel
+            control={
+              <Switch
+                size="small"
+                checked={advancedBadgesEnabled}
+                onChange={(e) => setAdvancedBadgesEnabled(e.target.checked)}
+              />
+            }
+            label="Advanced Badges"
+            sx={{ ml: 0.5, mr: 0.5 }}
+          />
           {isMobile ? (
             <Tooltip title="Add User" enterTouchDelay={0} leaveTouchDelay={3000}>
               <span>

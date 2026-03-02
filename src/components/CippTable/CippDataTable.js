@@ -2638,7 +2638,9 @@ export const CippDataTable = (props) => {
             <CardView
               data={usedData}
               config={effectiveCardConfig}
-              isLoading={getRequestData.isFetching || isFetching}
+              // Only show full-card skeletons for the initial load.
+              // Background refetches should not hide already loaded cards.
+              isLoading={(!Array.isArray(usedData) || usedData.length === 0) && (getRequestData.isLoading || isFetching)}
               searchTerm={debouncedCardSearchTerm}
               searchInput={cardSearchInput}
               onSearchChange={setCardSearchInput}
