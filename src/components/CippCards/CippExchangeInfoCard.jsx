@@ -20,6 +20,7 @@ import {
   DialogActions,
   Button,
   Collapse,
+  TextField,
 } from "@mui/material";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 import { 
@@ -126,6 +127,15 @@ export const CippExchangeInfoCard = (props) => {
   // State for spam status dialog
   const [spamDialog, setSpamDialog] = useState(false);
   const [isClearingSpam, setIsClearingSpam] = useState(false);
+
+  // State for hold toggle dialog
+  const [holdDialog, setHoldDialog] = useState({
+    open: false,
+    holdType: null,
+    currentlyEnabled: false,
+  });
+  const [isTogglingHold, setIsTogglingHold] = useState(false);
+  const [litigationDays, setLitigationDays] = useState("");
   
   // API call for toggling protocols
   const toggleProtocol = ApiPostCall({
@@ -144,6 +154,49 @@ export const CippExchangeInfoCard = (props) => {
     urlFromData: true,
     relatedQueryKeys: [`Mailbox-${exchangeData?.UserId}`],
   });
+
+  // API call for toggling holds
+  const toggleHold = ApiPostCall({
+    urlFromData: true,
+    relatedQueryKeys: [`Mailbox-${exchangeData?.UserId}`],
+  });
+
+  const handleHoldClick = (holdType, isEnabled) => {
+    setLitigationDays("");
+    setHoldDialog({ open: true, holdType, currentlyEnabled: isEnabled });
+  };
+
+  const handleHoldDialogClose = () => {
+    setHoldDialog({ open: false, holdType: null, currentlyEnabled: false });
+    setLitigationDays("");
+  };
+
+  const handleHoldToggle = async () => {
+    const { holdType, currentlyEnabled } = holdDialog;
+    setIsTogglingHold(true);
+
+    const isLitigation = holdType === "Litigation";
+    const url = isLitigation ? "/api/ExecSetLitigationHold" : "/api/ExecSetRetentionHold";
+    const data = {
+      tenantFilter: settings.currentTenant,
+      Identity: userPrincipalName,
+      UPN: userPrincipalName,
+      disable: currentlyEnabled,
+    };
+    if (isLitigation && !currentlyEnabled && litigationDays) {
+      data.days = parseInt(litigationDays, 10);
+    }
+
+    try {
+      await toggleHold.mutateAsync({ url, data });
+      if (handleRefresh) handleRefresh();
+    } catch (error) {
+      console.error("Failed to toggle hold:", error);
+    } finally {
+      setIsTogglingHold(false);
+      handleHoldDialogClose();
+    }
+  };
 
   // Handle protocol chip click (supports single protocol or array for "disable both")
   const handleProtocolClick = (protocol, isEnabled) => {
@@ -321,12 +374,12 @@ export const CippExchangeInfoCard = (props) => {
 
   // Define mailbox hold types array
   const holds = [
-    { name: "Litigation", enabled: exchangeData?.LitigationHold },
-    { name: "Retention", enabled: exchangeData?.RetentionHold },
-    { name: "Compliance Tag", enabled: exchangeData?.ComplianceTagHold },
-    { name: "In-Place", enabled: exchangeData?.InPlaceHold },
-    { name: "eDiscovery", enabled: exchangeData?.EDiscoveryHold },
-    { name: "Purview Retention", enabled: exchangeData?.PurviewRetentionHold },
+    { name: "Litigation", enabled: exchangeData?.LitigationHold, toggleable: true },
+    { name: "Retention", enabled: exchangeData?.RetentionHold, toggleable: true },
+    { name: "Compliance Tag", enabled: exchangeData?.ComplianceTagHold, toggleable: false },
+    { name: "In-Place", enabled: exchangeData?.InPlaceHold, toggleable: false },
+    { name: "eDiscovery", enabled: exchangeData?.EDiscoveryHold, toggleable: false },
+    { name: "Purview Retention", enabled: exchangeData?.PurviewRetentionHold, toggleable: false },
   ];
 
   const activeHolds = holds.filter(h => h.enabled);
@@ -822,13 +875,58 @@ export const CippExchangeInfoCard = (props) => {
 
           {/* Holds */}
           <InfoSection icon={Security} title="Mailbox Holds">
-            {activeHolds.length === 0 ? (
-              <Paper 
-                variant="outlined" 
-                sx={{ 
-                  p: 1.5, 
+            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
+              {holds.filter(h => h.toggleable).map((hold) => (
+                <Tooltip
+                  key={hold.name}
+                  title={userPrincipalName
+                    ? `${hold.name} Hold - Click to ${hold.enabled ? "disable" : "enable"}`
+                    : `${hold.name} Hold`}
+                >
+                  <Chip
+                    label={hold.name}
+                    icon={hold.enabled ? <Security /> : <CloseIcon />}
+                    color={hold.enabled ? "warning" : "default"}
+                    variant={hold.enabled ? "filled" : "outlined"}
+                    size="small"
+                    onClick={userPrincipalName ? () => handleHoldClick(hold.name, hold.enabled) : undefined}
+                    sx={{
+                      fontWeight: 500,
+                      cursor: userPrincipalName ? "pointer" : "default",
+                      "&:hover": userPrincipalName ? {
+                        opacity: 0.8,
+                        transform: "scale(1.02)",
+                      } : {},
+                      transition: "all 0.15s ease-in-out",
+                    }}
+                  />
+                </Tooltip>
+              ))}
+            </Stack>
+            {holds.filter(h => !h.toggleable && h.enabled).length > 0 && (
+              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                {holds.filter(h => !h.toggleable && h.enabled).map((hold) => (
+                  <Tooltip key={hold.name} title={`${hold.name} Hold - Managed via Microsoft Purview compliance portal`}>
+                    <Chip
+                      label={hold.name}
+                      icon={<Security />}
+                      color="warning"
+                      variant="outlined"
+                      size="small"
+                      sx={{ fontWeight: 500 }}
+                    />
+                  </Tooltip>
+                ))}
+              </Stack>
+            )}
+            {activeHolds.length === 0 && holds.filter(h => h.toggleable).every(h => !h.enabled) && (
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 1.5,
                   bgcolor: alpha(theme.palette.success.main, 0.04),
                   borderColor: alpha(theme.palette.success.main, 0.3),
+                  mt: 1,
                 }}
               >
                 <Stack direction="row" alignItems="center" spacing={1}>
@@ -836,21 +934,6 @@ export const CippExchangeInfoCard = (props) => {
                   <Typography variant="body2">No holds applied</Typography>
                 </Stack>
               </Paper>
-            ) : (
-              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                {holds.map((hold) => (
-                  hold.enabled && (
-                    <Chip
-                      key={hold.name}
-                      label={hold.name}
-                      icon={<Security />}
-                      color="warning"
-                      size="small"
-                      sx={{ fontWeight: 500 }}
-                    />
-                  )
-                ))}
-              </Stack>
             )}
             {exchangeData?.ExcludedFromOrgWideHold && (
               <Alert severity="info" sx={{ mt: 1.5 }}>
@@ -1128,6 +1211,105 @@ export const CippExchangeInfoCard = (props) => {
             startIcon={isClearingSpam ? <CircularProgress size={16} color="inherit" /> : <CheckCircle />}
           >
             {isClearingSpam ? "Clearing..." : "Clear Spam Block"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Hold Toggle Confirmation Dialog */}
+      <Dialog
+        open={holdDialog.open}
+        onClose={handleHoldDialogClose}
+        maxWidth="sm"
+        fullWidth
+        disableRestoreFocus
+      >
+        <DialogTitle>
+          {holdDialog.currentlyEnabled ? "Disable" : "Enable"} {holdDialog.holdType} Hold?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText component="div">
+            Are you sure you want to {holdDialog.currentlyEnabled ? "disable" : "enable"}{" "}
+            <strong>{holdDialog.holdType} Hold</strong> for this mailbox?
+
+            {!holdDialog.currentlyEnabled && holdDialog.holdType === "Litigation" && (
+              <>
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                    Litigation Hold preserves all mailbox content
+                  </Typography>
+                  <Typography variant="body2" component="div">
+                    <ul style={{ margin: 0, paddingLeft: 20 }}>
+                      <li>Deleted items and modified versions of items are retained</li>
+                      <li>Items in the Recoverable Items folder are preserved</li>
+                      <li>Users can still delete items, but they remain discoverable</li>
+                      <li>Hold persists until explicitly removed</li>
+                    </ul>
+                  </Typography>
+                </Alert>
+                <TextField
+                  label="Hold Duration (days, optional)"
+                  type="number"
+                  fullWidth
+                  size="small"
+                  value={litigationDays}
+                  onChange={(e) => setLitigationDays(e.target.value)}
+                  helperText="Leave blank for indefinite hold. Specify number of days to auto-expire."
+                  sx={{ mt: 2 }}
+                  slotProps={{ htmlInput: { min: 1 } }}
+                />
+              </>
+            )}
+
+            {!holdDialog.currentlyEnabled && holdDialog.holdType === "Retention" && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                  Retention Hold suspends retention policy processing
+                </Typography>
+                <Typography variant="body2" component="div">
+                  <ul style={{ margin: 0, paddingLeft: 20 }}>
+                    <li>MRM retention policies will stop processing this mailbox</li>
+                    <li>Items that would normally be deleted by retention are preserved</li>
+                    <li>Useful when a user is temporarily unavailable (e.g., on leave)</li>
+                  </ul>
+                </Typography>
+              </Alert>
+            )}
+
+            {holdDialog.currentlyEnabled && (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                  Disabling this hold may result in data loss
+                </Typography>
+                <Typography variant="body2">
+                  {holdDialog.holdType === "Litigation"
+                    ? "Previously preserved items in the Recoverable Items folder may be permanently deleted by the Managed Folder Assistant."
+                    : "Retention policies will resume processing, and items past their retention period may be deleted."}
+                </Typography>
+              </Alert>
+            )}
+          </DialogContentText>
+          {toggleHold.isError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {toggleHold.error?.message || `Failed to update ${holdDialog.holdType} hold`}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleHoldDialogClose} disabled={isTogglingHold}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleHoldToggle}
+            color={holdDialog.currentlyEnabled ? "error" : "warning"}
+            variant="contained"
+            disabled={isTogglingHold}
+            startIcon={isTogglingHold ? <CircularProgress size={16} color="inherit" /> : null}
+          >
+            {isTogglingHold
+              ? "Updating..."
+              : holdDialog.currentlyEnabled
+                ? "Disable Hold"
+                : "Enable Hold"}
           </Button>
         </DialogActions>
       </Dialog>
