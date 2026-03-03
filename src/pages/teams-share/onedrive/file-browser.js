@@ -579,6 +579,37 @@ const Page = () => {
     newFolderMutation.reset();
   };
 
+  // Location switcher state
+  const currentLocationType = siteId ? "sharepoint" : "onedrive";
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [switcherType, setSwitcherType] = useState(currentLocationType);
+  const switcherForm = useForm({ mode: "onChange" });
+
+  const handleSwitcherOpen = () => {
+    setSwitcherType(currentLocationType);
+    switcherForm.reset();
+    setSwitcherOpen(true);
+  };
+
+  const handleSwitchLocation = (values) => {
+    if (switcherType === "onedrive") {
+      const user = values.switchUser;
+      if (!user) return;
+      router.push({
+        pathname: router.pathname,
+        query: { userId: user.value || user, name: user.label || user.value || "OneDrive" },
+      });
+    } else {
+      const site = values.switchSite;
+      if (!site) return;
+      router.push({
+        pathname: router.pathname,
+        query: { siteId: site.value || site, name: site.label || site.value || "SharePoint" },
+      });
+    }
+    setSwitcherOpen(false);
+  };
+
   // Build breadcrumb from folderPath
   const breadcrumbs = useMemo(() => {
     const rootLabel = name || (siteId ? "SharePoint" : "OneDrive");
@@ -1064,6 +1095,17 @@ const Page = () => {
               );
             })}
           </Breadcrumbs>
+          <Tooltip title="Switch OneDrive or SharePoint site">
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<SwapHoriz />}
+              onClick={handleSwitcherOpen}
+              sx={{ whiteSpace: "nowrap", flexShrink: 0 }}
+            >
+              Switch
+            </Button>
+          </Tooltip>
           <Button
             size="small"
             variant="contained"
@@ -1120,6 +1162,101 @@ const Page = () => {
             }
           >
             {newFolderMutation.isPending ? "Creating..." : "Create"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Switch Location Dialog */}
+      <Dialog
+        open={switcherOpen}
+        onClose={() => setSwitcherOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <SwapHoriz color="primary" />
+            <span>Switch Location</span>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 0.5 }}>
+            <ToggleButtonGroup
+              value={switcherType}
+              exclusive
+              onChange={(_e, val) => {
+                if (!val) return;
+                setSwitcherType(val);
+                switcherForm.reset();
+              }}
+              size="small"
+              fullWidth
+            >
+              <ToggleButton value="onedrive">
+                <PersonOutline sx={{ mr: 1 }} /> OneDrive
+              </ToggleButton>
+              <ToggleButton value="sharepoint">
+                <Language sx={{ mr: 1 }} /> SharePoint
+              </ToggleButton>
+            </ToggleButtonGroup>
+
+            {switcherType === "onedrive" && (
+              <CippFormComponent
+                type="autoComplete"
+                name="switchUser"
+                label="Select User"
+                formControl={switcherForm}
+                multiple={false}
+                api={{
+                  url: "/api/ListGraphRequest",
+                  data: {
+                    Endpoint: "users",
+                    $filter: "accountEnabled eq true",
+                    $top: 999,
+                    $count: true,
+                    $orderby: "displayName",
+                    $select: "id,displayName,userPrincipalName",
+                  },
+                  dataKey: "Results",
+                  labelField: (user) => `${user.displayName} (${user.userPrincipalName})`,
+                  valueField: "id",
+                }}
+              />
+            )}
+
+            {switcherType === "sharepoint" && (
+              <CippFormComponent
+                type="autoComplete"
+                name="switchSite"
+                label="Select SharePoint Site"
+                formControl={switcherForm}
+                multiple={false}
+                api={{
+                  url: "/api/ListSites",
+                  data: { Type: "SharePointSiteUsage" },
+                  queryKey: "file-browser-sites",
+                  labelField: (s) => s.displayName || s.webUrl || s.siteId,
+                  valueField: "siteId",
+                }}
+              />
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSwitcherOpen(false)} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Search />}
+            onClick={switcherForm.handleSubmit(handleSwitchLocation)}
+            disabled={
+              switcherType === "onedrive"
+                ? !switcherForm.watch("switchUser")
+                : !switcherForm.watch("switchSite")
+            }
+          >
+            Browse
           </Button>
         </DialogActions>
       </Dialog>
