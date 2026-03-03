@@ -678,6 +678,12 @@ export const nativeMenuItems = [
             path: "/teams-share/onedrive",
             permissions: ["Sharepoint.Site.*"],
           },
+        ],
+      },
+      {
+        title: "File Management",
+        permissions: ["Sharepoint.Site.*"],
+        items: [
           {
             title: "File Browser",
             path: "/teams-share/onedrive/file-browser",
