@@ -19,6 +19,7 @@ import {
   TableCell,
   TableContainer,
   TableRow,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
@@ -545,6 +546,39 @@ const Page = () => {
   // Query key for the current folder view - used for cache invalidation
   const currentQueryKey = `onedrive-files-${siteId || userId || driveId}-${folderId || "root"}`;
 
+  // New Folder dialog state
+  const tenantFilter = useSettings().currentTenant;
+  const [newFolderOpen, setNewFolderOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const newFolderMutation = ApiPostCall({
+    relatedQueryKeys: [currentQueryKey],
+  });
+
+  const handleNewFolderSubmit = () => {
+    if (!newFolderName.trim()) return;
+    const identity = {};
+    if (driveId) identity.DriveId = driveId;
+    else if (userId) identity.UserId = userId;
+    else if (siteId) identity.SiteId = siteId;
+
+    newFolderMutation.mutate({
+      url: "/api/ExecOneDriveFileAction",
+      data: {
+        tenantFilter,
+        ...identity,
+        Action: "CreateFolder",
+        FolderName: newFolderName.trim(),
+        ...(folderId ? { ParentId: folderId } : {}),
+      },
+    });
+  };
+
+  const handleNewFolderClose = () => {
+    setNewFolderOpen(false);
+    setNewFolderName("");
+    newFolderMutation.reset();
+  };
+
   // Build breadcrumb from folderPath
   const breadcrumbs = useMemo(() => {
     const rootLabel = name || (siteId ? "SharePoint" : "OneDrive");
@@ -642,13 +676,11 @@ const Page = () => {
         ...(siteId && { SiteId: siteId }),
         ...(driveId && { DriveId: driveId }),
         ...(userId && { UserId: userId }),
-        // No FolderId = root children
       },
       queryKey: `onedrive-root-folders-${siteId || userId || driveId}`,
-      dataKey: "Results",
       labelField: (item) => item.name,
       valueField: "id",
-      dataFilter: (data) => data.filter((item) => item.isFolder),
+      dataFilter: (data) => data.filter((item) => item.rawData?.isFolder),
     }),
     [siteId, driveId, userId]
   );
@@ -967,35 +999,8 @@ const Page = () => {
         multiPost: false,
         category: "danger",
       },
-
-      // -- Create Folder (toolbar-level, applies to current directory) --
-      {
-        label: "New Folder",
-        type: "POST",
-        icon: <CreateNewFolder />,
-        url: "/api/ExecOneDriveFileAction",
-        data: {
-          ...driveIdentity,
-          Action: "!CreateFolder",
-          ...(folderId ? { ParentId: `!${folderId}` } : {}),
-        },
-        confirmText: "Create a new folder in the current directory.",
-        fields: [
-          {
-            type: "textField",
-            name: "FolderName",
-            label: "Folder Name",
-            required: true,
-          },
-        ],
-        relatedQueryKeys: [currentQueryKey],
-        multiPost: false,
-        // No row data needed - this is a toolbar action
-        noSelectionRequired: true,
-        category: "edit",
-      },
     ],
-    [driveIdentity, folderPickerApi, currentQueryKey, folderId]
+    [driveIdentity, folderPickerApi, currentQueryKey]
   );
 
   const defaultLabel = siteId ? "SharePoint" : "OneDrive";
@@ -1059,8 +1064,65 @@ const Page = () => {
               );
             })}
           </Breadcrumbs>
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<CreateNewFolder />}
+            onClick={() => setNewFolderOpen(true)}
+            sx={{ whiteSpace: "nowrap", flexShrink: 0 }}
+          >
+            New Folder
+          </Button>
         </Stack>
       </Paper>
+
+      {/* New Folder Dialog */}
+      <Dialog open={newFolderOpen} onClose={handleNewFolderClose} fullWidth maxWidth="xs">
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <CreateNewFolder color="primary" />
+            <span>New Folder</span>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Create a new folder in the current directory.
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            label="Folder Name"
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newFolderName.trim()) {
+                handleNewFolderSubmit();
+              }
+            }}
+            size="small"
+          />
+          <CippApiResults apiObject={newFolderMutation} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleNewFolderClose} color="inherit">
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleNewFolderSubmit}
+            disabled={!newFolderName.trim() || newFolderMutation.isPending}
+            startIcon={
+              newFolderMutation.isPending ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <CreateNewFolder />
+              )
+            }
+          >
+            {newFolderMutation.isPending ? "Creating..." : "Create"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* File Table */}
       <CippTablePage
