@@ -654,10 +654,10 @@ export const CippExchangeInfoCard = (props) => {
                 </Tooltip>
               </Grid>
               <Grid size={{ xs: 6 }}>
-                <Tooltip title={userPrincipalName ? `Click to ${exchangeData?.BlockExternalInbound ? 'allow' : 'block'} external inbound mail` : 'User info not available'}>
+                <Tooltip title={userPrincipalName ? `Click to ${exchangeData?.BlockExternalInbound === true ? 'allow' : 'block'} external inbound mail` : 'User info not available'}>
                   <Paper
                     variant="outlined"
-                    onClick={userPrincipalName ? () => handleRestrictionClick("Inbound", exchangeData?.BlockExternalInbound) : undefined}
+                    onClick={userPrincipalName ? () => handleRestrictionClick("Inbound", exchangeData?.BlockExternalInbound === true) : undefined}
                     sx={{
                       p: 1.5,
                       cursor: userPrincipalName ? "pointer" : "default",
@@ -671,7 +671,7 @@ export const CippExchangeInfoCard = (props) => {
                     <Stack direction="row" alignItems="center" spacing={1}>
                       {isTogglingRestriction && restrictionDialog.direction === "Inbound" ? (
                         <CircularProgress size={20} />
-                      ) : exchangeData?.BlockExternalInbound ? (
+                      ) : exchangeData?.BlockExternalInbound === true ? (
                         <Block fontSize="small" color="warning" />
                       ) : (
                         <CheckCircle fontSize="small" color="success" />
@@ -681,7 +681,7 @@ export const CippExchangeInfoCard = (props) => {
                           Ext. Inbound
                         </Typography>
                         <Typography variant="body2" fontWeight={500}>
-                          {exchangeData?.BlockExternalInbound ? "Blocked" : "Allowed"}
+                          {exchangeData?.BlockExternalInbound === true ? "Blocked" : "Allowed"}
                         </Typography>
                       </Box>
                     </Stack>
@@ -689,10 +689,10 @@ export const CippExchangeInfoCard = (props) => {
                 </Tooltip>
               </Grid>
               <Grid size={{ xs: 6 }}>
-                <Tooltip title={userPrincipalName ? `Click to ${exchangeData?.BlockExternalOutbound ? 'allow' : 'block'} external outbound mail` : 'User info not available'}>
+                <Tooltip title={userPrincipalName ? `Click to ${exchangeData?.BlockExternalOutbound === true ? 'allow' : 'block'} external outbound mail` : 'User info not available'}>
                   <Paper
                     variant="outlined"
-                    onClick={userPrincipalName ? () => handleRestrictionClick("Outbound", exchangeData?.BlockExternalOutbound) : undefined}
+                    onClick={userPrincipalName ? () => handleRestrictionClick("Outbound", exchangeData?.BlockExternalOutbound === true) : undefined}
                     sx={{
                       p: 1.5,
                       cursor: userPrincipalName ? "pointer" : "default",
@@ -706,7 +706,7 @@ export const CippExchangeInfoCard = (props) => {
                     <Stack direction="row" alignItems="center" spacing={1}>
                       {isTogglingRestriction && restrictionDialog.direction === "Outbound" ? (
                         <CircularProgress size={20} />
-                      ) : exchangeData?.BlockExternalOutbound ? (
+                      ) : exchangeData?.BlockExternalOutbound === true ? (
                         <Block fontSize="small" color="warning" />
                       ) : (
                         <CheckCircle fontSize="small" color="success" />
@@ -716,7 +716,7 @@ export const CippExchangeInfoCard = (props) => {
                           Ext. Outbound
                         </Typography>
                         <Typography variant="body2" fontWeight={500}>
-                          {exchangeData?.BlockExternalOutbound ? "Blocked" : "Allowed"}
+                          {exchangeData?.BlockExternalOutbound === true ? "Blocked" : "Allowed"}
                         </Typography>
                       </Box>
                     </Stack>
