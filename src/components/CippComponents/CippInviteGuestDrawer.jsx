@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Button } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { Grid } from "@mui/system";
 import { useForm, useFormState } from "react-hook-form";
 import { Send } from "@mui/icons-material";
 import { CippOffCanvas } from "./CippOffCanvas";
 import CippFormComponent from "./CippFormComponent";
 import { CippApiResults } from "./CippApiResults";
+import CippAccessTypeGuide from "./CippAccessTypeGuide";
 import { useSettings } from "../../hooks/use-settings";
 import { ApiPostCall } from "../../api/ApiCall";
 
@@ -105,6 +106,14 @@ export const CippInviteGuestDrawer = ({
           </div>
         }
       >
+        <Box sx={{ mb: 2 }}>
+          <CippAccessTypeGuide
+            type="guest"
+            variant="banner"
+            context="userManagement"
+            showSettingsLinks={false}
+          />
+        </Box>
         <Grid container spacing={2}>
           <Grid size={{ md: 6, xs: 12 }}>
             <CippFormComponent

@@ -802,7 +802,7 @@
     "name": "standards.ExternalMFATrusted",
     "cat": "Entra (AAD) Standards",
     "tag": ["ZTNA21803", "ZTNA21804"],
-    "helpText": "Sets the state of the Cross-tenant access setting to trust external MFA. This allows guest users to use their home tenant MFA to access your tenant.",
+    "helpText": "Sets the state of the Cross-tenant access setting to trust external MFA. This allows guest users to use their home tenant MFA to access your tenant. Applies to Guest Access (B2B Collaboration) users. External Access (B2B Direct Connect) users authenticate entirely in their home tenant.",
     "executiveText": "Allows external partners and vendors to use their own organization's multi-factor authentication when accessing company resources, streamlining collaboration while maintaining security standards. This reduces friction for external users while ensuring they still meet authentication requirements.",
     "addedComponent": [
       {
@@ -1120,7 +1120,7 @@
     "name": "standards.GuestInvite",
     "cat": "Entra (AAD) Standards",
     "tag": ["CISA (MS.AAD.18.1v1)", "EIDSCA.AP04", "EIDSCA.AP07", "EIDSCAAP04"],
-    "helpText": "This setting controls who can invite guests to your directory to collaborate on resources secured by your company, such as SharePoint sites or Azure resources.",
+    "helpText": "This setting controls who can invite guests to your directory to collaborate on resources secured by your company, such as SharePoint sites or Azure resources. This applies to Guest Access (B2B Collaboration) only. External Access (B2B Direct Connect) for Teams shared channels is controlled by cross-tenant access policies.",
     "executiveText": "Controls who within the organization can invite external partners and vendors to access company resources, ensuring proper oversight of external access while enabling necessary business collaboration. This helps maintain security while supporting partnership and vendor relationships.",
     "addedComponent": [
       {
@@ -4184,7 +4184,7 @@
     "name": "standards.SPAzureB2B",
     "cat": "SharePoint Standards",
     "tag": ["CIS M365 5.0 (7.2.2)"],
-    "helpText": "Ensure SharePoint and OneDrive integration with Azure AD B2B is enabled",
+    "helpText": "Ensure SharePoint and OneDrive integration with Azure AD B2B is enabled. This enables Guest Access (B2B Collaboration) for SharePoint and OneDrive, allowing external users to be invited as guests.",
     "executiveText": "Enables secure collaboration with external partners through SharePoint and OneDrive by integrating with Azure B2B guest access. This allows controlled sharing with external organizations while maintaining security oversight and proper access management.",
     "addedComponent": [],
     "label": "Enable SharePoint and OneDrive integration with Azure AD B2B",
@@ -4802,7 +4802,7 @@
     "name": "standards.TeamsGuestAccess",
     "cat": "Teams Standards",
     "tag": [],
-    "helpText": "Allow guest users access to teams.",
+    "helpText": "Allow guest users access to teams. This controls Guest Access (B2B Collaboration) in Teams. Shared channel access for external users (B2B Direct Connect) is controlled separately by cross-tenant access policies.",
     "docsDescription": "Allow guest users access to teams. Guest users are users who are not part of your organization but have been invited to collaborate with your organization in Teams. This setting allows you to control whether guest users can access Teams.",
     "executiveText": "Determines whether external partners, vendors, and collaborators can be invited to participate in Teams conversations and meetings. This fundamental setting enables external collaboration while requiring careful management to balance openness with security and information protection.",
     "addedComponent": [

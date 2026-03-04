@@ -66,6 +66,7 @@ import CippGuestInviteDialog from "../../../../components/CippComponents/CippGue
 import { useDialog } from "../../../../hooks/use-dialog";
 import { showToast } from "../../../../store/toasts";
 import { Send } from "@mui/icons-material";
+import CippAccessTypeGuide from "../../../../components/CippComponents/CippAccessTypeGuide";
 
 // Risk metadata for settings that could reduce security or cause data loss
 const settingsRiskInfo = {
@@ -331,14 +332,16 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
   );
 
   const isSharedChannel = channel.membershipType === "shared";
+  const isPrivateChannel = channel.membershipType === "private";
+  const allowExternalEmail = isSharedChannel || isPrivateChannel;
 
   const channelMemberFields = [
     {
       type: "autoComplete",
       name: "UserID",
-      label: isSharedChannel ? "Select User or Enter External Email" : "Select User",
+      label: allowExternalEmail ? "Select User or Enter External Email" : "Select User",
       multiple: false,
-      creatable: isSharedChannel,
+      creatable: allowExternalEmail,
       api: {
         url: "/api/ListGraphRequest",
         data: {
@@ -356,7 +359,7 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
         },
         valueField: "id",
       },
-      placeholder: isSharedChannel
+      placeholder: allowExternalEmail
         ? "Search users or type an external email address..."
         : "Search users...",
       validators: {
@@ -375,6 +378,16 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
     },
   ];
 
+  const getConfirmText = () => {
+    if (isSharedChannel) {
+      return `Add a user or external member to the '${channel.displayName}' shared channel. This uses External Access (B2B Direct Connect) — external users access the channel from their own tenant, no guest account is created. Only work or school accounts are supported; personal emails (Gmail, etc.) cannot be added to shared channels.`;
+    }
+    if (isPrivateChannel) {
+      return `Add a user or external guest to the '${channel.displayName}' private channel. This uses Guest Access (B2B Collaboration) — external email addresses will be invited as guest accounts in the tenant. Both organizational and personal emails (Gmail, Outlook.com) are supported.`;
+    }
+    return `Add a user to the '${channel.displayName}' channel.`;
+  };
+
   const addChannelMemberApi = {
     url: "/api/ExecTeamAction",
     type: "POST",
@@ -386,9 +399,7 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
       ChannelName: channel.displayName,
       ChannelType: channel.membershipType,
     },
-    confirmText: isSharedChannel
-      ? `Add a user or external member to the '${channel.displayName}' shared channel. External users are added via B2B direct connect — no guest invitation is created.`
-      : `Add a user to the '${channel.displayName}' channel.`,
+    confirmText: getConfirmText(),
     relatedQueryKeys: [`TeamDetails-${teamId}`],
   };
 
@@ -489,6 +500,14 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
                   </Button>
                 </Stack>
               </Stack>
+              {(channel.membershipType === "shared" || channel.membershipType === "private") && (
+                <Box sx={{ px: 2, pt: 1 }}>
+                  <CippAccessTypeGuide
+                    variant="panel"
+                    context={channel.membershipType === "shared" ? "teamsSharedChannel" : "teamsPrivateChannel"}
+                  />
+                </Box>
+              )}
               {members.length > 0 ? (
                 <Table size="small">
                   <TableHead>
@@ -1047,14 +1066,7 @@ const Page = () => {
                             <Stack direction="row" alignItems="center" spacing={0.5}>
                               <Typography variant="body2">{row.original.displayName}</Typography>
                               {isGuest && (
-                                <Chip
-                                  icon={<PersonAdd sx={{ fontSize: 14 }} />}
-                                  label="Guest"
-                                  size="small"
-                                  color="info"
-                                  variant="outlined"
-                                  sx={{ height: 22, fontSize: "0.7rem", "& .MuiChip-label": { px: 0.5 } }}
-                                />
+                                <CippAccessTypeGuide type="guest" variant="chip" />
                               )}
                             </Stack>
                           );
@@ -1109,14 +1121,7 @@ const Page = () => {
                             <Stack direction="row" alignItems="center" spacing={0.5}>
                               <Typography variant="body2">{row.original.displayName}</Typography>
                               {isGuest && (
-                                <Chip
-                                  icon={<PersonAdd sx={{ fontSize: 14 }} />}
-                                  label="Guest"
-                                  size="small"
-                                  color="info"
-                                  variant="outlined"
-                                  sx={{ height: 22, fontSize: "0.7rem", "& .MuiChip-label": { px: 0.5 } }}
-                                />
+                                <CippAccessTypeGuide type="guest" variant="chip" />
                               )}
                             </Stack>
                           );

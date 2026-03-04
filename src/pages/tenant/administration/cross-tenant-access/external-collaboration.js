@@ -30,6 +30,7 @@ import { CippApiResults } from "../../../../components/CippComponents/CippApiRes
 import CippRelatedSettings from "../../../../components/CippComponents/CippRelatedSettings.jsx";
 import CippRiskAlert from "../../../../components/CippComponents/CippRiskAlert.jsx";
 import CippRiskSummaryDialog from "../../../../components/CippComponents/CippRiskSummaryDialog.jsx";
+import CippAccessTypeGuide from "../../../../components/CippComponents/CippAccessTypeGuide";
 
 const DomainListEditor = ({ title, domains, onChange }) => {
   const [newDomain, setNewDomain] = useState("");
@@ -281,6 +282,11 @@ const Page = () => {
       </Stack>
 
       <CippApiResults apiObject={updateCollab} />
+      <CippAccessTypeGuide
+        type="guest"
+        variant="banner"
+        context="externalCollaboration"
+      />
 
       {collabQuery.isFetching ? (
         <Skeleton variant="rectangular" height={400} />

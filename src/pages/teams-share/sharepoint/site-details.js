@@ -53,6 +53,7 @@ import { CippApiDialog } from "../../../components/CippComponents/CippApiDialog"
 import CippGuestInviteDialog from "../../../components/CippComponents/CippGuestInviteDialog";
 import { useDialog } from "../../../hooks/use-dialog";
 import { getCippFormatting } from "../../../utils/get-cipp-formatting";
+import CippAccessTypeGuide from "../../../components/CippComponents/CippAccessTypeGuide";
 
 // Helpers
 const getSiteTypeInfo = (template) => {
@@ -591,14 +592,7 @@ const Page = () => {
                             />
                           )}
                           {isGuest && (
-                            <Chip
-                              icon={<PersonAdd sx={{ fontSize: 14 }} />}
-                              label="Guest"
-                              size="small"
-                              color="info"
-                              variant="outlined"
-                              sx={{ height: 22, fontSize: "0.7rem", "& .MuiChip-label": { px: 0.5 } }}
-                            />
+                            <CippAccessTypeGuide type="guest" variant="chip" />
                           )}
                         </Stack>
                       );

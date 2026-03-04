@@ -451,7 +451,7 @@ const Page = () => {
       },
       {
         field: "userType",
-        tooltip: "Guest User",
+        tooltip: "Guest Account (B2B Collaboration) — this user was invited to the tenant as a guest. External Access (B2B Direct Connect) users do not appear in the directory.",
         iconOnly: true,
         conditions: {
           Guest: { label: "Guest", color: "secondary", icon: <PersonAddAlt1 fontSize="small" /> },

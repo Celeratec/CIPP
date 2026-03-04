@@ -31,6 +31,7 @@ import { CippApiResults } from "../../../components/CippComponents/CippApiResult
 import CippRelatedSettings from "../../../components/CippComponents/CippRelatedSettings.jsx";
 import CippRiskAlert from "../../../components/CippComponents/CippRiskAlert.jsx";
 import CippRiskSummaryDialog from "../../../components/CippComponents/CippRiskSummaryDialog.jsx";
+import CippAccessTypeGuide from "../../../components/CippComponents/CippAccessTypeGuide";
 
 const TabPanel = ({ children, value, index }) => (
   <div role="tabpanel" hidden={value !== index}>
@@ -689,6 +690,11 @@ const Page = () => {
           {/* Guest & Cloud Storage Tab */}
           <TabPanel value={tabValue} index={1}>
             <Stack spacing={3}>
+              <CippAccessTypeGuide
+                type="guest"
+                variant="banner"
+                context="teamsGuestSettings"
+              />
               <CippRelatedSettings
                 title="Guest access requires multiple settings to align"
                 description="The Guest Access toggle below only controls whether guests can use Teams. To actually invite guests, Entra External Collaboration settings must allow invitations, the Cross-Tenant Access Policy must allow B2B inbound, and SharePoint sharing must be enabled for guests to access files."

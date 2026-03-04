@@ -28,6 +28,7 @@ import {
 import { useSettings } from "../../../../hooks/use-settings.js";
 import { ApiGetCall } from "../../../../api/ApiCall.jsx";
 import Link from "next/link";
+import CippAccessTypeGuide from "../../../../components/CippComponents/CippAccessTypeGuide";
 
 const HealthScoreCard = ({ healthData, isFetching }) => {
   if (isFetching) {
@@ -291,6 +292,7 @@ const Page = () => {
         Centralized management of Microsoft Entra cross-tenant access policies, B2B collaboration
         settings, and external identity governance.
       </Typography>
+      <CippAccessTypeGuide variant="panel" context="crossTenantAccess" />
 
       {!currentTenant || currentTenant === "AllTenants" ? (
         <Card>

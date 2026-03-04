@@ -27,6 +27,7 @@ import { useForm } from "react-hook-form";
 import { useEffect, useState, useCallback } from "react";
 import { ApiPostCall } from "../../api/ApiCall";
 import CippFormComponent from "./CippFormComponent";
+import CippAccessTypeGuide from "./CippAccessTypeGuide";
 import Link from "next/link";
 import axios from "axios";
 import { buildVersionedHeaders } from "../../utils/cippVersion";
@@ -539,6 +540,12 @@ const CippGuestInviteDialog = ({
               ? `Invite an external guest user to this Team${teamName ? ` (${teamName})` : ""}. The guest will be invited to the tenant and automatically added as a team member.`
               : "Invite an external guest user to this SharePoint site. The guest will be invited to the tenant and automatically added as a site member."}
           </Typography>
+          <CippAccessTypeGuide
+            type="guest"
+            variant="banner"
+            context={isTeamsMode ? "teamsStandardChannel" : "sharepoint"}
+            showSettingsLinks={false}
+          />
         </DialogContent>
 
         {/* Form Fields */}
