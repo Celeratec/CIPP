@@ -127,7 +127,7 @@ Manage365 extends upstream's detail pages with significantly richer, purpose-bui
 - **SharePoint Sites** -- storage monitoring, member and administrator management (including non-group-connected sites), guest invitation with domain restriction diagnostics and one-click quick-fix, cross-linking to Teams, and Create Team from Site
 - **Teams** -- member/owner management, channel management (including private/shared channel members), app management, interactive toggle-chip settings for member permissions, guest permissions, messaging, and fun settings, plus guest invitation with Teams-specific diagnostics
 - **Groups** -- hero overview by group type, member/owner/contact management, editable properties, interactive toggle-chip settings, dynamic membership rule display, and on-premises sync awareness (extends upstream's group page)
-- **Mailboxes** -- mailbox type identification, aliases, archive and litigation hold status, and direct link to Exchange settings
+- **Mailboxes / User Exchange Tab** -- mailbox type identification, aliases, archive and litigation hold status, direct link to Exchange settings, clickable external mail restriction tiles (independently block/allow inbound or outbound external email with confirmation dialogs and consequence warnings), and one-click spam block clearing when a mailbox has been flagged by Microsoft for suspected spam activity
 - **Contacts** -- editable properties form with on-premises sync awareness
 - **Entra Devices** -- OS-aware hero, source presence chips (Entra, Intune, NinjaOne), NinjaOne hardware enrichment, quick actions (enable/disable, BitLocker, delete)
 - **MEM Devices** -- compliance-colored hero, NinjaOne hardware enrichment, categorized quick actions (sync, reboot, rename, LAPS, BitLocker, retire, delete), NinjaOne data merged into device listings (extends upstream's device page)
@@ -194,6 +194,15 @@ When NinjaOne integration is configured, device views across the application are
 ### Enhanced Error Messages & Permission Guidance
 
 Structured error formatting throughout the application. The `FormattedResultText` renderer automatically detects and formats common error patterns: backend `Diagnostics:` sections are parsed into categorized items with `[Category]` chips and `CIPP Settings:` paths become clickable navigation buttons. SharePoint-specific error classification provides targeted diagnostics for token acquisition and access issues without misdirecting users to superadmin settings.
+
+### Mailbox External Mail Restrictions
+
+Control external email flow on a per-mailbox basis directly from the user's Exchange tab. Two independent toggles allow administrators to:
+
+- **Block external inbound** -- sets `RequireSenderAuthenticationEnabled` so only internal (authenticated) senders can email the mailbox; external senders receive an NDR
+- **Block external outbound** -- flags the mailbox via `CustomAttribute15` and auto-creates a tenant-wide transport rule that rejects messages sent to external recipients from any flagged mailbox
+
+Each toggle includes a confirmation dialog with clear warnings about the consequences. Restrictions can be applied independently (inbound only, outbound only, or both) and reversed at any time. The current status is displayed as a visual tile on the Exchange info card alongside other mailbox settings.
 
 ### Organized Navigation
 
