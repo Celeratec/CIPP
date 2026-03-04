@@ -1,10 +1,14 @@
 import { Layout as DashboardLayout } from "../../../layouts/index.js";
 import { useRouter } from "next/router";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   Button,
   Chip,
   CircularProgress,
+  Divider,
   IconButton,
   InputAdornment,
   Link as MuiLink,
@@ -23,6 +27,8 @@ import {
   FolderOpen,
   Clear,
   Info,
+  ExpandMore,
+  LightbulbOutlined,
 } from "@mui/icons-material";
 import { CippHead } from "../../../components/CippComponents/CippHead";
 import { ApiPostCall } from "../../../api/ApiCall";
@@ -115,20 +121,13 @@ const Page = () => {
             <Typography variant="h6">Search Files & Folders</Typography>
             <Typography variant="body2" color="text.secondary">
               Search across all SharePoint sites and OneDrive accounts in the
-              tenant. Supports file names, content, and{" "}
-              <MuiLink
-                href="https://learn.microsoft.com/en-us/sharepoint/dev/general-development/keyword-query-language-kql-syntax-reference"
-                target="_blank"
-                rel="noopener"
-              >
-                KQL syntax
-              </MuiLink>{" "}
-              (e.g. <code>filename:report filetype:pdf</code>).
+              selected tenant. Enter keywords, file names, or use advanced
+              filters to find what you need.
             </Typography>
             <Stack direction="row" spacing={1.5}>
               <TextField
                 fullWidth
-                placeholder='Search files... (e.g. "budget 2025", "filename:report.xlsx", "filetype:pdf")'
+                placeholder="Search by file name, content, or keywords..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -179,6 +178,125 @@ const Page = () => {
                 Please select a tenant from the dropdown above to search.
               </Alert>
             )}
+
+            <Accordion
+              disableGutters
+              elevation={0}
+              sx={{
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: "8px !important",
+                "&::before": { display: "none" },
+                bgcolor: alpha(theme.palette.info.main, 0.03),
+              }}
+            >
+              <AccordionSummary
+                expandIcon={<ExpandMore />}
+                sx={{ minHeight: 40, "& .MuiAccordionSummary-content": { my: 0.75 } }}
+              >
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <LightbulbOutlined fontSize="small" color="info" />
+                  <Typography variant="body2" fontWeight={600} color="text.secondary">
+                    Search Tips
+                  </Typography>
+                </Stack>
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                <Divider sx={{ mb: 1.5 }} />
+                <Stack spacing={1.5}>
+                  <Typography variant="subtitle2" color="text.primary">
+                    Basic Search
+                  </Typography>
+                  <Box component="ul" sx={{ m: 0, pl: 2.5, "& li": { mb: 0.5 } }}>
+                    <li>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Simple keywords</strong> &mdash; Type any word or phrase.
+                        E.g. <code>budget report</code> finds files containing both words.
+                      </Typography>
+                    </li>
+                    <li>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Exact phrase</strong> &mdash; Use quotes for exact matches.
+                        E.g. <code>&quot;EIN GTC Iconic&quot;</code>
+                      </Typography>
+                    </li>
+                  </Box>
+
+                  <Typography variant="subtitle2" color="text.primary">
+                    Filter by File Properties
+                  </Typography>
+                  <Box component="ul" sx={{ m: 0, pl: 2.5, "& li": { mb: 0.5 } }}>
+                    <li>
+                      <Typography variant="body2" color="text.secondary">
+                        <code>filename:report</code> &mdash; Match files with
+                        &quot;report&quot; in the file name
+                      </Typography>
+                    </li>
+                    <li>
+                      <Typography variant="body2" color="text.secondary">
+                        <code>filetype:pdf</code> &mdash; Only PDF files
+                        (also works with <code>xlsx</code>, <code>docx</code>,
+                        <code>pptx</code>, etc.)
+                      </Typography>
+                    </li>
+                    <li>
+                      <Typography variant="body2" color="text.secondary">
+                        <code>author:&quot;John Smith&quot;</code> &mdash; Files
+                        created by a specific person
+                      </Typography>
+                    </li>
+                    <li>
+                      <Typography variant="body2" color="text.secondary">
+                        <code>path:&quot;https://contoso.sharepoint.com/sites/HR&quot;</code>{" "}
+                        &mdash; Limit search to a specific SharePoint site
+                      </Typography>
+                    </li>
+                    <li>
+                      <Typography variant="body2" color="text.secondary">
+                        <code>lastmodifiedtime&gt;2025-01-01</code> &mdash; Files
+                        modified after a specific date
+                      </Typography>
+                    </li>
+                  </Box>
+
+                  <Typography variant="subtitle2" color="text.primary">
+                    Combine Filters
+                  </Typography>
+                  <Box component="ul" sx={{ m: 0, pl: 2.5, "& li": { mb: 0.5 } }}>
+                    <li>
+                      <Typography variant="body2" color="text.secondary">
+                        <code>EIN GTC filetype:pdf</code> &mdash; PDFs
+                        containing &quot;EIN&quot; and &quot;GTC&quot;
+                      </Typography>
+                    </li>
+                    <li>
+                      <Typography variant="body2" color="text.secondary">
+                        <code>filename:invoice filetype:xlsx author:&quot;Jane&quot;</code>{" "}
+                        &mdash; Excel files named &quot;invoice&quot; by Jane
+                      </Typography>
+                    </li>
+                    <li>
+                      <Typography variant="body2" color="text.secondary">
+                        <code>contract OR agreement filetype:docx</code> &mdash;{" "}
+                        Word docs containing either word
+                      </Typography>
+                    </li>
+                  </Box>
+
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    This search uses Microsoft&apos;s{" "}
+                    <MuiLink
+                      href="https://learn.microsoft.com/en-us/sharepoint/dev/general-development/keyword-query-language-kql-syntax-reference"
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      KQL syntax
+                    </MuiLink>
+                    . Results come from Microsoft&apos;s search index, which may take a
+                    few minutes to reflect very recently uploaded files.
+                  </Typography>
+                </Stack>
+              </AccordionDetails>
+            </Accordion>
           </Stack>
         </Paper>
 
@@ -190,7 +308,34 @@ const Page = () => {
           </Alert>
         )}
 
-        {searchMutation.isSuccess && (
+        {searchMutation.isSuccess &&
+          typeof searchMutation.data?.data?.Results === "string" && (
+            <Alert severity="error" variant="outlined">
+              <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
+                Search failed
+              </Typography>
+              <Typography variant="body2">
+                {searchMutation.data.data.Results}
+              </Typography>
+              {(searchMutation.data.data.Results.includes("403") ||
+                searchMutation.data.data.Results.includes("Forbidden") ||
+                searchMutation.data.data.Results.includes("Access") ||
+                searchMutation.data.data.Results.includes("permission") ||
+                searchMutation.data.data.Results.includes("Authorization")) && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  This usually means the <strong>Files.Read.All</strong>{" "}
+                  permission has not been granted for this tenant. Go to{" "}
+                  <strong>
+                    CIPP Settings &gt; SAM Permissions &gt; CPV Refresh
+                  </strong>{" "}
+                  to push the updated permissions to this tenant, then try again.
+                </Typography>
+              )}
+            </Alert>
+          )}
+
+        {searchMutation.isSuccess &&
+          Array.isArray(searchMutation.data?.data?.Results) && (
           <Paper
             elevation={0}
             sx={{
