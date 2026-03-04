@@ -179,9 +179,22 @@ External access in Microsoft 365 is controlled by multiple independent settings 
 
 An inline risk coaching system that alerts administrators to potentially dangerous settings as they make changes. Over 30 risk rules across External Collaboration, Cross-Tenant Policy, SharePoint Sharing, Teams Settings, Offboarding Wizard, Transport Rules, and Alert Configuration highlight dangerous options, recommend safer alternatives, and require explicit confirmation before saving high-risk configurations. B2B direct connect settings include dedicated risk coaching that explains the security model -- direct connect users have no directory footprint and are not subject to Conditional Access unless inbound trust is configured -- and recommends partner-specific policies over opening the default.
 
+### Access Type Coaching: Guest Access vs External Access
+
+Microsoft 365 has two fundamentally different ways to collaborate with external users -- Guest Access (B2B Collaboration) and External Access (B2B Direct Connect) -- controlled by different settings layers with different capabilities and security implications. Manage365 adds consistent, context-aware coaching throughout the application so administrators understand which access type applies to what they're doing:
+
+- **Inline chips** with educational tooltips replace generic "Guest" labels on member lists across Teams, SharePoint, and user management pages
+- **Contextual banners** in all guest invitation and channel member dialogs explain which access type is being used, what it means, and which email types are supported (organizational vs personal)
+- **Expandable info panels** on Teams channel detail, Cross-Tenant Access, and SharePoint pages provide a side-by-side comparison of both access types with characteristics, limitations, and links to the relevant settings pages
+- **Standards helpText** for guest-related standards (Guest Invite, Teams Guest Access, External MFA Trust, SP Azure B2B) now clarifies which access type each standard controls
+- **Backend messages** tag every success and error result with the access type label (e.g., "Guest Access — B2B Collaboration" or "External Access — B2B Direct Connect") so results are unambiguous
+- **Actionable error guidance** when a personal email is entered for a shared channel explains why it's not supported and directs the user to use a private channel instead
+
+All coaching content is driven by a single shared data layer (`accessTypes.js`) so terminology stays consistent across the entire application and can be updated in one place.
+
 ### Guest Invitation & Channel Member Diagnostics
 
-Invite external guests directly from SharePoint site and Teams detail pages. Add external members to shared channels via B2B direct connect. If an operation fails, the system automatically diagnoses the root cause -- checking cross-tenant access policies (B2B direct connect inbound/outbound), B2B domain restrictions, Teams guest access settings, Entra external collaboration settings, and SharePoint permissions -- and provides categorized, structured guidance with direct links to the relevant CIPP settings page. Microsoft internal error codes (e.g., "xTap") are translated to human-readable descriptions.
+Invite external guests directly from SharePoint site and Teams detail pages. Add external members to shared channels via B2B direct connect, or add guests with any email address (including personal emails like Gmail and Outlook.com) to private channels via B2B collaboration with automatic Email One-Time Passcode support. If an operation fails, the system automatically diagnoses the root cause -- checking cross-tenant access policies (B2B direct connect inbound/outbound), B2B domain restrictions, Teams guest access settings, Entra external collaboration settings, and SharePoint permissions -- and provides categorized, structured guidance with direct links to the relevant CIPP settings page. Microsoft internal error codes (e.g., "xTap") are translated to human-readable descriptions.
 
 ### Dynamics 365 Management
 
