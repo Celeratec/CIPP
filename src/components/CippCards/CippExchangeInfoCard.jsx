@@ -136,6 +136,13 @@ export const CippExchangeInfoCard = (props) => {
   });
   const [isTogglingHold, setIsTogglingHold] = useState(false);
   const [litigationDays, setLitigationDays] = useState("");
+
+  const [restrictionDialog, setRestrictionDialog] = useState({
+    open: false,
+    direction: null,
+    currentlyBlocked: false,
+  });
+  const [isTogglingRestriction, setIsTogglingRestriction] = useState(false);
   
   // API call for toggling protocols
   const toggleProtocol = ApiPostCall({
@@ -160,6 +167,42 @@ export const CippExchangeInfoCard = (props) => {
     urlFromData: true,
     relatedQueryKeys: [`Mailbox-${exchangeData?.UserId}`],
   });
+
+  const toggleRestriction = ApiPostCall({
+    urlFromData: true,
+    relatedQueryKeys: [`Mailbox-${exchangeData?.UserId}`],
+  });
+
+  const handleRestrictionClick = (direction, isBlocked) => {
+    setRestrictionDialog({ open: true, direction, currentlyBlocked: isBlocked });
+  };
+
+  const handleRestrictionDialogClose = () => {
+    setRestrictionDialog({ open: false, direction: null, currentlyBlocked: false });
+  };
+
+  const handleRestrictionToggle = async () => {
+    const { direction, currentlyBlocked } = restrictionDialog;
+    setIsTogglingRestriction(true);
+
+    try {
+      await toggleRestriction.mutateAsync({
+        url: "/api/ExecSetMailboxRestriction",
+        data: {
+          tenantFilter: settings.currentTenant,
+          UserId: userPrincipalName,
+          Direction: direction,
+          Enable: !currentlyBlocked,
+        },
+      });
+      if (handleRefresh) handleRefresh();
+    } catch (error) {
+      console.error("Failed to toggle mailbox restriction:", error);
+    } finally {
+      setIsTogglingRestriction(false);
+      handleRestrictionDialogClose();
+    }
+  };
 
   const handleHoldClick = (holdType, isEnabled) => {
     setLitigationDays("");
@@ -604,6 +647,76 @@ export const CippExchangeInfoCard = (props) => {
                         </Typography>
                         <Typography variant="body2" fontWeight={500} color={exchangeData?.BlockedForSpam ? "error.main" : "inherit"}>
                           {exchangeData?.BlockedForSpam ? "Blocked" : "Clear"}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Paper>
+                </Tooltip>
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <Tooltip title={userPrincipalName ? `Click to ${exchangeData?.BlockExternalInbound ? 'allow' : 'block'} external inbound mail` : 'User info not available'}>
+                  <Paper
+                    variant="outlined"
+                    onClick={userPrincipalName ? () => handleRestrictionClick("Inbound", exchangeData?.BlockExternalInbound) : undefined}
+                    sx={{
+                      p: 1.5,
+                      cursor: userPrincipalName ? "pointer" : "default",
+                      transition: "all 0.15s ease-in-out",
+                      "&:hover": userPrincipalName ? {
+                        borderColor: "primary.main",
+                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                      } : {},
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      {isTogglingRestriction && restrictionDialog.direction === "Inbound" ? (
+                        <CircularProgress size={20} />
+                      ) : exchangeData?.BlockExternalInbound ? (
+                        <Block fontSize="small" color="warning" />
+                      ) : (
+                        <CheckCircle fontSize="small" color="success" />
+                      )}
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Ext. Inbound
+                        </Typography>
+                        <Typography variant="body2" fontWeight={500}>
+                          {exchangeData?.BlockExternalInbound ? "Blocked" : "Allowed"}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Paper>
+                </Tooltip>
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <Tooltip title={userPrincipalName ? `Click to ${exchangeData?.BlockExternalOutbound ? 'allow' : 'block'} external outbound mail` : 'User info not available'}>
+                  <Paper
+                    variant="outlined"
+                    onClick={userPrincipalName ? () => handleRestrictionClick("Outbound", exchangeData?.BlockExternalOutbound) : undefined}
+                    sx={{
+                      p: 1.5,
+                      cursor: userPrincipalName ? "pointer" : "default",
+                      transition: "all 0.15s ease-in-out",
+                      "&:hover": userPrincipalName ? {
+                        borderColor: "primary.main",
+                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                      } : {},
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      {isTogglingRestriction && restrictionDialog.direction === "Outbound" ? (
+                        <CircularProgress size={20} />
+                      ) : exchangeData?.BlockExternalOutbound ? (
+                        <Block fontSize="small" color="warning" />
+                      ) : (
+                        <CheckCircle fontSize="small" color="success" />
+                      )}
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Ext. Outbound
+                        </Typography>
+                        <Typography variant="body2" fontWeight={500}>
+                          {exchangeData?.BlockExternalOutbound ? "Blocked" : "Allowed"}
                         </Typography>
                       </Box>
                     </Stack>
@@ -1310,6 +1423,118 @@ export const CippExchangeInfoCard = (props) => {
               : holdDialog.currentlyEnabled
                 ? "Disable Hold"
                 : "Enable Hold"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* External Mail Restriction Dialog */}
+      <Dialog
+        open={restrictionDialog.open}
+        onClose={handleRestrictionDialogClose}
+        maxWidth="sm"
+        fullWidth
+        disableRestoreFocus
+      >
+        <DialogTitle>
+          {restrictionDialog.currentlyBlocked ? "Allow" : "Block"} External{" "}
+          {restrictionDialog.direction} Mail?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText component="div">
+            Are you sure you want to{" "}
+            {restrictionDialog.currentlyBlocked ? "allow" : "block"} external{" "}
+            {restrictionDialog.direction?.toLowerCase()} mail for this mailbox?
+
+            {!restrictionDialog.currentlyBlocked &&
+              restrictionDialog.direction === "Inbound" && (
+                <Alert severity="warning" sx={{ mt: 2 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                    Blocking external inbound mail means:
+                  </Typography>
+                  <Typography variant="body2" component="div">
+                    <ul style={{ margin: 0, paddingLeft: 20 }}>
+                      <li>
+                        Only internal (authenticated) senders can email this
+                        mailbox
+                      </li>
+                      <li>
+                        External senders will receive a non-delivery report
+                        (NDR)
+                      </li>
+                      <li>
+                        This includes customers, vendors, and any sender outside
+                        the organization
+                      </li>
+                    </ul>
+                  </Typography>
+                </Alert>
+              )}
+
+            {!restrictionDialog.currentlyBlocked &&
+              restrictionDialog.direction === "Outbound" && (
+                <Alert severity="warning" sx={{ mt: 2 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                    Blocking external outbound mail means:
+                  </Typography>
+                  <Typography variant="body2" component="div">
+                    <ul style={{ margin: 0, paddingLeft: 20 }}>
+                      <li>
+                        This mailbox will not be able to send email to external
+                        recipients
+                      </li>
+                      <li>
+                        The sender will receive a non-delivery report (NDR) when
+                        attempting to send externally
+                      </li>
+                      <li>
+                        A transport rule will be auto-created in the tenant to
+                        enforce this restriction
+                      </li>
+                    </ul>
+                  </Typography>
+                </Alert>
+              )}
+
+            {restrictionDialog.currentlyBlocked && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                <Typography variant="body2">
+                  {restrictionDialog.direction === "Inbound"
+                    ? "This will allow external senders to email this mailbox again."
+                    : "This will allow this mailbox to send email to external recipients again."}
+                </Typography>
+              </Alert>
+            )}
+          </DialogContentText>
+          {toggleRestriction.isError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {toggleRestriction.error?.message ||
+                "Failed to update mailbox restriction"}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleRestrictionDialogClose}
+            disabled={isTogglingRestriction}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleRestrictionToggle}
+            color={restrictionDialog.currentlyBlocked ? "primary" : "warning"}
+            variant="contained"
+            disabled={isTogglingRestriction}
+            startIcon={
+              isTogglingRestriction ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : null
+            }
+          >
+            {isTogglingRestriction
+              ? "Updating..."
+              : restrictionDialog.currentlyBlocked
+                ? `Allow External ${restrictionDialog.direction}`
+                : `Block External ${restrictionDialog.direction}`}
           </Button>
         </DialogActions>
       </Dialog>
