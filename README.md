@@ -142,9 +142,10 @@ A comprehensive voice management section with dedicated pages for each component
 - **Auto Attendants** -- view all auto attendants with voice response status, operator, language, and timezone; detailed off-canvas view with business hours and after-hours call flows, menu options, and holiday schedules
 - **Dial Plans** -- view all tenant dial plans with normalization rule counts; detailed off-canvas view with full rule list showing match patterns and translations
 
-### OneDrive File Browser & Cross-Drive Transfer
+### File Management
 
-- **File browser** for any user's OneDrive -- navigate folders, download, rename, move, copy, delete files, and create folders without leaving the portal
+- **Tenant-wide file search** -- search across all SharePoint sites and OneDrive accounts in a tenant using Microsoft's KQL syntax. Filter by file name, type, author, date, path, and more. Results include a copy-link button for sharing direct file URLs with end users, a browse-to-location button to jump into the file browser, and an open-in-SharePoint link. Built-in search tips guide users through KQL operators and combined filters.
+- **File browser** for any user's OneDrive or SharePoint site -- navigate folders, download, rename, move, copy, delete files, and create folders without leaving the portal. Includes a location switcher to jump between SharePoint sites or OneDrive users without returning to the landing page.
 - **Cross-drive transfer wizard** -- move or copy files between OneDrive accounts and SharePoint sites with a visual file picker and destination browser
 
 ### SharePoint Recycle Bin
@@ -196,7 +197,7 @@ Structured error formatting throughout the application. The `FormattedResultText
 
 ### Organized Navigation
 
-Deeply nested navigation menus that group related pages together, reducing menu length and making features easier to find -- Groups with Group Templates, Users with Offboarding Wizard and Risky Users, Business Voice with Phone Numbers, Call Queues, Auto Attendants, and Dial Plans, and more.
+Deeply nested navigation menus that group related pages together, reducing menu length and making features easier to find -- Groups with Group Templates, Users with Offboarding Wizard and Risky Users, Business Voice with Phone Numbers, Call Queues, Auto Attendants, and Dial Plans, File Management with File Search, File Browser, and File Transfer, and more.
 
 ### Bulk Domain Migration
 
