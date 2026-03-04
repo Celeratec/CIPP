@@ -228,7 +228,7 @@ const Page = () => {
                     <li>
                       <Typography variant="body2" color="text.secondary">
                         <strong>Exact phrase</strong> &mdash; Use quotes for exact matches.
-                        E.g. <code>&quot;EIN GTC Iconic&quot;</code>
+                        E.g. <code>&quot;quarterly budget report&quot;</code>
                       </Typography>
                     </li>
                   </Box>
@@ -276,8 +276,8 @@ const Page = () => {
                   <Box component="ul" sx={{ m: 0, pl: 2.5, "& li": { mb: 0.5 } }}>
                     <li>
                       <Typography variant="body2" color="text.secondary">
-                        <code>EIN GTC filetype:pdf</code> &mdash; PDFs
-                        containing &quot;EIN&quot; and &quot;GTC&quot;
+                        <code>annual report filetype:pdf</code> &mdash; PDFs
+                        containing &quot;annual&quot; and &quot;report&quot;
                       </Typography>
                     </li>
                     <li>
