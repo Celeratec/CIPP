@@ -29,11 +29,13 @@ import {
   Info,
   ExpandMore,
   LightbulbOutlined,
+  ContentCopy,
+  Check,
 } from "@mui/icons-material";
 import { CippHead } from "../../../components/CippComponents/CippHead";
 import { ApiPostCall } from "../../../api/ApiCall";
 import { useSettings } from "../../../hooks/use-settings";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { getFileIcon } from "../../../utils/get-file-icon";
 
 const PAGE_SIZE = 25;
@@ -91,6 +93,16 @@ const Page = () => {
       query,
     });
   };
+
+  const [copiedId, setCopiedId] = useState(null);
+
+  const handleCopyLink = useCallback((item) => {
+    if (!item.webUrl) return;
+    navigator.clipboard.writeText(item.webUrl).then(() => {
+      setCopiedId(item.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  }, []);
 
   const columns = useMemo(
     () => [
@@ -565,6 +577,29 @@ const Page = () => {
                           justifyContent: "flex-end",
                         }}
                       >
+                        {item.webUrl && (
+                          <Tooltip
+                            title={
+                              copiedId === item.id
+                                ? "Copied!"
+                                : "Copy shareable link"
+                            }
+                          >
+                            <IconButton
+                              size="small"
+                              onClick={() => handleCopyLink(item)}
+                              color={
+                                copiedId === item.id ? "success" : "default"
+                              }
+                            >
+                              {copiedId === item.id ? (
+                                <Check fontSize="small" />
+                              ) : (
+                                <ContentCopy fontSize="small" />
+                              )}
+                            </IconButton>
+                          </Tooltip>
+                        )}
                         {(item.siteId || item.driveId) && (
                           <Tooltip title="Browse in File Browser">
                             <IconButton
