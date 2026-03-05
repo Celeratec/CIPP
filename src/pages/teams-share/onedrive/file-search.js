@@ -106,12 +106,12 @@ const Page = () => {
 
   const columns = useMemo(
     () => [
-      { id: "name", label: "Name", width: "30%" },
-      { id: "location", label: "Location", width: "25%" },
-      { id: "sizeFormatted", label: "Size", width: "10%" },
-      { id: "lastModified", label: "Modified", width: "15%" },
-      { id: "lastModifiedBy", label: "Modified By", width: "12%" },
-      { id: "actions", label: "", width: "8%" },
+      { id: "name", label: "Name", flex: 1, minWidth: 200 },
+      { id: "location", label: "Location", width: 200, align: "right" },
+      { id: "sizeFormatted", label: "Size", width: 80, align: "right" },
+      { id: "lastModified", label: "Modified", width: 120, align: "right" },
+      { id: "lastModifiedBy", label: "Modified By", width: 130, align: "right" },
+      { id: "actions", label: "", width: 110, align: "right" },
     ],
     []
   );
@@ -426,7 +426,16 @@ const Page = () => {
                   }}
                 >
                   {columns.map((col) => (
-                    <Box key={col.id} sx={{ width: col.width, px: 1 }}>
+                    <Box
+                      key={col.id}
+                      sx={{
+                        ...(col.flex
+                          ? { flex: col.flex, minWidth: col.minWidth }
+                          : { width: col.width, flexShrink: 0 }),
+                        px: 1,
+                        textAlign: col.align || "left",
+                      }}
+                    >
                       <Typography
                         variant="caption"
                         fontWeight={600}
@@ -482,12 +491,13 @@ const Page = () => {
                       {/* Name */}
                       <Box
                         sx={{
-                          width: "30%",
+                          flex: 1,
+                          minWidth: 200,
                           px: 1,
                           display: "flex",
                           alignItems: "center",
                           gap: 1.5,
-                          minWidth: 0,
+                          overflow: "hidden",
                         }}
                       >
                         <Box
@@ -518,7 +528,7 @@ const Page = () => {
                       </Box>
 
                       {/* Location */}
-                      <Box sx={{ width: "25%", px: 1, minWidth: 0 }}>
+                      <Box sx={{ width: 200, flexShrink: 0, px: 1, minWidth: 0, textAlign: "right" }}>
                         <Tooltip
                           title={locationLabel || "Root"}
                           enterDelay={500}
@@ -534,14 +544,14 @@ const Page = () => {
                       </Box>
 
                       {/* Size */}
-                      <Box sx={{ width: "10%", px: 1 }}>
+                      <Box sx={{ width: 80, flexShrink: 0, px: 1, textAlign: "right" }}>
                         <Typography variant="body2" color="text.secondary">
                           {item.sizeFormatted}
                         </Typography>
                       </Box>
 
                       {/* Modified */}
-                      <Box sx={{ width: "15%", px: 1 }}>
+                      <Box sx={{ width: 120, flexShrink: 0, px: 1, textAlign: "right" }}>
                         <Typography variant="body2" color="text.secondary">
                           {item.lastModified
                             ? new Date(item.lastModified).toLocaleDateString(
@@ -557,7 +567,7 @@ const Page = () => {
                       </Box>
 
                       {/* Modified By */}
-                      <Box sx={{ width: "12%", px: 1, minWidth: 0 }}>
+                      <Box sx={{ width: 130, flexShrink: 0, px: 1, minWidth: 0, textAlign: "right" }}>
                         <Typography
                           variant="body2"
                           color="text.secondary"
@@ -570,7 +580,8 @@ const Page = () => {
                       {/* Actions */}
                       <Box
                         sx={{
-                          width: "8%",
+                          width: 110,
+                          flexShrink: 0,
                           px: 1,
                           display: "flex",
                           gap: 0.5,
