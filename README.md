@@ -169,7 +169,7 @@ Centralized management of Microsoft Entra cross-tenant access policies, B2B coll
 Dedicated settings pages for policies that normally require switching between multiple Microsoft admin portals:
 
 - **SharePoint Sharing Settings** -- external sharing level, domain restrictions, default link type, anonymous link controls, and resharing behavior
-- **Teams Tenant Settings** -- federation and external access, guest access, cloud storage providers, meeting policy, and messaging policy, organized in a tabbed interface with per-section save
+- **Teams Tenant Settings** -- federation and external access, guest access, cloud storage providers, meeting policy, messaging policy, and meeting background management, organized in a tabbed interface with per-section save. The meeting backgrounds tab lets administrators enable organization-wide custom backgrounds, view currently configured images, assign branding policies to individual users, and links directly to the Teams Admin Center for image upload (Microsoft does not expose a public API for background image upload). Includes image requirement guidance with dimension warnings.
 
 ### Cross-Service Context Clues
 
@@ -243,7 +243,7 @@ The migration changes each user's UPN and primary email to the new domain while 
 
 - **Frontend:** React / Next.js 16 with Material-UI (MUI v7)
 - **Backend:** PowerShell Azure Functions
-- **API:** Microsoft Graph API, SharePoint Admin API, SharePoint REST API, Teams PowerShell cmdlets (via `New-TeamsRequest`), Power Platform BAP API, Dataverse Web API, NinjaOne API (via CIPP extension)
+- **API:** Microsoft Graph API, SharePoint Admin API, SharePoint REST API, Teams PowerShell cmdlets (via `New-TeamsRequest`, including meeting branding policy management), Power Platform BAP API, Dataverse Web API, NinjaOne API (via CIPP extension)
 - **Hosting:** Azure Static Web Apps + Azure Functions
 - **Data:** React Query for caching and state management
 
