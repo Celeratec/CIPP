@@ -572,6 +572,7 @@ const Page = () => {
                   select
                   fullWidth
                   label="Default sharing link type"
+                  InputLabelProps={{ shrink: true }}
                   value={formData.defaultSharingLinkType}
                   onChange={(e) => handleFieldChange("defaultSharingLinkType", e.target.value)}
                 >
@@ -595,6 +596,7 @@ const Page = () => {
                   select
                   fullWidth
                   label="Default link permission"
+                  InputLabelProps={{ shrink: true }}
                   value={formData.defaultLinkPermission}
                   onChange={(e) => handleFieldChange("defaultLinkPermission", e.target.value)}
                 >
@@ -623,6 +625,7 @@ const Page = () => {
                         select
                         fullWidth
                         label="File anonymous link permission"
+                        InputLabelProps={{ shrink: true }}
                         value={formData.fileAnonymousLinkType}
                         onChange={(e) =>
                           handleFieldChange("fileAnonymousLinkType", e.target.value)
@@ -636,6 +639,7 @@ const Page = () => {
                         select
                         fullWidth
                         label="Folder anonymous link permission"
+                        InputLabelProps={{ shrink: true }}
                         value={formData.folderAnonymousLinkType}
                         onChange={(e) =>
                           handleFieldChange("folderAnonymousLinkType", e.target.value)

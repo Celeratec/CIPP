@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Layout as DashboardLayout } from "../../../layouts/index.js";
 import { CippHead } from "../../../components/CippComponents/CippHead.jsx";
 import {
@@ -12,7 +12,13 @@ import {
   Divider,
   FormControl,
   FormControlLabel,
+  Grid,
   IconButton,
+  Link,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
   MenuItem,
   Radio,
   RadioGroup,
@@ -24,7 +30,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Add, Delete, Save, Refresh } from "@mui/icons-material";
+import { Add, Delete, Save, Refresh, OpenInNew, Wallpaper } from "@mui/icons-material";
 import { useSettings } from "../../../hooks/use-settings.js";
 import { ApiGetCall, ApiPostCall } from "../../../api/ApiCall.jsx";
 import { CippApiResults } from "../../../components/CippComponents/CippApiResults.jsx";
@@ -238,6 +244,27 @@ const Page = () => {
   const [formData, setFormData] = useState(null);
   const [changedSections, setChangedSections] = useState(new Set());
   const [riskDialogOpen, setRiskDialogOpen] = useState(false);
+  const [assignUser, setAssignUser] = useState("");
+  const [selectedPolicy, setSelectedPolicy] = useState("");
+
+  const assignPolicy = ApiPostCall({
+    relatedQueryKeys: [`TeamsSettings-${currentTenant}`],
+  });
+
+  const handleAssignPolicy = useCallback(() => {
+    if (!assignUser || !selectedPolicy) return;
+    assignPolicy.mutate({
+      url: "/api/EditTeamsSettings",
+      data: {
+        tenantFilter: currentTenant,
+        section: "backgrounds",
+        assignUser,
+        policyName: selectedPolicy,
+      },
+    });
+    setAssignUser("");
+    setSelectedPolicy("");
+  }, [assignUser, selectedPolicy, currentTenant]);
 
   const activeRisks = useMemo(() => {
     if (!formData) return [];
@@ -299,6 +326,10 @@ const Page = () => {
         allowSecurityEndUserReporting: d.allowSecurityEndUserReporting ?? true,
         allowCommunicationComplianceEndUserReporting:
           d.allowCommunicationComplianceEndUserReporting ?? true,
+        // Backgrounds
+        enableMeetingBackgroundImages: d.enableMeetingBackgroundImages ?? false,
+        meetingBackgroundImages: d.meetingBackgroundImages ?? [],
+        brandingPolicies: d.brandingPolicies ?? [],
       });
     }
   }, [teamsSettings.data]);
@@ -308,6 +339,7 @@ const Page = () => {
     1: "client",
     2: "meeting",
     3: "messaging",
+    4: "backgrounds",
   };
 
   const handleFieldChange = (field, value) => {
@@ -359,6 +391,8 @@ const Page = () => {
       payload.allowSecurityEndUserReporting = formData.allowSecurityEndUserReporting;
       payload.allowCommunicationComplianceEndUserReporting =
         formData.allowCommunicationComplianceEndUserReporting;
+    } else if (section === "backgrounds") {
+      payload.enableMeetingBackgroundImages = formData.enableMeetingBackgroundImages;
     }
 
     updateSettings.mutate({
@@ -473,6 +507,16 @@ const Page = () => {
                   <Stack direction="row" spacing={1} alignItems="center">
                     <span>Messaging Policy</span>
                     {changedSections.has("messaging") && (
+                      <Chip label="modified" size="small" color="warning" />
+                    )}
+                  </Stack>
+                }
+              />
+              <Tab
+                label={
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <span>Meeting Backgrounds</span>
+                    {changedSections.has("backgrounds") && (
                       <Chip label="modified" size="small" color="warning" />
                     )}
                   </Stack>
@@ -920,6 +964,7 @@ const Page = () => {
                       select
                       fullWidth
                       label="Who can bypass the lobby?"
+                      InputLabelProps={{ shrink: true }}
                       value={formData.autoAdmittedUsers}
                       onChange={(e) => handleFieldChange("autoAdmittedUsers", e.target.value)}
                     >
@@ -945,6 +990,7 @@ const Page = () => {
                       select
                       fullWidth
                       label="Who can present?"
+                      InputLabelProps={{ shrink: true }}
                       value={formData.designatedPresenterRoleMode}
                       onChange={(e) =>
                         handleFieldChange("designatedPresenterRoleMode", e.target.value)
@@ -971,6 +1017,7 @@ const Page = () => {
                       select
                       fullWidth
                       label="Meeting chat"
+                      InputLabelProps={{ shrink: true }}
                       value={formData.meetingChatEnabledType}
                       onChange={(e) =>
                         handleFieldChange("meetingChatEnabledType", e.target.value)
@@ -1074,6 +1121,7 @@ const Page = () => {
                       select
                       fullWidth
                       label="Read receipts"
+                      InputLabelProps={{ shrink: true }}
                       value={formData.readReceiptsEnabledType}
                       onChange={(e) =>
                         handleFieldChange("readReceiptsEnabledType", e.target.value)
@@ -1139,6 +1187,195 @@ const Page = () => {
                       }
                       label="Allow users to report messages as inappropriate content"
                     />
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Stack>
+          </TabPanel>
+
+          {/* Meeting Backgrounds Tab */}
+          <TabPanel value={tabValue} index={4}>
+            <Stack spacing={3}>
+              <Alert severity="info" variant="outlined">
+                Custom meeting backgrounds require <strong>Teams Premium</strong> licenses for users
+                to see admin-uploaded backgrounds. Users without Teams Premium can still upload their
+                own personal backgrounds.
+              </Alert>
+
+              <Card>
+                <CardHeader
+                  title="Custom Meeting Backgrounds"
+                  subheader="Enable organization-wide custom backgrounds for Teams meetings"
+                />
+                <CardContent>
+                  <Stack spacing={3}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData.enableMeetingBackgroundImages}
+                          onChange={(e) =>
+                            handleFieldChange("enableMeetingBackgroundImages", e.target.checked)
+                          }
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="body1">
+                            Use background images from my organization
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            When enabled, users with Teams Premium can select from custom backgrounds
+                            uploaded by the admin in meetings, webinars, and town halls.
+                          </Typography>
+                        </Box>
+                      }
+                    />
+
+                    <Divider />
+
+                    <Box>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Current Background Images
+                      </Typography>
+                      {formData.meetingBackgroundImages?.length > 0 ? (
+                        <List dense>
+                          {formData.meetingBackgroundImages.map((img, idx) => (
+                            <ListItem key={idx}>
+                              <ListItemIcon>
+                                <Wallpaper fontSize="small" />
+                              </ListItemIcon>
+                              <ListItemText
+                                primary={img?.FileName ?? img?.Id ?? `Background ${idx + 1}`}
+                                secondary={img?.ContentType ?? null}
+                              />
+                            </ListItem>
+                          ))}
+                        </List>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                          No custom background images found. Upload backgrounds via the Teams Admin
+                          Center.
+                        </Typography>
+                      )}
+                    </Box>
+
+                    <Divider />
+
+                    <Box>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Upload Background Images
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Microsoft does not provide an API for uploading background images. Backgrounds
+                        must be uploaded through the Teams Admin Center.
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        endIcon={<OpenInNew />}
+                        component={Link}
+                        href="https://admin.teams.microsoft.com/meetings/customization"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open Teams Admin Center
+                      </Button>
+                    </Box>
+
+                    <Divider />
+
+                    <Box>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Image Requirements
+                      </Typography>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <Stack spacing={0.5}>
+                            <Typography variant="body2">
+                              <strong>Formats:</strong> PNG, JPEG
+                            </Typography>
+                            <Typography variant="body2">
+                              <strong>Recommended:</strong> 1920 x 1080 px (16:9)
+                            </Typography>
+                            <Typography variant="body2">
+                              <strong>Minimum:</strong> 360 x 360 px
+                            </Typography>
+                          </Stack>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Stack spacing={0.5}>
+                            <Typography variant="body2">
+                              <strong>Maximum:</strong> 3840 x 2160 px
+                            </Typography>
+                            <Typography variant="body2">
+                              <strong>Limit:</strong> 50 images per organization
+                            </Typography>
+                          </Stack>
+                        </Grid>
+                      </Grid>
+                      <Alert severity="warning" sx={{ mt: 2 }}>
+                        Images below 1920 x 1080 may appear blurry or distorted when displayed as a
+                        full-screen meeting background. GIF format is not supported by Microsoft for
+                        meeting backgrounds.
+                      </Alert>
+                    </Box>
+                  </Stack>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader
+                  title="Assign Branding Policy to User"
+                  subheader="Grant a specific meeting branding policy to an individual user"
+                />
+                <CardContent>
+                  <Stack spacing={2}>
+                    {formData.brandingPolicies?.length > 0 ? (
+                      <>
+                        <TextField
+                          fullWidth
+                          label="User (UPN or Object ID)"
+                          InputLabelProps={{ shrink: true }}
+                          value={assignUser}
+                          onChange={(e) => setAssignUser(e.target.value)}
+                          placeholder="user@domain.com"
+                        />
+                        <TextField
+                          select
+                          fullWidth
+                          label="Branding policy"
+                          InputLabelProps={{ shrink: true }}
+                          value={selectedPolicy}
+                          onChange={(e) => setSelectedPolicy(e.target.value)}
+                        >
+                          <MenuItem value="">
+                            <em>Select a policy</em>
+                          </MenuItem>
+                          {formData.brandingPolicies.map((p) => (
+                            <MenuItem key={p.Identity} value={p.Identity}>
+                              {p.Identity}
+                              {p.Description ? ` — ${p.Description}` : ""}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                        <Box>
+                          <Button
+                            variant="contained"
+                            onClick={handleAssignPolicy}
+                            disabled={
+                              !assignUser || !selectedPolicy || assignPolicy.isPending
+                            }
+                          >
+                            Assign Policy
+                          </Button>
+                        </Box>
+                        <CippApiResults apiObject={assignPolicy} />
+                      </>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                        No branding policies found for this tenant. Create a policy in the Teams
+                        Admin Center before assigning it to users.
+                      </Typography>
+                    )}
                   </Stack>
                 </CardContent>
               </Card>

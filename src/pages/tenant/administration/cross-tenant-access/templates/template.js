@@ -561,6 +561,7 @@ const Page = () => {
                 select
                 fullWidth
                 label="Guest invite restrictions"
+                InputLabelProps={{ shrink: true }}
                 value={settings.allowInvitesFrom ?? "adminsAndGuestInviters"}
                 onChange={(e) => handleSettingsChange("allowInvitesFrom", e.target.value)}
               >
@@ -581,6 +582,7 @@ const Page = () => {
                 select
                 fullWidth
                 label="Guest user access level"
+                InputLabelProps={{ shrink: true }}
                 value={
                   settings.guestUserRoleId ?? "10dae51f-b6af-4016-8d66-8c2a99b929b3"
                 }

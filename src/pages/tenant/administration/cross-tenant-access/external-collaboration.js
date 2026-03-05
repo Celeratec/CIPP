@@ -303,6 +303,7 @@ const Page = () => {
                 select
                 fullWidth
                 label="Guest invite restrictions"
+                InputLabelProps={{ shrink: true }}
                 value={formData.allowInvitesFrom}
                 onChange={(e) => handleFieldChange("allowInvitesFrom", e.target.value)}
               >
