@@ -1,3 +1,6 @@
+import { getCachedLicense } from "./cipp-license-cache";
+import licenseBackfillManager from "./cipp-license-backfill-manager";
+
 // Lazy-load the ~2.1MB M365 license JSON files only when needed
 let _m365LicensesCache = null;
 const getM365Licenses = async () => {
@@ -108,6 +111,7 @@ getM365Licenses();
 export const getCippLicenseTranslation = (licenseArray) => {
   const M365Licenses = getM365LicensesSync();
   let licenses = [];
+  let missingSkuIds = [];
 
   if (Array.isArray(licenseArray) && typeof licenseArray[0] === "string") {
     return licenseArray;
@@ -122,19 +126,19 @@ export const getCippLicenseTranslation = (licenseArray) => {
   }
 
   licenseArray?.forEach((licenseAssignment) => {
-    // Skip if licenseAssignment is null/undefined
     if (!licenseAssignment) {
       return;
     }
     
     let found = false;
+
+    // 1. Check static JSON files
     for (let x = 0; x < M365Licenses.length; x++) {
       if (licenseAssignment.skuId === M365Licenses[x].GUID) {
         const displayName = M365Licenses[x].Product_Display_Name;
         if (displayName) {
           licenses.push(displayName);
         } else {
-          // Fallback to formatted skuPartNumber if display name is missing
           const formatted = formatSkuPartNumber(licenseAssignment.skuPartNumber);
           licenses.push(formatted || `License (${licenseAssignment.skuId?.substring(0, 8) || "Unknown"})`);
         }
@@ -142,18 +146,35 @@ export const getCippLicenseTranslation = (licenseArray) => {
         break;
       }
     }
+
+    if (!found && licenseAssignment.skuId) {
+      // 2. Check dynamic cache (populated by backfill API)
+      const cachedName = getCachedLicense(licenseAssignment.skuId);
+      if (cachedName) {
+        licenses.push(cachedName);
+        found = true;
+      }
+    }
+
     if (!found) {
-      // License not in lookup - format the skuPartNumber nicely
+      // 3. Use formatted skuPartNumber as immediate fallback
       const formatted = formatSkuPartNumber(licenseAssignment.skuPartNumber);
       if (formatted) {
         licenses.push(formatted);
       } else if (licenseAssignment.skuId) {
-        // Last resort: show partial GUID
         licenses.push(`License (${licenseAssignment.skuId.substring(0, 8)}...)`);
       }
-      // Skip completely invalid entries (no skuPartNumber and no skuId)
+
+      // 4. Queue for API backfill so the display auto-refreshes with accurate names
+      if (licenseAssignment.skuId) {
+        missingSkuIds.push(licenseAssignment.skuId);
+      }
     }
   });
+
+  if (missingSkuIds.length > 0) {
+    licenseBackfillManager.addMissingSkuIds(missingSkuIds);
+  }
 
   if (!licenses || licenses.length === 0) {
     return ["No Licenses Assigned"];
