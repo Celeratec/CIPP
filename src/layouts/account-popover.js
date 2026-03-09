@@ -152,7 +152,7 @@ export const AccountPopover = (props) => {
                     secondary={orgData?.data?.Org?.Domain}
                   />
                 </ListItem>
-                <ListItemButton onClick={onThemeSwitch}>
+                <ListItemButton onClick={() => { popover.handleClose(); onThemeSwitch(); }}>
                   <ListItemIcon>
                     <SvgIcon fontSize="small">
                       {paletteMode === "dark" ? <SunIcon /> : <MoonIcon />}
@@ -162,7 +162,7 @@ export const AccountPopover = (props) => {
                 </ListItemButton>
               </>
             )}
-            <ListItemButton onClick={() => router.push("/cipp/preferences")}>
+            <ListItemButton onClick={() => { popover.handleClose(); router.push("/cipp/preferences"); }}>
               <ListItemIcon>
                 <SvgIcon fontSize="small">
                   <CogIcon />

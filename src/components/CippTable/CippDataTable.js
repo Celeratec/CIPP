@@ -51,6 +51,7 @@ import { isEqual } from "lodash"; // Import lodash for deep comparison
 import { useRouter } from "next/router";
 import { getCippTranslation } from "../../utils/get-cipp-translation";
 import CippUserAvatar from "../CippComponents/CippUserAvatar";
+import { useLicenseBackfill } from "../../hooks/use-license-backfill";
 
 // Helper functions for row action category grouping and styling
 const getCategoryIcon = (category) => {
@@ -1752,6 +1753,8 @@ export const CippDataTable = (props) => {
     initialColumnFilters = null, // Optional initial column filters (e.g. [{ id: "assignedLicenses", value: "licensed" }])
   } = props;
 
+  const { updateTrigger } = useLicenseBackfill();
+
   // Create a map of column IDs to their filterType for quick lookup
   const filterTypeMap = useMemo(() => {
     if (!filters || !Array.isArray(filters)) return {};
@@ -2000,7 +2003,7 @@ export const CippDataTable = (props) => {
   );
   //create memoized version of usedColumns, and usedData
   const memoizedColumns = useMemo(() => usedColumns, [usedColumns]);
-  const memoizedData = useMemo(() => usedData, [usedData]);
+  const memoizedData = useMemo(() => usedData, [usedData, updateTrigger]);
 
   const handleActionDisabled = (row, action) => {
     if (action?.condition) {

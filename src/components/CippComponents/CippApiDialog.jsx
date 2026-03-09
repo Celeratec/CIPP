@@ -282,10 +282,14 @@ export const CippApiDialog = (props) => {
     return div.innerHTML;
   };
 
-  const getNestedValue = (obj, path) => {
-    const value = path
+  const getRawNestedValue = (obj, path) => {
+    return path
       .split(".")
       .reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
+  };
+
+  const getNestedValue = (obj, path) => {
+    const value = getRawNestedValue(obj, path);
     return typeof value === "string" ? escapeHtml(value) : value;
   };
 
@@ -301,7 +305,7 @@ export const CippApiDialog = (props) => {
       linkOpenedRef.current = true;
       const linkWithData = api.link.replace(
         /\[([^\]]+)\]/g,
-        (_, key) => getNestedValue(row, key) || `[${key}]`,
+        (_, key) => getRawNestedValue(row, key) || `[${key}]`,
       );
       if (linkWithData.startsWith("/") && !api?.external) {
         router.push(linkWithData, undefined, { shallow: true });

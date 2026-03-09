@@ -447,7 +447,7 @@ export const CippApiResults = (props) => {
             severity: res.severity,
             visible: true,
             ...res,
-          }))
+          })),
         );
       } else {
         setFinalResults([]);
@@ -478,7 +478,7 @@ export const CippApiResults = (props) => {
 
     const headers = Object.keys(finalResults[0]);
     const rows = finalResults.map((item) =>
-      headers.map((header) => `"${item[header] || ""}"`).join(",")
+      headers.map((header) => `"${item[header] || ""}"`).join(","),
     );
     const csvContent = [headers.join(","), ...rows].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -593,6 +593,7 @@ export const CippApiResults = (props) => {
                             language={typeof resultObj.details === "object" ? "json" : "text"}
                             showLineNumbers={false}
                             type="syntax"
+                            readOnly={true}
                           />
                         </Box>
                       </Collapse>

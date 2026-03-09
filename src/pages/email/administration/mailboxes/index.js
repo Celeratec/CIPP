@@ -342,10 +342,11 @@ const Page = () => {
           relatedQueryKeys: [`ListMailboxes-${currentTenant}`],
           data: {
             Name: "Mailboxes",
+            Types: "None",
           },
           onSuccess: (response) => {
-            if (response?.QueueId) {
-              setSyncQueueId(response.QueueId);
+            if (response?.Metadata?.QueueId) {
+              setSyncQueueId(response.Metadata.QueueId);
             }
           },
         }}

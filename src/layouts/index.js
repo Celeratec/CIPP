@@ -21,14 +21,10 @@ import { useDispatch } from "react-redux";
 import { showToast } from "../store/toasts";
 import { Box, Container, Grid } from "@mui/system";
 import { CippImageCard } from "../components/CippCards/CippImageCard";
-import dynamic from "next/dynamic";
+import Page from "../pages/onboardingv2";
 import { useDialog } from "../hooks/use-dialog";
-
-// Lazy-load the setup wizard (9 components) only when the dialog is opened
-const OnboardingWizard = dynamic(() => import("../pages/onboardingv2"), { ssr: false });
 import { nativeMenuItems } from "./config";
 import { CippBreadcrumbNav } from "../components/CippComponents/CippBreadcrumbNav";
-import { CippTenantSelector } from "../components/CippComponents/CippTenantSelector";
 
 const SIDE_NAV_WIDTH = 270;
 const SIDE_NAV_PINNED_WIDTH = 50;
@@ -68,10 +64,9 @@ const LayoutRoot = styled("div")(({ theme }) => ({
   display: "flex",
   flex: "1 1 auto",
   maxWidth: "100%",
-  minHeight: "100vh",
-  // Negative margin pulls content up behind the translucent header
-  marginTop: TOP_NAV_HEIGHT - 20,
-  paddingTop: 20,
+  height: "100vh",
+  overflow: "hidden",
+  paddingTop: TOP_NAV_HEIGHT,
   [theme.breakpoints.up("lg")]: {
     paddingLeft: SIDE_NAV_WIDTH,
   },
@@ -82,6 +77,8 @@ const LayoutContainer = styled("div")({
   flex: "1 1 auto",
   flexDirection: "column",
   width: "100%",
+  overflowY: "auto",
+  overscrollBehavior: "contain",
 });
 
 export const Layout = (props) => {
@@ -94,7 +91,7 @@ export const Layout = (props) => {
   const [menuItems, setMenuItems] = useState(nativeMenuItems);
   const lastUserSettingsUpdate = useRef(null);
   const currentTenant = settings?.currentTenant;
-  const [hideSidebar, setHideSidebar] = useState(true);
+  const [hideSidebar, setHideSidebar] = useState(false);
 
   const swaStatus = ApiGetCall({
     url: "/.auth/me",
@@ -182,8 +179,6 @@ export const Layout = (props) => {
       };
       const filteredMenu = filterItemsByRole(nativeMenuItems);
       setMenuItems(filteredMenu);
-      // Show sidebar when user roles are loaded successfully
-      setHideSidebar(false);
     } else if (
       swaStatus.isLoading ||
       swaStatus.data?.clientPrincipal === null ||
@@ -233,12 +228,24 @@ export const Layout = (props) => {
         }
         // get current devtools settings
         var showDevtools = settings.showDevtools;
-        // get current bookmarks
+        // get current bookmarks and navigation settings (device-local only)
         var bookmarks = settings.bookmarks;
+        var bookmarkSidebar = settings.bookmarkSidebar;
+        var bookmarkPopover = settings.bookmarkPopover;
+        var bookmarkReorderMode = settings.bookmarkReorderMode;
+        var bookmarkLocked = settings.bookmarkLocked;
+        var bookmarkSortOrder = settings.bookmarkSortOrder;
+        var bookmarksOpen = settings.bookmarksOpen;
 
         settings.handleUpdate({
           ...userSettingsAPI.data,
           bookmarks,
+          bookmarkSidebar,
+          bookmarkPopover,
+          bookmarkReorderMode,
+          bookmarkLocked,
+          bookmarkSortOrder,
+          bookmarksOpen,
           showDevtools,
         });
 
@@ -283,11 +290,6 @@ export const Layout = (props) => {
   const [setupCompleted, setSetupCompleted] = useState(true);
   const createDialog = useDialog();
   const dispatch = useDispatch();
-  const mobileTenantSelector = mdDown ? (
-    <Box sx={{ mx: 3, mt: 3, mb: 1 }}>
-      <CippTenantSelector width="100%" refreshButton={true} tenantButton={true} />
-    </Box>
-  ) : null;
   useEffect(() => {
     if (alertsAPI.isSuccess && !alertsAPI.isFetching) {
       if (alertsAPI.data.length > 0) {
@@ -339,7 +341,7 @@ export const Layout = (props) => {
           >
             <DialogTitle>Setup Wizard</DialogTitle>
             <DialogContent>
-              <OnboardingWizard />
+              <Page />
             </DialogContent>
           </Dialog>
           {!setupCompleted && (
@@ -355,7 +357,6 @@ export const Layout = (props) => {
           {(currentTenant === "AllTenants" || !currentTenant) && !allTenantsSupport ? (
             <Box sx={{ flexGrow: 1, py: 3 }}>
               <Container maxWidth={false}>
-                {mobileTenantSelector}
                 <CippBreadcrumbNav mode="hierarchical" />
                 <Grid container spacing={3}>
                   <Grid size={6}>
@@ -372,8 +373,7 @@ export const Layout = (props) => {
             </Box>
           ) : (
             <Stack>
-              {mobileTenantSelector}
-              <Box sx={{ mx: 3, mt: mdDown ? 2 : 3 }}>
+              <Box sx={{ mx: 3, mt: 3 }}>
                 <CippBreadcrumbNav mode="hierarchical" />
               </Box>
               <Divider sx={{ mb: 2 }} />

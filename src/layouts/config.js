@@ -265,6 +265,11 @@ export const nativeMenuItems = [
               },
             ],
           },
+          {
+            title: "Vacation Mode",
+            path: "/identity/administration/vacation-mode",
+            permissions: ["Identity.User.*"],
+          },
         ],
       },
       {

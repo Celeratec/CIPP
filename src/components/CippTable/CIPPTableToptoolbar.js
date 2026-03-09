@@ -1538,6 +1538,7 @@ export const CIPPTableToptoolbar = ({
               code={JSON.stringify(usedData, null, 2)}
               editorHeight="1000px"
               showLineNumbers={!mdDown}
+              readOnly={true}
             />
           </Stack>
         </CippOffCanvas>

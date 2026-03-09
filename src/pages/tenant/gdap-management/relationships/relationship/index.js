@@ -177,7 +177,7 @@ const Page = () => {
               <Alert severity="warning">
                 This relationship does not have all the Manage365 recommended roles. See the{" "}
                 <Link
-                  href="https://docs.cipp.app/setup/gdap/recommended-roles"
+                  href="https://docs.cipp.app/setup/installation/recommended-roles"
                   target="_blank"
                   rel="noreferrer"
                 >

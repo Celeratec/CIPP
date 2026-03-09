@@ -48,6 +48,7 @@ import {
 } from "@mui/icons-material";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 import { getCippLicenseTranslation } from "../../utils/get-cipp-license-translation";
+import { useLicenseBackfill } from "../../hooks/use-license-backfill";
 import { Stack, Grid, Box } from "@mui/system";
 import { useState, useRef, useMemo } from "react";
 import { ApiGetCall, ApiPostCall } from "../../api/ApiCall";
@@ -93,6 +94,7 @@ export const CippUserInfoCard = (props) => {
   const theme = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { updateTrigger } = useLicenseBackfill();
   const [photoTimestamp, setPhotoTimestamp] = useState(Date.now());
   const [uploadError, setUploadError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -830,7 +832,7 @@ export const CippUserInfoCard = (props) => {
         {/* Content Sections */}
         <Box sx={{ p: 2.5 }}>
           {/* Licenses Section */}
-          <Box sx={{ mb: 2.5 }}>
+          <Box key={`licenses-${updateTrigger}`} sx={{ mb: 2.5 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Badge fontSize="small" color="primary" />

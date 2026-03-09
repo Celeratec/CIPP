@@ -1,130 +1,29 @@
-import { 
-  Button, 
-  Tooltip, 
-  IconButton, 
-  useMediaQuery, 
-  useTheme,
-  Paper,
-  Avatar,
-  Typography,
-  Chip,
-  Divider,
-} from "@mui/material";
-import { alpha } from "@mui/material/styles";
-import { Box, Stack } from "@mui/system";
+import { Button } from "@mui/material";
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import Link from "next/link";
 import { TrashIcon, EyeIcon } from "@heroicons/react/24/outline";
 import {
   Visibility,
-  VisibilityOff,
   GroupAdd,
   Edit,
   LockOpen,
   Lock,
   GroupSharp,
   CloudSync,
-  People,
-  Security,
-  Email,
-  DynamicFeed,
-  Public,
-  PublicOff,
-  Info as InfoIcon,
-  Settings,
-  CalendarToday,
-  Sync,
-  Badge,
+  RocketLaunch,
 } from "@mui/icons-material";
-import { useState, useCallback } from "react";
-import { useRouter } from "next/router";
+import { Stack } from "@mui/system";
+import { useState } from "react";
 import { useSettings } from "../../../../hooks/use-settings";
-import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
-import { getInitials, stringToColor } from "../../../../utils/get-initials";
 
 const Page = () => {
   const pageTitle = "Groups";
   const [showMembers, setShowMembers] = useState(false);
   const { currentTenant } = useSettings();
-  const theme = useTheme();
-  const router = useRouter();
-
-  const handleCardClick = useCallback((group) => {
-    router.push(`/identity/administration/groups/edit?groupId=${group.id}&groupType=${encodeURIComponent(group.groupType || "")}`);
-  }, [router]);
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleMembersToggle = () => {
     setShowMembers(!showMembers);
-  };
-
-  // Card view configuration (works for both mobile and desktop)
-  const cardConfig = {
-    title: "displayName",
-    subtitle: "mail",
-    avatar: {
-      field: "displayName",
-    },
-    badges: [
-      {
-        field: "calculatedGroupType",
-        conditions: {
-          m365: { label: "Microsoft 365", color: "primary", icon: <GroupSharp fontSize="small" /> },
-          M365: { label: "Microsoft 365", color: "primary", icon: <GroupSharp fontSize="small" /> },
-          generic: { label: "Security", color: "warning", icon: <Security fontSize="small" /> },
-          Generic: { label: "Security", color: "warning", icon: <Security fontSize="small" /> },
-          security: { label: "Mail Security", color: "warning", icon: <Security fontSize="small" />, tooltip: "Mail-enabled security group" },
-          Security: { label: "Mail Security", color: "warning", icon: <Security fontSize="small" />, tooltip: "Mail-enabled security group" },
-          distributionList: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
-          DistributionList: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
-          distribution: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
-          Distribution: { label: "Distribution", color: "default", icon: <Email fontSize="small" /> },
-        },
-      },
-      {
-        field: "dynamicGroupBool",
-        conditions: {
-          true: { label: "Dynamic", color: "info", icon: <DynamicFeed fontSize="small" />, tooltip: "Members auto-assigned by rules" },
-        },
-      },
-      {
-        field: "visibility",
-        iconOnly: true,
-        conditions: {
-          Public: { label: "Public", tooltip: "Anyone can join", icon: <Public fontSize="small" sx={{ display: "block" }} />, color: "success" },
-          public: { label: "Public", tooltip: "Anyone can join", icon: <Public fontSize="small" sx={{ display: "block" }} />, color: "success" },
-          Private: { label: "Private", tooltip: "Invite only", icon: <PublicOff fontSize="small" sx={{ display: "block" }} />, color: "warning" },
-          private: { label: "Private", tooltip: "Invite only", icon: <PublicOff fontSize="small" sx={{ display: "block" }} />, color: "warning" },
-        },
-      },
-    ],
-    extraFields: [
-      { field: "description", maxLines: 2 },
-    ],
-    // Additional fields shown only on desktop cards
-    desktopFields: [
-      { field: "mailNickname", label: "Mail Nickname" },
-      { field: "visibility", label: "Visibility" },
-      { field: "membershipRule", label: "Membership Rule" },
-      { field: "onPremisesSyncEnabled", label: "On-Prem Sync" },
-    ],
-    // Quick actions on cards
-    maxQuickActions: 8,
-    // Mobile quick actions: 7 buttons (no delete on mobile)
-    mobileQuickActions: [
-      "Edit Group",
-      "Set Global Address List Visibility",
-      "Only allow messages from people inside the organisation",
-      "Allow messages from people inside and outside the organisation",
-      "Create template based on group",
-      "Create Team from Group",
-    ],
-    // Grid sizing for consistent card widths
-      cardGridProps: {
-        md: 6,
-        lg: 4,
-      },
   };
   const actions = [
     {
@@ -135,13 +34,12 @@ const Page = () => {
       multiPost: false,
     },
     {
+      //tested
       label: "Edit Group",
       link: "/identity/administration/groups/edit?groupId=[id]&groupType=[groupType]",
       multiPost: false,
       icon: <Edit />,
       color: "success",
-      quickAction: true,
-      category: "edit",
     },
     {
       label: "Set Global Address List Visibility",
@@ -167,8 +65,6 @@ const Page = () => {
       confirmText:
         "Are you sure you want to hide this group from the global address list? Remember this will not work if the group is AD Synched.",
       multiPost: false,
-      quickAction: true,
-      category: "edit",
     },
     {
       label: "Only allow messages from people inside the organisation",
@@ -183,8 +79,6 @@ const Page = () => {
       confirmText:
         "Are you sure you want to only allow messages from people inside the organisation? Remember this will not work if the group is AD Synched.",
       multiPost: false,
-      quickAction: true,
-      category: "security",
     },
     {
       label: "Allow messages from people inside and outside the organisation",
@@ -199,8 +93,6 @@ const Page = () => {
       confirmText:
         "Are you sure you want to allow messages from people inside and outside the organisation? Remember this will not work if the group is AD Synched.",
       multiPost: false,
-      quickAction: true,
-      category: "security",
     },
     {
       label: "Set Source of Authority",
@@ -227,8 +119,6 @@ const Page = () => {
       confirmText:
         "Are you sure you want to change the source of authority for '[displayName]'? Setting it to On-Premises Managed will take until the next sync cycle to show the change.",
       multiPost: false,
-      quickAction: true,
-      category: "manage",
     },
     {
       label: "Create template based on group",
@@ -245,8 +135,6 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to create a template based on this group?",
       multiPost: false,
-      quickAction: true,
-      category: "edit",
     },
     {
       label: "Create Team from Group",
@@ -259,7 +147,6 @@ const Page = () => {
       confirmText:
         "Are you sure you want to create a Team from this group? Note: The group must be at least 15 minutes old for this to work.",
       multiPost: false,
-      quickAction: true,
       defaultvalues: {
         TeamSettings: {
           memberSettings: {
@@ -382,7 +269,6 @@ const Page = () => {
         },
       ],
       condition: (row) => row?.calculatedGroupType === "m365",
-      category: "edit",
     },
     {
       label: "Delete Group",
@@ -396,322 +282,45 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to delete this group.",
       multiPost: false,
-      quickAction: true,
-      color: "error",
-      category: "danger",
     },
   ];
-  // Helper function to get group type info for styling
-  const getGroupTypeInfo = (row) => {
-    const groupType = String(row?.calculatedGroupType || row?.groupType || "").toLowerCase();
-    if (groupType.includes("m365") || groupType.includes("unified") || groupType.includes("microsoft")) {
-      return { label: "Microsoft 365", color: theme.palette.primary.main, icon: <GroupSharp fontSize="small" /> };
-    }
-    if (groupType.includes("distribution")) {
-      return { label: "Distribution List", color: theme.palette.info.main, icon: <Email fontSize="small" /> };
-    }
-    if (groupType.includes("security") && row?.mailEnabled) {
-      return { label: "Mail-Enabled Security", color: theme.palette.warning.main, icon: <Security fontSize="small" /> };
-    }
-    if (groupType.includes("security") || groupType.includes("generic")) {
-      return { label: "Security Group", color: theme.palette.warning.main, icon: <Security fontSize="small" /> };
-    }
-    return { label: "Group", color: theme.palette.grey[600], icon: <People fontSize="small" /> };
-  };
-
   const offCanvas = {
-    title: "Group Details",
-    size: "md",
+    extendedInfoFields: [
+      "displayName",
+      "userPrincipalName",
+      "id",
+      "mail",
+      "description",
+      "mailEnabled",
+      "securityEnabled",
+      "visibility",
+      "assignedLicenses",
+      "licenseProcessingState.state",
+      "onPremisesSamAccountName",
+      "membershipRule",
+      "onPremisesSyncEnabled",
+    ],
     actions: actions,
-    children: (row) => {
-      const groupTypeInfo = getGroupTypeInfo(row);
-      const isDynamic = row?.membershipRule || row?.groupTypes?.includes("DynamicMembership");
-      
-      return (
-        <Stack spacing={3}>
-          {/* Hero Section */}
-          <Paper 
-            elevation={0}
-            sx={{ 
-              p: 2.5,
-              borderRadius: 2,
-              background: `linear-gradient(135deg, ${alpha(groupTypeInfo.color, 0.15)} 0%, ${alpha(groupTypeInfo.color, 0.05)} 100%)`,
-              borderLeft: `4px solid ${groupTypeInfo.color}`,
-            }}
-          >
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Avatar
-                sx={{
-                  bgcolor: stringToColor(row.displayName || "G"),
-                  width: 56,
-                  height: 56,
-                  fontSize: "1.25rem",
-                  fontWeight: 600,
-                }}
-              >
-                {getInitials(row.displayName || "Group")}
-              </Avatar>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25 }}>
-                  {row.displayName || "Unknown Group"}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" noWrap>
-                  {row.mail || row.mailNickname || "No email"}
-                </Typography>
-              </Box>
-            </Stack>
-          </Paper>
-
-          {/* Group Type & Status */}
-          <Box>
-            <Typography 
-              variant="overline" 
-              color="text.secondary" 
-              sx={{ fontWeight: 600, letterSpacing: 1, mb: 1.5, display: "block" }}
-            >
-              Group Type & Status
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              <Chip
-                icon={groupTypeInfo.icon}
-                label={groupTypeInfo.label}
-                sx={{ 
-                  fontWeight: 600, 
-                  bgcolor: alpha(groupTypeInfo.color, 0.1),
-                  color: groupTypeInfo.color,
-                  borderColor: groupTypeInfo.color,
-                }}
-                variant="outlined"
-              />
-              {isDynamic && (
-                <Chip
-                  icon={<DynamicFeed fontSize="small" />}
-                  label="Dynamic"
-                  color="info"
-                  variant="filled"
-                  size="small"
-                />
-              )}
-              {row.visibility && (
-                <Chip
-                  icon={row.visibility === "Public" ? <Public fontSize="small" /> : <PublicOff fontSize="small" />}
-                  label={row.visibility}
-                  color={row.visibility === "Public" ? "success" : "warning"}
-                  variant="outlined"
-                  size="small"
-                />
-              )}
-              {row.teamsEnabled && (
-                <Chip
-                  label="Teams Enabled"
-                  color="primary"
-                  variant="outlined"
-                  size="small"
-                />
-              )}
-            </Stack>
-          </Box>
-
-          <Divider />
-
-          {/* Description */}
-          {row.description && (
-            <Box>
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                <InfoIcon fontSize="small" color="action" />
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Description
-                </Typography>
-              </Stack>
-              <Paper 
-                variant="outlined" 
-                sx={{ 
-                  p: 2, 
-                  borderRadius: 1.5,
-                  backgroundColor: alpha(theme.palette.background.default, 0.5),
-                }}
-              >
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                  {row.description}
-                </Typography>
-              </Paper>
-            </Box>
-          )}
-
-          {/* Dynamic Membership Rule */}
-          {row.membershipRule && (
-            <Box>
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                <DynamicFeed fontSize="small" color="action" />
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Membership Rule
-                </Typography>
-              </Stack>
-              <Paper 
-                variant="outlined" 
-                sx={{ 
-                  p: 2, 
-                  borderRadius: 1.5,
-                  backgroundColor: alpha(theme.palette.info.main, 0.05),
-                }}
-              >
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    fontFamily: "monospace", 
-                    fontSize: "0.8rem",
-                    wordBreak: "break-all",
-                  }}
-                >
-                  {row.membershipRule}
-                </Typography>
-              </Paper>
-            </Box>
-          )}
-
-          {/* Settings */}
-          <Box>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-              <Settings fontSize="small" color="action" />
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                Settings
-              </Typography>
-            </Stack>
-            <Stack spacing={1}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="body2" color="text.secondary">Mail Enabled</Typography>
-                <Chip 
-                  label={row.mailEnabled ? "Yes" : "No"} 
-                  size="small" 
-                  color={row.mailEnabled ? "success" : "default"}
-                  variant="outlined"
-                />
-              </Stack>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="body2" color="text.secondary">Security Enabled</Typography>
-                <Chip 
-                  label={row.securityEnabled ? "Yes" : "No"} 
-                  size="small" 
-                  color={row.securityEnabled ? "success" : "default"}
-                  variant="outlined"
-                />
-              </Stack>
-              {row.onPremisesSyncEnabled !== undefined && (
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body2" color="text.secondary">On-Premises Sync</Typography>
-                  <Chip 
-                    label={row.onPremisesSyncEnabled ? "Synced" : "Cloud Only"} 
-                    size="small" 
-                    color={row.onPremisesSyncEnabled ? "info" : "default"}
-                    variant="outlined"
-                    icon={row.onPremisesSyncEnabled ? <Sync fontSize="small" /> : undefined}
-                  />
-                </Stack>
-              )}
-            </Stack>
-          </Box>
-
-          <Divider />
-
-          {/* Metadata */}
-          <Box>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-              <CalendarToday fontSize="small" color="action" />
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                Details
-              </Typography>
-            </Stack>
-            <Stack spacing={1}>
-              {row.createdDateTime && (
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body2" color="text.secondary">Created</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {getCippFormatting(row.createdDateTime, "createdDateTime")}
-                  </Typography>
-                </Stack>
-              )}
-              {row.onPremisesSamAccountName && (
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body2" color="text.secondary">SAM Account Name</Typography>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      fontFamily: "monospace",
-                      bgcolor: alpha(theme.palette.text.primary, 0.05),
-                      px: 1,
-                      py: 0.25,
-                      borderRadius: 0.5,
-                    }}
-                  >
-                    {row.onPremisesSamAccountName}
-                  </Typography>
-                </Stack>
-              )}
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="body2" color="text.secondary">Group ID</Typography>
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    fontFamily: "monospace",
-                    bgcolor: alpha(theme.palette.text.primary, 0.05),
-                    px: 1,
-                    py: 0.25,
-                    borderRadius: 0.5,
-                    maxWidth: 200,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {row.id}
-                </Typography>
-              </Stack>
-            </Stack>
-          </Box>
-        </Stack>
-      );
-    },
   };
   return (
     <CippTablePage
       title={pageTitle}
-      tenantInTitle={!isMobile}
       cardButton={
-        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-          {isMobile ? (
-            <Tooltip title={showMembers ? "Hide Members" : "Show Members"} enterTouchDelay={0} leaveTouchDelay={3000}>
-              <IconButton
-                size="small"
-                onClick={handleMembersToggle}
-                color={showMembers ? "primary" : "default"}
-                sx={{ minWidth: 40 }}
-                aria-label={showMembers ? "Hide Members" : "Show Members"}
-              >
-                <People />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <Button onClick={handleMembersToggle} startIcon={<People />}>
-              {showMembers ? "Hide Members" : "Show Members"}
-            </Button>
-          )}
-          {isMobile ? (
-            <Tooltip title="Add Group" enterTouchDelay={0} leaveTouchDelay={3000}>
-              <IconButton
-                component={Link}
-                href="groups/add"
-                size="small"
-                sx={{ minWidth: 40 }}
-                aria-label="Add Group"
-              >
-                <GroupAdd />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <Button component={Link} href="groups/add" startIcon={<GroupAdd />}>
-              Add Group
-            </Button>
-          )}
-        </Box>
+        <Stack direction="row" spacing={1}>
+          <Button onClick={handleMembersToggle}>
+            {showMembers ? "Hide Members" : "Show Members"}
+          </Button>
+          <Button component={Link} href="groups/add" startIcon={<GroupAdd />}>
+            Add Group
+          </Button>
+          <Button
+            component={Link}
+            href="/identity/administration/group-templates/deploy"
+            startIcon={<RocketLaunch />}
+          >
+            Deploy Group Template
+          </Button>
+        </Stack>
       }
       apiUrl="/api/ListGroups"
       apiData={{ expandMembers: showMembers }}
@@ -736,9 +345,6 @@ const Page = () => {
         "membershipRule",
         "onPremisesSyncEnabled",
       ]}
-      cardConfig={cardConfig}
-      offCanvasOnRowClick={true}
-      onCardClick={handleCardClick}
     />
   );
 };

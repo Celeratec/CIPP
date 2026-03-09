@@ -4,6 +4,7 @@ import CippFormComponent from "../CippComponents/CippFormComponent";
 import { CippFormCondition } from "../CippComponents/CippFormCondition";
 import { CippFormDomainSelector } from "../CippComponents/CippFormDomainSelector";
 import { CippFormUserSelector } from "../CippComponents/CippFormUserSelector";
+import { getCippValidator } from "../../utils/get-cipp-validator";
 import countryList from "../../data/countryList.json";
 import { CippFormLicenseSelector } from "../CippComponents/CippFormLicenseSelector";
 import { Grid } from "@mui/system";
@@ -337,6 +338,9 @@ const CippAddEditUser = (props) => {
               label="First Name"
               name="givenName"
               formControl={formControl}
+              validators={{
+                maxLength: { value: 64, message: "First Name must be 64 characters or less" },
+              }}
             />
           </Grid>
           <Grid size={{ md: 6, xs: 12 }}>
@@ -346,6 +350,9 @@ const CippAddEditUser = (props) => {
               label="Last Name"
               name="surname"
               formControl={formControl}
+              validators={{
+                maxLength: { value: 64, message: "Last Name must be 64 characters or less" },
+              }}
             />
           </Grid>
           <Grid size={{ xs: 12 }}>
@@ -359,7 +366,10 @@ const CippAddEditUser = (props) => {
                 setDisplayNameManuallySet(true);
               }}
               required={true}
-              validators={{ required: "Display Name is required" }}
+              validators={{
+                required: "Display Name is required",
+                maxLength: { value: 256, message: "Display Name must be 256 characters or less" },
+              }}
             />
           </Grid>
           <Grid size={{ md: 6, xs: 12 }}>
@@ -376,7 +386,14 @@ const CippAddEditUser = (props) => {
                 setUsernameManuallySet(true);
               }}
               required={true}
-              validators={{ required: "Username is required" }}
+              validators={{
+                required: "Username is required",
+                maxLength: { value: 64, message: "Username must be 64 characters or less" },
+                pattern: {
+                  value: /^[a-zA-Z0-9._-]+$/,
+                  message: "Username can only contain letters, numbers, dots, hyphens, and underscores",
+                },
+              }}
             />
           </Grid>
           <Grid size={{ md: 6, xs: 12 }}>
@@ -384,6 +401,8 @@ const CippAddEditUser = (props) => {
               formControl={formControl}
               name="primDomain"
               label="Primary Domain"
+              required={true}
+              validators={{ required: "Primary Domain is required" }}
             />
           </Grid>
           <Grid size={{ xs: 12 }}>
@@ -491,6 +510,9 @@ const CippAddEditUser = (props) => {
               label="Job Title"
               name="jobTitle"
               formControl={formControl}
+              validators={{
+                maxLength: { value: 128, message: "Job Title must be 128 characters or less" },
+              }}
             />
           </Grid>
           <Grid size={{ md: 6, xs: 12 }}>
@@ -500,6 +522,9 @@ const CippAddEditUser = (props) => {
               label="Department"
               name="department"
               formControl={formControl}
+              validators={{
+                maxLength: { value: 64, message: "Department must be 64 characters or less" },
+              }}
             />
           </Grid>
           <Grid size={{ md: 6, xs: 12 }}>
@@ -509,6 +534,9 @@ const CippAddEditUser = (props) => {
               label="Company Name"
               name="companyName"
               formControl={formControl}
+              validators={{
+                maxLength: { value: 64, message: "Company Name must be 64 characters or less" },
+              }}
             />
           </Grid>
           <Grid size={{ md: 6, xs: 12 }}>
@@ -547,6 +575,9 @@ const CippAddEditUser = (props) => {
               name="mobilePhone"
               formControl={formControl}
               defaultCountry="US"
+              validators={{
+                maxLength: { value: 64, message: "Mobile Phone must be 64 characters or less" },
+              }}
             />
           </Grid>
           <Grid size={{ md: 6, xs: 12 }}>
@@ -575,6 +606,9 @@ const CippAddEditUser = (props) => {
               label="Street Address"
               name="streetAddress"
               formControl={formControl}
+              validators={{
+                maxLength: { value: 1024, message: "Street Address must be 1024 characters or less" },
+              }}
             />
           </Grid>
           <Grid size={{ md: 6, xs: 12 }}>
@@ -584,6 +618,9 @@ const CippAddEditUser = (props) => {
               label="City"
               name="city"
               formControl={formControl}
+              validators={{
+                maxLength: { value: 128, message: "City must be 128 characters or less" },
+              }}
             />
           </Grid>
           <Grid size={{ md: 6, xs: 12 }}>
@@ -593,6 +630,9 @@ const CippAddEditUser = (props) => {
               label="State/Province"
               name="state"
               formControl={formControl}
+              validators={{
+                maxLength: { value: 128, message: "State/Province must be 128 characters or less" },
+              }}
             />
           </Grid>
           <Grid size={{ md: 6, xs: 12 }}>
@@ -602,6 +642,9 @@ const CippAddEditUser = (props) => {
               label="Postal Code"
               name="postalCode"
               formControl={formControl}
+              validators={{
+                maxLength: { value: 40, message: "Postal Code must be 40 characters or less" },
+              }}
             />
           </Grid>
           <Grid size={{ md: 6, xs: 12 }}>

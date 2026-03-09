@@ -27,7 +27,7 @@ jobs:
 
       # Set up Node.js with yarn cache
       - name: Set up Node.js
-        uses: actions/setup-node@v6.2.0
+        uses: actions/setup-node@v6.3.0
         with:
           node-version: ${{ steps.get_node_version.outputs.node_version }}
           cache: 'yarn'
@@ -60,7 +60,7 @@ jobs:
 
       # Upload to Azure Blob Storage
       - name: Azure Blob Upload
-        uses: LanceMcCarthy/Action-AzureBlobUpload@v3.7.0
+        uses: LanceMcCarthy/Action-AzureBlobUpload@v3.8.0
         with:
           connection_string: ${{ secrets.AZURE_CONNECTION_STRING }}
           container_name: cipp

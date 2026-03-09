@@ -35,6 +35,7 @@ import { CippDataTable } from "../../../components/CippTable/CippDataTable";
 import { CippApiResults } from "../../../components/CippComponents/CippApiResults";
 import { CippApiDialog } from "../../../components/CippComponents/CippApiDialog";
 import { BackupValidator, BackupValidationError } from "../../../utils/backupValidation";
+import { CippRestoreWizard } from "../../../components/CippComponents/CippRestoreWizard";
 import { getCippError } from "../../../utils/get-cipp-error";
 import { useState } from "react";
 import { useDialog } from "../../../hooks/use-dialog";
