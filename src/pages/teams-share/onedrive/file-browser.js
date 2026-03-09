@@ -55,20 +55,20 @@ import { useForm } from "react-hook-form";
 import { getFileIcon } from "../../../utils/get-file-icon";
 
 // ─── Cross-Drive Transfer Dialog ─────────────────────────────────────────────
-// Rendered via customComponent action pattern from CippDataTable
+// Rendered via customComponent action pattern from CippDataTable (single item)
 const CrossDriveTransferDrawer = (row, { drawerVisible, setDrawerVisible }, actionType, sourceIdentity) => {
   return (
     <CrossDriveTransferDialog
       open={drawerVisible}
       onClose={() => setDrawerVisible(false)}
-      item={row}
+      items={[row]}
       actionType={actionType}
       sourceIdentity={sourceIdentity}
     />
   );
 };
 
-const CrossDriveTransferDialog = ({ open, onClose, item, actionType, sourceIdentity = {} }) => {
+const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourceIdentity = {} }) => {
   const tenantFilter = useSettings().currentTenant;
   const formControl = useForm({ mode: "onChange" });
   const theme = useTheme();
@@ -80,9 +80,11 @@ const CrossDriveTransferDialog = ({ open, onClose, item, actionType, sourceIdent
   const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Root", id: null }]);
   const prevValueRef = useRef(null);
 
-  const transferMutation = ApiPostCall({ onResult: () => {} });
+  // Bulk transfer progress state
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [itemStatuses, setItemStatuses] = useState({});
+  const [transferComplete, setTransferComplete] = useState(false);
 
-  // Watch form values for location selection
   const userValue = formControl.watch("destUser");
   const siteValue = formControl.watch("destSite");
 
@@ -132,7 +134,6 @@ const CrossDriveTransferDialog = ({ open, onClose, item, actionType, sourceIdent
     setBreadcrumbs([{ label: "Root", id: null }]);
   };
 
-  // Folder browser for destination
   const folderApiParams = useMemo(() => {
     if (!destLocation) return null;
     const params = { TenantFilter: tenantFilter };
@@ -153,7 +154,7 @@ const CrossDriveTransferDialog = ({ open, onClose, item, actionType, sourceIdent
 
   const folders = useMemo(() => {
     const raw = Array.isArray(foldersQuery.data) ? foldersQuery.data : [];
-    return raw.filter((item) => item.isFolder);
+    return raw.filter((f) => f.isFolder);
   }, [foldersQuery.data]);
 
   const navigateToFolder = (fId, fName) => {
@@ -169,7 +170,7 @@ const CrossDriveTransferDialog = ({ open, onClose, item, actionType, sourceIdent
     setBreadcrumbs((prev) => prev.slice(0, index + 1));
   };
 
-  const handleExecute = () => {
+  const handleExecute = async () => {
     const action = actionType === "move" ? "CrossMove" : "CrossCopy";
     const destIdentity = {};
     if (destLocation.type === "onedrive") {
@@ -178,228 +179,333 @@ const CrossDriveTransferDialog = ({ open, onClose, item, actionType, sourceIdent
       destIdentity.DestinationSiteId = destLocation.siteId;
     }
 
-    transferMutation.mutate({
-      url: "/api/ExecOneDriveFileAction",
-      data: {
-        TenantFilter: tenantFilter,
-        ...sourceIdentity,
-        ItemId: item.id,
-        ItemName: item.name,
-        Action: action,
-        ...destIdentity,
-        ...(destFolderId ? { DestinationFolderId: destFolderId } : {}),
-      },
-    });
+    setIsTransferring(true);
+    setTransferComplete(false);
+    const statuses = {};
+    items.forEach((it) => { statuses[it.id] = { status: "pending" }; });
+    setItemStatuses({ ...statuses });
+
+    for (const it of items) {
+      statuses[it.id] = { status: "in_progress" };
+      setItemStatuses({ ...statuses });
+
+      try {
+        const resp = await fetch("/api/ExecOneDriveFileAction", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            TenantFilter: tenantFilter,
+            ...sourceIdentity,
+            ItemId: it.id,
+            ItemName: it.name,
+            Action: action,
+            ...destIdentity,
+            ...(destFolderId ? { DestinationFolderId: destFolderId } : {}),
+          }),
+        });
+        const data = await resp.json();
+        if (resp.ok) {
+          statuses[it.id] = { status: "success", message: data?.Results || "Done" };
+        } else {
+          statuses[it.id] = { status: "error", message: data?.Results || `HTTP ${resp.status}` };
+        }
+      } catch (err) {
+        statuses[it.id] = { status: "error", message: err.message || "Network error" };
+      }
+      setItemStatuses({ ...statuses });
+    }
+
+    setIsTransferring(false);
+    setTransferComplete(true);
   };
 
   const handleClose = () => {
     onClose();
-    transferMutation.reset();
     setDestLocation(null);
     setDestFolderId(null);
     setCurrentFolderId(null);
     setBreadcrumbs([{ label: "Root", id: null }]);
     formControl.reset();
     prevValueRef.current = null;
+    setIsTransferring(false);
+    setItemStatuses({});
+    setTransferComplete(false);
   };
 
+  const successCount = Object.values(itemStatuses).filter((s) => s.status === "success").length;
+  const errorCount = Object.values(itemStatuses).filter((s) => s.status === "error").length;
+  const completedCount = successCount + errorCount;
+  const isBulk = items.length > 1;
+
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={isTransferring ? undefined : handleClose} fullWidth maxWidth="sm">
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={1}>
           {actionType === "move" ? <DriveFileMove color="primary" /> : <ContentCopy color="primary" />}
           <span>{actionType === "move" ? "Move" : "Copy"} to Another Drive</span>
+          {isBulk && (
+            <Chip label={`${items.length} items`} size="small" color="primary" variant="outlined" />
+          )}
         </Stack>
       </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2.5}>
           <Alert severity="info" variant="outlined">
-            {actionType === "move" ? "Move" : "Copy"} <strong>{item?.name}</strong> to a different
-            user&apos;s OneDrive or a SharePoint site.
+            {actionType === "move" ? "Move" : "Copy"}{" "}
+            {isBulk ? (
+              <><strong>{items.length} items</strong> to a different user&apos;s OneDrive or a SharePoint site.</>
+            ) : (
+              <><strong>{items[0]?.name}</strong> to a different user&apos;s OneDrive or a SharePoint site.</>
+            )}
           </Alert>
 
-          {/* Destination type toggle */}
-          <ToggleButtonGroup
-            value={locationType}
-            exclusive
-            onChange={handleTypeChange}
-            size="small"
-            fullWidth
-          >
-            <ToggleButton value="onedrive">
-              <PersonOutline sx={{ mr: 1 }} /> OneDrive User
-            </ToggleButton>
-            <ToggleButton value="sharepoint">
-              <Language sx={{ mr: 1 }} /> SharePoint Site
-            </ToggleButton>
-          </ToggleButtonGroup>
-
-          {/* User/Site picker */}
-          {locationType === "onedrive" && (
-            <CippFormComponent
-              type="autoComplete"
-              name="destUser"
-              label="Destination User"
-              formControl={formControl}
-              multiple={false}
-              api={{
-                tenantFilter,
-                url: "/api/ListGraphRequest",
-                data: {
-                  Endpoint: "users",
-                  $filter: "accountEnabled eq true",
-                  $top: 999,
-                  $count: true,
-                  $orderby: "displayName",
-                  $select: "id,displayName,userPrincipalName",
-                },
-                dataKey: "Results",
-                labelField: (u) => `${u.displayName} (${u.userPrincipalName})`,
-                valueField: "id",
-                queryKey: `xdrive-users-${tenantFilter}`,
-              }}
-            />
-          )}
-          {locationType === "sharepoint" && (
-            <CippFormComponent
-              type="autoComplete"
-              name="destSite"
-              label="Destination SharePoint Site"
-              formControl={formControl}
-              multiple={false}
-              api={{
-                tenantFilter,
-                url: "/api/ListSites",
-                data: { Type: "SharePointSiteUsage" },
-                queryKey: `xdrive-sites-${tenantFilter}`,
-                labelField: (s) => s.displayName || s.webUrl || s.siteId,
-                valueField: "siteId",
-              }}
-            />
-          )}
-
-          {/* Folder browser */}
-          {destLocation && (
-            <>
-              <Divider />
-              <Typography variant="subtitle2" color="text.secondary">
-                Navigate to select a destination folder, or leave at root.
-              </Typography>
-              <Paper
-                elevation={0}
-                sx={{
-                  px: 2,
-                  py: 1,
-                  borderBottom: `1px solid ${theme.palette.divider}`,
-                  bgcolor: alpha(theme.palette.info.main, 0.04),
-                }}
-              >
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  {breadcrumbs.length > 1 && (
-                    <Tooltip title="Go up one level">
-                      <IconButton size="small" onClick={() => navigateToBreadcrumb(breadcrumbs.length - 2)}>
-                        <ArrowBack fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  <Breadcrumbs separator="/" sx={{ flex: 1 }}>
-                    {breadcrumbs.map((crumb, i) => {
-                      const isLast = i === breadcrumbs.length - 1;
-                      return isLast ? (
-                        <Chip
-                          key={i}
-                          icon={i === 0 ? <Home fontSize="small" /> : <Folder fontSize="small" />}
-                          label={crumb.label}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
-                      ) : (
-                        <MuiLink
-                          key={i}
-                          component="button"
-                          underline="hover"
-                          color="text.secondary"
-                          variant="body2"
-                          onClick={() => navigateToBreadcrumb(i)}
-                          sx={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 0.5 }}
-                        >
-                          {i === 0 && <Home fontSize="small" />}
-                          {crumb.label}
-                        </MuiLink>
-                      );
-                    })}
-                  </Breadcrumbs>
-                </Stack>
-              </Paper>
-
-              {foldersQuery.isLoading ? (
-                <Box sx={{ p: 3, textAlign: "center" }}>
-                  <CircularProgress size={24} />
-                </Box>
-              ) : folders.length === 0 ? (
-                <Typography variant="body2" color="text.secondary" sx={{ px: 1 }}>
-                  No sub-folders. Files will be placed here.
+          {/* Item list for bulk transfers */}
+          {isBulk && !transferComplete && !isTransferring && (
+            <Paper variant="outlined" sx={{ maxHeight: 120, overflow: "auto", p: 1 }}>
+              {items.map((it) => (
+                <Typography key={it.id} variant="body2" color="text.secondary" noWrap sx={{ py: 0.25 }}>
+                  {it.isFolder ? "📁" : "📄"} {it.name}
                 </Typography>
-              ) : (
-                <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 250 }}>
-                  <Table size="small" stickyHeader>
-                    <TableBody>
-                      {folders.map((folder) => (
-                        <TableRow
-                          key={folder.id}
-                          hover
-                          sx={{ cursor: "pointer" }}
-                          onClick={() => navigateToFolder(folder.id, folder.name)}
-                        >
-                          <TableCell>
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                              <Folder fontSize="small" color="info" />
-                              <Typography variant="body2" fontWeight={600}>
-                                {folder.name}
-                              </Typography>
-                              {folder.childCount != null && (
-                                <Chip label={`${folder.childCount}`} size="small" variant="outlined" sx={{ height: 18, fontSize: "0.65rem" }} />
-                              )}
-                            </Stack>
+              ))}
+            </Paper>
+          )}
+
+          {/* Transfer progress */}
+          {(isTransferring || transferComplete) && (
+            <Stack spacing={1}>
+              {transferComplete && (
+                <Alert severity={errorCount === 0 ? "success" : errorCount === items.length ? "error" : "warning"}>
+                  {errorCount === 0
+                    ? `All ${successCount} item${successCount !== 1 ? "s" : ""} transferred successfully.`
+                    : `${successCount} succeeded, ${errorCount} failed.`}
+                </Alert>
+              )}
+              <Paper variant="outlined" sx={{ maxHeight: 200, overflow: "auto" }}>
+                <Table size="small">
+                  <TableBody>
+                    {items.map((it) => {
+                      const st = itemStatuses[it.id] || { status: "pending" };
+                      return (
+                        <TableRow key={it.id}>
+                          <TableCell sx={{ py: 0.5, width: "50%" }}>
+                            <Typography variant="body2" noWrap>{it.name}</Typography>
+                          </TableCell>
+                          <TableCell sx={{ py: 0.5 }}>
+                            {st.status === "pending" && (
+                              <Chip label="Waiting" size="small" variant="outlined" sx={{ height: 22 }} />
+                            )}
+                            {st.status === "in_progress" && (
+                              <Stack direction="row" alignItems="center" spacing={0.5}>
+                                <CircularProgress size={14} />
+                                <Typography variant="caption" color="text.secondary">Transferring...</Typography>
+                              </Stack>
+                            )}
+                            {st.status === "success" && (
+                              <Chip label="Done" size="small" color="success" sx={{ height: 22 }} />
+                            )}
+                            {st.status === "error" && (
+                              <Tooltip title={st.message}>
+                                <Chip label="Failed" size="small" color="error" sx={{ height: 22 }} />
+                              </Tooltip>
+                            )}
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </Paper>
+              {isTransferring && (
+                <Typography variant="body2" color="text.secondary" textAlign="center">
+                  {completedCount} of {items.length} complete...
+                </Typography>
+              )}
+            </Stack>
+          )}
+
+          {/* Destination picker (hidden during/after transfer) */}
+          {!isTransferring && !transferComplete && (
+            <>
+              <ToggleButtonGroup
+                value={locationType}
+                exclusive
+                onChange={handleTypeChange}
+                size="small"
+                fullWidth
+              >
+                <ToggleButton value="onedrive">
+                  <PersonOutline sx={{ mr: 1 }} /> OneDrive User
+                </ToggleButton>
+                <ToggleButton value="sharepoint">
+                  <Language sx={{ mr: 1 }} /> SharePoint Site
+                </ToggleButton>
+              </ToggleButtonGroup>
+
+              {locationType === "onedrive" && (
+                <CippFormComponent
+                  type="autoComplete"
+                  name="destUser"
+                  label="Destination User"
+                  formControl={formControl}
+                  multiple={false}
+                  api={{
+                    tenantFilter,
+                    url: "/api/ListGraphRequest",
+                    data: {
+                      Endpoint: "users",
+                      $filter: "accountEnabled eq true",
+                      $top: 999,
+                      $count: true,
+                      $orderby: "displayName",
+                      $select: "id,displayName,userPrincipalName",
+                    },
+                    dataKey: "Results",
+                    labelField: (u) => `${u.displayName} (${u.userPrincipalName})`,
+                    valueField: "id",
+                    queryKey: `xdrive-users-${tenantFilter}`,
+                  }}
+                />
+              )}
+              {locationType === "sharepoint" && (
+                <CippFormComponent
+                  type="autoComplete"
+                  name="destSite"
+                  label="Destination SharePoint Site"
+                  formControl={formControl}
+                  multiple={false}
+                  api={{
+                    tenantFilter,
+                    url: "/api/ListSites",
+                    data: { Type: "SharePointSiteUsage" },
+                    queryKey: `xdrive-sites-${tenantFilter}`,
+                    labelField: (s) => s.displayName || s.webUrl || s.siteId,
+                    valueField: "siteId",
+                  }}
+                />
+              )}
+
+              {destLocation && (
+                <>
+                  <Divider />
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Navigate to select a destination folder, or leave at root.
+                  </Typography>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      px: 2,
+                      py: 1,
+                      borderBottom: `1px solid ${theme.palette.divider}`,
+                      bgcolor: alpha(theme.palette.info.main, 0.04),
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      {breadcrumbs.length > 1 && (
+                        <Tooltip title="Go up one level">
+                          <IconButton size="small" onClick={() => navigateToBreadcrumb(breadcrumbs.length - 2)}>
+                            <ArrowBack fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <Breadcrumbs separator="/" sx={{ flex: 1 }}>
+                        {breadcrumbs.map((crumb, i) => {
+                          const isLast = i === breadcrumbs.length - 1;
+                          return isLast ? (
+                            <Chip
+                              key={i}
+                              icon={i === 0 ? <Home fontSize="small" /> : <Folder fontSize="small" />}
+                              label={crumb.label}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                            />
+                          ) : (
+                            <MuiLink
+                              key={i}
+                              component="button"
+                              underline="hover"
+                              color="text.secondary"
+                              variant="body2"
+                              onClick={() => navigateToBreadcrumb(i)}
+                              sx={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 0.5 }}
+                            >
+                              {i === 0 && <Home fontSize="small" />}
+                              {crumb.label}
+                            </MuiLink>
+                          );
+                        })}
+                      </Breadcrumbs>
+                    </Stack>
+                  </Paper>
+
+                  {foldersQuery.isLoading ? (
+                    <Box sx={{ p: 3, textAlign: "center" }}>
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : folders.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ px: 1 }}>
+                      No sub-folders. Files will be placed here.
+                    </Typography>
+                  ) : (
+                    <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 250 }}>
+                      <Table size="small" stickyHeader>
+                        <TableBody>
+                          {folders.map((folder) => (
+                            <TableRow
+                              key={folder.id}
+                              hover
+                              sx={{ cursor: "pointer" }}
+                              onClick={() => navigateToFolder(folder.id, folder.name)}
+                            >
+                              <TableCell>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                  <Folder fontSize="small" color="info" />
+                                  <Typography variant="body2" fontWeight={600}>
+                                    {folder.name}
+                                  </Typography>
+                                  {folder.childCount != null && (
+                                    <Chip label={`${folder.childCount}`} size="small" variant="outlined" sx={{ height: 18, fontSize: "0.65rem" }} />
+                                  )}
+                                </Stack>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  )}
+                </>
               )}
             </>
           )}
-
-          {/* Results */}
-          <CippApiResults apiObject={transferMutation} />
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} color="inherit">
-          Close
+        <Button onClick={handleClose} color="inherit" disabled={isTransferring}>
+          {transferComplete ? "Done" : "Cancel"}
         </Button>
-        <Button
-          variant="contained"
-          onClick={handleExecute}
-          disabled={!destLocation || transferMutation.isPending}
-          startIcon={
-            transferMutation.isPending ? (
-              <CircularProgress size={18} color="inherit" />
-            ) : actionType === "move" ? (
-              <DriveFileMove />
-            ) : (
-              <ContentCopy />
-            )
-          }
-        >
-          {transferMutation.isPending
-            ? "Transferring..."
-            : actionType === "move"
-            ? "Move Here"
-            : "Copy Here"}
-        </Button>
+        {!transferComplete && (
+          <Button
+            variant="contained"
+            onClick={handleExecute}
+            disabled={!destLocation || isTransferring}
+            startIcon={
+              isTransferring ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : actionType === "move" ? (
+                <DriveFileMove />
+              ) : (
+                <ContentCopy />
+              )
+            }
+          >
+            {isTransferring
+              ? `Transferring ${completedCount}/${items.length}...`
+              : actionType === "move"
+              ? `Move ${isBulk ? `${items.length} Items` : "Here"}`
+              : `Copy ${isBulk ? `${items.length} Items` : "Here"}`}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
@@ -579,6 +685,9 @@ const Page = () => {
     newFolderMutation.reset();
   };
 
+  // Bulk cross-drive transfer state
+  const [bulkTransfer, setBulkTransfer] = useState({ open: false, items: [], actionType: "move" });
+
   // Location switcher state
   const currentLocationType = siteId ? "sharepoint" : "onedrive";
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -692,10 +801,19 @@ const Page = () => {
   }, [siteId, driveId, userId, folderId]);
 
   // Build the common data payload for file actions (drive identity)
+  // The `!` prefix marks literal values for CippApiDialog action processing
   const driveIdentity = useMemo(() => {
     if (driveId) return { DriveId: `!${driveId}` };
     if (userId) return { UserId: `!${userId}` };
     if (siteId) return { SiteId: `!${siteId}` };
+    return {};
+  }, [driveId, userId, siteId]);
+
+  // Raw identity without `!` prefix for direct API calls (cross-drive dialogs)
+  const rawDriveIdentity = useMemo(() => {
+    if (driveId) return { DriveId: driveId };
+    if (userId) return { UserId: userId };
+    if (siteId) return { SiteId: siteId };
     return {};
   }, [driveId, userId, siteId]);
 
@@ -1001,13 +1119,21 @@ const Page = () => {
       {
         label: "Move to Another Drive",
         icon: <SwapHoriz />,
-        customComponent: (row, opts) => CrossDriveTransferDrawer(row, opts, "move", driveIdentity),
+        customComponent: (row, opts) => CrossDriveTransferDrawer(row, opts, "move", rawDriveIdentity),
+        customBulkHandler: ({ selectedData, clearSelection }) => {
+          setBulkTransfer({ open: true, items: selectedData, actionType: "move" });
+          clearSelection();
+        },
         category: "manage",
       },
       {
         label: "Copy to Another Drive",
         icon: <ContentCopy />,
-        customComponent: (row, opts) => CrossDriveTransferDrawer(row, opts, "copy", driveIdentity),
+        customComponent: (row, opts) => CrossDriveTransferDrawer(row, opts, "copy", rawDriveIdentity),
+        customBulkHandler: ({ selectedData, clearSelection }) => {
+          setBulkTransfer({ open: true, items: selectedData, actionType: "copy" });
+          clearSelection();
+        },
         category: "manage",
       },
 
@@ -1031,7 +1157,7 @@ const Page = () => {
         category: "danger",
       },
     ],
-    [driveIdentity, folderPickerApi, currentQueryKey]
+    [driveIdentity, rawDriveIdentity, folderPickerApi, currentQueryKey]
   );
 
   const defaultLabel = siteId ? "SharePoint" : "OneDrive";
@@ -1274,6 +1400,15 @@ const Page = () => {
           { id: "type", desc: true },
           { id: "name", desc: false },
         ]}
+      />
+
+      {/* Bulk Cross-Drive Transfer Dialog */}
+      <CrossDriveTransferDialog
+        open={bulkTransfer.open}
+        onClose={() => setBulkTransfer({ open: false, items: [], actionType: "move" })}
+        items={bulkTransfer.items}
+        actionType={bulkTransfer.actionType}
+        sourceIdentity={rawDriveIdentity}
       />
     </Box>
   );
