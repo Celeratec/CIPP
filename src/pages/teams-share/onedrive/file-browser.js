@@ -250,7 +250,13 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        const data = await resp.json();
+        let data;
+        const raw = await resp.text();
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          data = { Results: raw || `HTTP ${resp.status}` };
+        }
         if (resp.ok) {
           const msg = data?.Results || "Done";
           const isSkipped = msg.toLowerCase().startsWith("skipped");
