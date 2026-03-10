@@ -22,6 +22,7 @@ import {
   Person,
   Storage,
   Folder,
+  FolderOpen,
   CalendarToday,
   Description,
   OpenInNew,
@@ -379,6 +380,21 @@ const Page = () => {
                           target="_blank"
                           rel="noopener noreferrer"
                           clickable
+                        />
+                      )}
+                      {siteId && (
+                        <Chip
+                          icon={<FolderOpen sx={{ fontSize: 14 }} />}
+                          label="Browse Files"
+                          size="small"
+                          color="info"
+                          variant="outlined"
+                          clickable
+                          onClick={() =>
+                            router.push(
+                              `/teams-share/onedrive/file-browser?siteId=${encodeURIComponent(siteId)}&name=${encodeURIComponent(displayName)}`
+                            )
+                          }
                         />
                       )}
                       {isGroupConnected && isTeamEnabled && associatedTeamId && (

@@ -43,6 +43,7 @@ import {
   ArrowBack,
   OpenInNew,
   FolderShared,
+  FolderOpen,
   CheckCircle,
   Cancel,
   Warning,
@@ -212,8 +213,9 @@ const StatBox = ({ value, label, color }) => (
 );
 
 // Channel row component with expandable member management for private/shared channels
-const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
+const ChannelRow = ({ channel, teamId, teamName, tenantFilter, sharePointSiteId, onRefetch }) => {
   const theme = useTheme();
+  const router = useRouter();
   const dispatch = useDispatch();
   const [expanded, setExpanded] = useState(false);
   const [members, setMembers] = useState([]);
@@ -469,7 +471,23 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, onRefetch }) => {
               </Typography>
             </Tooltip>
           )}
-          {/* Delete channel button */}
+          {(channel.filesSiteId || sharePointSiteId) && (
+            <Tooltip title="Browse Files">
+              <IconButton
+                size="small"
+                color="info"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const siteId = channel.filesSiteId || sharePointSiteId;
+                  router.push(
+                    `/teams-share/onedrive/file-browser?siteId=${encodeURIComponent(siteId)}&name=${encodeURIComponent(channel.displayName)}`
+                  );
+                }}
+              >
+                <FolderOpen sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
+          )}
           <Tooltip title="Delete Channel">
             <IconButton
               size="small"
@@ -994,6 +1012,21 @@ const Page = () => {
                           }
                         />
                       )}
+                      {sharePointSiteId && (
+                        <Chip
+                          icon={<FolderOpen sx={{ fontSize: 14 }} />}
+                          label="Browse Files"
+                          size="small"
+                          color="info"
+                          variant="outlined"
+                          clickable
+                          onClick={() =>
+                            router.push(
+                              `/teams-share/onedrive/file-browser?siteId=${encodeURIComponent(sharePointSiteId)}&name=${encodeURIComponent(sharePointName || teamName)}`
+                            )
+                          }
+                        />
+                      )}
                       {teamId && (
                         <Chip
                           icon={<OpenInNew sx={{ fontSize: 14 }} />}
@@ -1167,6 +1200,7 @@ const Page = () => {
                         teamId={teamId}
                         teamName={teamName}
                         tenantFilter={tenantFilter}
+                        sharePointSiteId={sharePointSiteId}
                         onRefetch={() => teamDetails.refetch()}
                       />
                     ))
