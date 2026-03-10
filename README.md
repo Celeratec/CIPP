@@ -10,7 +10,7 @@
 
 ---
 
-> **Last synced with upstream:** February 2026 (CIPP v10.1.1 / CIPP-API v10.1.1)
+> **Last synced with upstream:** March 2026 (CIPP v10.2.1 / CIPP-API v10.2.1)
 >
 > Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. This document reflects the state of both projects as of the date above.
 
@@ -30,9 +30,11 @@ Manage365 includes the complete CIPP feature set:
 
 ### Identity Management
 - User administration (create, edit, delete, offboard with orchestrator-based batch processing)
+- User form validation with field-level constraints (max length, required, pattern)
+- Vacation mode wizard with mailbox permissions, calendar delegation, and out-of-office scheduling
 - Bulk guest invitation
 - Risky users monitoring
-- Group management with templates and group detail page
+- Group management with templates, group detail page, and deploy group template button
 - Device management (Entra ID devices with NinjaOne enrichment, cross-linked to Intune)
 - Per-user device view with hardware details and NinjaOne agent status
 - Role management and JIT Admin
@@ -46,12 +48,16 @@ Manage365 includes the complete CIPP feature set:
 - Application management and consent requests
 - GDAP relationship management with GDAP trace
 - Standards alignment and drift detection (including device registration local admin controls)
+- New standard: Restrict User Device Registration
+- Standards dialog with enabled/disabled status filter and severity color mapping
 - Best Practice Analyser and Domains Analyser (with DKIM selector rotation)
-- Conditional Access policy management, templates, and vacation mode
-- Licence reporting and management with granular control
+- Conditional Access policy management, templates, and vacation mode with authentication flow selection
+- Licence reporting and management with granular control and dynamic license backfill
+- BitLocker recovery key search and caching
 - Feature flags
 - Reusable settings standards with templates
-- Configuration backup with preview drawer and JSON viewer
+- Configuration backup with restore wizard (type-filtered restoration with row count reporting)
+- Incident report and attachment options
 - Log retention settings
 
 ### Security & Compliance
@@ -63,12 +69,13 @@ Manage365 includes the complete CIPP feature set:
 
 ### Endpoint Management
 - Application management and deployment queue (including Win32/custom apps)
+- Application assignment filter options
 - Managed device administration with NinjaOne hardware enrichment (CPU, RAM, agent status)
 - Device detail page
 - DEP sync
 - Autopilot device management, profiles, and status pages
 - Configuration and compliance policies with templates
-- Intune reusable settings deployment and templates
+- Intune reusable settings deployment and templates with assignment verification
 - App protection policies and assignment filters
 - Script management
 - Reports: device score analytics, work from anywhere, autopilot deployments, discovered apps
@@ -84,7 +91,7 @@ Manage365 includes the complete CIPP feature set:
 - Spam filter and connection filter management
 - SendFromAlias standard (enable/disable)
 - Resource management (rooms, equipment, room lists)
-- Reports: mailbox statistics, activity, CAS settings, permissions, calendar permissions, anti-phishing, malware filters, safe attachments, GAL
+- Reports: mailbox statistics, activity, CAS settings, permissions, calendar permissions, mailbox forwarding, anti-phishing, malware filters, safe attachments, GAL
 - Queue tracking for report generation
 
 ### Tools
@@ -99,10 +106,11 @@ Manage365 includes the complete CIPP feature set:
 - Task scheduler
 
 ### Settings & Administration
-- Application settings and integrations
+- Application settings and integrations (including PWPush with CloudFlare Tunnel and default passphrase support)
 - SAM service principal lock configuration
 - Setup wizard and onboarding
-- Logbook and diagnostics
+- Enhanced bookmark management with sidebar, drag-and-drop reordering, lock, and sort options
+- Logbook with severity color mapping
 - Custom data / directory extensions
 - Super admin tools (tenant mode, exchange cmdlets, timers, table maintenance)
 
@@ -238,9 +246,11 @@ The migration changes each user's UPN and primary email to the new domain while 
 
 ### Backend Enhancements
 
-- **Stack overflow protection** in Intune policy comparison with depth-tracking recursion
+- **Stack overflow protection** in Intune policy comparison with depth-tracking recursion and O(1) index-based lookups
 - **Thorough mailNickname sanitization** in group creation (M365 spec compliance: extracts local part, removes forbidden characters, enforces 64-char limit)
-- **Enhanced CippEntrypoints** with function-existence validation before invocation and detailed error logging with stack traces
+- **Enhanced CippEntrypoints** with function-existence validation before invocation, detailed error logging with stack traces, queue trigger support, and Premium SKU FanOut mode
+- **Selective user edit body** -- only sends properties that are explicitly set, preventing accidental field clearing during inline edits
+- **License backfill integration** -- missing licenses show formatted names immediately with asynchronous API backfill for accurate display names
 - **Power Platform Administrator** role included in GDAP role sets
 
 ---
