@@ -187,12 +187,19 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
     setIsTransferring(true);
     setTransferComplete(false);
     const statuses = {};
-    items.forEach((it) => { statuses[it.id] = { status: "pending" }; });
+    items.forEach((it) => { statuses[it.id || it.Id || it.ItemId || it.name] = { status: "pending" }; });
     setItemStatuses({ ...statuses });
 
     for (const it of items) {
-      statuses[it.id] = { status: "in_progress" };
+      const itemId = it.id || it.Id || it.ItemId;
+      statuses[itemId ?? it.name] = { status: "in_progress" };
       setItemStatuses({ ...statuses });
+
+      if (!itemId) {
+        statuses[it.name] = { status: "error", message: `No item ID found. Keys: ${Object.keys(it).join(", ")}` };
+        setItemStatuses({ ...statuses });
+        continue;
+      }
 
       try {
         const resp = await fetch("/api/ExecOneDriveFileAction", {
@@ -201,7 +208,7 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
           body: JSON.stringify({
             TenantFilter: tenantFilter,
             ...sourceIdentity,
-            ItemId: it.id,
+            ItemId: itemId,
             ItemName: it.name,
             Action: action,
             ConflictBehavior: conflictBehavior,
@@ -213,12 +220,12 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
         if (resp.ok) {
           const msg = data?.Results || "Done";
           const isSkipped = msg.toLowerCase().startsWith("skipped");
-          statuses[it.id] = { status: isSkipped ? "skipped" : "success", message: msg };
+          statuses[itemId] = { status: isSkipped ? "skipped" : "success", message: msg };
         } else {
-          statuses[it.id] = { status: "error", message: data?.Results || `HTTP ${resp.status}` };
+          statuses[itemId] = { status: "error", message: data?.Results || `HTTP ${resp.status}` };
         }
       } catch (err) {
-        statuses[it.id] = { status: "error", message: err.message || "Network error" };
+        statuses[itemId] = { status: "error", message: err.message || "Network error" };
       }
       setItemStatuses({ ...statuses });
     }
@@ -298,9 +305,10 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
                 <Table size="small">
                   <TableBody>
                     {items.map((it) => {
-                      const st = itemStatuses[it.id] || { status: "pending" };
+                      const key = it.id || it.Id || it.ItemId || it.name;
+                      const st = itemStatuses[key] || { status: "pending" };
                       return (
-                        <TableRow key={it.id}>
+                        <TableRow key={key}>
                           <TableCell sx={{ py: 0.5, width: "50%" }}>
                             <Typography variant="body2" noWrap>{it.name}</Typography>
                           </TableCell>
