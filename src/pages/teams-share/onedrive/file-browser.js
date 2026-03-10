@@ -204,7 +204,7 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
             const destNames = new Set(destItems.map((d) => d.name?.toLowerCase()));
             for (const it of items) {
               const key = it.id || it.Id || it.ItemId || it.name;
-              if (destNames.has(it.name?.toLowerCase())) {
+              if (!it.isFolder && destNames.has(it.name?.toLowerCase())) {
                 statuses[key] = {
                   status: "skipped",
                   message: `Skipped '${it.name}' — already exists at the destination.`,
