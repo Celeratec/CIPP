@@ -146,7 +146,13 @@ A comprehensive voice management section with dedicated pages for each component
 
 - **Tenant-wide file search** -- search across all SharePoint sites and OneDrive accounts in a tenant using Microsoft's KQL syntax. Filter by file name, type, author, date, path, and more. Results include a copy-link button for sharing direct file URLs with end users, a browse-to-location button to jump into the file browser, and an open-in-SharePoint link. Built-in search tips guide users through KQL operators and combined filters.
 - **File browser** for any user's OneDrive or SharePoint site -- navigate folders, download, rename, move, copy, delete files, and create folders without leaving the portal. Includes a location switcher to jump between SharePoint sites or OneDrive users without returning to the landing page.
-- **Cross-drive transfer wizard** -- move or copy files between OneDrive accounts and SharePoint sites with a visual file picker and destination browser
+- **Cross-drive transfer wizard** -- move or copy files and folders between OneDrive accounts and SharePoint sites with a visual destination browser. Supports single-item and bulk transfers with per-item progress tracking (pending, in progress, done, skipped, failed) displayed in a live status table.
+- **Conflict resolution** -- three options when items already exist at the destination:
+  - **Rename** (default) -- Graph API automatically appends a numeric suffix to avoid conflicts
+  - **Replace** -- deletes the existing item at the destination before copying, ensuring a clean overwrite for both files and folders
+  - **Skip duplicates** -- files that already exist at the destination are skipped; folders that already exist are intelligently merged rather than skipped entirely. A recursive comparison checks whether the destination folder's contents fully match the source. Fully matching folders are skipped instantly. Partially-copied folders are merged: only the missing files and subfolders are copied into place while already-existing items are left untouched. This enables resuming a previously interrupted transfer without re-copying everything.
+- **Frontend pre-check optimization** -- when skip duplicates is selected, the destination contents are fetched once upfront and duplicate files are marked as skipped immediately in the UI without making individual backend calls, providing instant feedback before the transfer begins
+- **Verified transfers** -- cross-drive copy and move operations poll the Graph API monitor URL for completion, then verify the destination item exists and matches the source in size before reporting success. For moves, the source is only deleted after verified copy completion to prevent data loss
 
 ### SharePoint Recycle Bin
 
