@@ -11,9 +11,13 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  FormControl,
   IconButton,
+  InputLabel,
   Link as MuiLink,
+  MenuItem,
   Paper,
+  Select,
   Table,
   TableBody,
   TableCell,
@@ -84,6 +88,7 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
   const [isTransferring, setIsTransferring] = useState(false);
   const [itemStatuses, setItemStatuses] = useState({});
   const [transferComplete, setTransferComplete] = useState(false);
+  const [conflictBehavior, setConflictBehavior] = useState("rename");
 
   const userValue = formControl.watch("destUser");
   const siteValue = formControl.watch("destSite");
@@ -199,13 +204,16 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
             ItemId: it.id,
             ItemName: it.name,
             Action: action,
+            ConflictBehavior: conflictBehavior,
             ...destIdentity,
             ...(destFolderId ? { DestinationFolderId: destFolderId } : {}),
           }),
         });
         const data = await resp.json();
         if (resp.ok) {
-          statuses[it.id] = { status: "success", message: data?.Results || "Done" };
+          const msg = data?.Results || "Done";
+          const isSkipped = msg.toLowerCase().startsWith("skipped");
+          statuses[it.id] = { status: isSkipped ? "skipped" : "success", message: msg };
         } else {
           statuses[it.id] = { status: "error", message: data?.Results || `HTTP ${resp.status}` };
         }
@@ -229,12 +237,14 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
     prevValueRef.current = null;
     setIsTransferring(false);
     setItemStatuses({});
+    setConflictBehavior("rename");
     setTransferComplete(false);
   };
 
   const successCount = Object.values(itemStatuses).filter((s) => s.status === "success").length;
+  const skippedCount = Object.values(itemStatuses).filter((s) => s.status === "skipped").length;
   const errorCount = Object.values(itemStatuses).filter((s) => s.status === "error").length;
-  const completedCount = successCount + errorCount;
+  const completedCount = successCount + skippedCount + errorCount;
   const isBulk = items.length > 1;
 
   return (
@@ -275,9 +285,13 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
             <Stack spacing={1}>
               {transferComplete && (
                 <Alert severity={errorCount === 0 ? "success" : errorCount === items.length ? "error" : "warning"}>
-                  {errorCount === 0
+                  {errorCount === 0 && skippedCount === 0
                     ? `All ${successCount} item${successCount !== 1 ? "s" : ""} transferred successfully.`
-                    : `${successCount} succeeded, ${errorCount} failed.`}
+                    : [
+                        successCount > 0 && `${successCount} succeeded`,
+                        skippedCount > 0 && `${skippedCount} skipped`,
+                        errorCount > 0 && `${errorCount} failed`,
+                      ].filter(Boolean).join(", ") + "."}
                 </Alert>
               )}
               <Paper variant="outlined" sx={{ maxHeight: 200, overflow: "auto" }}>
@@ -302,6 +316,11 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
                             )}
                             {st.status === "success" && (
                               <Chip label="Done" size="small" color="success" sx={{ height: 22 }} />
+                            )}
+                            {st.status === "skipped" && (
+                              <Tooltip title={st.message}>
+                                <Chip label="Skipped" size="small" color="info" sx={{ height: 22 }} />
+                              </Tooltip>
                             )}
                             {st.status === "error" && (
                               <Tooltip title={st.message}>
@@ -340,6 +359,19 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
                   <Language sx={{ mr: 1 }} /> SharePoint Site
                 </ToggleButton>
               </ToggleButtonGroup>
+
+              <FormControl size="small" fullWidth>
+                <InputLabel>If a file or folder already exists</InputLabel>
+                <Select
+                  value={conflictBehavior}
+                  label="If a file or folder already exists"
+                  onChange={(e) => setConflictBehavior(e.target.value)}
+                >
+                  <MenuItem value="rename">Rename (keep both)</MenuItem>
+                  <MenuItem value="replace">Replace existing</MenuItem>
+                  <MenuItem value="skip">Skip duplicates</MenuItem>
+                </Select>
+              </FormControl>
 
               {locationType === "onedrive" && (
                 <CippFormComponent
