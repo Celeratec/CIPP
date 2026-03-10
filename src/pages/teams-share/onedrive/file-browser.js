@@ -4,6 +4,7 @@ import {
   Alert,
   Breadcrumbs,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
   Dialog,
@@ -14,6 +15,7 @@ import {
   FormControl,
   IconButton,
   InputLabel,
+  LinearProgress,
   Link as MuiLink,
   MenuItem,
   Paper,
@@ -22,6 +24,7 @@ import {
   TableBody,
   TableCell,
   TableContainer,
+  TableHead,
   TableRow,
   TextField,
   ToggleButton,
@@ -41,6 +44,7 @@ import {
   Search,
   Edit,
   DriveFileMove,
+  CompareArrows,
   ContentCopy,
   Delete,
   Download,
@@ -591,6 +595,675 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
   );
 };
 
+// ─── Folder Compare Dialog ──────────────────────────────────────────────────
+const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) => {
+  const theme = useTheme();
+  const rightForm = useForm({ mode: "onChange" });
+
+  const [rightLocationType, setRightLocationType] = useState("onedrive");
+  const [rightLocation, setRightLocation] = useState(null);
+  const [rightFolderId, setRightFolderId] = useState(null);
+  const [rightCurrentFolderId, setRightCurrentFolderId] = useState(null);
+  const [rightBreadcrumbs, setRightBreadcrumbs] = useState([{ label: "Root", id: null }]);
+  const prevRightRef = useRef(null);
+
+  const [leftFolderId, setLeftFolderId] = useState(null);
+  const [leftCurrentFolderId, setLeftCurrentFolderId] = useState(null);
+  const [leftBreadcrumbs, setLeftBreadcrumbs] = useState([]);
+
+  const [diffResults, setDiffResults] = useState([]);
+  const [isComparing, setIsComparing] = useState(false);
+  const [hasCompared, setHasCompared] = useState(false);
+  const [compareError, setCompareError] = useState(null);
+  const [compareInfo, setCompareInfo] = useState(null);
+
+  const [selected, setSelected] = useState(new Set());
+  const [isCopying, setIsCopying] = useState(false);
+  const [copyStatuses, setCopyStatuses] = useState({});
+  const [copyComplete, setCopyComplete] = useState(false);
+
+  useEffect(() => {
+    if (open && currentLocation) {
+      const rootLabel = currentLocation.name || "Root";
+      const crumbs = [{ label: rootLabel, id: null }];
+      if (currentLocation.folderPath) {
+        const parts = currentLocation.folderPath.split("/").filter(Boolean);
+        for (let i = 0; i < parts.length; i += 2) {
+          crumbs.push({ label: parts[i], id: parts[i + 1] || null });
+        }
+      }
+      setLeftFolderId(currentLocation.folderId || null);
+      setLeftCurrentFolderId(currentLocation.folderId || null);
+      setLeftBreadcrumbs(crumbs);
+    }
+  }, [open, currentLocation]);
+
+  const rightUserValue = rightForm.watch("rightUser");
+  const rightSiteValue = rightForm.watch("rightSite");
+
+  useEffect(() => {
+    if (rightLocationType === "onedrive") {
+      const key = rightUserValue?.value || null;
+      if (key !== prevRightRef.current) {
+        prevRightRef.current = key;
+        if (rightUserValue?.value) {
+          setRightLocation({ type: "onedrive", userId: rightUserValue.value, label: rightUserValue.label });
+        } else {
+          setRightLocation(null);
+        }
+        setRightFolderId(null);
+        setRightCurrentFolderId(null);
+        setRightBreadcrumbs([{ label: rightUserValue?.label || "Root", id: null }]);
+      }
+    }
+  }, [rightUserValue, rightLocationType]);
+
+  useEffect(() => {
+    if (rightLocationType === "sharepoint") {
+      const key = rightSiteValue?.value || null;
+      if (key !== prevRightRef.current) {
+        prevRightRef.current = key;
+        if (rightSiteValue?.value) {
+          setRightLocation({ type: "sharepoint", siteId: rightSiteValue.value, label: rightSiteValue.label });
+        } else {
+          setRightLocation(null);
+        }
+        setRightFolderId(null);
+        setRightCurrentFolderId(null);
+        setRightBreadcrumbs([{ label: rightSiteValue?.label || "Root", id: null }]);
+      }
+    }
+  }, [rightSiteValue, rightLocationType]);
+
+  const handleRightTypeChange = (_e, val) => {
+    if (!val) return;
+    setRightLocationType(val);
+    rightForm.setValue("rightUser", null);
+    rightForm.setValue("rightSite", null);
+    prevRightRef.current = null;
+    setRightLocation(null);
+    setRightFolderId(null);
+    setRightCurrentFolderId(null);
+    setRightBreadcrumbs([{ label: "Root", id: null }]);
+  };
+
+  const leftFolderParams = useMemo(() => {
+    if (!currentLocation) return null;
+    const params = { TenantFilter: tenantFilter };
+    if (currentLocation.userId) params.UserId = currentLocation.userId;
+    if (currentLocation.siteId) params.SiteId = currentLocation.siteId;
+    if (leftCurrentFolderId) params.FolderId = leftCurrentFolderId;
+    return params;
+  }, [tenantFilter, currentLocation, leftCurrentFolderId]);
+
+  const leftFolderQuery = ApiGetCall({
+    url: "/api/ListOneDriveFiles",
+    data: leftFolderParams || {},
+    queryKey: `compare-left-${currentLocation?.userId || currentLocation?.siteId}-${leftCurrentFolderId || "root"}`,
+    waiting: !!currentLocation && open,
+  });
+
+  const leftFolders = useMemo(() => {
+    const raw = Array.isArray(leftFolderQuery.data) ? leftFolderQuery.data : [];
+    return raw.filter((f) => f.isFolder);
+  }, [leftFolderQuery.data]);
+
+  const rightFolderParams = useMemo(() => {
+    if (!rightLocation) return null;
+    const params = { TenantFilter: tenantFilter };
+    if (rightLocation.type === "onedrive") params.UserId = rightLocation.userId;
+    if (rightLocation.type === "sharepoint") params.SiteId = rightLocation.siteId;
+    if (rightCurrentFolderId) params.FolderId = rightCurrentFolderId;
+    return params;
+  }, [tenantFilter, rightLocation, rightCurrentFolderId]);
+
+  const rightFolderQuery = ApiGetCall({
+    url: "/api/ListOneDriveFiles",
+    data: rightFolderParams || {},
+    queryKey: `compare-right-${rightLocation?.userId || rightLocation?.siteId}-${rightCurrentFolderId || "root"}`,
+    waiting: !!rightLocation,
+  });
+
+  const rightFolders = useMemo(() => {
+    const raw = Array.isArray(rightFolderQuery.data) ? rightFolderQuery.data : [];
+    return raw.filter((f) => f.isFolder);
+  }, [rightFolderQuery.data]);
+
+  const navigateLeft = (fId, fName) => {
+    setLeftCurrentFolderId(fId);
+    setLeftFolderId(fId);
+    setLeftBreadcrumbs((prev) => [...prev, { label: fName, id: fId }]);
+  };
+  const navigateLeftBreadcrumb = (index) => {
+    const crumb = leftBreadcrumbs[index];
+    setLeftCurrentFolderId(crumb.id);
+    setLeftFolderId(crumb.id);
+    setLeftBreadcrumbs((prev) => prev.slice(0, index + 1));
+  };
+  const navigateRight = (fId, fName) => {
+    setRightCurrentFolderId(fId);
+    setRightFolderId(fId);
+    setRightBreadcrumbs((prev) => [...prev, { label: fName, id: fId }]);
+  };
+  const navigateRightBreadcrumb = (index) => {
+    const crumb = rightBreadcrumbs[index];
+    setRightCurrentFolderId(crumb.id);
+    setRightFolderId(crumb.id);
+    setRightBreadcrumbs((prev) => prev.slice(0, index + 1));
+  };
+
+  const handleCompare = async () => {
+    setIsComparing(true);
+    setCompareError(null);
+    setDiffResults([]);
+    setSelected(new Set());
+    setCopyStatuses({});
+    setCopyComplete(false);
+    setHasCompared(false);
+
+    try {
+      const payload = { TenantFilter: tenantFilter };
+      if (currentLocation.userId) payload.SourceUserId = currentLocation.userId;
+      if (currentLocation.siteId) payload.SourceSiteId = currentLocation.siteId;
+      if (leftFolderId) payload.SourceFolderId = leftFolderId;
+      if (rightLocation.type === "onedrive") payload.DestUserId = rightLocation.userId;
+      if (rightLocation.type === "sharepoint") payload.DestSiteId = rightLocation.siteId;
+      if (rightFolderId) payload.DestFolderId = rightFolderId;
+
+      const resp = await fetch("/api/ExecOneDriveCompare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      let data;
+      const raw = await resp.text();
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = { Results: raw };
+      }
+
+      if (resp.ok && Array.isArray(data.Results)) {
+        setDiffResults(data.Results);
+        setCompareInfo({
+          sourceDriveId: data.SourceDriveId,
+          destDriveId: data.DestDriveId,
+          matchCount: data.MatchCount || 0,
+        });
+        setHasCompared(true);
+      } else {
+        setCompareError(data?.Results || `Comparison failed (HTTP ${resp.status})`);
+      }
+    } catch (err) {
+      setCompareError(err.message || "Network error");
+    }
+    setIsComparing(false);
+  };
+
+  const toggleSelect = (path) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelected(new Set(diffResults.map((d) => d.path)));
+  const clearSelection = () => setSelected(new Set());
+
+  const handleCopy = async (direction) => {
+    const selectedItems = diffResults.filter((d) => selected.has(d.path));
+    const itemsToCopy =
+      direction === "toDest"
+        ? selectedItems.filter((d) => d.status === "source_only" || d.status === "size_differs")
+        : selectedItems.filter((d) => d.status === "dest_only" || d.status === "size_differs");
+    if (itemsToCopy.length === 0) return;
+
+    setIsCopying(true);
+    setCopyComplete(false);
+    const statuses = {};
+
+    for (const item of itemsToCopy) {
+      statuses[item.path] = { status: "in_progress" };
+      setCopyStatuses({ ...statuses });
+
+      try {
+        const payload = { TenantFilter: tenantFilter, Action: "CrossCopy", ConflictBehavior: "replace" };
+
+        if (direction === "toDest") {
+          if (currentLocation.userId) payload.UserId = currentLocation.userId;
+          if (currentLocation.siteId) payload.SiteId = currentLocation.siteId;
+          payload.ItemId = item.sourceId;
+          payload.ItemName = item.name;
+          if (rightLocation.type === "onedrive") payload.DestinationUserId = rightLocation.userId;
+          if (rightLocation.type === "sharepoint") payload.DestinationSiteId = rightLocation.siteId;
+          payload.DestinationFolderId = item.destParentId || rightFolderId || null;
+        } else {
+          if (rightLocation.type === "onedrive") payload.UserId = rightLocation.userId;
+          if (rightLocation.type === "sharepoint") payload.SiteId = rightLocation.siteId;
+          payload.ItemId = item.destId;
+          payload.ItemName = item.name;
+          if (currentLocation.userId) payload.DestinationUserId = currentLocation.userId;
+          if (currentLocation.siteId) payload.DestinationSiteId = currentLocation.siteId;
+          payload.DestinationFolderId = item.sourceParentId || leftFolderId || null;
+        }
+
+        const resp = await fetch("/api/ExecOneDriveFileAction", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        let data;
+        const raw = await resp.text();
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          data = { Results: raw || `HTTP ${resp.status}` };
+        }
+        statuses[item.path] = resp.ok
+          ? { status: "success", message: data?.Results || "Done" }
+          : { status: "error", message: data?.Results || `HTTP ${resp.status}` };
+      } catch (err) {
+        statuses[item.path] = { status: "error", message: err.message || "Network error" };
+      }
+      setCopyStatuses({ ...statuses });
+    }
+    setIsCopying(false);
+    setCopyComplete(true);
+  };
+
+  const handleClose = () => {
+    if (isCopying) return;
+    onClose();
+    setRightLocation(null);
+    setRightFolderId(null);
+    setRightCurrentFolderId(null);
+    setRightBreadcrumbs([{ label: "Root", id: null }]);
+    rightForm.reset();
+    prevRightRef.current = null;
+    setDiffResults([]);
+    setIsComparing(false);
+    setHasCompared(false);
+    setCompareError(null);
+    setCompareInfo(null);
+    setSelected(new Set());
+    setCopyStatuses({});
+    setCopyComplete(false);
+  };
+
+  const sourceOnlyCount = diffResults.filter((d) => d.status === "source_only").length;
+  const destOnlyCount = diffResults.filter((d) => d.status === "dest_only").length;
+  const sizeDiffersCount = diffResults.filter((d) => d.status === "size_differs").length;
+
+  const selectedSourceCount = [...selected].filter((p) => {
+    const item = diffResults.find((d) => d.path === p);
+    return item && (item.status === "source_only" || item.status === "size_differs");
+  }).length;
+  const selectedDestCount = [...selected].filter((p) => {
+    const item = diffResults.find((d) => d.path === p);
+    return item && (item.status === "dest_only" || item.status === "size_differs");
+  }).length;
+
+  const getStatusChip = (status) => {
+    switch (status) {
+      case "source_only":
+        return <Chip label="Source Only" size="small" color="primary" sx={{ height: 22 }} />;
+      case "dest_only":
+        return <Chip label="Dest Only" size="small" color="warning" sx={{ height: 22 }} />;
+      case "size_differs":
+        return <Chip label="Size Differs" size="small" color="error" sx={{ height: 22 }} />;
+      default:
+        return null;
+    }
+  };
+
+  const formatSize = (bytes) => {
+    if (bytes == null) return "\u2014";
+    if (bytes === 0) return "0 B";
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${(bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0)} ${units[i]}`;
+  };
+
+  const getDepth = (path) => (path.match(/\//g) || []).length;
+  const canCompare = !!rightLocation && !isComparing && !isCopying;
+
+  const renderBreadcrumbs = (crumbs, onNavigate, color) => (
+    <Paper
+      elevation={0}
+      sx={{ px: 1.5, py: 0.75, mb: 1, bgcolor: alpha(theme.palette[color].main, 0.04), borderRadius: 1 }}
+    >
+      <Stack direction="row" alignItems="center" spacing={0.5}>
+        {crumbs.length > 1 && (
+          <IconButton size="small" onClick={() => onNavigate(crumbs.length - 2)}>
+            <ArrowBack sx={{ fontSize: 16 }} />
+          </IconButton>
+        )}
+        <Breadcrumbs separator="/" sx={{ flex: 1, "& .MuiBreadcrumbs-separator": { mx: 0.5 } }}>
+          {crumbs.map((crumb, i) => {
+            const isLast = i === crumbs.length - 1;
+            return isLast ? (
+              <Chip
+                key={i}
+                icon={i === 0 ? <Home sx={{ fontSize: 14 }} /> : <Folder sx={{ fontSize: 14 }} />}
+                label={crumb.label}
+                size="small"
+                color={color}
+                variant="outlined"
+              />
+            ) : (
+              <MuiLink
+                key={i}
+                component="button"
+                underline="hover"
+                variant="caption"
+                color="text.secondary"
+                onClick={() => onNavigate(i)}
+                sx={{ cursor: "pointer" }}
+              >
+                {crumb.label}
+              </MuiLink>
+            );
+          })}
+        </Breadcrumbs>
+      </Stack>
+    </Paper>
+  );
+
+  const renderFolderList = (folders, isLoading, onNavigate, color) => {
+    if (isLoading) {
+      return (
+        <Box sx={{ py: 2, textAlign: "center" }}>
+          <CircularProgress size={20} />
+        </Box>
+      );
+    }
+    if (folders.length === 0) {
+      return (
+        <Typography variant="caption" color="text.secondary">
+          No subfolders
+        </Typography>
+      );
+    }
+    return (
+      <TableContainer sx={{ maxHeight: 150 }}>
+        <Table size="small">
+          <TableBody>
+            {folders.map((f) => (
+              <TableRow key={f.id} hover sx={{ cursor: "pointer" }} onClick={() => onNavigate(f.id, f.name)}>
+                <TableCell sx={{ py: 0.25 }}>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Folder sx={{ fontSize: 16, color: `${color}.main` }} />
+                    <Typography variant="caption">{f.name}</Typography>
+                  </Stack>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
+
+  return (
+    <Dialog open={open} onClose={isCopying ? undefined : handleClose} fullWidth maxWidth="lg">
+      <DialogTitle>
+        <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+          <CompareArrows color="primary" />
+          <span>Compare Folders</span>
+          {hasCompared && (
+            <>
+              {sourceOnlyCount > 0 && (
+                <Chip label={`${sourceOnlyCount} source only`} size="small" color="primary" />
+              )}
+              {destOnlyCount > 0 && (
+                <Chip label={`${destOnlyCount} dest only`} size="small" color="warning" />
+              )}
+              {sizeDiffersCount > 0 && (
+                <Chip label={`${sizeDiffersCount} differ`} size="small" color="error" />
+              )}
+              {compareInfo?.matchCount > 0 && (
+                <Chip
+                  label={`${compareInfo.matchCount} match`}
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                />
+              )}
+            </>
+          )}
+        </Stack>
+      </DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2}>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+            {/* Left Panel - Source */}
+            <Paper variant="outlined" sx={{ flex: 1, p: 2, minWidth: 0 }}>
+              <Typography variant="subtitle2" color="primary" gutterBottom>
+                Source
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }} noWrap>
+                {currentLocation?.name || "Current Location"}
+                {currentLocation?.siteId ? " (SharePoint)" : " (OneDrive)"}
+              </Typography>
+              {renderBreadcrumbs(leftBreadcrumbs, navigateLeftBreadcrumb, "info")}
+              {renderFolderList(leftFolders, leftFolderQuery.isLoading, navigateLeft, "info")}
+            </Paper>
+
+            {/* Right Panel - Destination */}
+            <Paper variant="outlined" sx={{ flex: 1, p: 2, minWidth: 0 }}>
+              <Typography variant="subtitle2" color="warning.main" gutterBottom>
+                Destination
+              </Typography>
+              <ToggleButtonGroup
+                value={rightLocationType}
+                exclusive
+                onChange={handleRightTypeChange}
+                size="small"
+                fullWidth
+                sx={{ mb: 1 }}
+              >
+                <ToggleButton value="onedrive">
+                  <PersonOutline sx={{ mr: 0.5, fontSize: 16 }} /> OneDrive
+                </ToggleButton>
+                <ToggleButton value="sharepoint">
+                  <Language sx={{ mr: 0.5, fontSize: 16 }} /> SharePoint
+                </ToggleButton>
+              </ToggleButtonGroup>
+
+              {rightLocationType === "onedrive" && (
+                <CippFormComponent
+                  type="autoComplete"
+                  name="rightUser"
+                  label="User"
+                  formControl={rightForm}
+                  multiple={false}
+                  api={{
+                    tenantFilter,
+                    url: "/api/ListGraphRequest",
+                    data: {
+                      Endpoint: "users",
+                      $filter: "accountEnabled eq true",
+                      $top: 999,
+                      $count: true,
+                      $orderby: "displayName",
+                      $select: "id,displayName,userPrincipalName",
+                    },
+                    dataKey: "Results",
+                    labelField: (u) => `${u.displayName} (${u.userPrincipalName})`,
+                    valueField: "id",
+                    queryKey: `compare-users-${tenantFilter}`,
+                  }}
+                />
+              )}
+              {rightLocationType === "sharepoint" && (
+                <CippFormComponent
+                  type="autoComplete"
+                  name="rightSite"
+                  label="SharePoint Site"
+                  formControl={rightForm}
+                  multiple={false}
+                  api={{
+                    tenantFilter,
+                    url: "/api/ListSites",
+                    data: { Type: "SharePointSiteUsage" },
+                    queryKey: `compare-sites-${tenantFilter}`,
+                    labelField: (s) => s.displayName || s.webUrl || s.siteId,
+                    valueField: "siteId",
+                  }}
+                />
+              )}
+
+              {rightLocation && (
+                <>
+                  {renderBreadcrumbs(rightBreadcrumbs, navigateRightBreadcrumb, "warning")}
+                  {renderFolderList(rightFolders, rightFolderQuery.isLoading, navigateRight, "warning")}
+                </>
+              )}
+            </Paper>
+          </Stack>
+
+          <Button
+            variant="contained"
+            onClick={handleCompare}
+            disabled={!canCompare}
+            startIcon={isComparing ? <CircularProgress size={18} color="inherit" /> : <CompareArrows />}
+            fullWidth
+          >
+            {isComparing ? "Comparing..." : "Compare"}
+          </Button>
+
+          {isComparing && <LinearProgress />}
+          {compareError && <Alert severity="error">{compareError}</Alert>}
+
+          {hasCompared && diffResults.length === 0 && !isComparing && (
+            <Alert severity="success">
+              Folders are identical
+              {compareInfo?.matchCount > 0 ? ` \u2014 ${compareInfo.matchCount} matching files.` : "."}
+            </Alert>
+          )}
+
+          {hasCompared && diffResults.length > 0 && !isComparing && (
+            <>
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Typography variant="subtitle2">
+                  {diffResults.length} difference{diffResults.length !== 1 ? "s" : ""} found
+                </Typography>
+                <Stack direction="row" spacing={1}>
+                  <Button size="small" onClick={selectAll} disabled={isCopying}>
+                    Select All
+                  </Button>
+                  <Button size="small" onClick={clearSelection} disabled={isCopying}>
+                    Clear
+                  </Button>
+                </Stack>
+              </Stack>
+
+              <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 400 }}>
+                <Table size="small" stickyHeader>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell padding="checkbox" sx={{ width: 42 }} />
+                      <TableCell>Name</TableCell>
+                      <TableCell align="right" sx={{ width: 100 }}>
+                        Source Size
+                      </TableCell>
+                      <TableCell align="right" sx={{ width: 100 }}>
+                        Dest Size
+                      </TableCell>
+                      <TableCell sx={{ width: 130 }}>Status</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {diffResults.map((item) => {
+                      const depth = getDepth(item.path);
+                      const cs = copyStatuses[item.path];
+                      return (
+                        <TableRow key={item.path} hover>
+                          <TableCell padding="checkbox">
+                            <Checkbox
+                              size="small"
+                              checked={selected.has(item.path)}
+                              onChange={() => toggleSelect(item.path)}
+                              disabled={isCopying}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pl: depth * 2 }}>
+                              {item.type === "folder" && (
+                                <Folder sx={{ fontSize: 16, color: "info.main" }} />
+                              )}
+                              <Typography variant="body2" noWrap>
+                                {item.name}
+                              </Typography>
+                              {cs?.status === "in_progress" && <CircularProgress size={14} />}
+                              {cs?.status === "success" && (
+                                <Chip label="Copied" size="small" color="success" sx={{ height: 20, ml: 0.5 }} />
+                              )}
+                              {cs?.status === "error" && (
+                                <Tooltip title={cs.message}>
+                                  <Chip label="Error" size="small" color="error" sx={{ height: 20, ml: 0.5 }} />
+                                </Tooltip>
+                              )}
+                            </Stack>
+                          </TableCell>
+                          <TableCell align="right">
+                            <Typography variant="caption" color="text.secondary">
+                              {item.sourceSize != null ? formatSize(item.sourceSize) : "\u2014"}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right">
+                            <Typography variant="caption" color="text.secondary">
+                              {item.destSize != null ? formatSize(item.destSize) : "\u2014"}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>{getStatusChip(item.status)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          )}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose} color="inherit" disabled={isCopying}>
+          {hasCompared ? "Done" : "Cancel"}
+        </Button>
+        {hasCompared && diffResults.length > 0 && !copyComplete && (
+          <>
+            {selectedSourceCount > 0 && (
+              <Button
+                variant="contained"
+                color="primary"
+                disabled={isCopying}
+                onClick={() => handleCopy("toDest")}
+                startIcon={isCopying ? <CircularProgress size={18} color="inherit" /> : <ContentCopy />}
+              >
+                Copy {selectedSourceCount} to Destination
+              </Button>
+            )}
+            {selectedDestCount > 0 && (
+              <Button
+                variant="contained"
+                color="warning"
+                disabled={isCopying}
+                onClick={() => handleCopy("toSource")}
+                startIcon={isCopying ? <CircularProgress size={18} color="inherit" /> : <ContentCopy />}
+              >
+                Copy {selectedDestCount} to Source
+              </Button>
+            )}
+          </>
+        )}
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const LocationPickerLanding = () => {
   const router = useRouter();
   const formControl = useForm({ mode: "onChange" });
@@ -767,6 +1440,9 @@ const Page = () => {
 
   // Bulk cross-drive transfer state
   const [bulkTransfer, setBulkTransfer] = useState({ open: false, items: [], actionType: "move" });
+
+  // Compare dialog state
+  const [compareOpen, setCompareOpen] = useState(false);
 
   // Location switcher state
   const currentLocationType = siteId ? "sharepoint" : "onedrive";
@@ -1312,6 +1988,17 @@ const Page = () => {
               Switch
             </Button>
           </Tooltip>
+          <Tooltip title="Compare folders between two locations">
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<CompareArrows />}
+              onClick={() => setCompareOpen(true)}
+              sx={{ whiteSpace: "nowrap", flexShrink: 0 }}
+            >
+              Compare
+            </Button>
+          </Tooltip>
           <Button
             size="small"
             variant="contained"
@@ -1489,6 +2176,14 @@ const Page = () => {
         items={bulkTransfer.items}
         actionType={bulkTransfer.actionType}
         sourceIdentity={rawDriveIdentity}
+      />
+
+      {/* Folder Compare Dialog */}
+      <FolderCompareDialog
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        currentLocation={{ userId, siteId, driveId, folderId, folderPath, name }}
+        tenantFilter={tenantFilter}
       />
     </Box>
   );
