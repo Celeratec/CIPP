@@ -1152,8 +1152,8 @@ const Page = () => {
         label: "Move to Another Drive",
         icon: <SwapHoriz />,
         customComponent: (row, opts) => CrossDriveTransferDrawer(row, opts, "move", rawDriveIdentity),
-        customBulkHandler: ({ selectedData, clearSelection }) => {
-          setBulkTransfer({ open: true, items: selectedData, actionType: "move" });
+        customBulkHandler: ({ data, clearSelection }) => {
+          setBulkTransfer({ open: true, items: data, actionType: "move" });
           clearSelection();
         },
         category: "manage",
@@ -1162,8 +1162,8 @@ const Page = () => {
         label: "Copy to Another Drive",
         icon: <ContentCopy />,
         customComponent: (row, opts) => CrossDriveTransferDrawer(row, opts, "copy", rawDriveIdentity),
-        customBulkHandler: ({ selectedData, clearSelection }) => {
-          setBulkTransfer({ open: true, items: selectedData, actionType: "copy" });
+        customBulkHandler: ({ data, clearSelection }) => {
+          setBulkTransfer({ open: true, items: data, actionType: "copy" });
           clearSelection();
         },
         category: "manage",
