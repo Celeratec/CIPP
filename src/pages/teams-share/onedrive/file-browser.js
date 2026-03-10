@@ -190,9 +190,42 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
     items.forEach((it) => { statuses[it.id || it.Id || it.ItemId || it.name] = { status: "pending" }; });
     setItemStatuses({ ...statuses });
 
+    if (conflictBehavior === "skip") {
+      try {
+        const destParams = new URLSearchParams({ TenantFilter: tenantFilter });
+        if (destLocation.type === "onedrive") destParams.set("UserId", destLocation.userId);
+        if (destLocation.type === "sharepoint") destParams.set("SiteId", destLocation.siteId);
+        if (destFolderId) destParams.set("FolderId", destFolderId);
+
+        const checkResp = await fetch(`/api/ListOneDriveFiles?${destParams.toString()}`);
+        if (checkResp.ok) {
+          const destItems = await checkResp.json();
+          if (Array.isArray(destItems)) {
+            const destNames = new Set(destItems.map((d) => d.name?.toLowerCase()));
+            for (const it of items) {
+              const key = it.id || it.Id || it.ItemId || it.name;
+              if (destNames.has(it.name?.toLowerCase())) {
+                statuses[key] = {
+                  status: "skipped",
+                  message: `Skipped '${it.name}' — already exists at the destination.`,
+                };
+              }
+            }
+            setItemStatuses({ ...statuses });
+          }
+        }
+      } catch {
+        // Pre-check failed; per-item backend check will still handle skip
+      }
+    }
+
     for (const it of items) {
       const itemId = it.id || it.Id || it.ItemId;
-      statuses[itemId ?? it.name] = { status: "in_progress" };
+      const key = itemId ?? it.name;
+
+      if (statuses[key]?.status === "skipped") continue;
+
+      statuses[key] = { status: "in_progress" };
       setItemStatuses({ ...statuses });
 
       if (!itemId) {
@@ -212,7 +245,6 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
           ...destIdentity,
           ...(destFolderId ? { DestinationFolderId: destFolderId } : {}),
         };
-        console.log("[CrossDrive] Sending payload:", JSON.stringify(payload, null, 2));
         const resp = await fetch("/api/ExecOneDriveFileAction", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
