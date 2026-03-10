@@ -621,6 +621,11 @@ export const nativeMenuItems = [
                 path: "/email/reports/calendar-permissions",
                 permissions: ["Exchange.Mailbox.*"],
               },
+              {
+                title: "Mailbox Forwarding",
+                path: "/email/reports/mailbox-forwarding",
+                permissions: ["Exchange.Mailbox.*"],
+              },
             ],
           },
           {
