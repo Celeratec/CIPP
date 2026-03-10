@@ -202,19 +202,21 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
       }
 
       try {
+        const payload = {
+          TenantFilter: tenantFilter,
+          ...sourceIdentity,
+          ItemId: itemId,
+          ItemName: it.name,
+          Action: action,
+          ConflictBehavior: conflictBehavior,
+          ...destIdentity,
+          ...(destFolderId ? { DestinationFolderId: destFolderId } : {}),
+        };
+        console.log("[CrossDrive] Sending payload:", JSON.stringify(payload, null, 2));
         const resp = await fetch("/api/ExecOneDriveFileAction", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            TenantFilter: tenantFilter,
-            ...sourceIdentity,
-            ItemId: itemId,
-            ItemName: it.name,
-            Action: action,
-            ConflictBehavior: conflictBehavior,
-            ...destIdentity,
-            ...(destFolderId ? { DestinationFolderId: destFolderId } : {}),
-          }),
+          body: JSON.stringify(payload),
         });
         const data = await resp.json();
         if (resp.ok) {
