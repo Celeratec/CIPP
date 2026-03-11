@@ -11,9 +11,10 @@ import { useTheme } from "@mui/material/styles";
 import { Grid } from "@mui/system";
 import CippWizardStepButtons from "./CippWizardStepButtons";
 import CippFormComponent from "../CippComponents/CippFormComponent";
+import { CippFormDomainSelector } from "../CippComponents/CippFormDomainSelector";
 import countryList from "../../data/countryList.json";
 import { CippFormLicenseSelector } from "../CippComponents/CippFormLicenseSelector";
-import { Tune, Public, CardMembership, Security } from "@mui/icons-material";
+import { Tune, Public, CardMembership, Security, Domain } from "@mui/icons-material";
 
 export const CippWizardBulkOptions = (props) => {
   const { postUrl, formControl, onPreviousStep, onNextStep, currentStep } = props;
@@ -51,6 +52,37 @@ export const CippWizardBulkOptions = (props) => {
       <Card variant="outlined">
         <CardContent sx={{ p: smDown ? 2 : 3 }}>
           <Grid container spacing={smDown ? 2 : 3}>
+            <Grid size={{ xs: 12 }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 32,
+                    height: 32,
+                    borderRadius: 1,
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    color: "primary.main",
+                  }}
+                >
+                  <Domain fontSize="small" />
+                </Box>
+                <Typography variant="subtitle2" fontWeight={600}>
+                  Primary Domain
+                </Typography>
+              </Stack>
+              <CippFormDomainSelector
+                formControl={formControl}
+                name="primDomain"
+                label="Select domain for user accounts"
+                required={true}
+                validators={{ required: "Primary Domain is required" }}
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                This domain will be used for all users that don&apos;t have a domain specified in the CSV
+              </Typography>
+            </Grid>
             <Grid size={{ xs: 12 }}>
               <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
                 <Box

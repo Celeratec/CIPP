@@ -8,6 +8,7 @@ import CippFormComponent from "./CippFormComponent";
 import { CippFormLicenseSelector } from "./CippFormLicenseSelector";
 import { CippDataTable } from "../CippTable/CippDataTable";
 import { CippApiResults } from "./CippApiResults";
+import { CippFormDomainSelector } from "./CippFormDomainSelector";
 import { useSettings } from "../../hooks/use-settings";
 import { ApiPostCall } from "../../api/ApiCall";
 import { getCippTranslation } from "../../utils/get-cipp-translation";
@@ -32,7 +33,6 @@ export const CippBulkUserDrawer = ({
     "surName",
     "displayName",
     "mailNickName",
-    "domain",
     "JobTitle",
     "streetAddress",
     "PostalCode",
@@ -117,6 +117,13 @@ export const CippBulkUserDrawer = ({
 
   const handleSubmit = () => {
     const formData = formControl.getValues();
+    const selectedDomain = formData.primDomain?.value || formData.primDomain;
+    if (selectedDomain && Array.isArray(formData.bulkUser)) {
+      formData.bulkUser = formData.bulkUser.map((user) => ({
+        ...user,
+        domain: user.domain || selectedDomain,
+      }));
+    }
     createBulkUsers.mutate({
       url: "/api/AddUserBulk",
       data: formData,
@@ -194,6 +201,16 @@ export const CippBulkUserDrawer = ({
                 value: Code,
               }))}
               formControl={formControl}
+            />
+          </Grid>
+
+          <Grid size={{ md: 6, xs: 12 }}>
+            <CippFormDomainSelector
+              formControl={formControl}
+              name="primDomain"
+              label="Primary Domain"
+              required={true}
+              validators={{ required: "Primary Domain is required" }}
             />
           </Grid>
 
