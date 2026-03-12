@@ -57,6 +57,8 @@ import { CippTablePage } from "../../../components/CippComponents/CippTablePage.
 import CippFormComponent from "../../../components/CippComponents/CippFormComponent";
 import { CippApiResults } from "../../../components/CippComponents/CippApiResults";
 import { ApiGetCall, ApiPostCall } from "../../../api/ApiCall";
+import axios from "axios";
+import { buildVersionedHeaders } from "../../../utils/cippVersion";
 import { useSettings } from "../../../hooks/use-settings";
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
@@ -201,9 +203,12 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
         if (destLocation.type === "sharepoint") destParams.set("SiteId", destLocation.siteId);
         if (destFolderId) destParams.set("FolderId", destFolderId);
 
-        const checkResp = await fetch(`/api/ListOneDriveFiles?${destParams.toString()}`);
-        if (checkResp.ok) {
-          const destItems = await checkResp.json();
+        const checkResp = await axios.get("/api/ListOneDriveFiles", {
+          params: Object.fromEntries(destParams),
+          headers: await buildVersionedHeaders(),
+        });
+        if (checkResp.status === 200) {
+          const destItems = checkResp.data;
           if (Array.isArray(destItems)) {
             const destNames = new Set(destItems.map((d) => d.name?.toLowerCase()));
             for (const it of items) {
@@ -249,27 +254,19 @@ const CrossDriveTransferDialog = ({ open, onClose, items = [], actionType, sourc
           ...destIdentity,
           ...(destFolderId ? { DestinationFolderId: destFolderId } : {}),
         };
-        const resp = await fetch("/api/ExecOneDriveFileAction", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+        const resp = await axios.post("/api/ExecOneDriveFileAction", payload, {
+          headers: await buildVersionedHeaders(),
         });
-        let data;
-        const raw = await resp.text();
-        try {
-          data = JSON.parse(raw);
-        } catch {
-          data = { Results: raw || `HTTP ${resp.status}` };
-        }
-        if (resp.ok) {
-          const msg = data?.Results || "Done";
-          const isSkipped = msg.toLowerCase().startsWith("skipped");
-          statuses[itemId] = { status: isSkipped ? "skipped" : "success", message: msg };
-        } else {
-          statuses[itemId] = { status: "error", message: data?.Results || `HTTP ${resp.status}` };
-        }
+        const data = resp.data;
+        const msg = data?.Results || "Done";
+        const isSkipped = msg.toLowerCase().startsWith("skipped");
+        statuses[itemId] = { status: isSkipped ? "skipped" : "success", message: msg };
       } catch (err) {
-        statuses[itemId] = { status: "error", message: err.message || "Network error" };
+        const errData = err.response?.data;
+        statuses[itemId] = {
+          status: "error",
+          message: errData?.Results || errData?.error || err.message || "Network error",
+        };
       }
       setItemStatuses({ ...statuses });
     }
@@ -770,20 +767,12 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
       if (rightLocation.type === "sharepoint") payload.DestSiteId = rightLocation.siteId;
       if (rightFolderId) payload.DestFolderId = rightFolderId;
 
-      const resp = await fetch("/api/ExecOneDriveCompare", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      const resp = await axios.post("/api/ExecOneDriveCompare", payload, {
+        headers: await buildVersionedHeaders(),
       });
-      let data;
-      const raw = await resp.text();
-      try {
-        data = JSON.parse(raw);
-      } catch {
-        data = { Results: raw };
-      }
+      const data = resp.data;
 
-      if (resp.ok && Array.isArray(data.Results)) {
+      if (Array.isArray(data?.Results)) {
         setDiffResults(data.Results);
         setCompareInfo({
           sourceDriveId: data.SourceDriveId,
@@ -792,10 +781,13 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
         });
         setHasCompared(true);
       } else {
-        setCompareError(data?.Results || `Comparison failed (HTTP ${resp.status})`);
+        setCompareError(data?.Results || "Comparison returned unexpected data");
       }
     } catch (err) {
-      setCompareError(err.message || "Network error");
+      const errData = err.response?.data;
+      setCompareError(
+        errData?.Results || errData?.error || err.message || "Network error"
+      );
     }
     setIsComparing(false);
   };
@@ -849,23 +841,17 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
           payload.DestinationFolderId = item.sourceParentId || leftFolderId || null;
         }
 
-        const resp = await fetch("/api/ExecOneDriveFileAction", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+        const resp = await axios.post("/api/ExecOneDriveFileAction", payload, {
+          headers: await buildVersionedHeaders(),
         });
-        let data;
-        const raw = await resp.text();
-        try {
-          data = JSON.parse(raw);
-        } catch {
-          data = { Results: raw || `HTTP ${resp.status}` };
-        }
-        statuses[item.path] = resp.ok
-          ? { status: "success", message: data?.Results || "Done" }
-          : { status: "error", message: data?.Results || `HTTP ${resp.status}` };
+        const data = resp.data;
+        statuses[item.path] = { status: "success", message: data?.Results || "Done" };
       } catch (err) {
-        statuses[item.path] = { status: "error", message: err.message || "Network error" };
+        const errData = err.response?.data;
+        statuses[item.path] = {
+          status: "error",
+          message: errData?.Results || errData?.error || err.message || "Network error",
+        };
       }
       setCopyStatuses({ ...statuses });
     }
