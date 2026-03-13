@@ -197,9 +197,21 @@ const Page = () => {
     waiting: !!currentTenant,
   });
 
-  const sites = useMemo(() => siteUsage.data?.Results || [], [siteUsage.data]);
-  const quotaData = useMemo(() => (quota.data?.Results || [])[0] || null, [quota.data]);
-  const settingsData = useMemo(() => (settings.data?.Results || [])[0] || null, [settings.data]);
+  const sites = useMemo(() => {
+    const r = siteUsage.data?.Results;
+    if (!r) return [];
+    return Array.isArray(r) ? r : [r];
+  }, [siteUsage.data]);
+  const quotaData = useMemo(() => {
+    const r = quota.data?.Results;
+    if (!r) return null;
+    return Array.isArray(r) ? r[0] || null : r;
+  }, [quota.data]);
+  const settingsData = useMemo(() => {
+    const r = settings.data?.Results;
+    if (!r) return null;
+    return Array.isArray(r) ? r[0] || null : r;
+  }, [settings.data]);
 
   const isLoading = siteUsage.isFetching || quota.isFetching || settings.isFetching;
 
