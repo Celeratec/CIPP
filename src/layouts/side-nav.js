@@ -134,7 +134,7 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname, openMenus, on
             onMenuToggle,
           })}
         </Stack>
-      </SideNavItem>
+      </SideNavItem>,
     );
   } else {
     acc.push(
@@ -147,7 +147,7 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname, openMenus, on
         key={item.title}
         path={item.path}
         title={item.title}
-      />
+      />,
     );
   }
 

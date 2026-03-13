@@ -17,6 +17,7 @@ const config = {
       },
     },
   },
+  transpilePackages: ["react-syntax-highlighter", "refractor", "parse-entities"],
   output: "export",
   distDir: "./out",
   experimental: {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, memo } from "react";
+import { useCallback, useEffect, useRef, memo } from "react";
 import NextLink from "next/link";
 import PropTypes from "prop-types";
 import Bars3Icon from "@heroicons/react/24/outline/Bars3Icon";
@@ -37,9 +37,18 @@ export const TopNav = memo((props) => {
     });
   }, [settings]);
 
+  const tenantSelectorRef = useRef(null);
+
+  const openSearch = useCallback(() => {
+    searchDialog.handleOpen();
+  }, [searchDialog.handleOpen]);
+
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
+      if ((event.metaKey || event.ctrlKey) && event.altKey && event.key === "k") {
+        event.preventDefault();
+        tenantSelectorRef.current?.focus();
+      } else if ((event.metaKey || event.ctrlKey) && event.key === "k") {
         event.preventDefault();
         openSearch();
       }
@@ -48,11 +57,7 @@ export const TopNav = memo((props) => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
-
-  const openSearch = () => {
-    searchDialog.handleOpen();
-  };
+  }, [openSearch]);
 
   return (
     <Box
@@ -112,7 +117,9 @@ export const TopNav = memo((props) => {
           >
             <Logo height={48} />
           </Box>
-          {!mdDown && <CippTenantSelector refreshButton={true} tenantButton={true} />}
+          {!mdDown && (
+            <CippTenantSelector ref={tenantSelectorRef} refreshButton={true} tenantButton={true} />
+          )}
           {mdDown && (
             <IconButton 
               onClick={onNavOpen}
