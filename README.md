@@ -167,6 +167,19 @@ A comprehensive voice management section with dedicated pages for each component
 - **Verified transfers** -- cross-drive copy and move operations poll the Graph API monitor URL for completion, then verify the destination item exists and matches the source in size before reporting success. For moves, the source is only deleted after verified copy completion to prevent data loss
 - **Folder compare** -- side-by-side recursive comparison of any two folder locations (OneDrive or SharePoint). A two-panel dialog lets users pick a source and destination, then runs a depth-limited diff that returns every difference: items only in the source, items only in the destination, and files with differing sizes. Results are displayed in a flat table with status chips, size columns, and checkbox selection. Users can select any subset of differing items and copy them to the other location in bulk, with per-item progress tracking. Matching file counts are shown in summary chips so users can quickly gauge how much the two locations overlap
 
+### SharePoint Admin Dashboard
+
+A dedicated SharePoint dashboard under Teams & SharePoint > SharePoint > Dashboard providing at-a-glance visibility into tenant storage health and site administration:
+
+- **Key Metrics** -- tenant storage used/total, total sites, total files, and inactive site count
+- **Storage Charts** -- tenant quota donut (used vs free), storage breakdown by site type (Communication, Group-Connected, Classic), and top 10 sites by storage consumption as a bar chart
+- **Storage Alerts** -- sites approaching storage limits (>75% and >90%) sorted by severity with colored chips
+- **Inactive Sites** -- sites with no activity in 90+ days, sorted by storage used to help identify cleanup candidates
+- **Sharing Configuration** -- tenant-level external sharing settings, default link type, resharing policy, and link expiration at a glance
+- **Recently Created Sites** -- new sites from the last 30 days
+
+Data is cached in the CIPP reporting database and refreshed daily during the scheduled cache cycle. A manual "Refresh Data" button triggers an on-demand cache update. The dashboard gracefully handles the first visit before any data is cached with a clear empty state and refresh prompt.
+
 ### SharePoint Recycle Bin
 
 Manage and recover deleted SharePoint sites with retention tracking, visual expiration warnings, one-click restore, and permanent delete with appropriate safety warnings.
