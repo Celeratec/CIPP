@@ -410,7 +410,7 @@ export const CippApiResults = (props) => {
 
     // Also extract error results if there's an error
     if (apiObject.isError && apiObject.error) {
-      const errorResults = extractAllResults(apiObject.error.response.data);
+      const errorResults = extractAllResults(apiObject.error?.response?.data);
       if (errorResults.length > 0) {
         // Mark all error results with error severity and merge with success results
         return [...apiResults, ...errorResults.map((r) => ({ ...r, severity: "error" }))];

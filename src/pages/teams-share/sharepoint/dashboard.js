@@ -746,6 +746,7 @@ const Page = () => {
           ],
           data: {
             Name: "SharePointSiteUsage",
+            Types: "None",
           },
         }}
       />
