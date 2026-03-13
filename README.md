@@ -10,7 +10,7 @@
 
 ---
 
-> **Last synced with upstream:** March 2026 (CIPP v10.2.1 / CIPP-API v10.2.1)
+> **Last synced with upstream:** March 2026 (CIPP v10.2.2 / CIPP-API v10.2.2)
 >
 > Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. This document reflects the state of both projects as of the date above.
 
@@ -107,9 +107,11 @@ Manage365 includes the complete CIPP feature set:
 
 ### Settings & Administration
 - Application settings and integrations (including PWPush with CloudFlare Tunnel and default passphrase support)
+- SIEM settings with SAS token generation for log table access
 - SAM service principal lock configuration
 - Setup wizard and onboarding
 - Enhanced bookmark management with sidebar, drag-and-drop reordering, lock, and sort options
+- Compact navigation mode for denser sidebar layout
 - Logbook with severity color mapping
 - Custom data / directory extensions
 - Super admin tools (tenant mode, exchange cmdlets, timers, table maintenance)
@@ -136,8 +138,8 @@ Comprehensive mobile responsiveness throughout the application: responsive data 
 
 Manage365 extends upstream's detail pages with significantly richer, purpose-built interfaces for key entities:
 
-- **SharePoint Sites** -- storage monitoring, member and administrator management (including non-group-connected sites), guest invitation with domain restriction diagnostics and one-click quick-fix, cross-linking to Teams, and Create Team from Site
-- **Teams** -- member/owner management, channel management (including private/shared channel members), app management, interactive toggle-chip settings for member permissions, guest permissions, messaging, and fun settings, plus guest invitation with Teams-specific diagnostics
+- **SharePoint Sites** -- storage monitoring, member and administrator management (including non-group-connected sites), guest invitation with domain restriction diagnostics and one-click quick-fix, cross-linking to Teams, Create Team from Site, and direct file browser access
+- **Teams** -- member/owner management, channel management (including private/shared channel members with per-channel file browsing), app management, interactive toggle-chip settings for member permissions, guest permissions, messaging, and fun settings, plus guest invitation with Teams-specific diagnostics and direct file browser access at both team and channel level
 - **Groups** -- hero overview by group type, member/owner/contact management, editable properties, interactive toggle-chip settings, dynamic membership rule display, on-premises sync awareness, and add member to multiple groups at once from the groups list page (extends upstream's group page)
 - **Mailboxes / User Exchange Tab** -- mailbox type identification, aliases, archive status, direct link to Exchange settings, clickable external mail restriction tiles (independently block/allow inbound or outbound external email with confirmation dialogs and consequence warnings), one-click spam block clearing when a mailbox has been flagged by Microsoft for suspected spam activity, and **interactive hold management** -- toggle Litigation Hold and Retention Hold on/off directly from the Exchange info card with confirmation dialogs, data loss warnings, and optional duration (days) for Litigation Hold; read-only holds (eDiscovery, In-Place, Compliance Tag, Purview Retention) display with Purview portal guidance
 - **Contacts** -- editable properties form with on-premises sync awareness
@@ -157,7 +159,7 @@ A comprehensive voice management section with dedicated pages for each component
 ### File Management
 
 - **Tenant-wide file search** -- search across all SharePoint sites and OneDrive accounts in a tenant using Microsoft's KQL syntax. Filter by file name, type, author, date, path, and more. Results include a copy-link button for sharing direct file URLs with end users, a browse-to-location button to jump into the file browser, and an open-in-SharePoint link. Built-in search tips guide users through KQL operators and combined filters.
-- **File browser** for any user's OneDrive or SharePoint site -- navigate folders, download, rename, move, copy, delete files, and create folders without leaving the portal. Includes a location switcher to jump between SharePoint sites or OneDrive users without returning to the landing page.
+- **File browser** for any user's OneDrive or SharePoint site -- navigate folders, download, rename, move, copy, delete files, and create folders without leaving the portal. Includes a location switcher to jump between SharePoint sites or OneDrive users without returning to the landing page. Direct "Browse Files" links are available from Team detail pages, individual channel rows, and SharePoint site detail pages, opening the file browser pre-loaded to the correct site.
 - **Cross-drive transfer wizard** -- move or copy files and folders between OneDrive accounts and SharePoint sites with a visual destination browser. Supports single-item and bulk transfers with per-item progress tracking (pending, in progress, done, skipped, failed) displayed in a live status table.
 - **Conflict resolution** -- three options when items already exist at the destination:
   - **Rename** (default) -- Graph API automatically appends a numeric suffix to avoid conflicts
@@ -267,6 +269,8 @@ The migration changes each user's UPN and primary email to the new domain while 
 - **Stack overflow protection** in Intune policy comparison with depth-tracking recursion and O(1) index-based lookups
 - **Thorough mailNickname sanitization** in group creation (M365 spec compliance: extracts local part, removes forbidden characters, enforces 64-char limit)
 - **Enhanced CippEntrypoints** with function-existence validation before invocation, detailed error logging with stack traces, queue trigger support, and Premium SKU FanOut mode
+- **Durable SDK 2.2.0** with fan-out/fan-in/fan-out orchestration pattern for DB cache collection
+- **Channel filesFolder batch-fetch** -- Teams detail API returns per-channel SharePoint siteId/driveId via Graph batch requests, enabling direct file browsing for private/shared channels with their own SharePoint sites
 - **Selective user edit body** -- only sends properties that are explicitly set, preventing accidental field clearing during inline edits
 - **License backfill integration** -- missing licenses show formatted names immediately with asynchronous API backfill for accurate display names
 - **Power Platform Administrator** role included in GDAP role sets
