@@ -12,6 +12,7 @@ import {
   GroupSharp,
   CloudSync,
   RocketLaunch,
+  PersonAdd,
 } from "@mui/icons-material";
 import { Stack } from "@mui/system";
 import { useState } from "react";
@@ -40,6 +41,67 @@ const Page = () => {
       multiPost: false,
       icon: <Edit />,
       color: "success",
+    },
+    {
+      label: "Add Member",
+      type: "POST",
+      icon: <PersonAdd />,
+      url: "/api/EditGroup",
+      customDataformatter: (row, action, formData) => {
+        const groups = Array.isArray(row) ? row : [row];
+        const user = formData.UserID;
+        const addMember = [
+          {
+            label: user?.addedFields?.displayName ?? user?.label,
+            value: user?.addedFields?.id ?? user?.value,
+            addedFields: {
+              id: user?.addedFields?.id,
+              userPrincipalName: user?.addedFields?.userPrincipalName ?? user?.value,
+              displayName: user?.addedFields?.displayName ?? user?.label,
+            },
+          },
+        ];
+        return groups.map((group) => ({
+          addMember,
+          tenantFilter: currentTenant,
+          groupId: group.id,
+          groupType: group.groupType,
+          groupName: group.displayName,
+        }));
+      },
+      fields: [
+        {
+          type: "autoComplete",
+          name: "UserID",
+          label: "Select User",
+          multiple: false,
+          creatable: false,
+          validators: { required: "Please select a user" },
+          api: {
+            url: "/api/ListGraphRequest",
+            data: {
+              Endpoint: "users",
+              $select: "id,displayName,userPrincipalName",
+              $top: 999,
+              $count: true,
+            },
+            queryKey: "ListUsersAutoComplete",
+            dataKey: "Results",
+            labelField: (user) => `${user.displayName} (${user.userPrincipalName})`,
+            valueField: "userPrincipalName",
+            addedField: {
+              id: "id",
+              userPrincipalName: "userPrincipalName",
+              displayName: "displayName",
+            },
+            showRefresh: true,
+          },
+        },
+      ],
+      confirmText: "Select a user to add as a member to the selected group(s).",
+      multiPost: false,
+      category: "edit",
+      quickAction: true,
     },
     {
       label: "Set Global Address List Visibility",

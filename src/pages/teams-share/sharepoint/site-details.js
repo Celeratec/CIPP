@@ -167,13 +167,37 @@ const Page = () => {
   const storageColor = getStorageStatusColor(storagePct);
   const inactive = isInactiveSite(lastActivityDate);
 
+  // Resolve associated M365 Group for group-connected sites
+  const isGroupConnected = rootWebTemplate?.includes("Group");
+  const sitePathName = webUrl ? decodeURIComponent(webUrl.split("/sites/")[1]?.split("/")[0] || "") : "";
+  const groupLookup = ApiGetCall({
+    url: "/api/ListGraphRequest",
+    data: {
+      Endpoint: "groups",
+      $filter: `mailNickname eq '${sitePathName}'`,
+      $select: "id,displayName,resourceProvisioningOptions",
+      $count: true,
+      tenantFilter: tenantFilter,
+    },
+    queryKey: `site-group-lookup-${siteId}`,
+    waiting: !!(isGroupConnected && sitePathName && tenantFilter && siteId),
+  });
+  const associatedGroup = groupLookup?.data?.Results?.[0];
+  const isTeamEnabled =
+    associatedGroup?.resourceProvisioningOptions?.includes("Team") ?? false;
+  const associatedTeamId = isTeamEnabled ? associatedGroup.id : null;
+  const associatedTeamName = isTeamEnabled ? associatedGroup.displayName : null;
+
+  // Prefer the resolved M365 Group GUID over ownerPrincipalName for API calls
+  const groupIdForApi = associatedGroup?.id || ownerPrincipalName;
+
   // Add Member dialog
   const addMemberDialog = useDialog();
   const addMemberApi = {
     url: "/api/ExecSetSharePointMember",
     type: "POST",
     data: {
-      groupId: ownerPrincipalName,
+      groupId: groupIdForApi,
       add: true,
       URL: webUrl,
       SharePointType: rootWebTemplate,
@@ -195,29 +219,6 @@ const Page = () => {
     confirmText: "Select a user to add as a Site Admin.",
     relatedQueryKeys: [`site-members-${siteId}`],
   };
-
-  // Resolve associated team for group-connected sites
-  // Extract the site path segment from webUrl (e.g. "ShippingTeam" from ".../sites/ShippingTeam")
-  // This always matches the M365 Group's mailNickname for group-connected sites
-  const isGroupConnected = rootWebTemplate?.includes("Group");
-  const sitePathName = webUrl ? decodeURIComponent(webUrl.split("/sites/")[1]?.split("/")[0] || "") : "";
-  const groupLookup = ApiGetCall({
-    url: "/api/ListGraphRequest",
-    data: {
-      Endpoint: "groups",
-      $filter: `mailNickname eq '${sitePathName}'`,
-      $select: "id,displayName,resourceProvisioningOptions",
-      $count: true,
-      tenantFilter: tenantFilter,
-    },
-    queryKey: `site-group-lookup-${siteId}`,
-    waiting: !!(isGroupConnected && sitePathName && tenantFilter && siteId),
-  });
-  const associatedGroup = groupLookup?.data?.Results?.[0];
-  const isTeamEnabled =
-    associatedGroup?.resourceProvisioningOptions?.includes("Team") ?? false;
-  const associatedTeamId = isTeamEnabled ? associatedGroup.id : null;
-  const associatedTeamName = isTeamEnabled ? associatedGroup.displayName : null;
 
   // Create Team from Group dialog
   const createTeamDialog = useDialog();
@@ -269,7 +270,7 @@ const Page = () => {
       icon: <PersonRemove />,
       url: "/api/ExecSetSharePointMember",
       data: {
-        groupId: `!${ownerPrincipalName}`,
+        groupId: `!${groupIdForApi}`,
         add: "!false",
         URL: `!${webUrl}`,
         SharePointType: `!${rootWebTemplate}`,
@@ -672,7 +673,7 @@ const Page = () => {
         open={inviteGuestOpen}
         onClose={() => setInviteGuestOpen(false)}
         tenantFilter={tenantFilter}
-        groupId={ownerPrincipalName}
+        groupId={groupIdForApi}
         webUrl={webUrl}
         sharePointType={rootWebTemplate}
         relatedQueryKeys={[`site-members-${siteId}`]}
