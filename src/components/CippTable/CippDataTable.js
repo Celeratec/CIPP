@@ -2193,8 +2193,7 @@ export const CippDataTable = (props) => {
       ) : undefined,
     onColumnVisibilityChange: setColumnVisibility,
     ...modeInfo,
-    // Override enableRowActions when showRowActionsMenu is false
-    enableRowActions: showRowActionsMenu && actions ? true : false,
+    enableRowActions: showRowActionsMenu && (actions || offCanvas) ? true : false,
     renderRowActionMenuItems: actions && showRowActionsMenu
       ? ({ closeMenu, row }) => {
           // Group actions by category
@@ -2316,26 +2315,28 @@ export const CippDataTable = (props) => {
             ),
           ];
         }
-      : offCanvas && (
-          <MenuItem
-            onClick={() => {
-              closeMenu();
-              setOffCanvasData(row.original);
-              // Find the index of this row in the filtered rows
-              const filteredRowsArray = table.getFilteredRowModel().rows;
-              const indexInFiltered = filteredRowsArray.findIndex(
-                (r) => r.original === row.original,
-              );
-              setOffCanvasRowIndex(indexInFiltered >= 0 ? indexInFiltered : 0);
-              setOffcanvasVisible(true);
-            }}
-          >
-            <ListItemIcon>
-              <More fontSize="small" />
-            </ListItemIcon>
-            More Info
-          </MenuItem>
-        ),
+      : offCanvas
+        ? ({ closeMenu, row }) => [
+            <MenuItem
+              key="offcanvas-more-info"
+              onClick={() => {
+                closeMenu();
+                setOffCanvasData(row.original);
+                const filteredRowsArray = table.getFilteredRowModel().rows;
+                const indexInFiltered = filteredRowsArray.findIndex(
+                  (r) => r.original === row.original,
+                );
+                setOffCanvasRowIndex(indexInFiltered >= 0 ? indexInFiltered : 0);
+                setOffcanvasVisible(true);
+              }}
+            >
+              <ListItemIcon>
+                <More fontSize="small" />
+              </ListItemIcon>
+              More Info
+            </MenuItem>,
+          ]
+        : undefined,
     renderTopToolbar: ({ table }) => {
       return (
         <>
