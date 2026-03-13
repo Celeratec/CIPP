@@ -716,6 +716,11 @@ export const nativeMenuItems = [
         permissions: ["Sharepoint.Admin.*"],
         items: [
           {
+            title: "Dashboard",
+            path: "/teams-share/sharepoint/dashboard",
+            permissions: ["Sharepoint.Admin.*"],
+          },
+          {
             title: "SharePoint Sites",
             path: "/teams-share/sharepoint",
             permissions: ["Sharepoint.Admin.*"],
