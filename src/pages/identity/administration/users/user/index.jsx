@@ -15,6 +15,7 @@ import {
   Security,
   Devices,
   Badge,
+  PersonAdd,
 } from "@mui/icons-material";
 import { HeaderedTabbedLayout } from "../../../../../layouts/HeaderedTabbedLayout";
 import tabOptions from "./tabOptions";
@@ -34,8 +35,20 @@ const CippMap = dynamic(() => import("../../../../../components/CippComponents/C
   ssr: false,
 });
 
-import { Button, Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
+import {
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  CircularProgress,
+} from "@mui/material";
 import { Close } from "@mui/icons-material";
+import { useForm, useWatch } from "react-hook-form";
+import CippFormComponent from "../../../../../components/CippComponents/CippFormComponent";
+import { CippApiResults } from "../../../../../components/CippComponents/CippApiResults";
+import gdaproles from "../../../../../data/GDAPRoles.json";
 import { CippPropertyList } from "../../../../../components/CippComponents/CippPropertyList";
 import { CippCodeBlock } from "../../../../../components/CippComponents/CippCodeBlock";
 import { CippHead } from "../../../../../components/CippComponents/CippHead";
@@ -81,11 +94,109 @@ const SignInLogsDialog = ({ open, onClose, userId, tenantFilter }) => {
   );
 };
 
+const AddRoleForm = ({ user, tenant, onClose, onSuccess, mutation }) => {
+  const formControl = useForm({ mode: "onChange" });
+  const assignmentType = useWatch({
+    control: formControl.control,
+    name: "assignmentType",
+  });
+  const assignmentTypeValue = assignmentType?.value || assignmentType;
+  const isTemporary = assignmentTypeValue === "Temporary";
+
+  const handleSubmit = formControl.handleSubmit((formData) => {
+    const actionType = isTemporary ? "AddTemporary" : "Add";
+    const roles = Array.isArray(formData.roles) ? formData.roles : [formData.roles];
+    mutation.mutate(
+      {
+        url: "/api/ExecRoleAssignment",
+        data: {
+          tenantFilter: tenant,
+          userId: user.id,
+          userPrincipalName: user.userPrincipalName,
+          displayName: user.displayName,
+          roles: roles.map((r) => ({ label: r.label, value: r.value })),
+          action: actionType,
+          expiration: formData.expiration
+            ? Math.floor(new Date(formData.expiration).getTime() / 1000)
+            : undefined,
+          reason: formData.reason || undefined,
+        },
+      },
+      { onSuccess }
+    );
+  });
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <Stack spacing={2} sx={{ mt: 1 }}>
+        <CippFormComponent
+          type="autoComplete"
+          name="roles"
+          label="Select Admin Roles"
+          multiple={true}
+          creatable={false}
+          formControl={formControl}
+          options={gdaproles.map((role) => ({ label: role.Name, value: role.ObjectId }))}
+          validators={{ required: "Please select at least one role" }}
+        />
+        <CippFormComponent
+          type="radio"
+          name="assignmentType"
+          label="Assignment Type"
+          formControl={formControl}
+          options={[
+            { label: "Permanent", value: "Permanent" },
+            { label: "Temporary", value: "Temporary" },
+          ]}
+          validators={{ required: "Please select an assignment type" }}
+        />
+        {isTemporary && (
+          <CippFormComponent
+            type="datePicker"
+            name="expiration"
+            label="Expiration Date/Time"
+            dateTimeType="datetime"
+            formControl={formControl}
+            validators={{ required: "Please select an expiration date" }}
+          />
+        )}
+        <CippFormComponent
+          type="textField"
+          name="reason"
+          label="Reason (optional)"
+          formControl={formControl}
+        />
+        <CippApiResults apiObject={mutation} />
+        <DialogActions sx={{ px: 0, pb: 0 }}>
+          <Button onClick={onClose} disabled={mutation.isPending}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={mutation.isPending}
+            startIcon={
+              mutation.isPending ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <PersonAdd />
+              )
+            }
+          >
+            {mutation.isPending ? "Assigning..." : "Assign Role"}
+          </Button>
+        </DialogActions>
+      </Stack>
+    </form>
+  );
+};
+
 const Page = () => {
   const userSettingsDefaults = useSettings();
   const router = useRouter();
   const { userId } = router.query;
   const [signInLogsDialogOpen, setSignInLogsDialogOpen] = useState(false);
+  const [addRoleDialogOpen, setAddRoleDialogOpen] = useState(false);
   const userActions = useCippUserActions();
   const tenant = router.query.tenantFilter ?? userSettingsDefaults.currentTenant;
   const settingsReady = userSettingsDefaults.isInitialized && !!tenant;
@@ -106,6 +217,11 @@ const Page = () => {
 
   const userBulkRequest = ApiPostCall({
     urlFromData: true,
+  });
+
+  const addRoleMutation = ApiPostCall({
+    urlFromData: true,
+    relatedQueryKeys: ["ListRoles"],
   });
 
   const refreshFunction = useCallback(() => {
@@ -596,6 +712,16 @@ const Page = () => {
         subtext: "List of roles the user is a member of",
         statusText: ` ${roles.length} Role(s)`,
         statusColor: "info.main",
+        actionButton: (
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<PersonAdd />}
+            onClick={() => setAddRoleDialogOpen(true)}
+          >
+            Add Role
+          </Button>
+        ),
         table: {
           title: "Admin Roles",
           hideTitle: true,
@@ -767,6 +893,31 @@ const Page = () => {
         userId={userId}
         tenantFilter={userSettingsDefaults.currentTenant}
       />
+      <Dialog
+        open={addRoleDialogOpen}
+        onClose={() => !addRoleMutation.isPending && setAddRoleDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <PersonAdd color="primary" />
+          Add Role to {data?.displayName}
+        </DialogTitle>
+        <DialogContent>
+          {addRoleDialogOpen && (
+            <AddRoleForm
+              user={data}
+              tenant={tenant}
+              onClose={() => setAddRoleDialogOpen(false)}
+              onSuccess={() => {
+                refreshFunction();
+                setAddRoleDialogOpen(false);
+              }}
+              mutation={addRoleMutation}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </HeaderedTabbedLayout>
   );
 };
