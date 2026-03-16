@@ -228,12 +228,11 @@ const Page = () => {
 
     return [
       {
-        //tested
         label: "Edit Group",
         link: "/identity/administration/groups/edit?groupId=[id]&groupType=[groupType]",
         multiPost: false,
         icon: <Edit />,
-        color: "success",
+        category: "edit",
         showInActionsMenu: true,
       },
       {
@@ -260,6 +259,7 @@ const Page = () => {
         confirmText:
           "Are you sure you want to hide this group from the global address list? Remember this will not work if the group is AD Synched.",
         multiPost: false,
+        category: "manage",
       },
       {
         label: "Only allow messages from people inside the organisation",
@@ -274,6 +274,7 @@ const Page = () => {
         confirmText:
           "Are you sure you want to only allow messages from people inside the organisation? Remember this will not work if the group is AD Synched.",
         multiPost: false,
+        category: "manage",
       },
       {
         label: "Allow messages from people inside and outside the organisation",
@@ -288,6 +289,7 @@ const Page = () => {
         confirmText:
           "Are you sure you want to allow messages from people inside and outside the organisation? Remember this will not work if the group is AD Synched.",
         multiPost: false,
+        category: "manage",
       },
       {
         label: "Set Source of Authority",
@@ -314,6 +316,7 @@ const Page = () => {
         confirmText:
           "Are you sure you want to change the source of authority for '[displayName]'? Setting it to On-Premises Managed will take until the next sync cycle to show the change.",
         multiPost: false,
+        category: "manage",
       },
       {
         label: "Create template based on group",
@@ -330,6 +333,7 @@ const Page = () => {
         },
         confirmText: "Are you sure you want to create a template based on this group?",
         multiPost: false,
+        category: "manage",
       },
       {
         label: "Create Team from Group",
@@ -464,6 +468,7 @@ const Page = () => {
           },
         ],
         condition: (row) => row?.calculatedGroupType === "m365",
+        category: "manage",
       },
       {
         label: "Delete Group",
@@ -477,6 +482,8 @@ const Page = () => {
         },
         confirmText: "Are you sure you want to delete this group.",
         multiPost: false,
+        color: "danger",
+        category: "danger",
       },
     ];
   };
@@ -505,6 +512,8 @@ const Page = () => {
                   label: "View User",
                   link: `/identity/administration/users/user?userId=[id]&tenantFilter=${userSettingsDefaults.currentTenant}`,
                   condition: (row) => row["@odata.type"] === "#microsoft.graph.user",
+                  color: "success",
+                  category: "view",
                 },
               ],
               data: groupMembers,
@@ -559,6 +568,8 @@ const Page = () => {
                   label: "View User",
                   link: `/identity/administration/users/user?userId=[id]&tenantFilter=${userSettingsDefaults.currentTenant}`,
                   condition: (row) => row["@odata.type"] === "#microsoft.graph.user",
+                  color: "success",
+                  category: "view",
                 },
               ],
               data: groupOwners,
@@ -615,12 +626,15 @@ const Page = () => {
                   label: "View Group",
                   link: `/identity/administration/groups/group?groupId=[id]&tenantFilter=${userSettingsDefaults.currentTenant}`,
                   condition: (row) => row["@odata.type"] === "#microsoft.graph.group",
+                  color: "success",
+                  category: "view",
                 },
                 {
                   icon: <PencilIcon />,
                   label: "Edit Group",
                   link: "/identity/administration/groups/edit?groupId=[id]&groupType=[calculatedGroupType]",
                   condition: (row) => row["@odata.type"] === "#microsoft.graph.group",
+                  category: "edit",
                 },
               ],
               data: groupMemberOf?.filter((item) => item?.["@odata.type"] === "#microsoft.graph.group"),

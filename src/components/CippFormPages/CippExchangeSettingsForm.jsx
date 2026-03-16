@@ -64,6 +64,18 @@ const CippExchangeSettingsForm = (props) => {
     queryKey: `TenantContacts-${userSettingsDefaults.currentTenant}`,
   });
 
+  const groupsList = ApiGetCall({
+    url: "/api/ListGraphRequest",
+    data: {
+      Endpoint: `groups`,
+      tenantFilter: userSettingsDefaults.currentTenant,
+      $filter: "mailEnabled eq true",
+      $select: "id,displayName,mail,groupTypes,securityEnabled",
+      $top: 999,
+    },
+    queryKey: `MailEnabledGroups-${userSettingsDefaults.currentTenant}`,
+  });
+
   const postRequest = ApiPostCall({
     datafromUrl: true,
     relatedQueryKeys: relatedQueryKeys,
@@ -166,6 +178,7 @@ const CippExchangeSettingsForm = (props) => {
           formControl={formControl}
           usersList={usersList}
           contactsList={contactsList}
+          groupsList={groupsList}
           postRequest={postRequest}
           handleSubmit={handleSubmit}
         />

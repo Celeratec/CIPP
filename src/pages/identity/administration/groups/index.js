@@ -13,6 +13,15 @@ import {
   CloudSync,
   RocketLaunch,
   PersonAdd,
+  Groups,
+  Security,
+  Mail,
+  AdminPanelSettings,
+  Cloud,
+  Public,
+  Sync,
+  DynamicFeed,
+  Description,
 } from "@mui/icons-material";
 import { Stack } from "@mui/system";
 import { useState } from "react";
@@ -30,17 +39,17 @@ const Page = () => {
     {
       label: "View Group",
       link: `/identity/administration/groups/group?groupId=[id]&tenantFilter=${currentTenant}`,
-      color: "info",
+      color: "success",
       icon: <EyeIcon />,
       multiPost: false,
+      category: "view",
     },
     {
-      //tested
       label: "Edit Group",
       link: "/identity/administration/groups/edit?groupId=[id]&groupType=[groupType]",
       multiPost: false,
       icon: <Edit />,
-      color: "success",
+      category: "edit",
     },
     {
       label: "Add Member",
@@ -127,6 +136,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to hide this group from the global address list? Remember this will not work if the group is AD Synched.",
       multiPost: false,
+      category: "manage",
     },
     {
       label: "Only allow messages from people inside the organisation",
@@ -141,6 +151,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to only allow messages from people inside the organisation? Remember this will not work if the group is AD Synched.",
       multiPost: false,
+      category: "manage",
     },
     {
       label: "Allow messages from people inside and outside the organisation",
@@ -155,6 +166,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to allow messages from people inside and outside the organisation? Remember this will not work if the group is AD Synched.",
       multiPost: false,
+      category: "manage",
     },
     {
       label: "Set Source of Authority",
@@ -181,6 +193,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to change the source of authority for '[displayName]'? Setting it to On-Premises Managed will take until the next sync cycle to show the change.",
       multiPost: false,
+      category: "manage",
     },
     {
       label: "Create template based on group",
@@ -197,6 +210,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to create a template based on this group?",
       multiPost: false,
+      category: "manage",
     },
     {
       label: "Create Team from Group",
@@ -209,6 +223,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to create a Team from this group? Note: The group must be at least 15 minutes old for this to work.",
       multiPost: false,
+      category: "manage",
       defaultvalues: {
         TeamSettings: {
           memberSettings: {
@@ -344,8 +359,113 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to delete this group.",
       multiPost: false,
+      color: "danger",
+      category: "danger",
     },
   ];
+  const cardConfig = {
+    title: "displayName",
+    subtitle: "mail",
+    avatar: {
+      field: "displayName",
+      icon: (item) => {
+        const gt = item.calculatedGroupType;
+        if (gt === "m365") return <Groups />;
+        if (gt === "security") return <Security />;
+        if (gt === "distribution") return <Mail />;
+        if (gt === "mailenabledsecurity") return <AdminPanelSettings />;
+        return <Groups />;
+      },
+    },
+    badges: [
+      {
+        field: "groupType",
+        conditions: {
+          "Microsoft 365": {
+            label: "M365",
+            color: "primary",
+            icon: <Cloud fontSize="small" />,
+          },
+          Security: {
+            label: "Security",
+            color: "warning",
+            icon: <Security fontSize="small" />,
+          },
+          "Distribution List": {
+            label: "Distribution",
+            color: "info",
+            icon: <Mail fontSize="small" />,
+          },
+          "Mail-Enabled Security": {
+            label: "Mail Security",
+            color: "secondary",
+            icon: <AdminPanelSettings fontSize="small" />,
+          },
+        },
+      },
+      {
+        field: "visibility",
+        iconOnly: true,
+        conditions: {
+          Public: {
+            label: "Public",
+            color: "success",
+            icon: <Public fontSize="small" />,
+          },
+          Private: {
+            label: "Private",
+            color: "default",
+            icon: <Lock fontSize="small" />,
+          },
+        },
+      },
+      {
+        field: "onPremisesSyncEnabled",
+        iconOnly: true,
+        conditions: {
+          true: {
+            label: "Synced from On-Premises",
+            color: "info",
+            icon: <Sync fontSize="small" />,
+          },
+        },
+      },
+      {
+        field: "membershipRule",
+        iconOnly: true,
+        transform: (value) => (value ? "dynamic" : null),
+        conditions: {
+          dynamic: {
+            label: "Dynamic Membership",
+            color: "secondary",
+            icon: <DynamicFeed fontSize="small" />,
+          },
+        },
+      },
+    ],
+    extraFields: [
+      {
+        field: "description",
+        icon: <Description />,
+        maxLines: 2,
+      },
+    ],
+    desktopFields: [
+      { field: "mail", label: "Email", icon: <Mail /> },
+      { field: "visibility", label: "Visibility", icon: <Public /> },
+    ],
+    desktopFieldsMax: 3,
+    desktopFieldsLayout: "column",
+    cardGridProps: { md: 6, lg: 4 },
+    mobileQuickActions: [
+      "Edit Group",
+      "Add Member",
+      "Set Global Address List Visibility",
+      "Delete Group",
+    ],
+    maxQuickActions: 6,
+  };
+
   const offCanvas = {
     extendedInfoFields: [
       "displayName",
@@ -393,6 +513,7 @@ const Page = () => {
       }
       actions={actions}
       offCanvas={offCanvas}
+      cardConfig={cardConfig}
       simpleColumns={[
         "displayName",
         "description",
