@@ -301,9 +301,17 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, sharePointSiteId,
   const removeMemberMutation = ApiPostCall({ relatedQueryKeys: [`TeamDetails-${teamId}`] });
   const updateRoleMutation = ApiPostCall({ relatedQueryKeys: [`TeamDetails-${teamId}`] });
 
-  const handleRemoveMember = useCallback(
-    (member) => {
-      if (!confirm(`Remove ${member.displayName || "this member"} from channel ${channel.displayName}?`)) return;
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null, member: null, newRole: null });
+
+  const handleConfirmClose = useCallback(() => {
+    setConfirmDialog({ open: false, type: null, member: null, newRole: null });
+  }, []);
+
+  const handleConfirmExecute = useCallback(() => {
+    const { type, member, newRole } = confirmDialog;
+    handleConfirmClose();
+
+    if (type === "remove") {
       removeMemberMutation.mutate(
         {
           url: "/api/ExecTeamAction",
@@ -330,15 +338,8 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, sharePointSiteId,
           },
         }
       );
-    },
-    [teamId, channel.id, channel.displayName, tenantFilter, removeMemberMutation, dispatch, handleRefreshMembers]
-  );
-
-  const handleUpdateRole = useCallback(
-    (member, newRole) => {
+    } else if (type === "role") {
       const action = newRole === "owner" ? "Promote" : "Demote";
-      const target = newRole === "owner" ? "owner" : "member";
-      if (!confirm(`${action} ${member.displayName || "this member"} to ${target} in channel ${channel.displayName}?`)) return;
       updateRoleMutation.mutate(
         {
           url: "/api/ExecTeamAction",
@@ -366,9 +367,32 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, sharePointSiteId,
           },
         }
       );
-    },
-    [teamId, channel.id, channel.displayName, channel.membershipType, tenantFilter, updateRoleMutation, dispatch, handleRefreshMembers]
+    }
+  }, [confirmDialog, handleConfirmClose, removeMemberMutation, updateRoleMutation, tenantFilter, teamId, channel.id, channel.displayName, channel.membershipType, dispatch, handleRefreshMembers]);
+
+  const handleRemoveMember = useCallback(
+    (member) => setConfirmDialog({ open: true, type: "remove", member, newRole: null }),
+    []
   );
+
+  const handleUpdateRole = useCallback(
+    (member, newRole) => setConfirmDialog({ open: true, type: "role", member, newRole }),
+    []
+  );
+
+  const confirmDialogTitle = confirmDialog.type === "remove"
+    ? "Remove Channel Member"
+    : confirmDialog.newRole === "owner"
+      ? "Promote to Owner"
+      : "Demote to Member";
+
+  const confirmDialogMessage = confirmDialog.type === "remove"
+    ? `Remove ${confirmDialog.member?.displayName || "this member"} from channel ${channel.displayName}?`
+    : confirmDialog.newRole === "owner"
+      ? `Promote ${confirmDialog.member?.displayName || "this member"} to owner in channel ${channel.displayName}? Owners can manage channel settings and membership.`
+      : `Demote ${confirmDialog.member?.displayName || "this member"} to a regular member in channel ${channel.displayName}?`;
+
+  const confirmDialogColor = confirmDialog.type === "remove" ? "error" : confirmDialog.newRole === "owner" ? "warning" : "info";
 
   const isSharedChannel = channel.membershipType === "shared";
   const isPrivateChannel = channel.membershipType === "private";
@@ -662,6 +686,24 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, sharePointSiteId,
         row={channel}
         relatedQueryKeys={[`TeamDetails-${teamId}`]}
       />
+
+      {/* Confirm Role Change / Remove Member Dialog */}
+      <Dialog open={confirmDialog.open} onClose={handleConfirmClose} maxWidth="xs" fullWidth>
+        <DialogTitle>{confirmDialogTitle}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{confirmDialogMessage}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleConfirmClose}>Cancel</Button>
+          <Button
+            onClick={handleConfirmExecute}
+            color={confirmDialogColor}
+            variant="contained"
+          >
+            {confirmDialogTitle}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
