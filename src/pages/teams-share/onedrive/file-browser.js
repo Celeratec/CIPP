@@ -784,7 +784,7 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
             defaultDirs[item.path] = "toDest";
           } else if (item.status === "dest_only") {
             defaultDirs[item.path] = "toSource";
-          } else if (item.status === "size_differs") {
+          } else if (item.status === "size_differs" || item.status === "modified_differs") {
             const srcDate = item.sourceModified ? new Date(item.sourceModified) : null;
             const dstDate = item.destModified ? new Date(item.destModified) : null;
             if (srcDate && dstDate) {
@@ -830,8 +830,8 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
     const itemsToCopy = selectedItems.filter((d) => {
       const dir = copyDirections[d.path];
       if (dir === "skip" || !dir) return false;
-      if (dir === "toDest") return d.status === "source_only" || d.status === "size_differs";
-      if (dir === "toSource") return d.status === "dest_only" || d.status === "size_differs";
+      if (dir === "toDest") return d.status === "source_only" || d.status === "size_differs" || d.status === "modified_differs";
+      if (dir === "toSource") return d.status === "dest_only" || d.status === "size_differs" || d.status === "modified_differs";
       return false;
     });
     if (itemsToCopy.length === 0) return;
@@ -907,6 +907,7 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
   const sourceOnlyCount = diffResults.filter((d) => d.status === "source_only").length;
   const destOnlyCount = diffResults.filter((d) => d.status === "dest_only").length;
   const sizeDiffersCount = diffResults.filter((d) => d.status === "size_differs").length;
+  const modifiedDiffersCount = diffResults.filter((d) => d.status === "modified_differs").length;
 
   const selectedCopyCount = [...selected].filter((p) => {
     const dir = copyDirections[p];
@@ -921,6 +922,8 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
         return <Chip label="Dest Only" size="small" color="warning" sx={{ height: 22 }} />;
       case "size_differs":
         return <Chip label="Size Differs" size="small" color="error" sx={{ height: 22 }} />;
+      case "modified_differs":
+        return <Chip label="Modified Differs" size="small" color="info" sx={{ height: 22 }} />;
       default:
         return null;
     }
@@ -1044,7 +1047,10 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
                 <Chip label={`${destOnlyCount} dest only`} size="small" color="warning" />
               )}
               {sizeDiffersCount > 0 && (
-                <Chip label={`${sizeDiffersCount} differ`} size="small" color="error" />
+                <Chip label={`${sizeDiffersCount} size differ`} size="small" color="error" />
+              )}
+              {modifiedDiffersCount > 0 && (
+                <Chip label={`${modifiedDiffersCount} modified differ`} size="small" color="info" />
               )}
               {compareInfo?.matchCount > 0 && (
                 <Chip
@@ -1201,7 +1207,7 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
                     {diffResults.map((item) => {
                       const depth = getDepth(item.path);
                       const cs = copyStatuses[item.path];
-                      const newer = item.status === "size_differs" ? getNewerSide(item) : null;
+                      const newer = (item.status === "size_differs" || item.status === "modified_differs") ? getNewerSide(item) : null;
                       const dir = copyDirections[item.path] || "skip";
                       return (
                         <TableRow key={item.path} hover>
