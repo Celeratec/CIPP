@@ -299,6 +299,7 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, sharePointSiteId,
   }, [teamId, channel.id, channel.membershipType, tenantFilter]);
 
   const removeMemberMutation = ApiPostCall({ relatedQueryKeys: [`TeamDetails-${teamId}`] });
+  const updateRoleMutation = ApiPostCall({ relatedQueryKeys: [`TeamDetails-${teamId}`] });
 
   const handleRemoveMember = useCallback(
     (member) => {
@@ -331,6 +332,42 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, sharePointSiteId,
       );
     },
     [teamId, channel.id, channel.displayName, tenantFilter, removeMemberMutation, dispatch, handleRefreshMembers]
+  );
+
+  const handleUpdateRole = useCallback(
+    (member, newRole) => {
+      const action = newRole === "owner" ? "Promote" : "Demote";
+      const target = newRole === "owner" ? "owner" : "member";
+      if (!confirm(`${action} ${member.displayName || "this member"} to ${target} in channel ${channel.displayName}?`)) return;
+      updateRoleMutation.mutate(
+        {
+          url: "/api/ExecTeamAction",
+          data: {
+            TenantFilter: tenantFilter,
+            TeamID: teamId,
+            Action: "UpdateChannelMemberRole",
+            ChannelID: channel.id,
+            ChannelName: channel.displayName,
+            ChannelType: channel.membershipType,
+            MembershipID: member.id,
+            MemberName: member.displayName,
+            NewRole: newRole,
+          },
+        },
+        {
+          onSuccess: (res) => {
+            const msg = res?.data?.Results || `${action}d successfully`;
+            dispatch(showToast({ message: msg, title: "Channel Member Role" }));
+            handleRefreshMembers();
+          },
+          onError: (err) => {
+            const msg = err?.response?.data?.Results || err?.message || `Failed to ${action.toLowerCase()} member`;
+            dispatch(showToast({ message: msg, title: "Channel Member Role", toastError: { message: msg } }));
+          },
+        }
+      );
+    },
+    [teamId, channel.id, channel.displayName, channel.membershipType, tenantFilter, updateRoleMutation, dispatch, handleRefreshMembers]
   );
 
   const isSharedChannel = channel.membershipType === "shared";
@@ -550,16 +587,41 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, sharePointSiteId,
                         <TableCell sx={{ py: 0.5, fontSize: "0.8rem" }}>{member.email || "—"}</TableCell>
                         <TableCell sx={{ py: 0.5, fontSize: "0.8rem" }}>{member.roles || "member"}</TableCell>
                         <TableCell sx={{ py: 0.5 }} align="right">
-                          <Tooltip title="Remove from channel">
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => handleRemoveMember(member)}
-                              disabled={removeMemberMutation.isPending}
-                            >
-                              <PersonRemove sx={{ fontSize: 16 }} />
-                            </IconButton>
-                          </Tooltip>
+                          <Stack direction="row" spacing={0} justifyContent="flex-end">
+                            {member.roles && member.roles.includes("owner") ? (
+                              <Tooltip title="Demote to member">
+                                <IconButton
+                                  size="small"
+                                  color="info"
+                                  onClick={() => handleUpdateRole(member, "member")}
+                                  disabled={updateRoleMutation.isPending}
+                                >
+                                  <Person sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Tooltip>
+                            ) : (
+                              <Tooltip title="Promote to owner">
+                                <IconButton
+                                  size="small"
+                                  color="warning"
+                                  onClick={() => handleUpdateRole(member, "owner")}
+                                  disabled={updateRoleMutation.isPending}
+                                >
+                                  <SupervisorAccount sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            <Tooltip title="Remove from channel">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleRemoveMember(member)}
+                                disabled={removeMemberMutation.isPending}
+                              >
+                                <PersonRemove sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
                         </TableCell>
                       </TableRow>
                     ))}
