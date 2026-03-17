@@ -38,6 +38,7 @@ import { Box, Stack } from "@mui/system";
 import {
   Folder,
   ArrowBack,
+  ArrowForward,
   Home,
   OpenInNew,
   CloudQueue,
@@ -52,6 +53,7 @@ import {
   Language,
   PersonOutline,
   SwapHoriz,
+  Block,
 } from "@mui/icons-material";
 import { CippTablePage } from "../../../components/CippComponents/CippTablePage.jsx";
 import CippFormComponent from "../../../components/CippComponents/CippFormComponent";
@@ -615,6 +617,7 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
   const [compareInfo, setCompareInfo] = useState(null);
 
   const [selected, setSelected] = useState(new Set());
+  const [copyDirections, setCopyDirections] = useState({});
   const [isCopying, setIsCopying] = useState(false);
   const [copyStatuses, setCopyStatuses] = useState({});
   const [copyComplete, setCopyComplete] = useState(false);
@@ -754,6 +757,7 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
     setCompareError(null);
     setDiffResults([]);
     setSelected(new Set());
+    setCopyDirections({});
     setCopyStatuses({});
     setCopyComplete(false);
     setHasCompared(false);
@@ -774,6 +778,23 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
 
       if (Array.isArray(data?.Results)) {
         setDiffResults(data.Results);
+        const defaultDirs = {};
+        data.Results.forEach((item) => {
+          if (item.status === "source_only") {
+            defaultDirs[item.path] = "toDest";
+          } else if (item.status === "dest_only") {
+            defaultDirs[item.path] = "toSource";
+          } else if (item.status === "size_differs") {
+            const srcDate = item.sourceModified ? new Date(item.sourceModified) : null;
+            const dstDate = item.destModified ? new Date(item.destModified) : null;
+            if (srcDate && dstDate) {
+              defaultDirs[item.path] = srcDate >= dstDate ? "toDest" : "toSource";
+            } else {
+              defaultDirs[item.path] = "skip";
+            }
+          }
+        });
+        setCopyDirections(defaultDirs);
         setCompareInfo({
           sourceDriveId: data.SourceDriveId,
           destDriveId: data.DestDriveId,
@@ -804,12 +825,15 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
   const selectAll = () => setSelected(new Set(diffResults.map((d) => d.path)));
   const clearSelection = () => setSelected(new Set());
 
-  const handleCopy = async (direction) => {
+  const handleCopy = async () => {
     const selectedItems = diffResults.filter((d) => selected.has(d.path));
-    const itemsToCopy =
-      direction === "toDest"
-        ? selectedItems.filter((d) => d.status === "source_only" || d.status === "size_differs")
-        : selectedItems.filter((d) => d.status === "dest_only" || d.status === "size_differs");
+    const itemsToCopy = selectedItems.filter((d) => {
+      const dir = copyDirections[d.path];
+      if (dir === "skip" || !dir) return false;
+      if (dir === "toDest") return d.status === "source_only" || d.status === "size_differs";
+      if (dir === "toSource") return d.status === "dest_only" || d.status === "size_differs";
+      return false;
+    });
     if (itemsToCopy.length === 0) return;
 
     setIsCopying(true);
@@ -817,6 +841,7 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
     const statuses = {};
 
     for (const item of itemsToCopy) {
+      const direction = copyDirections[item.path];
       statuses[item.path] = { status: "in_progress" };
       setCopyStatuses({ ...statuses });
 
@@ -874,6 +899,7 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
     setCompareError(null);
     setCompareInfo(null);
     setSelected(new Set());
+    setCopyDirections({});
     setCopyStatuses({});
     setCopyComplete(false);
   };
@@ -882,13 +908,9 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
   const destOnlyCount = diffResults.filter((d) => d.status === "dest_only").length;
   const sizeDiffersCount = diffResults.filter((d) => d.status === "size_differs").length;
 
-  const selectedSourceCount = [...selected].filter((p) => {
-    const item = diffResults.find((d) => d.path === p);
-    return item && (item.status === "source_only" || item.status === "size_differs");
-  }).length;
-  const selectedDestCount = [...selected].filter((p) => {
-    const item = diffResults.find((d) => d.path === p);
-    return item && (item.status === "dest_only" || item.status === "size_differs");
+  const selectedCopyCount = [...selected].filter((p) => {
+    const dir = copyDirections[p];
+    return dir && dir !== "skip";
   }).length;
 
   const getStatusChip = (status) => {
@@ -910,6 +932,21 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
     const units = ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return `${(bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0)} ${units[i]}`;
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "\u2014";
+    const d = new Date(dateStr);
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) +
+      " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const getNewerSide = (item) => {
+    if (!item.sourceModified || !item.destModified) return null;
+    const src = new Date(item.sourceModified);
+    const dst = new Date(item.destModified);
+    if (src.getTime() === dst.getTime()) return null;
+    return src > dst ? "source" : "dest";
   };
 
   const getDepth = (path) => (path.match(/\//g) || []).length;
@@ -1152,19 +1189,20 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
                     <TableRow>
                       <TableCell padding="checkbox" sx={{ width: 42 }} />
                       <TableCell>Name</TableCell>
-                      <TableCell align="right" sx={{ width: 100 }}>
-                        Source Size
-                      </TableCell>
-                      <TableCell align="right" sx={{ width: 100 }}>
-                        Dest Size
-                      </TableCell>
-                      <TableCell sx={{ width: 130 }}>Status</TableCell>
+                      <TableCell align="right" sx={{ width: 90 }}>Source Size</TableCell>
+                      <TableCell sx={{ width: 140 }}>Source Modified</TableCell>
+                      <TableCell align="right" sx={{ width: 90 }}>Dest Size</TableCell>
+                      <TableCell sx={{ width: 140 }}>Dest Modified</TableCell>
+                      <TableCell sx={{ width: 120 }}>Status</TableCell>
+                      <TableCell sx={{ width: 130 }} align="center">Action</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {diffResults.map((item) => {
                       const depth = getDepth(item.path);
                       const cs = copyStatuses[item.path];
+                      const newer = item.status === "size_differs" ? getNewerSide(item) : null;
+                      const dir = copyDirections[item.path] || "skip";
                       return (
                         <TableRow key={item.path} hover>
                           <TableCell padding="checkbox">
@@ -1199,12 +1237,66 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
                               {item.sourceSize != null ? formatSize(item.sourceSize) : "\u2014"}
                             </Typography>
                           </TableCell>
+                          <TableCell>
+                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                              <Typography variant="caption" color="text.secondary">
+                                {formatDate(item.sourceModified)}
+                              </Typography>
+                              {newer === "source" && (
+                                <Chip label="Newer" size="small" color="success" sx={{ height: 18, fontSize: "0.65rem" }} />
+                              )}
+                            </Stack>
+                          </TableCell>
                           <TableCell align="right">
                             <Typography variant="caption" color="text.secondary">
                               {item.destSize != null ? formatSize(item.destSize) : "\u2014"}
                             </Typography>
                           </TableCell>
+                          <TableCell>
+                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                              <Typography variant="caption" color="text.secondary">
+                                {formatDate(item.destModified)}
+                              </Typography>
+                              {newer === "dest" && (
+                                <Chip label="Newer" size="small" color="success" sx={{ height: 18, fontSize: "0.65rem" }} />
+                              )}
+                            </Stack>
+                          </TableCell>
                           <TableCell>{getStatusChip(item.status)}</TableCell>
+                          <TableCell align="center">
+                            <Stack direction="row" spacing={0} justifyContent="center">
+                              <Tooltip title="Copy source to destination">
+                                <IconButton
+                                  size="small"
+                                  color={dir === "toDest" ? "primary" : "default"}
+                                  onClick={() => setCopyDirections((prev) => ({ ...prev, [item.path]: "toDest" }))}
+                                  disabled={isCopying || !item.sourceId}
+                                >
+                                  <ArrowForward sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Copy destination to source">
+                                <IconButton
+                                  size="small"
+                                  color={dir === "toSource" ? "warning" : "default"}
+                                  onClick={() => setCopyDirections((prev) => ({ ...prev, [item.path]: "toSource" }))}
+                                  disabled={isCopying || !item.destId}
+                                >
+                                  <ArrowBack sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Skip — don't copy">
+                                <IconButton
+                                  size="small"
+                                  color={dir === "skip" ? "error" : "default"}
+                                  onClick={() => setCopyDirections((prev) => ({ ...prev, [item.path]: "skip" }))}
+                                  disabled={isCopying}
+                                >
+                                  <Block sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          </TableCell>
                         </TableRow>
                       );
                     })}
@@ -1219,31 +1311,16 @@ const FolderCompareDialog = ({ open, onClose, currentLocation, tenantFilter }) =
         <Button onClick={handleClose} color="inherit" disabled={isCopying}>
           {hasCompared ? "Done" : "Cancel"}
         </Button>
-        {hasCompared && diffResults.length > 0 && !copyComplete && (
-          <>
-            {selectedSourceCount > 0 && (
-              <Button
-                variant="contained"
-                color="primary"
-                disabled={isCopying}
-                onClick={() => handleCopy("toDest")}
-                startIcon={isCopying ? <CircularProgress size={18} color="inherit" /> : <ContentCopy />}
-              >
-                Copy {selectedSourceCount} to Destination
-              </Button>
-            )}
-            {selectedDestCount > 0 && (
-              <Button
-                variant="contained"
-                color="warning"
-                disabled={isCopying}
-                onClick={() => handleCopy("toSource")}
-                startIcon={isCopying ? <CircularProgress size={18} color="inherit" /> : <ContentCopy />}
-              >
-                Copy {selectedDestCount} to Source
-              </Button>
-            )}
-          </>
+        {hasCompared && diffResults.length > 0 && !copyComplete && selectedCopyCount > 0 && (
+          <Button
+            variant="contained"
+            color="primary"
+            disabled={isCopying}
+            onClick={() => handleCopy()}
+            startIcon={isCopying ? <CircularProgress size={18} color="inherit" /> : <ContentCopy />}
+          >
+            Copy {selectedCopyCount} Selected
+          </Button>
         )}
       </DialogActions>
     </Dialog>
