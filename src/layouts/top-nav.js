@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { Logo } from "../components/logo";
 import { useSettings } from "../hooks/use-settings";
+import { useUserBookmarks } from "../hooks/use-user-bookmarks";
 import { paths } from "../paths";
 import { AccountPopover } from "./account-popover";
 import { CippTenantSelector } from "../components/CippComponents/CippTenantSelector";
@@ -28,6 +29,7 @@ export const TopNav = memo((props) => {
   const searchDialog = useDialog();
   const { onNavOpen } = props;
   const settings = useSettings();
+  const { bookmarks, setBookmarks } = useUserBookmarks();
   const mdDown = useMediaQuery((theme) => theme.breakpoints.down("md"));
   const handleThemeSwitch = useCallback(() => {
     const themeName = settings.currentTheme?.value === "light" ? "dark" : "light";

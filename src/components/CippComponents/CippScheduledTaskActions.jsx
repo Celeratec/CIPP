@@ -2,7 +2,7 @@ import { EyeIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { CopyAll, Edit, PlayArrow } from "@mui/icons-material";
 import { usePermissions } from "../../hooks/use-permissions";
 
-export const CippScheduledTaskActions = (drawerHandlers = {}) => {
+export const CippScheduledTaskActions = (drawerHandlers = {}, { hideActions = [] } = {}) => {
   const { checkPermissions } = usePermissions();
   const canWriteScheduler = checkPermissions(["CIPP.Scheduler.ReadWrite"]);
   const canReadScheduler = checkPermissions(["CIPP.Scheduler.Read", "CIPP.Scheduler.ReadWrite"]);
@@ -74,7 +74,7 @@ export const CippScheduledTaskActions = (drawerHandlers = {}) => {
       multiPost: false,
       condition: () => canWriteScheduler,
     },
-  ];
+  ].filter((action) => !hideActions.includes(action.label));
 };
 
 export default CippScheduledTaskActions;

@@ -50,6 +50,12 @@ export const getCippFilterVariant = (providedColumnKeys, arg) => {
         }));
       }
 
+      // Add "No Licenses Assigned" option at beginning
+      filterSelectOptions.unshift({
+        label: "No Licenses Assigned",
+        value: "__no_license__",
+      });
+
       return {
         filterVariant: "multi-select",
         sortingFn: "alphanumeric",
@@ -64,7 +70,7 @@ export const getCippFilterVariant = (providedColumnKeys, arg) => {
           if (filterValue === "unlicensed") {
             return !hasLicenses;
           }
-          
+
           // Handle array of filter values (could be skuIds or special values)
           if (Array.isArray(filterValue)) {
             if (filterValue.length === 0) {
@@ -77,14 +83,25 @@ export const getCippFilterVariant = (providedColumnKeys, arg) => {
             if (filterValue.includes("unlicensed")) {
               return !hasLicenses;
             }
-            // Otherwise filter by skuId
-            if (!hasLicenses) {
+            // Upstream: handle "__no_license__" (No Licenses Assigned)
+            const hasNoLicenseFilter = filterValue.includes("__no_license__");
+            const otherFilters = filterValue.filter((v) => v !== "__no_license__");
+            const isUnlicensed = !hasLicenses;
+
+            if (hasNoLicenseFilter && isUnlicensed) {
+              return true;
+            }
+            if (hasNoLicenseFilter && otherFilters.length === 0 && !isUnlicensed) {
               return false;
             }
+            if (isUnlicensed) {
+              return false;
+            }
+            // Otherwise filter by skuId
             const userSkuIds = userLicenses.map((license) => license.skuId).filter(Boolean);
-            return filterValue.some((selectedSkuId) => userSkuIds.includes(selectedSkuId));
+            return otherFilters.some((selectedSkuId) => userSkuIds.includes(selectedSkuId));
           }
-          
+
           // No filter or unrecognized format - show all
           return true;
         },
