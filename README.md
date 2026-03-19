@@ -129,10 +129,6 @@ The following capabilities have been developed specifically for Manage365 and ar
 
 CIPP uses table-only views for listing data. Manage365 adds card view alternatives across every major list page -- Users, Groups, Teams, Mailboxes, Contacts, Devices, Applications, SharePoint Sites, OneDrive, and more. Cards surface key status badges, metadata, and up to 8 quick-action buttons directly on each item, so common tasks are one click away without opening a detail page. Standardized card widths, meaningful icons (OS-aware device icons, entity-type icons), and consistent badge design provide a polished, scannable interface. Card view loading is optimized to only show skeletons during initial data fetch; background refetches do not blank already-loaded cards.
 
-### Performance & Load Optimization
-
-The Users page defers heavy enrichment API calls (mailbox data, CAS protocol checks, Intune device presence, NinjaOne enrichment) behind an **Advanced Badges** toggle so the core user list renders immediately. Enrichment queries use extended cache durations and reduced retry counts to minimize backend pressure during peak load. The CAS mailbox endpoint returns only the fields needed for legacy protocol badges and filters server-side to legacy-enabled rows only, significantly reducing payload size and Exchange processing time.
-
 ### Mobile-Responsive Design
 
 Comprehensive mobile responsiveness throughout the application: responsive data tables that adapt to screen size, mobile-friendly toolbars with compact controls, sticky wizard step buttons, a mobile tenant selector in the top navigation, and card views optimized for touch. The entire interface is usable on tablets and phones without horizontal scrolling.
@@ -171,6 +167,14 @@ A comprehensive voice management section with dedicated pages for each component
 - **Frontend pre-check optimization** -- when skip duplicates is selected, the destination contents are fetched once upfront and duplicate files are marked as skipped immediately in the UI without making individual backend calls, providing instant feedback before the transfer begins
 - **Verified transfers** -- cross-drive copy and move operations poll the Graph API monitor URL for completion, then verify the destination item exists and matches the source in size before reporting success. For moves, the source is only deleted after verified copy completion to prevent data loss
 - **Folder compare** -- side-by-side recursive comparison of any two folder locations (OneDrive or SharePoint). A two-panel dialog lets users pick a source and destination, then runs a depth-limited diff that returns every difference: items only in the source, items only in the destination, and files with differing sizes. Results are displayed in a flat table with status chips, size columns, and checkbox selection. Users can select any subset of differing items and copy them to the other location in bulk, with per-item progress tracking. Matching file counts are shown in summary chips so users can quickly gauge how much the two locations overlap
+- **Temp file cleanup wizard** -- a guided 5-step wizard to find and remove temporary and junk files from SharePoint sites and OneDrive accounts:
+  - **Flexible scope** -- scan a single SharePoint site, a specific user's OneDrive, all SharePoint sites, or all OneDrives in a tenant
+  - **Configurable filters** -- select which file types to target: Office temp files (~$*), .TMP/.temp files, zero-byte files, system junk (Thumbs.db, .DS_Store, desktop.ini), and backup files (.bak, .old)
+  - **Recursive scanning** -- searches all folders up to 10 levels deep with progress feedback
+  - **File selection** -- review scan results in a searchable table with per-file checkboxes, bulk select/deselect, and type-based filtering
+  - **Double verification** -- checkbox confirmation plus button click required before any deletion
+  - **Safe deletion** -- files are moved to the SharePoint/OneDrive recycle bin (93-day recovery) rather than permanently deleted
+  - **Detailed results** -- per-file success/failure status with actionable error messages
 
 ### SharePoint Admin Dashboard
 
