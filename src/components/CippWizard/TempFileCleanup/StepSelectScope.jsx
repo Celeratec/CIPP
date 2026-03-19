@@ -31,6 +31,7 @@ export const StepSelectScope = ({ data, onUpdate, onNext }) => {
       <CippAutoComplete
         api={{
           url: "/api/ListTenants",
+          excludeTenantFilter: true,
           queryKey: "ListTenants-TempFileCleanup",
           labelField: (tenant) =>
             `${tenant.displayName} (${tenant.defaultDomainName})`,
