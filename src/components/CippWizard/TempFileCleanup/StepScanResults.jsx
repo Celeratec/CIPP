@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState, useRef } from "react";
 import { ApiPostCall } from "../../../api/ApiCall";
+import { getCippError } from "../../../utils/get-cipp-error";
 
 const formatFileSize = (bytes) => {
   if (bytes === 0 || bytes === null || bytes === undefined) return "0 B";
@@ -53,7 +54,7 @@ export const StepScanResults = ({ data, onUpdate, onNext, onBack }) => {
         },
         onError: (err) => {
           setIsScanning(false);
-          setError(err?.response?.data?.message || err.message || "Scan failed");
+          setError(getCippError(err) || "Scan failed");
         },
       }
     );
