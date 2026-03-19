@@ -74,17 +74,7 @@ const Page = () => {
   const template = templateQuery.data?.[0];
 
   const deployMutation = ApiPostCall({
-    urlFromData: true,
-    onSuccess: (data) => {
-      if (data?.DeploymentId) {
-        setDeploymentId(data.DeploymentId);
-        setActiveStep(2);
-      }
-      setIsDeploying(false);
-    },
-    onError: () => {
-      setIsDeploying(false);
-    },
+    relatedQueryKeys: ["ListIntegrationTemplates"],
   });
 
   const handleNext = () => {
@@ -104,19 +94,34 @@ const Page = () => {
     if (tenants.length === 0) return;
 
     setIsDeploying(true);
-    deployMutation.mutate({
-      url: "/api/ExecDeployIntegrationApp",
-      data: {
-        templateId: template.id,
-        tenants: tenants.map((t) => ({
-          value: t.value,
-          label: t.label,
-        })),
-        customizations: {
-          secretExpirationDays: formControl.getValues("secretExpirationDays"),
+    deployMutation.mutate(
+      {
+        url: "/api/ExecDeployIntegrationApp",
+        data: {
+          templateId: template.id,
+          tenants: tenants.map((t) => ({
+            value: t.value,
+            label: t.label,
+          })),
+          customizations: {
+            secretExpirationDays: formControl.getValues("secretExpirationDays"),
+          },
         },
       },
-    });
+      {
+        onSuccess: (response) => {
+          const responseData = response?.data;
+          if (responseData?.DeploymentId) {
+            setDeploymentId(responseData.DeploymentId);
+            setActiveStep(2);
+          }
+          setIsDeploying(false);
+        },
+        onError: () => {
+          setIsDeploying(false);
+        },
+      }
+    );
   };
 
   const permissionCount =
