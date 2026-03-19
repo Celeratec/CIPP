@@ -271,6 +271,21 @@ Migrate users and groups from one domain to another in bulk -- a common need whe
 
 The migration changes each user's UPN and primary email to the new domain while automatically preserving the old email address as an alias so inbound mail delivery is not disrupted. Groups (M365 Groups, Distribution Lists, Mail-Enabled Security Groups) are supported with an opt-in toggle. Conflict detection checks for address collisions before making changes, and per-object results report exactly which items succeeded or failed.
 
+### Integration Templates
+
+A template-based system for creating app registrations in client tenants, designed to streamline the setup of third-party integrations like UniFi Identity, Datto, and similar services that require Microsoft Entra app credentials.
+
+- **Prebuilt templates** -- ships with ready-to-use templates for common integrations (UniFi Identity included) with correct API permissions pre-configured
+- **Custom templates** -- create your own templates for any integration, selecting from a curated list of common Microsoft Graph permissions
+- **Multi-tenant deployment** -- deploy the same app registration to multiple client tenants in a single operation with orchestrator-based parallel processing
+- **Credential display** -- after deployment, credentials (Application ID, Tenant ID, Client Secret) are displayed in a table with individual copy buttons, show/hide toggle for secrets, and a "Copy All" button for bulk export
+- **CSV export** -- export all deployment results including credentials for record-keeping and documentation
+- **Secret expiration** -- choose secret lifetime (90 days to 2 years) during deployment; longer expirations reduce maintenance overhead
+- **Built-in template protection** -- prebuilt templates show a lock icon and can be duplicated but not modified or deleted, ensuring reliable defaults
+- **Automatic admin consent** -- app role assignments are created automatically, granting the configured permissions without additional manual steps in the Entra portal
+
+Located under Tenant Administration > Applications > Integration Templates.
+
 ### Backend Enhancements
 
 - **Stack overflow protection** in Intune policy comparison with depth-tracking recursion and O(1) index-based lookups

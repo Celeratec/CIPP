@@ -14,5 +14,9 @@
   {
     "label": "Application Templates",
     "path": "/tenant/administration/applications/templates"
+  },
+  {
+    "label": "Integration Templates",
+    "path": "/tenant/administration/applications/integration-templates"
   }
 ]
