@@ -10,7 +10,7 @@
 
 ---
 
-> **Last synced with upstream:** March 2026 (CIPP v10.2.2 / CIPP-API v10.2.2)
+> **Last synced with upstream:** March 2026 (CIPP v10.2.4 / CIPP-API v10.2.5)
 >
 > Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. This document reflects the state of both projects as of the date above.
 
@@ -29,24 +29,26 @@ For information about the upstream CIPP project, visit [cipp.app](https://cipp.a
 Manage365 includes the complete CIPP feature set:
 
 ### Identity Management
-- User administration (create, edit, delete, offboard with orchestrator-based batch processing)
+- User administration (create, edit, delete, offboard with orchestrator-based batch processing and scheduler-routed task tracking)
 - User form validation with field-level constraints (max length, required, pattern)
 - Vacation mode wizard with mailbox permissions, calendar delegation, and out-of-office scheduling
+- Offboarding wizard with dialog mode, table view for all tenant offboarding tasks, and scheduler integration for proper task tracking and alerting
 - Bulk guest invitation
 - Risky users monitoring
 - Group management with templates, group detail page, and deploy group template button
 - Device management (Entra ID devices with NinjaOne enrichment, cross-linked to Intune)
 - Per-user device view with hardware details and NinjaOne agent status
 - Role management and JIT Admin
-- Reports: MFA, inactive users, sign-in logs, Entra Connect, risk detections, BEC remediation
+- Reports: MFA (with role-targeted CA policy detection), inactive users, sign-in logs, Entra Connect, risk detections, BEC remediation
 
 ### Tenant Administration
 - Multi-tenant management and configuration
 - Upgraded tenant onboarding experience with type selection
 - Alert configuration and audit logs (group membership change, Defender severity filtering, inactive users)
 - Secure Score monitoring
-- Application management and consent requests
+- Application management, consent requests, and app management policies
 - GDAP relationship management with GDAP trace
+- Tenant group management with usage reporting
 - Standards alignment and drift detection (including device registration local admin controls)
 - New standard: Restrict User Device Registration
 - Standards dialog with enabled/disabled status filter and severity color mapping
@@ -103,7 +105,8 @@ Manage365 includes the complete CIPP feature set:
 - Message trace, mailbox restores, message viewer
 - Dark web breach lookups (tenant and individual)
 - Template library and community repositories
-- Task scheduler
+- Task scheduler with label-based action filtering
+- Guest account disable support with sign-in audit fallback
 
 ### Settings & Administration
 - Application settings and integrations (including PWPush with CloudFlare Tunnel and default passphrase support)
