@@ -735,6 +735,11 @@ export const nativeMenuItems = [
             path: "/teams-share/sharepoint/recycle-bin",
             permissions: ["Sharepoint.Site.ReadWrite"],
           },
+          {
+            title: "Temp File Cleanup",
+            path: "/teams-share/sharepoint/temp-file-cleanup",
+            permissions: ["Sharepoint.Site.ReadWrite"],
+          },
         ],
       },
       {
