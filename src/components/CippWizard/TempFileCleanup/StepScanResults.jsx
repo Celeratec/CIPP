@@ -54,7 +54,14 @@ export const StepScanResults = ({ data, onUpdate, onNext, onBack }) => {
         },
         onError: (err) => {
           setIsScanning(false);
-          setError(getCippError(err) || "Scan failed");
+          const errorMsg = getCippError(err);
+          const status = err?.response?.status;
+          const statusText = err?.response?.statusText;
+          if (status) {
+            setError(`${errorMsg || "Scan failed"} (HTTP ${status}${statusText ? `: ${statusText}` : ""})`);
+          } else {
+            setError(errorMsg || err?.message || "Scan failed - please check your connection");
+          }
         },
       }
     );
@@ -76,7 +83,9 @@ export const StepScanResults = ({ data, onUpdate, onNext, onBack }) => {
       <Typography variant="h6">
         {isScanning
           ? "Scanning... This may take a moment for large sites."
-          : "Scan Complete"}
+          : error
+            ? "Scan Failed"
+            : "Scan Complete"}
       </Typography>
 
       {isScanning && (
