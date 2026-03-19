@@ -1,4 +1,5 @@
 import { Layout as DashboardLayout } from "../../../layouts/index.js";
+import { CippHead } from "../../../components/CippComponents/CippHead";
 import {
   Alert,
   Box,
@@ -44,8 +45,8 @@ const TempFileCleanupPage = () => {
     selectedFiles: [],
   });
 
-  const handleNext = () => setActiveStep((prev) => prev + 1);
-  const handleBack = () => setActiveStep((prev) => prev - 1);
+  const handleNext = () => setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
+  const handleBack = () => setActiveStep((prev) => Math.max(prev - 1, 0));
   const updateWizardData = (data) => setWizardData((prev) => ({ ...prev, ...data }));
 
   const renderStep = () => {
@@ -88,6 +89,7 @@ const TempFileCleanupPage = () => {
 
   return (
     <Box sx={{ flexGrow: 1, py: 4 }}>
+      <CippHead title="Temp File Cleanup" />
       <Container maxWidth="lg">
         <Stack spacing={4}>
           <Box>
