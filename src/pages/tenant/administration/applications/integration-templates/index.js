@@ -19,10 +19,10 @@ import {
 import { Grid } from "@mui/system";
 import { Add, RocketLaunch, Edit, ContentCopy, Delete, Lock, OpenInNew } from "@mui/icons-material";
 import Link from "next/link";
-import { CippPageCard } from "../../../../../components/CippCards/CippPageCard";
+import CippPageCard from "../../../../../components/CippCards/CippPageCard";
 import { useSettings } from "../../../../../hooks/use-settings.js";
 import { getCippFormatting } from "../../../../../utils/get-cipp-formatting.js";
-import CippApiDialog from "../../../../../components/CippComponents/CippApiDialog.jsx";
+import { CippApiDialog } from "../../../../../components/CippComponents/CippApiDialog.jsx";
 import { useState } from "react";
 
 const IntegrationTemplateCard = ({ template, onDelete, onDuplicate }) => {
