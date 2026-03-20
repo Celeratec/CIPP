@@ -7,6 +7,7 @@ import ArrowTopRightOnSquareIcon from "@heroicons/react/24/outline/ArrowTopRight
 import { Box, ButtonBase, Collapse, SvgIcon, Stack } from "@mui/material";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
+import LanguageIcon from "@mui/icons-material/Language";
 import { useUserBookmarks } from "../hooks/use-user-bookmarks";
 import { useSettings } from "../hooks/use-settings";
 
@@ -21,9 +22,11 @@ export const SideNavItem = (props) => {
     open = false,
     onToggle,
     path,
+    scope,
     title,
   } = props;
 
+  const isGlobal = scope === "global";
   const [hovered, setHovered] = useState(false);
   const { bookmarks, setBookmarks } = useUserBookmarks();
   const settings = useSettings();
@@ -239,6 +242,24 @@ export const SideNavItem = (props) => {
           >
             {title}
           </Box>
+          {isGlobal && (
+            <Box
+              component="span"
+              title="Global - not tied to selected tenant"
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                flexShrink: 0,
+                ml: 0.5,
+                transition: "opacity 250ms ease-in-out",
+                ...(collapse && { opacity: 0 }),
+              }}
+            >
+              <SvgIcon sx={{ color: "neutral.400", fontSize: 14 }}>
+                <LanguageIcon />
+              </SvgIcon>
+            </Box>
+          )}
           {external && (
             <SvgIcon
               sx={{
@@ -282,5 +303,6 @@ SideNavItem.propTypes = {
   open: PropTypes.bool,
   onToggle: PropTypes.func,
   path: PropTypes.string,
+  scope: PropTypes.string,
   title: PropTypes.string.isRequired,
 };

@@ -39,6 +39,11 @@ import {
 } from "@heroicons/react/24/outline";
 import { EyeIcon } from "@heroicons/react/24/outline";
 import { getCippFormatting } from "../../../utils/get-cipp-formatting";
+import { useSettings } from "../../../hooks/use-settings.js";
+
+const offcanvas = {
+  extendedInfoFields: ["DateTime", "API", "Severity", "Message", "User", "AppId", "IP", "LogData"],
+};
 
 const apiUrl = "/api/Listlogs";
 const pageTitle = "Logbook";
@@ -107,6 +112,8 @@ const Page = () => {
   const [username, setUsername] = useState(null);
   const [severity, setSeverity] = useState(null);
   const [activePreset, setActivePreset] = useState(null);
+  const settings = useSettings();
+  const currentTenant = settings?.currentTenant;
 
   const watchStartDate = formControl.watch("startDate");
   const watchEndDate = formControl.watch("endDate");
@@ -560,14 +567,15 @@ const Page = () => {
       title={pageTitle}
       apiUrl={apiUrl}
       columns={columns}
-      queryKey={`Listlogs-${startDate}-${endDate}-${username}-${severity}-${filterEnabled}`}
-      tenantInTitle={false}
+      queryKey={`Listlogs-${startDate}-${endDate}-${username}-${severity}-${filterEnabled}-${currentTenant}`}
+      tenantInTitle={true}
       apiData={{
         StartDate: startDate,
         EndDate: endDate,
         User: username,
         Severity: severity,
         Filter: filterEnabled,
+        Tenant: currentTenant,
       }}
       actions={actions}
       spacing={1}

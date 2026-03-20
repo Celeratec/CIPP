@@ -113,6 +113,7 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname, openMenus, on
         open={isOpen}
         onToggle={() => onMenuToggle(item.title, depth)}
         path={item.path}
+        scope={item.scope}
         title={item.title}
         type={item.type}
       >
@@ -146,6 +147,7 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname, openMenus, on
         icon={item.icon}
         key={item.title}
         path={item.path}
+        scope={item.scope}
         title={item.title}
       />,
     );
