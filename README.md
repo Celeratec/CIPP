@@ -68,6 +68,7 @@ Manage365 includes the complete CIPP feature set:
 - Defender alerts with severity filtering
 - Device compliance reporting
 - Customer Lockbox
+- eDiscovery case management with legal holds, content searches, and exports (see Manage365 features below)
 
 ### Endpoint Management
 - Application management and deployment queue (including Win32/custom apps)
@@ -237,6 +238,20 @@ All coaching content is driven by a single shared data layer (`accessTypes.js`) 
 
 Invite external guests directly from SharePoint site and Teams detail pages. Add external members to shared channels via B2B direct connect, or add guests with any email address (including personal emails like Gmail and Outlook.com) to private channels via B2B collaboration with automatic Email One-Time Passcode support. If an operation fails, the system automatically diagnoses the root cause -- checking cross-tenant access policies (B2B direct connect inbound/outbound), B2B domain restrictions, Teams guest access settings, Entra external collaboration settings, and SharePoint permissions -- and provides categorized, structured guidance with direct links to the relevant CIPP settings page. Microsoft internal error codes (e.g., "xTap") are translated to human-readable descriptions.
 
+### eDiscovery Case Management
+
+End-to-end eDiscovery workflow for managing legal holds, content searches, and evidence exports directly from the portal -- eliminating the need to switch to the Microsoft Purview compliance portal or write PowerShell scripts for each client:
+
+- **Case management** -- create, close, reopen, and delete eDiscovery cases per tenant with status tracking, case metadata, and external ID support for correlating with legal matter numbers
+- **Legal holds** -- place litigation holds on specific user mailboxes and SharePoint sites with optional KQL content queries to narrow the scope. Supports multiple content sources per hold and displays hold status with content source counts
+- **Content searches** -- create KQL-based searches across Exchange, SharePoint, Teams, and OneDrive. Run search estimates to preview result counts and data volume before committing to an export. Status polling auto-refreshes while searches are running
+- **Export and production** -- initiate exports from completed searches with configurable export criteria. Export operations track progress percentage and provide download links when complete. Auto-polling updates export status in real time
+- **Async operation tracking** -- long-running operations (search estimates, exports) are handled asynchronously with automatic 5-second polling that stops when the operation completes or fails
+- **Setup guidance** -- a proactive setup banner on the cases page explains the one-time per-tenant prerequisites (CPV refresh for permissions and eDiscovery Administrator role assignment in Purview), plus reactive error classification that detects 403/permission and license errors and renders structured remediation steps
+- **Tier support** -- uses the Microsoft Graph eDiscovery Standard API (September 2025), which works for both E3 and E5 tenants. Phase 2 will add Premium-only features (custodian management, review sets, advanced export options) for E5 tenants
+
+Built on app-only authentication (`eDiscovery.Read.All` and `eDiscovery.ReadWrite.All`) via SAM, consistent with the rest of the CIPP architecture. Located under Security & Compliance > eDiscovery > Cases.
+
 ### Dynamics 365 Management
 
 Read-only visibility into Power Platform / Dynamics 365 environments, users, security roles, business units, and solutions -- providing insight without needing the Power Platform Admin Center.
@@ -303,7 +318,7 @@ Located under Tenant Administration > Applications > Integration Templates.
 
 - **Frontend:** React / Next.js 16 with Material-UI (MUI v7)
 - **Backend:** PowerShell Azure Functions
-- **API:** Microsoft Graph API, SharePoint Admin API, SharePoint REST API, Teams PowerShell cmdlets (via `New-TeamsRequest`, including meeting branding policy management), Power Platform BAP API, Dataverse Web API, NinjaOne API (via CIPP extension)
+- **API:** Microsoft Graph API (including eDiscovery API), SharePoint Admin API, SharePoint REST API, Teams PowerShell cmdlets (via `New-TeamsRequest`, including meeting branding policy management), Power Platform BAP API, Dataverse Web API, NinjaOne API (via CIPP extension)
 - **Hosting:** Azure Static Web Apps + Azure Functions
 - **Data:** React Query for caching and state management
 

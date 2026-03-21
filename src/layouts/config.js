@@ -322,6 +322,7 @@ export const nativeMenuItems = [
     permissions: [
       "Security.Incident.*",
       "Security.Alert.*",
+      "Security.Ediscovery.*",
       "Tenant.DeviceCompliance.*",
     ],
     items: [
@@ -369,6 +370,17 @@ export const nativeMenuItems = [
             title: "Vulnerabilities",
             path: "/security/defender/list-defender-tvm",
             permissions: ["Security.Alert.*"],
+          },
+        ],
+      },
+      {
+        title: "eDiscovery",
+        permissions: ["Security.Ediscovery.*"],
+        items: [
+          {
+            title: "Cases",
+            path: "/security/ediscovery/cases",
+            permissions: ["Security.Ediscovery.*"],
           },
         ],
       },

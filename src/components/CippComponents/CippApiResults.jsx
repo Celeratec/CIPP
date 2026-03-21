@@ -163,6 +163,64 @@ const FormattedResultText = ({ text, severity }) => {
     );
   }
 
+  // Pattern: eDiscovery permission / license errors
+  const isEdiscoveryError =
+    (text.includes("eDiscovery") || text.includes("ediscovery")) &&
+    (text.includes("Authorization_RequestDenied") ||
+      text.includes("403") ||
+      text.includes("Forbidden") ||
+      text.includes("not found") ||
+      text.includes("license"));
+  if (isEdiscoveryError) {
+    const isPermission =
+      text.includes("Authorization_RequestDenied") ||
+      text.includes("403") ||
+      text.includes("Forbidden");
+    const isLicense = text.includes("license") || text.includes("SKU");
+    return (
+      <Stack spacing={1}>
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {isPermission
+            ? "eDiscovery Permission Error"
+            : isLicense
+              ? "eDiscovery License Error"
+              : "eDiscovery Error"}
+        </Typography>
+        <Typography variant="body2">{text}</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
+          Suggested steps:
+        </Typography>
+        <Typography variant="body2" component="div">
+          <ol style={{ margin: 0, paddingLeft: "1.2em" }}>
+            {isPermission && (
+              <>
+                <li>
+                  Run a <strong>CPV Refresh</strong> from CIPP Settings to push eDiscovery
+                  permissions to this tenant
+                </li>
+                <li>
+                  Assign the <strong>eDiscovery Administrator</strong> role to the CIPP service
+                  principal in the tenant&apos;s{" "}
+                  <strong>Purview portal &gt; Roles &amp; Scopes &gt; Permissions</strong>
+                </li>
+              </>
+            )}
+            {isLicense && (
+              <li>
+                This tenant requires a <strong>Microsoft 365 E3 or E5</strong> license with
+                eDiscovery capabilities
+              </li>
+            )}
+            <li>
+              If the issue persists, verify the CIPP SAM app registration includes{" "}
+              <strong>eDiscovery.ReadWrite.All</strong> application permission
+            </li>
+          </ol>
+        </Typography>
+      </Stack>
+    );
+  }
+
   // Pattern: error with Diagnostics section from backend policy checks
   if (text.includes("Diagnostics:")) {
     const [prelude, ...diagParts] = text.split(/Diagnostics:\s*/);
