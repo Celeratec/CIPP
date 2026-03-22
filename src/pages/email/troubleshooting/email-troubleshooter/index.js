@@ -220,9 +220,10 @@ const Page = () => {
     urlFromData: true,
     queryKey: `TraceDetail-${detailMessageId}`,
     onResult: (result) => {
-      if (result?.Events) {
-        setTraceDetailData(result.Events);
-        setAuthSummary(result.AuthSummary ?? null);
+      const data = Array.isArray(result) ? result[0] : result;
+      if (data?.Events) {
+        setTraceDetailData(data.Events);
+        setAuthSummary(data.AuthSummary ?? null);
       } else {
         setTraceDetailData(Array.isArray(result) ? result : []);
         setAuthSummary(null);
