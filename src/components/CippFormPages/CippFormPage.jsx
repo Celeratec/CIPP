@@ -99,29 +99,33 @@ const CippFormPage = (props) => {
     const values = customDataformatter
       ? customDataformatter(formControl.getValues())
       : formControl.getValues();
-    //remove all empty values or blanks (recursively)
     const removeEmpty = (obj) => {
       if (Array.isArray(obj)) {
         return obj
           .map((item) => (item && typeof item === "object" ? removeEmpty(item) : item))
-          .filter((item) => item !== "" && item !== null && item !== undefined);
+          .filter((item) => {
+            if (item === "" || item === null || item === undefined) return false;
+            if (Array.isArray(item)) return item.length > 0;
+            if (typeof item === "object") return Object.keys(item).length > 0;
+            return true;
+          });
       }
       Object.keys(obj).forEach((key) => {
         if (obj[key] === "" || obj[key] === null || obj[key] === undefined) {
           delete obj[key];
         } else if (typeof obj[key] === "object") {
           obj[key] = removeEmpty(obj[key]);
-          if (!Array.isArray(obj[key]) && Object.keys(obj[key]).length === 0) {
+          if (Array.isArray(obj[key]) ? obj[key].length === 0 : Object.keys(obj[key]).length === 0) {
             delete obj[key];
           }
         }
       });
       return obj;
     };
-    removeEmpty(values);
+    const cleanedValues = removeEmpty(values);
     postCall.mutate({
       url: postUrl,
-      data: values,
+      data: cleanedValues,
     });
   };
   return (

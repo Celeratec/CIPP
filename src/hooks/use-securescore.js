@@ -98,6 +98,8 @@ export function useSecureScore({ waiting = true } = {}) {
         controlScores: updatedControlScores,
       });
       setIsSuccess(true);
+    } else {
+      setIsSuccess(false);
     }
   }, [
     controlScore.isSuccess,
