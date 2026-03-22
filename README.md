@@ -94,6 +94,7 @@ Manage365 includes the complete CIPP feature set:
 - Spam filter and connection filter management
 - SendFromAlias standard (enable/disable)
 - Resource management (rooms, equipment, room lists)
+- Message trace, mailbox restores, message viewer
 - Reports: mailbox statistics, activity, CAS settings, permissions, calendar permissions, mailbox forwarding, anti-phishing, malware filters, safe attachments, GAL
 - Queue tracking for report generation
 
@@ -103,7 +104,6 @@ Manage365 includes the complete CIPP feature set:
 - Application approval workflow
 - Tenant and IP lookup
 - Domain health checks
-- Message trace, mailbox restores, message viewer
 - Dark web breach lookups (tenant and individual)
 - Template library and community repositories
 - Task scheduler with label-based action filtering
@@ -273,9 +273,26 @@ Control external email flow on a per-mailbox basis directly from the user's Exch
 
 Each toggle includes a confirmation dialog with clear warnings about the consequences. Restrictions can be applied independently (inbound only, outbound only, or both) and reversed at any time. The current status is displayed as a visual tile on the Exchange info card alongside other mailbox settings.
 
+### Email Troubleshooter
+
+A unified email troubleshooting hub under Email & Exchange > Troubleshooting that combines message trace and quarantine management into a single search-diagnose-act workflow, eliminating the context-switching that previously required technicians to navigate between separate pages in different menus.
+
+- **Unified search** -- a single search form queries both Exchange message trace and quarantine simultaneously, returning results in a tabbed interface with badge counts showing trace results and unreleased quarantine messages
+- **Quick-filter presets** -- one-click chips for common searches: "Quarantined (24h)", "Failed Delivery (48h)", "All Recent (7d)" pre-fill the search form and execute immediately
+- **Advanced filtering** -- collapsible advanced section with Message ID, subject, status, From/To IP, and quarantine type (Spam, Phish, Malware, High Confidence Phish) filters
+- **Contextual actions on trace results** -- View Delivery Details, View in Security Explorer, Allow Sender, Block Sender, Copy Message ID, and Release from Quarantine (appears only for quarantined messages) without leaving the page
+- **Contextual actions on quarantine results** -- View Message (EML preview), View Delivery Timeline, Release, Deny, Release & Allow Sender, Release & Add Allow Entry (creates a Tenant Allow/Block List entry), and Block Sender
+- **Cross-tab linking** -- clicking a "Quarantined" status chip in the trace tab switches to the quarantine tab and filters to the matching message
+- **Bulk quarantine operations** -- select multiple quarantine entries and release, deny, or release-and-allow in bulk with tiered confirmation guardrails (10+ and 50+ messages)
+- **Delivery timeline visualization** -- an MUI Timeline-based detail panel replaces the plain table, showing color-coded delivery events (green for delivered, red for failed, amber for quarantined) with timestamps, event names, actions, and detail text
+- **Partial failure resilience** -- the combined backend endpoint handles permission failures gracefully: if quarantine access is missing but trace works (or vice versa), partial results are shown with a guidance banner explaining which data source failed and how to fix it
+- **Guest UPN encoding** -- sender and recipient addresses containing `#EXT#` are automatically encoded for Exchange Online API compatibility
+
+The navigation is restructured with Troubleshooting as the first submenu under Email & Exchange, placing the most commonly used tools at the top. The standalone Quarantine Management page remains available for all-tenant bulk monitoring. Message Viewer and Mailbox Restores are relocated from Tools to Troubleshooting for better discoverability.
+
 ### Organized Navigation
 
-Deeply nested navigation menus that group related pages together, reducing menu length and making features easier to find -- Groups with Group Templates, Users with Offboarding Wizard and Risky Users, Business Voice with Phone Numbers, Call Queues, Auto Attendants, and Dial Plans, File Management with File Search, File Browser, and File Transfer, and more.
+Deeply nested navigation menus that group related pages together, reducing menu length and making features easier to find -- Email & Exchange Troubleshooting with Email Troubleshooter, Quarantine, Message Viewer, and Mailbox Restores; Groups with Group Templates; Users with Offboarding Wizard and Risky Users; Business Voice with Phone Numbers, Call Queues, Auto Attendants, and Dial Plans; File Management with File Search, File Browser, and File Transfer; and more.
 
 ### Bulk Domain Migration
 

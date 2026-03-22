@@ -415,6 +415,32 @@ export const nativeMenuItems = [
     ],
     items: [
       {
+        title: "Troubleshooting",
+        permissions: ["Exchange.Mailbox.*"],
+        items: [
+          {
+            title: "Email Troubleshooter",
+            path: "/email/troubleshooting/email-troubleshooter",
+            permissions: ["Exchange.Mailbox.*"],
+          },
+          {
+            title: "Quarantine",
+            path: "/email/administration/quarantine",
+            permissions: ["Exchange.SpamFilter.*"],
+          },
+          {
+            title: "Message Viewer",
+            path: "/email/troubleshooting/message-viewer",
+            permissions: ["Exchange.Mailbox.*"],
+          },
+          {
+            title: "Mailbox Restores",
+            path: "/email/troubleshooting/mailbox-restores",
+            permissions: ["Exchange.Mailbox.*"],
+          },
+        ],
+      },
+      {
         title: "Administration",
         permissions: ["Exchange.Mailbox.*"],
         items: [
@@ -454,11 +480,6 @@ export const nativeMenuItems = [
                 permissions: ["Exchange.Contact.*"],
               },
             ],
-          },
-          {
-            title: "Quarantine",
-            path: "/email/administration/quarantine",
-            permissions: ["Exchange.SpamFilter.*"],
           },
           {
             title: "Restricted Users",
@@ -1059,18 +1080,8 @@ export const nativeMenuItems = [
         permissions: ["Exchange.Mailbox.*"],
         items: [
           {
-            title: "Message Trace",
-            path: "/email/tools/message-trace",
-            permissions: ["Exchange.Mailbox.*"],
-          },
-          {
-            title: "Mailbox Restores",
-            path: "/email/tools/mailbox-restores",
-            permissions: ["Exchange.Mailbox.*"],
-          },
-          {
-            title: "Message Viewer",
-            path: "/email/tools/message-viewer",
+            title: "Mail Test",
+            path: "/email/tools/mail-test",
             permissions: ["Exchange.Mailbox.*"],
           },
         ],
