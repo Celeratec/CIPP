@@ -107,6 +107,45 @@ const DeliveryTimeline = ({ events }) => {
   );
 };
 
+const authResultColor = (result) => {
+  const r = (result || "").toLowerCase();
+  if (r === "pass" || r === "bestguesspass") return "success";
+  if (r === "fail" || r === "permerror") return "error";
+  if (r === "softfail" || r === "temperror") return "warning";
+  return "default";
+};
+
+const AuthSummaryCard = ({ summary }) => {
+  if (!summary) return null;
+  const items = [
+    { label: "SPF", result: summary.SPF?.result, detail: summary.SPF?.detail },
+    { label: "DKIM", result: summary.DKIM?.result, detail: summary.DKIM?.detail },
+    { label: "DMARC", result: summary.DMARC?.result, detail: summary.DMARC?.detail },
+    { label: "CompAuth", result: summary.CompAuth?.result },
+  ];
+  const allUnknown = items.every((i) => !i.result || i.result === "Unknown");
+  if (allUnknown) return null;
+
+  return (
+    <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+        Authentication Results
+      </Typography>
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        {items.map((item) => (
+          <Chip
+            key={item.label}
+            label={`${item.label}: ${item.result || "Unknown"}${item.detail ? ` (${item.detail})` : ""}`}
+            color={authResultColor(item.result)}
+            size="small"
+            variant="outlined"
+          />
+        ))}
+      </Stack>
+    </Paper>
+  );
+};
+
 const statusColorMap = {
   Delivered: "success",
   Quarantined: "warning",
@@ -137,6 +176,7 @@ const Page = () => {
 
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [traceDetailData, setTraceDetailData] = useState([]);
+  const [authSummary, setAuthSummary] = useState(null);
   const [detailMessageId, setDetailMessageId] = useState(null);
 
   const [selectedQuarantineRows, setSelectedQuarantineRows] = useState([]);
@@ -179,7 +219,15 @@ const Page = () => {
   const traceDetailApi = ApiPostCall({
     urlFromData: true,
     queryKey: `TraceDetail-${detailMessageId}`,
-    onResult: (result) => setTraceDetailData(result),
+    onResult: (result) => {
+      if (result?.Events) {
+        setTraceDetailData(result.Events);
+        setAuthSummary(result.AuthSummary ?? null);
+      } else {
+        setTraceDetailData(Array.isArray(result) ? result : []);
+        setAuthSummary(null);
+      }
+    },
   });
 
   const getMessageContents = ApiGetCall({
@@ -864,7 +912,12 @@ const Page = () => {
               <Typography variant="body1">Loading delivery details...</Typography>
             </Stack>
           )}
-          {traceDetailApi.isSuccess && <DeliveryTimeline events={traceDetailData ?? []} />}
+          {traceDetailApi.isSuccess && (
+            <>
+              <AuthSummaryCard summary={authSummary} />
+              <DeliveryTimeline events={traceDetailData ?? []} />
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
