@@ -51,6 +51,13 @@ import { CippMessageViewer } from "../../../../components/CippComponents/CippMes
 import { ApiPostCall, ApiGetCall } from "../../../../api/ApiCall";
 import { useSettings } from "../../../../hooks/use-settings";
 
+const daysOptions = [
+  { label: "Last 24 hours", value: 1 },
+  { label: "Last 2 days", value: 2 },
+  { label: "Last 7 days", value: 7 },
+  { label: "Last 10 days", value: 10 },
+];
+
 const quickPresets = [
   { key: "quarantined24h", label: "Quarantined (24h)", days: 1, status: "Quarantined" },
   { key: "failed48h", label: "Failed Delivery (48h)", days: 2, status: "Failed" },
@@ -187,7 +194,7 @@ const Page = () => {
   const formControl = useForm({
     defaultValues: {
       dateFilter: "relative",
-      days: 2,
+      days: { label: "Last 2 days", value: 2 },
       startDate: null,
       endDate: null,
       sender: [],
@@ -290,8 +297,12 @@ const Page = () => {
   };
 
   const applyPreset = (preset) => {
+    const daysOption = daysOptions.find((o) => o.value === preset.days) || {
+      label: `Last ${preset.days} days`,
+      value: preset.days,
+    };
     formControl.setValue("dateFilter", "relative");
-    formControl.setValue("days", preset.days);
+    formControl.setValue("days", daysOption);
     if (preset.status) {
       formControl.setValue("status", [{ label: preset.status, value: preset.status }]);
     } else {
@@ -300,7 +311,7 @@ const Page = () => {
     setActivePreset(preset.key);
     onSubmit({
       dateFilter: "relative",
-      days: preset.days,
+      days: daysOption,
       status: preset.status ? [{ value: preset.status }] : [],
     });
   };
@@ -609,12 +620,9 @@ const Page = () => {
                 type="autoComplete"
                 name="days"
                 label="Time Range"
-                options={[
-                  { label: "Last 24 hours", value: 1 },
-                  { label: "Last 2 days", value: 2 },
-                  { label: "Last 7 days", value: 7 },
-                  { label: "Last 10 days", value: 10 },
-                ]}
+                multiple={false}
+                creatable={false}
+                options={daysOptions}
                 formControl={formControl}
                 disabled={isMessageIdSet}
               />
