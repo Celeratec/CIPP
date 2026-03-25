@@ -21,169 +21,6 @@ export const nativeMenuItems = [
     permissions: ["CIPP.Core.*"],
   },
   {
-    title: "Tenant Administration",
-    type: "header",
-    icon: (
-      <SvgIcon>
-        <BuildingOfficeIcon />
-      </SvgIcon>
-    ),
-    permissions: ["Tenant.*", "Identity.AuditLog.*", "CIPP.Backup.*", "Scheduler.Billing.*"],
-    items: [
-      {
-        title: "Administration",
-        permissions: ["Tenant.Administration.*"],
-        items: [
-          {
-            title: "Tenants",
-            permissions: ["Tenant.Administration.*"],
-            items: [
-              {
-                title: "Tenants",
-                path: "/tenant/administration/tenants",
-                permissions: ["Tenant.Administration.*"],
-              },
-              {
-                title: "Manage Tenant",
-                path: "/tenant/manage/edit",
-                permissions: ["Tenant.Administration.*"],
-              },
-            ],
-          },
-          {
-            title: "Monitoring",
-            permissions: ["Tenant.Alert.*", "Identity.AuditLog.*"],
-            items: [
-              {
-                title: "Alert Configuration",
-                path: "/tenant/administration/alert-configuration",
-                permissions: ["Tenant.Alert.*"],
-              },
-              {
-                title: "Audit Logs",
-                path: "/tenant/administration/audit-logs",
-                permissions: ["Identity.AuditLog.*"],
-              },
-            ],
-          },
-          {
-            title: "Applications",
-            permissions: ["Tenant.Application.*"],
-            items: [
-              {
-                title: "Applications",
-                path: "/tenant/administration/applications/enterprise-apps",
-                permissions: ["Tenant.Application.*"],
-              },
-              {
-                title: "App Consent Requests",
-                path: "/tenant/administration/app-consent-requests",
-                permissions: ["Tenant.Application.*"],
-              },
-            ],
-          },
-          {
-            title: "Secure Score",
-            path: "/tenant/administration/securescore",
-            permissions: ["Tenant.Administration.*"],
-          },
-          {
-            title: "Authentication Methods",
-            path: "/tenant/administration/authentication-methods",
-            permissions: ["Tenant.Config.*"],
-          },
-          {
-            title: "Partner Relationships",
-            path: "/tenant/administration/partner-relationships",
-            permissions: ["Tenant.Relationship.*"],
-          },
-          {
-            title: "Domains",
-            path: "/tenant/administration/domains",
-            permissions: ["Tenant.Administration.*"],
-          },
-          {
-            title: "Cross-Tenant Access",
-            path: "/tenant/administration/cross-tenant-access",
-            permissions: ["Tenant.CrossTenant.*"],
-          },
-        ],
-      },
-      {
-        title: "GDAP Management",
-        path: "/tenant/gdap-management",
-        permissions: ["Tenant.Relationship.*"],
-      },
-      {
-        title: "Standards & Drift",
-        permissions: [
-          "Tenant.Standards.*",
-          "Tenant.BestPracticeAnalyser.*",
-          "Tenant.DomainAnalyser.*",
-        ],
-        items: [
-          {
-            title: "Standards Management",
-            path: "/tenant/standards/alignment",
-            permissions: ["Tenant.Standards.*"],
-          },
-          {
-            title: "Best Practice Analyser",
-            path: "/tenant/standards/bpa-report",
-            permissions: ["Tenant.BestPracticeAnalyser.*"],
-          },
-          {
-            title: "Domains Analyser",
-            path: "/tenant/standards/domains-analyser",
-            permissions: ["Tenant.DomainAnalyser.*"],
-          },
-        ],
-      },
-      {
-        title: "Conditional Access",
-        permissions: ["Tenant.ConditionalAccess.*"],
-        items: [
-          {
-            title: "CA Policies",
-            path: "/tenant/conditional/list-policies",
-            permissions: ["Tenant.ConditionalAccess.*"],
-          },
-          {
-            title: "CA Vacation Mode",
-            path: "/tenant/conditional/deploy-vacation",
-            permissions: ["Tenant.ConditionalAccess.*"],
-          },
-          {
-            title: "CA Templates",
-            path: "/tenant/conditional/list-template",
-            permissions: ["Tenant.ConditionalAccess.*"],
-          },
-          {
-            title: "Named Locations",
-            path: "/tenant/conditional/list-named-locations",
-            permissions: ["Tenant.ConditionalAccess.*"],
-          },
-        ],
-      },
-      {
-        title: "Reports",
-        permissions: ["Tenant.Administration.*", "Scheduler.Billing.*", "Tenant.Application.*"],
-        items: [
-          {
-            title: "Licence Report",
-            path: "/tenant/reports/list-licenses",
-            permissions: ["Tenant.Administration.*"],
-          },
-          {
-            title: "Consented Applications",
-            path: "/tenant/reports/application-consent",
-            permissions: ["Tenant.Application.*"],
-          },
-        ],
-      },
-    ],
-  },
-  {
     title: "Identity Management",
     type: "header",
     icon: (
@@ -1022,6 +859,169 @@ export const nativeMenuItems = [
             title: "Solutions",
             path: "/dynamics/administration/solutions",
             permissions: ["Dynamics.Solution.*"],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    title: "Tenant Administration",
+    type: "header",
+    icon: (
+      <SvgIcon>
+        <BuildingOfficeIcon />
+      </SvgIcon>
+    ),
+    permissions: ["Tenant.*", "Identity.AuditLog.*", "CIPP.Backup.*", "Scheduler.Billing.*"],
+    items: [
+      {
+        title: "Administration",
+        permissions: ["Tenant.Administration.*"],
+        items: [
+          {
+            title: "Tenants",
+            permissions: ["Tenant.Administration.*"],
+            items: [
+              {
+                title: "Tenants",
+                path: "/tenant/administration/tenants",
+                permissions: ["Tenant.Administration.*"],
+              },
+              {
+                title: "Manage Tenant",
+                path: "/tenant/manage/edit",
+                permissions: ["Tenant.Administration.*"],
+              },
+            ],
+          },
+          {
+            title: "Monitoring",
+            permissions: ["Tenant.Alert.*", "Identity.AuditLog.*"],
+            items: [
+              {
+                title: "Alert Configuration",
+                path: "/tenant/administration/alert-configuration",
+                permissions: ["Tenant.Alert.*"],
+              },
+              {
+                title: "Audit Logs",
+                path: "/tenant/administration/audit-logs",
+                permissions: ["Identity.AuditLog.*"],
+              },
+            ],
+          },
+          {
+            title: "Applications",
+            permissions: ["Tenant.Application.*"],
+            items: [
+              {
+                title: "Applications",
+                path: "/tenant/administration/applications/enterprise-apps",
+                permissions: ["Tenant.Application.*"],
+              },
+              {
+                title: "App Consent Requests",
+                path: "/tenant/administration/app-consent-requests",
+                permissions: ["Tenant.Application.*"],
+              },
+            ],
+          },
+          {
+            title: "Secure Score",
+            path: "/tenant/administration/securescore",
+            permissions: ["Tenant.Administration.*"],
+          },
+          {
+            title: "Authentication Methods",
+            path: "/tenant/administration/authentication-methods",
+            permissions: ["Tenant.Config.*"],
+          },
+          {
+            title: "Partner Relationships",
+            path: "/tenant/administration/partner-relationships",
+            permissions: ["Tenant.Relationship.*"],
+          },
+          {
+            title: "Domains",
+            path: "/tenant/administration/domains",
+            permissions: ["Tenant.Administration.*"],
+          },
+          {
+            title: "Cross-Tenant Access",
+            path: "/tenant/administration/cross-tenant-access",
+            permissions: ["Tenant.CrossTenant.*"],
+          },
+        ],
+      },
+      {
+        title: "GDAP Management",
+        path: "/tenant/gdap-management",
+        permissions: ["Tenant.Relationship.*"],
+      },
+      {
+        title: "Standards & Drift",
+        permissions: [
+          "Tenant.Standards.*",
+          "Tenant.BestPracticeAnalyser.*",
+          "Tenant.DomainAnalyser.*",
+        ],
+        items: [
+          {
+            title: "Standards Management",
+            path: "/tenant/standards/alignment",
+            permissions: ["Tenant.Standards.*"],
+          },
+          {
+            title: "Best Practice Analyser",
+            path: "/tenant/standards/bpa-report",
+            permissions: ["Tenant.BestPracticeAnalyser.*"],
+          },
+          {
+            title: "Domains Analyser",
+            path: "/tenant/standards/domains-analyser",
+            permissions: ["Tenant.DomainAnalyser.*"],
+          },
+        ],
+      },
+      {
+        title: "Conditional Access",
+        permissions: ["Tenant.ConditionalAccess.*"],
+        items: [
+          {
+            title: "CA Policies",
+            path: "/tenant/conditional/list-policies",
+            permissions: ["Tenant.ConditionalAccess.*"],
+          },
+          {
+            title: "CA Vacation Mode",
+            path: "/tenant/conditional/deploy-vacation",
+            permissions: ["Tenant.ConditionalAccess.*"],
+          },
+          {
+            title: "CA Templates",
+            path: "/tenant/conditional/list-template",
+            permissions: ["Tenant.ConditionalAccess.*"],
+          },
+          {
+            title: "Named Locations",
+            path: "/tenant/conditional/list-named-locations",
+            permissions: ["Tenant.ConditionalAccess.*"],
+          },
+        ],
+      },
+      {
+        title: "Reports",
+        permissions: ["Tenant.Administration.*", "Scheduler.Billing.*", "Tenant.Application.*"],
+        items: [
+          {
+            title: "Licence Report",
+            path: "/tenant/reports/list-licenses",
+            permissions: ["Tenant.Administration.*"],
+          },
+          {
+            title: "Consented Applications",
+            path: "/tenant/reports/application-consent",
+            permissions: ["Tenant.Application.*"],
           },
         ],
       },
