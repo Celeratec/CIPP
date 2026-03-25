@@ -179,6 +179,7 @@ const Page = () => {
           SharePointType: "rootWebTemplate",
         },
         confirmText: "Select the User to add as a member.",
+        relatedQueryKeys: ["site-members-*"],
         fields: [
           {
             type: "autoComplete",
@@ -221,6 +222,7 @@ const Page = () => {
           SharePointType: "rootWebTemplate",
         },
         confirmText: "Select the User to remove as a member from this site.",
+        relatedQueryKeys: ["site-members-*"],
         category: "edit",
         fields: [
           {
@@ -268,6 +270,7 @@ const Page = () => {
           URL: "webUrl",
         },
         confirmText: "Select the User to add to the Site Admins permissions",
+        relatedQueryKeys: ["site-members-*"],
         fields: [
           {
             type: "autoComplete",
@@ -344,6 +347,7 @@ const Page = () => {
           },
         ],
         multiPost: false,
+        relatedQueryKeys: ["site-members-*"],
         category: "security",
         quickAction: true,
       },
