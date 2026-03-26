@@ -238,9 +238,14 @@ const CippVersionProperties = () => {
                 </Typography>
               </Box>
             </Stack>
-            <SvgIcon sx={{ color: "info.main", fontSize: 18 }}>
-              <CheckCircle />
-            </SvgIcon>
+            <Chip
+              icon={<Hub sx={{ fontSize: 14 }} />}
+              label="Fork"
+              size="small"
+              color="info"
+              variant="outlined"
+              sx={{ height: 22, fontSize: "0.7rem" }}
+            />
           </Box>
 
           {/* Upstream CIPP section */}
