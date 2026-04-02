@@ -83,8 +83,8 @@ const Page = () => {
   const results = searchMutation.data?.data?.Results || [];
   const totalCount = searchMutation.data?.data?.TotalCount || 0;
   const filteredCount = searchMutation.data?.data?.FilteredCount;
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const hasFilters = filterDateFrom || filterDateTo || filterModifiedBy;
+  const totalPages = filteredCount != null ? 1 : Math.ceil(totalCount / PAGE_SIZE);
 
   const handleBrowseLocation = (item) => {
     const query = {};
