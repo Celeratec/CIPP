@@ -353,7 +353,7 @@ const Page = () => {
               }}
             >
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                {row.riskDetail || "No additional details available for this risk assessment."}
+                {row.riskDetail ? formatLabel(row.riskDetail) : "No additional details available for this risk assessment."}
               </Typography>
             </Paper>
           </Box>
@@ -476,7 +476,7 @@ const Page = () => {
       { 
         field: "riskDetail", 
         label: "Details",
-        formatter: (value) => value || "No details available",
+        formatter: (value) => value ? formatLabel(value) : "No details available",
       },
     ],
     extraFieldsMax: 1,
