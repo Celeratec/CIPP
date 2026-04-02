@@ -313,12 +313,34 @@ const Page = () => {
         </Paper>
 
         {/* Results */}
-        {searchMutation.isError && (
-          <Alert severity="error">
-            {searchMutation.error?.message ||
-              "Search failed. Please try again."}
-          </Alert>
-        )}
+        {searchMutation.isError && (() => {
+          const backendMsg =
+            searchMutation.error?.response?.data?.Results;
+          const displayMsg =
+            typeof backendMsg === "string" && backendMsg
+              ? backendMsg
+              : searchMutation.error?.message || "Search failed. Please try again.";
+          const isPermError =
+            /403|Forbidden|Access|permission|Authorization/i.test(displayMsg);
+          return (
+            <Alert severity="error" variant="outlined">
+              <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
+                Search failed
+              </Typography>
+              <Typography variant="body2">{displayMsg}</Typography>
+              {isPermError && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  This usually means the <strong>Files.Read.All</strong>{" "}
+                  permission has not been granted for this tenant. Go to{" "}
+                  <strong>
+                    CIPP Settings &gt; SAM Permissions &gt; CPV Refresh
+                  </strong>{" "}
+                  to push the updated permissions to this tenant, then try again.
+                </Typography>
+              )}
+            </Alert>
+          );
+        })()}
 
         {searchMutation.isSuccess &&
           typeof searchMutation.data?.data?.Results === "string" && (
