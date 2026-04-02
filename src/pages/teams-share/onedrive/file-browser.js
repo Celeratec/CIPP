@@ -54,6 +54,7 @@ import {
   PersonOutline,
   SwapHoriz,
   Block,
+  FolderZip,
 } from "@mui/icons-material";
 import { CippTablePage } from "../../../components/CippComponents/CippTablePage.jsx";
 import CippFormComponent from "../../../components/CippComponents/CippFormComponent";
@@ -1510,6 +1511,42 @@ const Page = () => {
   // Bulk cross-drive transfer state
   const [bulkTransfer, setBulkTransfer] = useState({ open: false, items: [], actionType: "move" });
 
+  // Bulk zip download state
+  const [isZipping, setIsZipping] = useState(false);
+  const handleBulkZipDownload = useCallback(async (items) => {
+    if (!items.length || !tenantFilter) return;
+    setIsZipping(true);
+    try {
+      const payload = {
+        TenantFilter: tenantFilter,
+        Items: items.map((it) => ({ DriveId: it.driveId || driveId, ItemId: it.id, Name: it.name })),
+        ZipFileName: `CIPP-Archive-${new Date().toISOString().slice(0, 10)}.zip`,
+      };
+      const resp = await axios.post("/api/ExecZipFiles", payload, {
+        headers: await buildVersionedHeaders(),
+        timeout: 300000,
+      });
+      const { zipBase64, zipFileName } = resp.data || {};
+      if (zipBase64) {
+        const byteChars = atob(zipBase64);
+        const byteArray = new Uint8Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
+        const blob = new Blob([byteArray], { type: "application/zip" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = zipFileName || "CIPP-Archive.zip";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      // Errors handled by the Results toast pattern
+    }
+    setIsZipping(false);
+  }, [tenantFilter, driveId]);
+
   // Compare dialog state
   const [compareOpen, setCompareOpen] = useState(false);
 
@@ -1962,6 +1999,18 @@ const Page = () => {
         category: "manage",
       },
 
+      // -- Zip --
+      {
+        label: "Download as Zip",
+        icon: isZipping ? <CircularProgress size={16} /> : <FolderZip />,
+        customBulkHandler: ({ data, clearSelection }) => {
+          handleBulkZipDownload(data);
+          clearSelection();
+        },
+        condition: (row) => !row.isFolder,
+        category: "view",
+      },
+
       // -- Danger --
       {
         label: "Delete",
@@ -1982,7 +2031,7 @@ const Page = () => {
         category: "danger",
       },
     ],
-    [driveIdentity, rawDriveIdentity, folderPickerApi, currentQueryKey]
+    [driveIdentity, rawDriveIdentity, folderPickerApi, currentQueryKey, isZipping, handleBulkZipDownload]
   );
 
   const defaultLabel = siteId ? "SharePoint" : "OneDrive";

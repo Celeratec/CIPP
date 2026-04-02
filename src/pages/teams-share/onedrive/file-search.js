@@ -6,15 +6,30 @@ import {
   AccordionSummary,
   Alert,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
+  FormControl,
   IconButton,
   InputAdornment,
+  InputLabel,
   Link as MuiLink,
+  MenuItem,
   Pagination,
   Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography,
   useTheme,
@@ -32,15 +47,507 @@ import {
   ContentCopy,
   Check,
   FilterList,
+  DriveFileMove,
+  FileCopy,
+  Language,
+  PersonOutline,
+  Folder,
+  FolderZip,
+  SaveAlt,
 } from "@mui/icons-material";
 import { CippHead } from "../../../components/CippComponents/CippHead";
 import { CippAutoComplete } from "../../../components/CippComponents/CippAutocomplete";
-import { ApiPostCall } from "../../../api/ApiCall";
+import CippFormComponent from "../../../components/CippComponents/CippFormComponent";
+import { ApiGetCall, ApiPostCall } from "../../../api/ApiCall";
+import axios from "axios";
+import { buildVersionedHeaders } from "../../../utils/cippVersion";
 import { useSettings } from "../../../hooks/use-settings";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useForm } from "react-hook-form";
 import { getFileIcon } from "../../../utils/get-file-icon";
 
 const PAGE_SIZE = 25;
+
+const DestinationPickerDialog = ({ open, onClose, items = [], actionType, tenantFilter, mode = "transfer" }) => {
+  const formControl = useForm({ mode: "onChange" });
+  const theme = useTheme();
+  const isZipMode = mode === "zip";
+
+  const [locationType, setLocationType] = useState("onedrive");
+  const [destLocation, setDestLocation] = useState(null);
+  const [destFolderId, setDestFolderId] = useState(null);
+  const [currentFolderId, setCurrentFolderId] = useState(null);
+  const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Root", id: null }]);
+  const prevValueRef = useRef(null);
+
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [itemStatuses, setItemStatuses] = useState({});
+  const [transferComplete, setTransferComplete] = useState(false);
+  const [conflictBehavior, setConflictBehavior] = useState("rename");
+  const [zipFileName, setZipFileName] = useState(`CIPP-Archive-${new Date().toISOString().slice(0, 10)}.zip`);
+
+  const userValue = formControl.watch("destUser");
+  const siteValue = formControl.watch("destSite");
+
+  useEffect(() => {
+    if (locationType === "onedrive") {
+      const key = userValue?.value || null;
+      if (key !== prevValueRef.current) {
+        prevValueRef.current = key;
+        if (userValue?.value) {
+          setDestLocation({ type: "onedrive", userId: userValue.value, label: userValue.label });
+        } else {
+          setDestLocation(null);
+        }
+        setDestFolderId(null);
+        setCurrentFolderId(null);
+        setBreadcrumbs([{ label: userValue?.label || "Root", id: null }]);
+      }
+    }
+  }, [userValue, locationType]);
+
+  useEffect(() => {
+    if (locationType === "sharepoint") {
+      const key = siteValue?.value || null;
+      if (key !== prevValueRef.current) {
+        prevValueRef.current = key;
+        if (siteValue?.value) {
+          setDestLocation({ type: "sharepoint", siteId: siteValue.value, label: siteValue.label });
+        } else {
+          setDestLocation(null);
+        }
+        setDestFolderId(null);
+        setCurrentFolderId(null);
+        setBreadcrumbs([{ label: siteValue?.label || "Root", id: null }]);
+      }
+    }
+  }, [siteValue, locationType]);
+
+  const handleTypeChange = (_e, val) => {
+    if (!val) return;
+    setLocationType(val);
+    formControl.setValue("destUser", null);
+    formControl.setValue("destSite", null);
+    prevValueRef.current = null;
+    setDestLocation(null);
+    setDestFolderId(null);
+    setCurrentFolderId(null);
+    setBreadcrumbs([{ label: "Root", id: null }]);
+  };
+
+  const folderApiParams = useMemo(() => {
+    if (!destLocation) return null;
+    const params = { TenantFilter: tenantFilter };
+    if (destLocation.type === "onedrive") params.UserId = destLocation.userId;
+    if (destLocation.type === "sharepoint") params.SiteId = destLocation.siteId;
+    if (currentFolderId) params.FolderId = currentFolderId;
+    return params;
+  }, [tenantFilter, destLocation, currentFolderId]);
+
+  const folderQueryKey = `search-xdrive-folders-${destLocation?.userId || destLocation?.siteId}-${currentFolderId || "root"}`;
+
+  const foldersQuery = ApiGetCall({
+    url: "/api/ListOneDriveFiles",
+    data: folderApiParams || {},
+    queryKey: folderQueryKey,
+    waiting: !!destLocation,
+  });
+
+  const folders = useMemo(() => {
+    const raw = Array.isArray(foldersQuery.data) ? foldersQuery.data : [];
+    return raw.filter((f) => f.isFolder);
+  }, [foldersQuery.data]);
+
+  const navigateToFolder = (fId, fName) => {
+    setCurrentFolderId(fId);
+    setDestFolderId(fId);
+    setBreadcrumbs((prev) => [...prev, { label: fName, id: fId }]);
+  };
+
+  const navigateToBreadcrumb = (index) => {
+    const crumb = breadcrumbs[index];
+    setCurrentFolderId(crumb.id);
+    setDestFolderId(crumb.id);
+    setBreadcrumbs((prev) => prev.slice(0, index + 1));
+  };
+
+  const handleExecute = async () => {
+    if (isZipMode) {
+      setIsTransferring(true);
+      setTransferComplete(false);
+      setItemStatuses({});
+
+      try {
+        const destIdentity = {};
+        if (destLocation.type === "onedrive") destIdentity.DestinationUserId = destLocation.userId;
+        else destIdentity.DestinationSiteId = destLocation.siteId;
+
+        const payload = {
+          TenantFilter: tenantFilter,
+          Items: items.map((it) => ({ DriveId: it.driveId, ItemId: it.id, Name: it.name })),
+          ZipFileName: zipFileName,
+          ...destIdentity,
+          ...(destFolderId ? { DestinationFolderId: destFolderId } : {}),
+        };
+        const resp = await axios.post("/api/ExecZipFiles", payload, {
+          headers: await buildVersionedHeaders(),
+          timeout: 300000,
+        });
+        setItemStatuses({ _zip: { status: "success", message: resp.data?.Results || "Zip saved successfully." } });
+      } catch (err) {
+        const errData = err.response?.data;
+        setItemStatuses({ _zip: { status: "error", message: errData?.Results || err.message || "Zip failed" } });
+      }
+
+      setIsTransferring(false);
+      setTransferComplete(true);
+      return;
+    }
+
+    const action = actionType === "move" ? "CrossMove" : "CrossCopy";
+    const destIdentity = {};
+    if (destLocation.type === "onedrive") {
+      destIdentity.DestinationUserId = destLocation.userId;
+    } else {
+      destIdentity.DestinationSiteId = destLocation.siteId;
+    }
+
+    setIsTransferring(true);
+    setTransferComplete(false);
+    const statuses = {};
+    items.forEach((it) => {
+      statuses[it.id] = { status: "pending" };
+    });
+    setItemStatuses({ ...statuses });
+
+    for (const it of items) {
+      statuses[it.id] = { status: "in_progress" };
+      setItemStatuses({ ...statuses });
+
+      try {
+        const payload = {
+          TenantFilter: tenantFilter,
+          DriveId: it.driveId,
+          ItemId: it.id,
+          ItemName: it.name,
+          Action: action,
+          ConflictBehavior: conflictBehavior,
+          ...destIdentity,
+          ...(destFolderId ? { DestinationFolderId: destFolderId } : {}),
+        };
+        const resp = await axios.post("/api/ExecOneDriveFileAction", payload, {
+          headers: await buildVersionedHeaders(),
+          timeout: 90000,
+        });
+        const msg = resp.data?.Results || "Done";
+        const isSkipped = msg.toLowerCase().startsWith("skipped");
+        statuses[it.id] = { status: isSkipped ? "skipped" : "success", message: msg };
+      } catch (err) {
+        const errData = err.response?.data;
+        statuses[it.id] = {
+          status: "error",
+          message: errData?.Results || errData?.error || err.message || "Network error",
+        };
+      }
+      setItemStatuses({ ...statuses });
+    }
+
+    setIsTransferring(false);
+    setTransferComplete(true);
+  };
+
+  const handleClose = () => {
+    onClose(transferComplete);
+    setDestLocation(null);
+    setDestFolderId(null);
+    setCurrentFolderId(null);
+    setBreadcrumbs([{ label: "Root", id: null }]);
+    formControl.reset();
+    prevValueRef.current = null;
+    setIsTransferring(false);
+    setItemStatuses({});
+    setConflictBehavior("rename");
+    setTransferComplete(false);
+    setZipFileName(`CIPP-Archive-${new Date().toISOString().slice(0, 10)}.zip`);
+  };
+
+  const successCount = Object.values(itemStatuses).filter((s) => s.status === "success").length;
+  const skippedCount = Object.values(itemStatuses).filter((s) => s.status === "skipped").length;
+  const errorCount = Object.values(itemStatuses).filter((s) => s.status === "error").length;
+  const completedCount = successCount + skippedCount + errorCount;
+
+  return (
+    <Dialog open={open} onClose={isTransferring ? undefined : handleClose} fullWidth maxWidth="sm">
+      <DialogTitle>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          {isZipMode ? <FolderZip color="primary" /> : actionType === "move" ? <DriveFileMove color="primary" /> : <FileCopy color="primary" />}
+          <span>
+            {isZipMode
+              ? `Save Zip (${items.length} item${items.length !== 1 ? "s" : ""})`
+              : `${actionType === "move" ? "Move" : "Copy"} ${items.length} item${items.length !== 1 ? "s" : ""}`}
+          </span>
+        </Stack>
+      </DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2.5}>
+          {/* Transfer progress */}
+          {(isTransferring || transferComplete) && (
+            <Stack spacing={1}>
+              {isZipMode ? (
+                <>
+                  {isTransferring && (
+                    <Stack alignItems="center" spacing={1} py={2}>
+                      <CircularProgress size={28} />
+                      <Typography variant="body2" color="text.secondary">
+                        Creating zip with {items.length} file{items.length !== 1 ? "s" : ""}...
+                      </Typography>
+                    </Stack>
+                  )}
+                  {transferComplete && itemStatuses._zip && (
+                    <Alert severity={itemStatuses._zip.status === "success" ? "success" : "error"}>
+                      {itemStatuses._zip.message}
+                    </Alert>
+                  )}
+                </>
+              ) : (
+                <>
+                  {transferComplete && (
+                    <Alert severity={errorCount === 0 ? "success" : errorCount === items.length ? "error" : "warning"}>
+                      {errorCount === 0 && skippedCount === 0
+                        ? `All ${successCount} item${successCount !== 1 ? "s" : ""} transferred successfully.`
+                        : [
+                            successCount > 0 && `${successCount} succeeded`,
+                            skippedCount > 0 && `${skippedCount} skipped`,
+                            errorCount > 0 && `${errorCount} failed`,
+                          ].filter(Boolean).join(", ") + "."}
+                    </Alert>
+                  )}
+                  <Paper variant="outlined" sx={{ maxHeight: 200, overflow: "auto" }}>
+                    <Table size="small">
+                      <TableBody>
+                        {items.map((it) => {
+                          const st = itemStatuses[it.id] || { status: "pending" };
+                          return (
+                            <TableRow key={it.id}>
+                              <TableCell sx={{ py: 0.5, width: "50%" }}>
+                                <Typography variant="body2" noWrap>{it.name}</Typography>
+                              </TableCell>
+                              <TableCell sx={{ py: 0.5 }}>
+                                {st.status === "pending" && (
+                                  <Chip label="Waiting" size="small" variant="outlined" sx={{ height: 22 }} />
+                                )}
+                                {st.status === "in_progress" && (
+                                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                                    <CircularProgress size={14} />
+                                    <Typography variant="caption" color="text.secondary">Transferring...</Typography>
+                                  </Stack>
+                                )}
+                                {st.status === "success" && (
+                                  <Chip label="Done" size="small" color="success" sx={{ height: 22 }} />
+                                )}
+                                {st.status === "skipped" && (
+                                  <Tooltip title={st.message}>
+                                    <Chip label="Skipped" size="small" color="info" sx={{ height: 22 }} />
+                                  </Tooltip>
+                                )}
+                                {st.status === "error" && (
+                                  <Tooltip title={st.message}>
+                                    <Chip label="Failed" size="small" color="error" sx={{ height: 22 }} />
+                                  </Tooltip>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </Paper>
+                  {isTransferring && (
+                    <Typography variant="body2" color="text.secondary" textAlign="center">
+                      {completedCount} of {items.length} complete...
+                    </Typography>
+                  )}
+                </>
+              )}
+            </Stack>
+          )}
+
+          {/* Destination picker */}
+          {!isTransferring && !transferComplete && (
+            <>
+              {items.length > 0 && (
+                <Paper variant="outlined" sx={{ maxHeight: 120, overflow: "auto", p: 1 }}>
+                  {items.map((it) => (
+                    <Typography key={it.id} variant="body2" color="text.secondary" noWrap sx={{ py: 0.25 }}>
+                      {it.isFolder ? "\uD83D\uDCC1" : "\uD83D\uDCC4"} {it.name}
+                    </Typography>
+                  ))}
+                </Paper>
+              )}
+
+              <ToggleButtonGroup
+                value={locationType}
+                exclusive
+                onChange={handleTypeChange}
+                size="small"
+                fullWidth
+              >
+                <ToggleButton value="onedrive">
+                  <PersonOutline sx={{ mr: 1 }} /> OneDrive User
+                </ToggleButton>
+                <ToggleButton value="sharepoint">
+                  <Language sx={{ mr: 1 }} /> SharePoint Site
+                </ToggleButton>
+              </ToggleButtonGroup>
+
+              {isZipMode && (
+                <TextField
+                  label="Zip File Name"
+                  value={zipFileName}
+                  onChange={(e) => setZipFileName(e.target.value)}
+                  size="small"
+                  fullWidth
+                />
+              )}
+
+              {!isZipMode && (
+                <FormControl size="small" fullWidth>
+                  <InputLabel>If a file or folder already exists</InputLabel>
+                  <Select
+                    value={conflictBehavior}
+                    label="If a file or folder already exists"
+                    onChange={(e) => setConflictBehavior(e.target.value)}
+                  >
+                    <MenuItem value="rename">Rename (keep both)</MenuItem>
+                    <MenuItem value="replace">Replace existing</MenuItem>
+                    <MenuItem value="skip">Skip duplicates</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+
+              {locationType === "onedrive" && (
+                <CippFormComponent
+                  type="autoComplete"
+                  name="destUser"
+                  label="Destination User"
+                  formControl={formControl}
+                  multiple={false}
+                  api={{
+                    url: "/api/ListGraphRequest",
+                    data: {
+                      Endpoint: "users",
+                      manualPagination: true,
+                      $select: "id,displayName,userPrincipalName,mail",
+                      $count: true,
+                      $orderby: "displayName",
+                      $top: 999,
+                    },
+                    queryKey: `search-dest-users-${tenantFilter}`,
+                    dataKey: "Results",
+                    labelField: (u) => `${u.displayName} (${u.userPrincipalName})`,
+                    valueField: "id",
+                  }}
+                />
+              )}
+
+              {locationType === "sharepoint" && (
+                <CippFormComponent
+                  type="autoComplete"
+                  name="destSite"
+                  label="Destination SharePoint Site"
+                  formControl={formControl}
+                  multiple={false}
+                  api={{
+                    url: "/api/ListSites",
+                    queryKey: `search-dest-sites-${tenantFilter}`,
+                    dataKey: "Results",
+                    data: { TenantFilter: tenantFilter, type: "SharePointSiteUsage" },
+                    labelField: (s) => s["Site Name"] || s.displayName || s.name,
+                    valueField: (s) => s["Site ID"] || s.id,
+                  }}
+                />
+              )}
+
+              {/* Folder browser */}
+              {destLocation && (
+                <Paper variant="outlined" sx={{ p: 1.5 }}>
+                  <Stack spacing={1}>
+                    <Stack direction="row" spacing={0.5} flexWrap="wrap" alignItems="center">
+                      {breadcrumbs.map((crumb, i) => (
+                        <Stack key={i} direction="row" alignItems="center" spacing={0.5}>
+                          {i > 0 && <Typography variant="caption" color="text.secondary">/</Typography>}
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              cursor: i < breadcrumbs.length - 1 ? "pointer" : "default",
+                              fontWeight: i === breadcrumbs.length - 1 ? 600 : 400,
+                              color: i < breadcrumbs.length - 1 ? "primary.main" : "text.primary",
+                              "&:hover": i < breadcrumbs.length - 1 ? { textDecoration: "underline" } : {},
+                            }}
+                            onClick={() => i < breadcrumbs.length - 1 && navigateToBreadcrumb(i)}
+                          >
+                            {crumb.label}
+                          </Typography>
+                        </Stack>
+                      ))}
+                    </Stack>
+                    <Divider />
+                    {foldersQuery.isLoading && (
+                      <Stack alignItems="center" py={2}>
+                        <CircularProgress size={20} />
+                      </Stack>
+                    )}
+                    {foldersQuery.isSuccess && folders.length === 0 && (
+                      <Typography variant="body2" color="text.secondary" sx={{ py: 1, textAlign: "center" }}>
+                        No subfolders. Files will be placed here.
+                      </Typography>
+                    )}
+                    {folders.map((f) => (
+                      <Stack
+                        key={f.id}
+                        direction="row"
+                        alignItems="center"
+                        spacing={1}
+                        sx={{
+                          py: 0.5,
+                          px: 1,
+                          borderRadius: 1,
+                          cursor: "pointer",
+                          "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.06) },
+                        }}
+                        onClick={() => navigateToFolder(f.id, f.name)}
+                      >
+                        <Folder fontSize="small" color="primary" />
+                        <Typography variant="body2" noWrap>{f.name}</Typography>
+                      </Stack>
+                    ))}
+                  </Stack>
+                </Paper>
+              )}
+            </>
+          )}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose} disabled={isTransferring}>
+          {transferComplete ? "Close" : "Cancel"}
+        </Button>
+        {!isTransferring && !transferComplete && (
+          <Button
+            variant="contained"
+            onClick={handleExecute}
+            disabled={!destLocation || (isZipMode && !zipFileName.trim())}
+            startIcon={isZipMode ? <FolderZip /> : actionType === "move" ? <DriveFileMove /> : <FileCopy />}
+          >
+            {isZipMode
+              ? `Save Zip (${items.length} file${items.length !== 1 ? "s" : ""})`
+              : `${actionType === "move" ? "Move" : "Copy"} ${items.length} item${items.length !== 1 ? "s" : ""}`}
+          </Button>
+        )}
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 const Page = () => {
   const router = useRouter();
@@ -54,6 +561,10 @@ const Page = () => {
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
   const [filterModifiedBy, setFilterModifiedBy] = useState("");
+
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [transferDialog, setTransferDialog] = useState({ open: false, actionType: "copy", mode: "transfer" });
+  const [isZipping, setIsZipping] = useState(false);
 
   const searchMutation = ApiPostCall({});
 
@@ -124,6 +635,75 @@ const Page = () => {
     ],
     []
   );
+
+  const selectedIds = useMemo(() => new Set(selectedItems.map((i) => i.id)), [selectedItems]);
+
+  const toggleItem = useCallback((item) => {
+    setSelectedItems((prev) => {
+      const exists = prev.some((i) => i.id === item.id);
+      return exists ? prev.filter((i) => i.id !== item.id) : [...prev, item];
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    if (!results.length) return;
+    const allOnPageSelected = results.every((r) => selectedIds.has(r.id));
+    if (allOnPageSelected) {
+      setSelectedItems((prev) => prev.filter((i) => !results.some((r) => r.id === i.id)));
+    } else {
+      setSelectedItems((prev) => {
+        const existing = new Set(prev.map((i) => i.id));
+        const toAdd = results.filter((r) => !existing.has(r.id));
+        return [...prev, ...toAdd];
+      });
+    }
+  }, [results, selectedIds]);
+
+  const allOnPageSelected = results.length > 0 && results.every((r) => selectedIds.has(r.id));
+  const someOnPageSelected = results.length > 0 && results.some((r) => selectedIds.has(r.id));
+
+  const openTransferDialog = (actionType, mode = "transfer") => {
+    setTransferDialog({ open: true, actionType, mode });
+  };
+
+  const handleTransferClose = (wasCompleted) => {
+    setTransferDialog({ open: false, actionType: "copy", mode: "transfer" });
+    if (wasCompleted) setSelectedItems([]);
+  };
+
+  const handleZipDownload = useCallback(async (items) => {
+    if (!items.length || !tenantFilter) return;
+    setIsZipping(true);
+    try {
+      const payload = {
+        TenantFilter: tenantFilter,
+        Items: items.map((it) => ({ DriveId: it.driveId, ItemId: it.id, Name: it.name })),
+        ZipFileName: `CIPP-Archive-${new Date().toISOString().slice(0, 10)}.zip`,
+      };
+      const resp = await axios.post("/api/ExecZipFiles", payload, {
+        headers: await buildVersionedHeaders(),
+        timeout: 300000,
+      });
+      const { zipBase64, zipFileName } = resp.data || {};
+      if (zipBase64) {
+        const byteChars = atob(zipBase64);
+        const byteArray = new Uint8Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
+        const blob = new Blob([byteArray], { type: "application/zip" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = zipFileName || "CIPP-Archive.zip";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      // Error is shown via the UI state; no silent swallow
+    }
+    setIsZipping(false);
+  }, [tenantFilter]);
 
   return (
     <>
@@ -542,6 +1122,68 @@ const Page = () => {
               )}
             </Box>
 
+            {/* Selection Toolbar */}
+            {selectedItems.length > 0 && (
+              <Box
+                sx={{
+                  px: 2,
+                  py: 1,
+                  bgcolor: alpha(theme.palette.primary.main, 0.08),
+                  borderBottom: `1px solid ${theme.palette.divider}`,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.5,
+                  position: "sticky",
+                  top: 0,
+                  zIndex: 2,
+                }}
+              >
+                <Typography variant="body2" fontWeight={600} color="primary">
+                  {selectedItems.length} selected
+                </Typography>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<FileCopy />}
+                  onClick={() => openTransferDialog("copy")}
+                >
+                  Copy
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<DriveFileMove />}
+                  onClick={() => openTransferDialog("move")}
+                >
+                  Move
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={isZipping ? <CircularProgress size={16} color="inherit" /> : <FolderZip />}
+                  onClick={() => handleZipDownload(selectedItems)}
+                  disabled={isZipping}
+                >
+                  {isZipping ? "Zipping..." : "Download Zip"}
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<SaveAlt />}
+                  onClick={() => openTransferDialog("copy", "zip")}
+                >
+                  Save Zip
+                </Button>
+                <Button
+                  size="small"
+                  onClick={() => setSelectedItems([])}
+                  sx={{ ml: "auto" }}
+                >
+                  Clear
+                </Button>
+              </Box>
+            )}
+
             {results.length === 0 ? (
               <Box sx={{ p: 4, textAlign: "center" }}>
                 <Info
@@ -570,6 +1212,15 @@ const Page = () => {
                     bgcolor: alpha(theme.palette.grey[500], 0.04),
                   }}
                 >
+                  <Box sx={{ width: 40, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Checkbox
+                      size="small"
+                      checked={allOnPageSelected}
+                      indeterminate={someOnPageSelected && !allOnPageSelected}
+                      onChange={toggleAll}
+                      sx={{ p: 0 }}
+                    />
+                  </Box>
                   {columns.map((col) => (
                     <Box
                       key={col.id}
@@ -615,6 +1266,8 @@ const Page = () => {
                     .filter(Boolean)
                     .join("");
 
+                  const isSelected = selectedIds.has(item.id);
+
                   return (
                     <Box
                       key={`${item.id}-${idx}`}
@@ -631,8 +1284,21 @@ const Page = () => {
                           bgcolor: alpha(theme.palette.primary.main, 0.02),
                         },
                         "&:last-child": { borderBottom: "none" },
+                        ...(isSelected && {
+                          bgcolor: alpha(theme.palette.primary.main, 0.04),
+                        }),
                       }}
                     >
+                      {/* Checkbox */}
+                      <Box sx={{ width: 40, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Checkbox
+                          size="small"
+                          checked={isSelected}
+                          onChange={() => toggleItem(item)}
+                          sx={{ p: 0 }}
+                        />
+                      </Box>
+
                       {/* Name */}
                       <Box
                         sx={{
@@ -808,6 +1474,15 @@ const Page = () => {
           </Paper>
         )}
       </Box>
+
+      <DestinationPickerDialog
+        open={transferDialog.open}
+        onClose={handleTransferClose}
+        items={selectedItems}
+        actionType={transferDialog.actionType}
+        tenantFilter={tenantFilter}
+        mode={transferDialog.mode}
+      />
     </>
   );
 };
