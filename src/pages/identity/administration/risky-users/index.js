@@ -155,7 +155,7 @@ const Page = () => {
       color: "info",
     },
     {
-      label: "Research Compromise",
+      label: "Research",
       type: "GET",
       icon: <Search />,
       link: "/identity/administration/users/user/bec?userId=[id]",
@@ -166,7 +166,7 @@ const Page = () => {
       color: "info",
     },
     {
-      label: "Remediate User",
+      label: "Remediate",
       type: "POST",
       icon: <ShieldCheckIcon />,
       url: "/api/execBecRemediate",
@@ -212,10 +212,11 @@ const Page = () => {
         "This will mark the password as expired for [userPrincipalName]. The user will be required to change their password on their next sign-in. Their current password remains valid until they log in. Use 'Revoke all user sessions' to force immediate re-authentication.",
       multiPost: false,
       category: "security",
+      quickAction: true,
       color: "warning",
     },
     {
-      label: "Re-require MFA registration",
+      label: "Reset MFA",
       type: "POST",
       icon: <PhonelinkSetup />,
       url: "/api/ExecResetMFA",
@@ -227,7 +228,7 @@ const Page = () => {
       color: "warning",
     },
     {
-      label: "Revoke all user sessions",
+      label: "Revoke Sessions",
       type: "POST",
       icon: <PersonOff />,
       url: "/api/ExecRevokeSessions",
