@@ -314,8 +314,17 @@ const Page = () => {
 
         {/* Results */}
         {searchMutation.isError && (() => {
-          const backendMsg =
-            searchMutation.error?.response?.data?.Results;
+          const errorData = searchMutation.error?.response?.data;
+          let backendMsg;
+          if (typeof errorData === "string") {
+            try {
+              backendMsg = JSON.parse(errorData)?.Results;
+            } catch {
+              backendMsg = errorData;
+            }
+          } else {
+            backendMsg = errorData?.Results;
+          }
           const displayMsg =
             typeof backendMsg === "string" && backendMsg
               ? backendMsg
