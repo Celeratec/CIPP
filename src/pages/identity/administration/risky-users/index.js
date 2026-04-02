@@ -1,6 +1,7 @@
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
+import { getCippTranslation } from "../../../../utils/get-cipp-translation";
 import { Avatar, Box, Chip, Divider, Paper, Stack, Typography, useMediaQuery } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import {
@@ -353,7 +354,7 @@ const Page = () => {
               }}
             >
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                {row.riskDetail ? formatLabel(row.riskDetail) : "No additional details available for this risk assessment."}
+                {row.riskDetail ? getCippTranslation(row.riskDetail) : "No additional details available for this risk assessment."}
               </Typography>
             </Paper>
           </Box>
@@ -476,7 +477,7 @@ const Page = () => {
       { 
         field: "riskDetail", 
         label: "Details",
-        formatter: (value) => value ? formatLabel(value) : "No details available",
+        formatter: (value) => value ? getCippTranslation(value) : "No details available",
       },
     ],
     extraFieldsMax: 1,
