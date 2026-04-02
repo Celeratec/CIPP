@@ -31,6 +31,7 @@ import {
   LightbulbOutlined,
   ContentCopy,
   Check,
+  FilterList,
 } from "@mui/icons-material";
 import { CippHead } from "../../../components/CippComponents/CippHead";
 import { ApiPostCall } from "../../../api/ApiCall";
@@ -48,6 +49,10 @@ const Page = () => {
   const [searchInput, setSearchInput] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
+
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+  const [filterModifiedBy, setFilterModifiedBy] = useState("");
 
   const searchMutation = ApiPostCall({});
 
@@ -73,9 +78,32 @@ const Page = () => {
     executeSearch(activeQuery, from);
   };
 
-  const results = searchMutation.data?.data?.Results || [];
+  const rawResults = searchMutation.data?.data?.Results || [];
   const totalCount = searchMutation.data?.data?.TotalCount || 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  const hasFilters = filterDateFrom || filterDateTo || filterModifiedBy;
+
+  const results = useMemo(() => {
+    if (!hasFilters) return rawResults;
+    return rawResults.filter((item) => {
+      if (filterModifiedBy) {
+        const name = (item.lastModifiedBy || "").toLowerCase();
+        if (!name.includes(filterModifiedBy.toLowerCase())) return false;
+      }
+      if (filterDateFrom && item.lastModified) {
+        const itemDate = new Date(item.lastModified);
+        const fromDate = new Date(filterDateFrom + "T00:00:00");
+        if (itemDate < fromDate) return false;
+      }
+      if (filterDateTo && item.lastModified) {
+        const itemDate = new Date(item.lastModified);
+        const toDate = new Date(filterDateTo + "T23:59:59");
+        if (itemDate > toDate) return false;
+      }
+      return true;
+    });
+  }, [rawResults, filterDateFrom, filterDateTo, filterModifiedBy, hasFilters]);
 
   const handleBrowseLocation = (item) => {
     const query = {};
@@ -312,6 +340,91 @@ const Page = () => {
           </Stack>
         </Paper>
 
+        {/* Filters */}
+        {searchMutation.isSuccess && Array.isArray(rawResults) && rawResults.length > 0 && (
+          <Paper
+            elevation={0}
+            sx={{
+              px: 3,
+              py: 2,
+              border: `1px solid ${theme.palette.divider}`,
+              borderRadius: 2,
+            }}
+          >
+            <Stack spacing={1.5}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <FilterList fontSize="small" color="action" />
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Filter Results
+                </Typography>
+                {hasFilters && (
+                  <Chip
+                    label={`${results.length} of ${rawResults.length} on this page`}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                  />
+                )}
+                {hasFilters && (
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      setFilterDateFrom("");
+                      setFilterDateTo("");
+                      setFilterModifiedBy("");
+                    }}
+                    sx={{ ml: "auto" }}
+                  >
+                    Clear Filters
+                  </Button>
+                )}
+              </Stack>
+              <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+                <TextField
+                  label="Modified By"
+                  placeholder="e.g. Jason Gaskell"
+                  value={filterModifiedBy}
+                  onChange={(e) => setFilterModifiedBy(e.target.value)}
+                  size="small"
+                  sx={{ minWidth: 200 }}
+                  InputProps={{
+                    endAdornment: filterModifiedBy ? (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={() => setFilterModifiedBy("")}>
+                          <Clear fontSize="small" />
+                        </IconButton>
+                      </InputAdornment>
+                    ) : null,
+                  }}
+                />
+                <TextField
+                  label="Modified From"
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  size="small"
+                  sx={{ width: 170 }}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  label="Modified To"
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  size="small"
+                  sx={{ width: 170 }}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Stack>
+              {hasFilters && (
+                <Typography variant="caption" color="text.secondary">
+                  Filters apply to the current page of results. Use pagination to check other pages.
+                </Typography>
+              )}
+            </Stack>
+          </Paper>
+        )}
+
         {/* Results */}
         {searchMutation.isError && (() => {
           const errorData = searchMutation.error?.response?.data;
@@ -378,7 +491,7 @@ const Page = () => {
           )}
 
         {searchMutation.isSuccess &&
-          Array.isArray(searchMutation.data?.data?.Results) && (
+          Array.isArray(rawResults) && (
           <Paper
             elevation={0}
             sx={{
@@ -401,9 +514,11 @@ const Page = () => {
             >
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Typography variant="subtitle2">
-                  {totalCount > 0
-                    ? `${totalCount.toLocaleString()} result${totalCount !== 1 ? "s" : ""}`
-                    : "No results"}
+                  {hasFilters
+                    ? `${results.length} matching result${results.length !== 1 ? "s" : ""} (${totalCount.toLocaleString()} total)`
+                    : totalCount > 0
+                      ? `${totalCount.toLocaleString()} result${totalCount !== 1 ? "s" : ""}`
+                      : "No results"}
                 </Typography>
                 {activeQuery && (
                   <Chip
