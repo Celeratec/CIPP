@@ -561,6 +561,7 @@ const Page = () => {
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
   const [filterModifiedBy, setFilterModifiedBy] = useState("");
+  const [filterFileType, setFilterFileType] = useState("");
 
   const [selectedItems, setSelectedItems] = useState([]);
   const [transferDialog, setTransferDialog] = useState({ open: false, actionType: "copy", mode: "transfer" });
@@ -572,9 +573,13 @@ const Page = () => {
     if (!query.trim() || !tenantFilter) return;
     setActiveQuery(query.trim());
     setCurrentPage(from / PAGE_SIZE);
+
+    let effectiveQuery = query.trim();
+    if (filterFileType) effectiveQuery = `filetype:${filterFileType} ${effectiveQuery}`;
+
     const data = {
       TenantFilter: tenantFilter,
-      SearchQuery: query.trim(),
+      SearchQuery: effectiveQuery,
       From: from,
       Size: PAGE_SIZE,
     };
@@ -594,7 +599,7 @@ const Page = () => {
   const results = searchMutation.data?.data?.Results || [];
   const totalCount = searchMutation.data?.data?.TotalCount || 0;
   const filteredCount = searchMutation.data?.data?.FilteredCount;
-  const hasFilters = filterDateFrom || filterDateTo || filterModifiedBy;
+  const hasFilters = filterDateFrom || filterDateTo || filterModifiedBy || filterFileType;
   const totalPages = filteredCount != null ? 1 : Math.ceil(totalCount / PAGE_SIZE);
 
   const handleBrowseLocation = (item) => {
@@ -780,6 +785,149 @@ const Page = () => {
               </Alert>
             )}
 
+            {/* Filters - always visible */}
+            <Accordion
+              disableGutters
+              elevation={0}
+              defaultExpanded
+              sx={{
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: "8px !important",
+                "&::before": { display: "none" },
+              }}
+            >
+              <AccordionSummary
+                expandIcon={<ExpandMore />}
+                sx={{ minHeight: 40, "& .MuiAccordionSummary-content": { my: 0.75 } }}
+              >
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <FilterList fontSize="small" color="action" />
+                  <Typography variant="body2" fontWeight={600} color="text.secondary">
+                    Filters
+                  </Typography>
+                  {hasFilters && (
+                    <Chip
+                      label={
+                        [
+                          filterFileType && filterFileType.toUpperCase(),
+                          filterModifiedBy,
+                          filterDateFrom && `from ${filterDateFrom}`,
+                          filterDateTo && `to ${filterDateTo}`,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")
+                      }
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                </Stack>
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0 }}>
+                <Divider sx={{ mb: 1.5 }} />
+                <Stack spacing={2}>
+                  <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap alignItems="flex-start">
+                    <FormControl size="small" sx={{ minWidth: 180 }}>
+                      <InputLabel>File Type</InputLabel>
+                      <Select
+                        value={filterFileType}
+                        label="File Type"
+                        onChange={(e) => setFilterFileType(e.target.value)}
+                      >
+                        <MenuItem value="">All Types</MenuItem>
+                        <Divider />
+                        <MenuItem value="xlsx">Excel (.xlsx)</MenuItem>
+                        <MenuItem value="xls">Excel Legacy (.xls)</MenuItem>
+                        <MenuItem value="csv">CSV (.csv)</MenuItem>
+                        <Divider />
+                        <MenuItem value="docx">Word (.docx)</MenuItem>
+                        <MenuItem value="doc">Word Legacy (.doc)</MenuItem>
+                        <Divider />
+                        <MenuItem value="pptx">PowerPoint (.pptx)</MenuItem>
+                        <MenuItem value="ppt">PowerPoint Legacy (.ppt)</MenuItem>
+                        <Divider />
+                        <MenuItem value="pdf">PDF (.pdf)</MenuItem>
+                        <Divider />
+                        <MenuItem value="jpg">JPEG Image (.jpg)</MenuItem>
+                        <MenuItem value="png">PNG Image (.png)</MenuItem>
+                        <MenuItem value="gif">GIF Image (.gif)</MenuItem>
+                        <Divider />
+                        <MenuItem value="mp4">Video (.mp4)</MenuItem>
+                        <MenuItem value="mp3">Audio (.mp3)</MenuItem>
+                        <Divider />
+                        <MenuItem value="zip">Zip Archive (.zip)</MenuItem>
+                        <MenuItem value="txt">Text (.txt)</MenuItem>
+                        <MenuItem value="html">HTML (.html)</MenuItem>
+                        <MenuItem value="json">JSON (.json)</MenuItem>
+                        <MenuItem value="xml">XML (.xml)</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <CippAutoComplete
+                      label="Modified By"
+                      placeholder="Search users..."
+                      multiple={false}
+                      creatable={false}
+                      size="small"
+                      sx={{ minWidth: 260 }}
+                      value={filterModifiedBy ? { label: filterModifiedBy, value: filterModifiedBy } : null}
+                      onChange={(val) => setFilterModifiedBy(val?.addedFields?.displayName || val?.label || "")}
+                      api={{
+                        url: "/api/ListGraphRequest",
+                        data: {
+                          Endpoint: "users",
+                          $select: "id,displayName,userPrincipalName",
+                          $filter: "accountEnabled eq true",
+                          $top: 999,
+                          $count: true,
+                          $orderby: "displayName",
+                        },
+                        queryKey: `file-search-users-${tenantFilter}`,
+                        dataKey: "Results",
+                        labelField: (u) => `${u.displayName} (${u.userPrincipalName})`,
+                        valueField: "displayName",
+                        addedField: { displayName: "displayName" },
+                      }}
+                    />
+                    <TextField
+                      label="Modified From"
+                      type="date"
+                      value={filterDateFrom}
+                      onChange={(e) => setFilterDateFrom(e.target.value)}
+                      size="small"
+                      sx={{ width: 170 }}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                    <TextField
+                      label="Modified To"
+                      type="date"
+                      value={filterDateTo}
+                      onChange={(e) => setFilterDateTo(e.target.value)}
+                      size="small"
+                      sx={{ width: 170 }}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                    {hasFilters && (
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          setFilterFileType("");
+                          setFilterModifiedBy("");
+                          setFilterDateFrom("");
+                          setFilterDateTo("");
+                        }}
+                      >
+                        Clear Filters
+                      </Button>
+                    )}
+                  </Stack>
+                  <Typography variant="caption" color="text.secondary">
+                    Filters are applied server-side when you click Search. File type and modified-by narrow the search index; date range filters the returned results.
+                  </Typography>
+                </Stack>
+              </AccordionDetails>
+            </Accordion>
+
             <Accordion
               disableGutters
               elevation={0}
@@ -823,7 +971,7 @@ const Page = () => {
                   </Box>
 
                   <Typography variant="subtitle2" color="text.primary">
-                    Filter by File Properties
+                    Advanced KQL Operators
                   </Typography>
                   <Box component="ul" sx={{ m: 0, pl: 2.5, "& li": { mb: 0.5 } }}>
                     <li>
@@ -835,8 +983,7 @@ const Page = () => {
                     <li>
                       <Typography variant="body2" color="text.secondary">
                         <code>filetype:pdf</code> &mdash; Only PDF files
-                        (also works with <code>xlsx</code>, <code>docx</code>,
-                        <code>pptx</code>, etc.)
+                        (use the File Type dropdown above, or type manually for unlisted types)
                       </Typography>
                     </li>
                     <li>
@@ -849,12 +996,6 @@ const Page = () => {
                       <Typography variant="body2" color="text.secondary">
                         <code>path:&quot;https://contoso.sharepoint.com/sites/HR&quot;</code>{" "}
                         &mdash; Limit search to a specific SharePoint site
-                      </Typography>
-                    </li>
-                    <li>
-                      <Typography variant="body2" color="text.secondary">
-                        <code>lastmodifiedtime&gt;2025-01-01</code> &mdash; Files
-                        modified after a specific date
                       </Typography>
                     </li>
                   </Box>
@@ -871,14 +1012,8 @@ const Page = () => {
                     </li>
                     <li>
                       <Typography variant="body2" color="text.secondary">
-                        <code>filename:invoice filetype:xlsx author:&quot;Jane&quot;</code>{" "}
-                        &mdash; Excel files named &quot;invoice&quot; by Jane
-                      </Typography>
-                    </li>
-                    <li>
-                      <Typography variant="body2" color="text.secondary">
-                        <code>contract OR agreement filetype:docx</code> &mdash;{" "}
-                        Word docs containing either word
+                        <code>contract OR agreement</code> &mdash;{" "}
+                        Files containing either word
                       </Typography>
                     </li>
                   </Box>
@@ -901,107 +1036,12 @@ const Page = () => {
           </Stack>
         </Paper>
 
-        {/* Filters */}
-        {searchMutation.isSuccess && Array.isArray(searchMutation.data?.data?.Results) && (
-          <Paper
-            elevation={0}
-            sx={{
-              px: 3,
-              py: 2,
-              border: `1px solid ${theme.palette.divider}`,
-              borderRadius: 2,
-            }}
-          >
-            <Stack spacing={1.5}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <FilterList fontSize="small" color="action" />
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Filter Results
-                </Typography>
-                {hasFilters && filteredCount != null && (
-                  <Chip
-                    label={`${filteredCount} matching`}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                  />
-                )}
-                {hasFilters && (
-                  <Button
-                    size="small"
-                    onClick={() => {
-                      setFilterModifiedBy("");
-                      setFilterDateFrom("");
-                      setFilterDateTo("");
-                    }}
-                    sx={{ ml: "auto" }}
-                  >
-                    Clear Filters
-                  </Button>
-                )}
-              </Stack>
-              <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap alignItems="flex-start">
-                <CippAutoComplete
-                  label="Modified By"
-                  placeholder="Search users..."
-                  multiple={false}
-                  creatable={false}
-                  size="small"
-                  sx={{ minWidth: 260 }}
-                  value={filterModifiedBy ? { label: filterModifiedBy, value: filterModifiedBy } : null}
-                  onChange={(val) => setFilterModifiedBy(val?.addedFields?.displayName || val?.label || "")}
-                  api={{
-                    url: "/api/ListGraphRequest",
-                    data: {
-                      Endpoint: "users",
-                      $select: "id,displayName,userPrincipalName",
-                      $filter: "accountEnabled eq true",
-                      $top: 999,
-                      $count: true,
-                      $orderby: "displayName",
-                    },
-                    queryKey: `file-search-users-${tenantFilter}`,
-                    dataKey: "Results",
-                    labelField: (u) => `${u.displayName} (${u.userPrincipalName})`,
-                    valueField: "displayName",
-                    addedField: { displayName: "displayName" },
-                  }}
-                />
-                <TextField
-                  label="Modified From"
-                  type="date"
-                  value={filterDateFrom}
-                  onChange={(e) => setFilterDateFrom(e.target.value)}
-                  size="small"
-                  sx={{ width: 170 }}
-                  InputLabelProps={{ shrink: true }}
-                />
-                <TextField
-                  label="Modified To"
-                  type="date"
-                  value={filterDateTo}
-                  onChange={(e) => setFilterDateTo(e.target.value)}
-                  size="small"
-                  sx={{ width: 170 }}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Stack>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={() => executeSearch(activeQuery || searchInput, 0)}
-                  disabled={!activeQuery && !searchInput.trim() || searchMutation.isPending}
-                  startIcon={searchMutation.isPending ? <CircularProgress size={14} color="inherit" /> : <Search />}
-                >
-                  {searchMutation.isPending ? "Searching..." : "Apply Filters"}
-                </Button>
-                <Typography variant="caption" color="text.secondary">
-                  Filters are applied server-side. Click Apply to re-run the search with the current filters.
-                </Typography>
-              </Stack>
-            </Stack>
-          </Paper>
+        {/* Filter summary when results are present */}
+        {searchMutation.isSuccess && Array.isArray(searchMutation.data?.data?.Results) && hasFilters && filteredCount != null && (
+          <Alert severity="info" variant="outlined" icon={<FilterList />}>
+            Showing {filteredCount.toLocaleString()} filtered result{filteredCount !== 1 ? "s" : ""} out of {totalCount.toLocaleString()} total.
+            {" "}Adjust filters above and click Search again to refine.
+          </Alert>
         )}
 
         {/* Results */}
