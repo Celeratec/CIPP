@@ -60,15 +60,16 @@ const Page = () => {
     if (!query.trim() || !tenantFilter) return;
     setActiveQuery(query.trim());
     setCurrentPage(from / PAGE_SIZE);
-    searchMutation.mutate({
-      url: "/api/ExecSearchFiles",
-      data: {
-        TenantFilter: tenantFilter,
-        SearchQuery: query.trim(),
-        From: from,
-        Size: PAGE_SIZE,
-      },
-    });
+    const data = {
+      TenantFilter: tenantFilter,
+      SearchQuery: query.trim(),
+      From: from,
+      Size: PAGE_SIZE,
+    };
+    if (filterModifiedBy.trim()) data.FilterModifiedBy = filterModifiedBy.trim();
+    if (filterDateFrom) data.FilterDateFrom = filterDateFrom;
+    if (filterDateTo) data.FilterDateTo = filterDateTo;
+    searchMutation.mutate({ url: "/api/ExecSearchFiles", data });
   };
 
   const handleSearch = () => executeSearch(searchInput, 0);
@@ -78,32 +79,11 @@ const Page = () => {
     executeSearch(activeQuery, from);
   };
 
-  const rawResults = searchMutation.data?.data?.Results || [];
+  const results = searchMutation.data?.data?.Results || [];
   const totalCount = searchMutation.data?.data?.TotalCount || 0;
+  const filteredCount = searchMutation.data?.data?.FilteredCount;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-
   const hasFilters = filterDateFrom || filterDateTo || filterModifiedBy;
-
-  const results = useMemo(() => {
-    if (!hasFilters) return rawResults;
-    return rawResults.filter((item) => {
-      if (filterModifiedBy) {
-        const name = (item.lastModifiedBy || "").toLowerCase();
-        if (!name.includes(filterModifiedBy.toLowerCase())) return false;
-      }
-      if (filterDateFrom && item.lastModified) {
-        const itemDate = new Date(item.lastModified);
-        const fromDate = new Date(filterDateFrom + "T00:00:00");
-        if (itemDate < fromDate) return false;
-      }
-      if (filterDateTo && item.lastModified) {
-        const itemDate = new Date(item.lastModified);
-        const toDate = new Date(filterDateTo + "T23:59:59");
-        if (itemDate > toDate) return false;
-      }
-      return true;
-    });
-  }, [rawResults, filterDateFrom, filterDateTo, filterModifiedBy, hasFilters]);
 
   const handleBrowseLocation = (item) => {
     const query = {};
@@ -341,7 +321,7 @@ const Page = () => {
         </Paper>
 
         {/* Filters */}
-        {searchMutation.isSuccess && Array.isArray(rawResults) && rawResults.length > 0 && (
+        {searchMutation.isSuccess && Array.isArray(searchMutation.data?.data?.Results) && (
           <Paper
             elevation={0}
             sx={{
@@ -357,9 +337,9 @@ const Page = () => {
                 <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                   Filter Results
                 </Typography>
-                {hasFilters && (
+                {hasFilters && filteredCount != null && (
                   <Chip
-                    label={`${results.length} of ${rawResults.length} on this page`}
+                    label={`${filteredCount} matching`}
                     size="small"
                     color="primary"
                     variant="outlined"
@@ -416,11 +396,20 @@ const Page = () => {
                   InputLabelProps={{ shrink: true }}
                 />
               </Stack>
-              {hasFilters && (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => executeSearch(activeQuery || searchInput, 0)}
+                  disabled={!activeQuery && !searchInput.trim() || searchMutation.isPending}
+                  startIcon={searchMutation.isPending ? <CircularProgress size={14} color="inherit" /> : <Search />}
+                >
+                  {searchMutation.isPending ? "Searching..." : "Apply Filters"}
+                </Button>
                 <Typography variant="caption" color="text.secondary">
-                  Filters apply to the current page of results. Use pagination to check other pages.
+                  Filters are applied server-side. Click Apply to re-run the search with the current filters.
                 </Typography>
-              )}
+              </Stack>
             </Stack>
           </Paper>
         )}
@@ -491,7 +480,7 @@ const Page = () => {
           )}
 
         {searchMutation.isSuccess &&
-          Array.isArray(rawResults) && (
+          Array.isArray(searchMutation.data?.data?.Results) && (
           <Paper
             elevation={0}
             sx={{
@@ -514,8 +503,8 @@ const Page = () => {
             >
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Typography variant="subtitle2">
-                  {hasFilters
-                    ? `${results.length} matching result${results.length !== 1 ? "s" : ""} (${totalCount.toLocaleString()} total)`
+                  {filteredCount != null
+                    ? `${filteredCount.toLocaleString()} matching result${filteredCount !== 1 ? "s" : ""} (${totalCount.toLocaleString()} before filters)`
                     : totalCount > 0
                       ? `${totalCount.toLocaleString()} result${totalCount !== 1 ? "s" : ""}`
                       : "No results"}
