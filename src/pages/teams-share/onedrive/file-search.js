@@ -34,6 +34,7 @@ import {
   FilterList,
 } from "@mui/icons-material";
 import { CippHead } from "../../../components/CippComponents/CippHead";
+import { CippAutoComplete } from "../../../components/CippComponents/CippAutocomplete";
 import { ApiPostCall } from "../../../api/ApiCall";
 import { useSettings } from "../../../hooks/use-settings";
 import { useState, useMemo, useCallback } from "react";
@@ -349,9 +350,9 @@ const Page = () => {
                   <Button
                     size="small"
                     onClick={() => {
+                      setFilterModifiedBy("");
                       setFilterDateFrom("");
                       setFilterDateTo("");
-                      setFilterModifiedBy("");
                     }}
                     sx={{ ml: "auto" }}
                   >
@@ -359,22 +360,31 @@ const Page = () => {
                   </Button>
                 )}
               </Stack>
-              <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
-                <TextField
+              <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap alignItems="flex-start">
+                <CippAutoComplete
                   label="Modified By"
-                  placeholder="e.g. Jason Gaskell"
-                  value={filterModifiedBy}
-                  onChange={(e) => setFilterModifiedBy(e.target.value)}
+                  placeholder="Search users..."
+                  multiple={false}
+                  creatable={false}
                   size="small"
-                  sx={{ minWidth: 200 }}
-                  InputProps={{
-                    endAdornment: filterModifiedBy ? (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setFilterModifiedBy("")}>
-                          <Clear fontSize="small" />
-                        </IconButton>
-                      </InputAdornment>
-                    ) : null,
+                  sx={{ minWidth: 260 }}
+                  value={filterModifiedBy ? { label: filterModifiedBy, value: filterModifiedBy } : null}
+                  onChange={(val) => setFilterModifiedBy(val?.addedFields?.displayName || val?.label || "")}
+                  api={{
+                    url: "/api/ListGraphRequest",
+                    data: {
+                      Endpoint: "users",
+                      $select: "id,displayName,userPrincipalName",
+                      $filter: "accountEnabled eq true",
+                      $top: 999,
+                      $count: true,
+                      $orderby: "displayName",
+                    },
+                    queryKey: `file-search-users-${tenantFilter}`,
+                    dataKey: "Results",
+                    labelField: (u) => `${u.displayName} (${u.userPrincipalName})`,
+                    valueField: "displayName",
+                    addedField: { displayName: "displayName" },
                   }}
                 />
                 <TextField
