@@ -407,28 +407,28 @@ const Page = () => {
   }, [usersList?.data?.Results, groupsList?.data?.Results]);
 
   // Create options array for calendar permissions (includes system users)
+  // Uses mail (primary SMTP) instead of UPN so Exchange can resolve recipients
   const calendarPermissionOptions = useMemo(() => {
     const options = [];
 
-    // Add special system users for calendar permissions
     options.push({
       value: "Default",
       label: "Default",
       type: "system",
     });
 
-    // Add users
     if (usersList?.data?.Results) {
-      usersList.data.Results.forEach((user) => {
-        options.push({
-          value: user.userPrincipalName,
-          label: `${user.displayName} (${user.userPrincipalName})`,
-          type: "user",
+      usersList.data.Results
+        .filter((user) => user.mail)
+        .forEach((user) => {
+          options.push({
+            value: user.mail,
+            label: `${user.displayName} (${user.mail})`,
+            type: "user",
+          });
         });
-      });
     }
 
-    // Add mail-enabled security groups
     if (groupsList?.data?.Results) {
       groupsList.data.Results.forEach((group) => {
         options.push({
@@ -439,7 +439,6 @@ const Page = () => {
       });
     }
 
-    // Sort alphabetically by label, but keep system users at the top
     return options.sort((a, b) => {
       if (a.type === "system" && b.type !== "system") return -1;
       if (b.type === "system" && a.type !== "system") return 1;
@@ -450,25 +449,24 @@ const Page = () => {
   const contactPermissionOptions = useMemo(() => {
     const options = [];
 
-    // Add special system users for calendar permissions
     options.push({
       value: "Default",
       label: "Default",
       type: "system",
     });
 
-    // Add users
     if (usersList?.data?.Results) {
-      usersList.data.Results.forEach((user) => {
-        options.push({
-          value: user.userPrincipalName,
-          label: `${user.displayName} (${user.userPrincipalName})`,
-          type: "user",
+      usersList.data.Results
+        .filter((user) => user.mail)
+        .forEach((user) => {
+          options.push({
+            value: user.mail,
+            label: `${user.displayName} (${user.mail})`,
+            type: "user",
+          });
         });
-      });
     }
 
-    // Add mail-enabled security groups
     if (groupsList?.data?.Results) {
       groupsList.data.Results.forEach((group) => {
         options.push({
@@ -479,7 +477,6 @@ const Page = () => {
       });
     }
 
-    // Sort alphabetically by label, but keep system users at the top
     return options.sort((a, b) => {
       if (a.type === "system" && b.type !== "system") return -1;
       if (b.type === "system" && a.type !== "system") return 1;
