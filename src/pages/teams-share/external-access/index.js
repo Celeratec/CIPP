@@ -137,7 +137,7 @@ const Page = () => {
 
         if (resourceTypeValue === "sharepoint") {
           payload.URL = resourceIdValue;
-          payload.SharePointType = data.resourceId?.SharePointType || data.sharePointType || "Group";
+          payload.SharePointType = data.resourceId?.addedFields?.SharePointType || data.sharePointType || "Group";
           payload.groupId = data.groupId;
         } else if (resourceTypeValue?.startsWith("teams")) {
           payload.TeamID = resourceIdValue;
