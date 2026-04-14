@@ -79,6 +79,8 @@ const Page = () => {
   const inviteApi = ApiPostCall({});
 
   const watchedResourceType = formHook.watch("resourceType");
+  const watchedResourceId = formHook.watch("resourceId");
+  const watchedGuests = formHook.watch("guests");
 
   useEffect(() => {
     formHook.setValue("resourceId", null);
@@ -143,7 +145,10 @@ const Page = () => {
           payload.URL = resourceIdValue;
           payload.SharePointType = data.resourceId?.addedFields?.SharePointType || "Group";
           payload.groupId = data.groupId;
-        } else if (data.resourceType?.startsWith("teams")) {
+        } else if (data.resourceType === "teams-shared") {
+          payload.TeamID = data.resourceId?.addedFields?.teamId || resourceIdValue;
+          payload.ChannelID = resourceIdValue;
+        } else if (data.resourceType === "teams-standard") {
           payload.TeamID = resourceIdValue;
         }
 
@@ -169,14 +174,10 @@ const Page = () => {
 
   const canProceedFromStep = (step) => {
     switch (step) {
-      case 0: {
-        const guests = formHook.getValues("guests");
-        return guests.length > 0 && guests.every((g) => g.email && g.email.includes("@"));
-      }
-      case 1: {
-        const rid = formHook.getValues("resourceId");
-        return Boolean(rid?.value || rid);
-      }
+      case 0:
+        return watchedGuests.length > 0 && watchedGuests.every((g) => g.email && g.email.includes("@"));
+      case 1:
+        return Boolean(watchedResourceId?.value || watchedResourceId);
       case 2:
         return !hasBlockedPolicies;
       default:
@@ -333,9 +334,10 @@ const Page = () => {
 
                     <Box>
                       <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                        {watchedResourceType === "sharepoint" ? "SharePoint Site" : "Team"}
+                        {watchedResourceType === "sharepoint" ? "SharePoint Site" :
+                         watchedResourceType === "teams-shared" ? "Shared Channel" : "Team"}
                       </Typography>
-                      {watchedResourceType === "sharepoint" ? (
+                      {watchedResourceType === "sharepoint" && (
                         <CippFormComponent
                           key="sharepoint-picker"
                           formControl={formHook}
@@ -358,7 +360,8 @@ const Page = () => {
                           }}
                           validators={{ required: "Please select a SharePoint site" }}
                         />
-                      ) : (
+                      )}
+                      {watchedResourceType === "teams-standard" && (
                         <CippFormComponent
                           key="teams-picker"
                           formControl={formHook}
@@ -379,6 +382,31 @@ const Page = () => {
                             },
                           }}
                           validators={{ required: "Please select a Team" }}
+                        />
+                      )}
+                      {watchedResourceType === "teams-shared" && (
+                        <CippFormComponent
+                          key="shared-channel-picker"
+                          formControl={formHook}
+                          type="autoComplete"
+                          name="resourceId"
+                          label="Select a shared channel"
+                          multiple={false}
+                          creatable={false}
+                          size="medium"
+                          api={{
+                            url: "/api/ListTeams",
+                            data: { type: "SharedChannels" },
+                            queryKey: `extaccess-sharedchannels-${currentTenant}`,
+                            labelField: (ch) => ch.teamName ? `${ch.teamName} → ${ch.displayName}` : ch.displayName,
+                            valueField: "id",
+                            addedField: {
+                              teamId: "teamId",
+                              teamName: "teamName",
+                              displayName: "displayName",
+                            },
+                          }}
+                          validators={{ required: "Please select a shared channel" }}
                         />
                       )}
                     </Box>
@@ -440,7 +468,8 @@ const Page = () => {
 
                     <Typography variant="subtitle2">Target Resource:</Typography>
                     <Typography variant="body2">
-                      {formHook.getValues("resourceType") === "sharepoint" ? "SharePoint Site" : "Teams"}:{" "}
+                      {formHook.getValues("resourceType") === "sharepoint" ? "SharePoint Site" :
+                       formHook.getValues("resourceType") === "teams-shared" ? "Shared Channel" : "Team"}:{" "}
                       {formHook.getValues("resourceId")?.label || formHook.getValues("resourceId")?.value || formHook.getValues("resourceId")}
                     </Typography>
 
