@@ -188,12 +188,10 @@ export const CippActionMenu = ({
 
     // Handle link actions
     if (action.link) {
-      // Replace placeholders in link
-      let link = action.link;
-      Object.keys(data || {}).forEach((key) => {
-        link = link.replace(`[${key}]`, encodeURIComponent(data[key] || ""));
-      });
-      
+      let link = action.link.replace(/\[([^\]]+)\]/g, (_, key) =>
+        encodeURIComponent(data?.[key] ?? "")
+      );
+
       if (action.external || action.target === "_blank") {
         window.open(link, "_blank");
       } else {
@@ -501,10 +499,9 @@ export const CippQuickActions = ({
     }
 
     if (action.link) {
-      let link = action.link;
-      Object.keys(data || {}).forEach((key) => {
-        link = link.replace(`[${key}]`, encodeURIComponent(data[key] || ""));
-      });
+      let link = action.link.replace(/\[([^\]]+)\]/g, (_, key) =>
+        encodeURIComponent(data?.[key] ?? "")
+      );
       if (action.external || action.target === "_blank") {
         window.open(link, "_blank");
       } else {

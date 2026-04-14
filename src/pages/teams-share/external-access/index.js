@@ -86,6 +86,12 @@ const Page = () => {
     formHook.setValue("resourceId", null);
   }, [watchedResourceType]);
 
+  useEffect(() => {
+    if (hasConsumerEmails && watchedResourceType === "teams-shared") {
+      formHook.setValue("resourceType", "sharepoint");
+    }
+  }, [hasConsumerEmails, watchedResourceType]);
+
   const validateEmail = useCallback(
     async (email, index) => {
       if (!email || !email.includes("@") || !currentTenant) return;
@@ -107,7 +113,14 @@ const Page = () => {
     [currentTenant, formHook]
   );
 
-  const hasConsumerEmails = Object.values(validations).some((v) => v?.domainType === "consumer");
+  const isAnyValidating = Object.values(validating).some((v) => v);
+
+  const hasConsumerByDomain = watchedGuests.some((g) => {
+    const domain = g.email?.split("@")[1]?.toLowerCase();
+    return domain && CONSUMER_DOMAINS.has(domain);
+  });
+  const hasConsumerEmails =
+    hasConsumerByDomain || Object.values(validations).some((v) => v?.domainType === "consumer");
   const hasBlockedPolicies = Object.values(validations).some((v) => v?.canProceed === false);
   const allValidated = guestFields.every((_, i) => validations[i]);
 
@@ -124,9 +137,26 @@ const Page = () => {
   };
 
   const handleExecute = async () => {
+    const data = formHook.getValues();
+
+    if (data.resourceType === "teams-shared") {
+      const blocked = data.guests.filter((g) => {
+        const domain = g.email?.split("@")[1]?.toLowerCase();
+        return CONSUMER_DOMAINS.has(domain);
+      });
+      if (blocked.length > 0) {
+        setExecutionResults(blocked.map((g) => ({
+          email: g.email,
+          status: "error",
+          messages: ["Personal email addresses cannot use shared channels (B2B Direct Connect). Use a work/school account or choose a different resource type."],
+        })));
+        setActiveStep(3);
+        return;
+      }
+    }
+
     setExecuting(true);
     setExecutionResults([]);
-    const data = formHook.getValues();
     const results = [];
 
     for (const guest of data.guests) {
@@ -175,11 +205,16 @@ const Page = () => {
   const canProceedFromStep = (step) => {
     switch (step) {
       case 0:
-        return watchedGuests.length > 0 && watchedGuests.every((g) => g.email && g.email.includes("@"));
+        return (
+          watchedGuests.length > 0 &&
+          watchedGuests.every((g) => g.email && g.email.includes("@")) &&
+          allValidated &&
+          !isAnyValidating
+        );
       case 1:
         return Boolean(watchedResourceId?.value || watchedResourceId);
       case 2:
-        return !hasBlockedPolicies;
+        return !hasBlockedPolicies && !(hasConsumerEmails && watchedResourceType === "teams-shared");
       default:
         return false;
     }
@@ -288,6 +323,14 @@ const Page = () => {
                     <Button startIcon={<Add />} onClick={() => appendGuest({ email: "", displayName: "" })} sx={{ alignSelf: "flex-start", textTransform: "none" }}>
                       Add Another Guest
                     </Button>
+
+                    {!allValidated && !isAnyValidating && watchedGuests.some((g) => g.email?.includes("@")) && (
+                      <Alert severity="info" sx={{ py: 0.5 }}>
+                        <Typography variant="caption">
+                          Click into each email field and tab out to validate before proceeding.
+                        </Typography>
+                      </Alert>
+                    )}
                   </Stack>
                 </CardContent>
               </Card>
@@ -440,61 +483,168 @@ const Page = () => {
             )}
 
             {/* Step 3: Review */}
-            {activeStep === 2 && (
-              <Card>
-                <CardHeader title="Review" subheader="Confirm the details before sending invitations." />
-                <CardContent>
-                  <Stack spacing={2}>
-                    <Typography variant="subtitle2">Guests to Invite:</Typography>
-                    {formHook.getValues("guests").map((guest, i) => (
-                      <Stack key={i} direction="row" spacing={1} alignItems="center">
-                        <PersonAdd fontSize="small" color="action" />
-                        <Typography variant="body2">{guest.email}</Typography>
-                        {guest.displayName && (
-                          <Typography variant="caption" color="text.secondary">({guest.displayName})</Typography>
+            {activeStep === 2 && (() => {
+              const reviewData = formHook.getValues();
+              const resourceLabel = reviewData.resourceId?.label || reviewData.resourceId?.value || reviewData.resourceId;
+              const isShared = reviewData.resourceType === "teams-shared";
+              const isSharePoint = reviewData.resourceType === "sharepoint";
+              const isTeamsStandard = reviewData.resourceType === "teams-standard";
+
+              return (
+                <Stack spacing={3}>
+                  <Card>
+                    <CardHeader title="Review Proposed Changes" subheader="Verify the actions below before proceeding. No changes will be made until you confirm." />
+                    <CardContent>
+                      <Stack spacing={3}>
+                        {/* Access method */}
+                        <Box>
+                          <Typography variant="subtitle2" gutterBottom>Access Method</Typography>
+                          <Alert severity="info" variant="outlined" icon={false}>
+                            {isShared ? (
+                              <>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>B2B Direct Connect (External Access)</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  Users will access the shared channel from their own tenant. They are NOT added to your directory.
+                                  Requires work/school accounts — personal emails are not supported.
+                                </Typography>
+                              </>
+                            ) : (
+                              <>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>B2B Collaboration (Guest Access)</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  Users will be invited as guest accounts in your Entra ID directory,
+                                  then granted access to the {isSharePoint ? "SharePoint site" : "Team"}.
+                                  {reviewData.sendInvite ? " An email invitation will be sent." : " No email invitation will be sent."}
+                                </Typography>
+                              </>
+                            )}
+                          </Alert>
+                        </Box>
+
+                        {/* Target resource */}
+                        <Box>
+                          <Typography variant="subtitle2" gutterBottom>Target Resource</Typography>
+                          <Card variant="outlined">
+                            <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                {isSharePoint ? <Language color="action" /> : isShared ? <Share color="action" /> : <Groups color="action" />}
+                                <Box>
+                                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                    {isSharePoint ? "SharePoint Site" : isShared ? "Shared Channel" : "Team"}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary">{resourceLabel}</Typography>
+                                </Box>
+                              </Stack>
+                            </CardContent>
+                          </Card>
+                        </Box>
+
+                        <Divider />
+
+                        {/* Per-guest action plan */}
+                        <Box>
+                          <Typography variant="subtitle2" gutterBottom>
+                            Actions per Guest ({reviewData.guests.length})
+                          </Typography>
+                          <Stack spacing={1.5}>
+                            {reviewData.guests.map((guest, i) => {
+                              const domain = guest.email?.split("@")[1]?.toLowerCase();
+                              const isConsumer = CONSUMER_DOMAINS.has(domain) || validations[i]?.domainType === "consumer";
+                              const isExisting = validations[i]?.existingGuest;
+                              const isBlocked = validations[i]?.canProceed === false;
+                              const consumerSharedConflict = isConsumer && isShared;
+
+                              return (
+                                <Card key={i} variant="outlined" sx={isBlocked || consumerSharedConflict ? { borderColor: "error.main" } : undefined}>
+                                  <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
+                                    <Stack spacing={1}>
+                                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                                        <PersonAdd fontSize="small" color="action" />
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{guest.email}</Typography>
+                                        {guest.displayName && (
+                                          <Typography variant="caption" color="text.secondary">({guest.displayName})</Typography>
+                                        )}
+                                        {isConsumer && <Chip size="small" label="Personal Email" color="warning" variant="outlined" />}
+                                        {isExisting && <Chip size="small" label="Existing Guest" color="success" variant="outlined" />}
+                                        {isBlocked && <Chip size="small" label="Blocked" color="error" />}
+                                      </Stack>
+
+                                      {consumerSharedConflict ? (
+                                        <Alert severity="error" sx={{ py: 0.25 }}>
+                                          <Typography variant="caption">
+                                            Personal email addresses cannot be used with shared channels (B2B Direct Connect requires a work/school account).
+                                            Go back and choose a different resource type, or remove this guest.
+                                          </Typography>
+                                        </Alert>
+                                      ) : isBlocked ? (
+                                        <Alert severity="error" sx={{ py: 0.25 }}>
+                                          <Typography variant="caption">
+                                            Policy checks failed for this guest. Go back to resolve, or use the Sharing Troubleshooter.
+                                          </Typography>
+                                        </Alert>
+                                      ) : (
+                                        <Stack spacing={0.25} sx={{ pl: 3.5 }}>
+                                          {!isShared && !isExisting && (
+                                            <Typography variant="caption" color="text.secondary">
+                                              1. Create guest account in your directory
+                                            </Typography>
+                                          )}
+                                          {!isShared && isExisting && (
+                                            <Typography variant="caption" color="text.secondary">
+                                              1. Use existing guest account (already in directory)
+                                            </Typography>
+                                          )}
+                                          {!isShared && reviewData.sendInvite && (
+                                            <Typography variant="caption" color="text.secondary">
+                                              2. Send email invitation to {guest.email}
+                                            </Typography>
+                                          )}
+                                          {isSharePoint && (
+                                            <Typography variant="caption" color="text.secondary">
+                                              {reviewData.sendInvite ? "3" : "2"}. Add to SharePoint site members
+                                            </Typography>
+                                          )}
+                                          {isTeamsStandard && (
+                                            <Typography variant="caption" color="text.secondary">
+                                              {reviewData.sendInvite ? "3" : "2"}. Add as Team member
+                                            </Typography>
+                                          )}
+                                          {isShared && (
+                                            <Typography variant="caption" color="text.secondary">
+                                              1. Add to shared channel via B2B Direct Connect
+                                            </Typography>
+                                          )}
+                                        </Stack>
+                                      )}
+                                    </Stack>
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </Stack>
+                        </Box>
+
+                        {/* Warnings summary */}
+                        {hasBlockedPolicies && (
+                          <Alert severity="error">
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              One or more guests have policy blocks. Go back and resolve the issues or use the Sharing Troubleshooter.
+                            </Typography>
+                          </Alert>
                         )}
-                        {validations[i] && (
-                          <Chip
-                            size="small"
-                            label={validations[i].domainType === "consumer" ? "Personal" : "Work/School"}
-                            color={validations[i].domainType === "consumer" ? "warning" : "info"}
-                            variant="outlined"
-                          />
+                        {hasConsumerEmails && isShared && (
+                          <Alert severity="error">
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              Personal email addresses are not compatible with shared channels. Change the resource type or remove the affected guests.
+                            </Typography>
+                          </Alert>
                         )}
                       </Stack>
-                    ))}
-
-                    <Divider />
-
-                    <Typography variant="subtitle2">Target Resource:</Typography>
-                    <Typography variant="body2">
-                      {formHook.getValues("resourceType") === "sharepoint" ? "SharePoint Site" :
-                       formHook.getValues("resourceType") === "teams-shared" ? "Shared Channel" : "Team"}:{" "}
-                      {formHook.getValues("resourceId")?.label || formHook.getValues("resourceId")?.value || formHook.getValues("resourceId")}
-                    </Typography>
-
-                    <Divider />
-
-                    <Typography variant="subtitle2">Access Type:</Typography>
-                    <Alert severity="info" variant="outlined">
-                      <Typography variant="body2">
-                        {formHook.getValues("resourceType") === "teams-shared"
-                          ? "External Access (B2B Direct Connect) — users access from their own tenant."
-                          : "Guest Access (B2B Collaboration) — users are invited to your directory."}
-                      </Typography>
-                    </Alert>
-
-                    {hasBlockedPolicies && (
-                      <Alert severity="error">
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          One or more guests have policy blocks that will prevent the invitation. Go back and resolve the issues first, or use the Sharing Troubleshooter.
-                        </Typography>
-                      </Alert>
-                    )}
-                  </Stack>
-                </CardContent>
-              </Card>
-            )}
+                    </CardContent>
+                  </Card>
+                </Stack>
+              );
+            })()}
 
             {/* Step 4: Execute / Results */}
             {activeStep === 3 && (
@@ -556,12 +706,13 @@ const Page = () => {
               {activeStep === 2 && (
                 <Button
                   variant="contained"
+                  color="success"
                   startIcon={<Send />}
                   onClick={handleExecute}
-                  disabled={hasBlockedPolicies || executing}
+                  disabled={!canProceedFromStep(2) || executing}
                   sx={{ textTransform: "none" }}
                 >
-                  Send Invitations
+                  Confirm &amp; Send Invitations
                 </Button>
               )}
 

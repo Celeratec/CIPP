@@ -123,21 +123,35 @@ const Page = () => {
   const tenantFilter = useSettings().currentTenant;
   const theme = useTheme();
 
-  // We receive some site data as query params; fetch usage data to fill gaps
+  // Strip unresolved [placeholder] values that leak through from link templates
+  const cleanParam = (val) => (typeof val === "string" && /^\[.+\]$/.test(val) ? "" : val);
+
   const {
     siteId,
-    displayName: qName,
-    webUrl: qUrl,
-    rootWebTemplate: qTemplate,
-    ownerPrincipalName: qOwner,
-    ownerDisplayName: qOwnerDisplay,
-    storageUsedInGigabytes: qUsed,
-    storageAllocatedInGigabytes: qAllocated,
-    fileCount: qFiles,
-    lastActivityDate: qLastActivity,
-    createdDateTime: qCreated,
-    reportRefreshDate: qRefresh,
+    displayName: rawName,
+    webUrl: rawUrl,
+    rootWebTemplate: rawTemplate,
+    ownerPrincipalName: rawOwner,
+    ownerDisplayName: rawOwnerDisplay,
+    storageUsedInGigabytes: rawUsed,
+    storageAllocatedInGigabytes: rawAllocated,
+    fileCount: rawFiles,
+    lastActivityDate: rawLastActivity,
+    createdDateTime: rawCreated,
+    reportRefreshDate: rawRefresh,
   } = router.query;
+
+  const qName = cleanParam(rawName);
+  const qUrl = cleanParam(rawUrl);
+  const qTemplate = cleanParam(rawTemplate);
+  const qOwner = cleanParam(rawOwner);
+  const qOwnerDisplay = cleanParam(rawOwnerDisplay);
+  const qUsed = cleanParam(rawUsed);
+  const qAllocated = cleanParam(rawAllocated);
+  const qFiles = cleanParam(rawFiles);
+  const qLastActivity = cleanParam(rawLastActivity);
+  const qCreated = cleanParam(rawCreated);
+  const qRefresh = cleanParam(rawRefresh);
 
   // Fetch site usage data to populate fields not available from query params
   // This will use React Query's cache if the list page was recently viewed
