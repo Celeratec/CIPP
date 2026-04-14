@@ -121,6 +121,8 @@ export const Layout = (props) => {
         return;
       }
 
+      setHideSidebar(false);
+
       // Get disabled pages from feature flags - only filter if we have valid data
       let disabledPages = [];
       if (featureFlags.isSuccess && Array.isArray(featureFlags.data)) {
@@ -179,10 +181,11 @@ export const Layout = (props) => {
       const filteredMenu = filterItemsByRole(nativeMenuItems);
       setMenuItems(filteredMenu);
     } else if (
-      swaStatus.isLoading ||
-      swaStatus.data?.clientPrincipal === null ||
-      swaStatus.data === undefined ||
-      currentRole.isLoading
+      !currentRole.data?.clientPrincipal?.userRoles &&
+      (swaStatus.isLoading ||
+        swaStatus.data?.clientPrincipal === null ||
+        swaStatus.data === undefined ||
+        currentRole.isLoading)
     ) {
       setHideSidebar(true);
     }

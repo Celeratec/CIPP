@@ -53,16 +53,10 @@ import en from 'javascript-time-ago/locale/en.json'
 import CippSpeedDial from '../components/CippComponents/CippSpeedDial'
 import {
   Help as HelpIcon,
-  AutoStories,
   Gavel,
   ClearAll as ClearAllIcon,
-  BugReport as BugReportIcon,
-  Feedback as FeedbackIcon,
 } from "@mui/icons-material";
-import { SvgIcon } from '@mui/material'
-import discordIcon from '../../public/discord-mark-blue.svg'
 import React, { useEffect, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
 import { useRouter } from "next/router";
 import { persistQueryClient } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
@@ -115,7 +109,6 @@ const App = (props) => {
   const { Component, emotionCache = clientSideEmotionCache, pageProps } = props;
   const getLayout = Component.getLayout ?? ((page) => page);
   const preferredTheme = useMediaPredicate("(prefers-color-scheme: dark)") ? "dark" : "light";
-  const pathname = usePathname();
   const route = useRouter();
 
   const [dateLocale, setDateLocale] = useState(enUS);
@@ -247,45 +240,6 @@ const App = (props) => {
       name: 'License',
       href: '/license',
       onClick: () => route.push('/license'),
-    },
-    {
-      id: 'bug-report',
-      icon: <BugReportIcon />,
-      name: 'Report Bug',
-      href: 'https://github.com/KelvinTegelaar/CIPP/issues/new?template=bug.yml',
-      onClick: () =>
-        window.open('https://github.com/KelvinTegelaar/CIPP/issues/new?template=bug.yml', '_blank'),
-    },
-    {
-      id: 'feature-request',
-      icon: <FeedbackIcon />,
-      name: 'Request Feature',
-      href: 'https://github.com/KelvinTegelaar/CIPP/issues/new?template=feature.yml',
-      onClick: () =>
-        window.open(
-          'https://github.com/KelvinTegelaar/CIPP/issues/new?template=feature.yml',
-          '_blank'
-        ),
-    },
-    {
-      id: 'discord',
-      icon: (
-        <SvgIcon
-          component={discordIcon}
-          viewBox="0 0 127.14 96.36"
-          sx={{ fontSize: '1.5rem' }}
-        ></SvgIcon>
-      ),
-      name: 'Join the Discord!',
-      href: 'https://discord.gg/cyberdrain',
-      onClick: () => window.open('https://discord.gg/cyberdrain', '_blank'),
-    },
-    {
-      id: 'documentation',
-      icon: <AutoStories />,
-      name: 'Check the Documentation',
-      href: `https://docs.cipp.app/user-documentation${pathname}`,
-      onClick: () => window.open(`https://docs.cipp.app/user-documentation${pathname}`, '_blank'),
     },
   ]
 
