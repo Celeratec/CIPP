@@ -84,13 +84,13 @@ const Page = () => {
 
   useEffect(() => {
     formHook.setValue("resourceId", null);
-  }, [watchedResourceType]);
+  }, [watchedResourceType, formHook]);
 
   useEffect(() => {
     if (hasConsumerEmails && watchedResourceType === "teams-shared") {
       formHook.setValue("resourceType", "sharepoint");
     }
-  }, [hasConsumerEmails, watchedResourceType]);
+  }, [hasConsumerEmails, watchedResourceType, formHook]);
 
   const validateEmail = useCallback(
     async (email, index) => {
@@ -140,9 +140,9 @@ const Page = () => {
     const data = formHook.getValues();
 
     if (data.resourceType === "teams-shared") {
-      const blocked = data.guests.filter((g) => {
+      const blocked = data.guests.filter((g, i) => {
         const domain = g.email?.split("@")[1]?.toLowerCase();
-        return CONSUMER_DOMAINS.has(domain);
+        return CONSUMER_DOMAINS.has(domain) || validations[i]?.domainType === "consumer";
       });
       if (blocked.length > 0) {
         setExecutionResults(blocked.map((g) => ({
