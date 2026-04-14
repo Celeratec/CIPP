@@ -10,7 +10,6 @@ import {
   CardHeader,
   Chip,
   CircularProgress,
-  Collapse,
   Grid,
   Stack,
   ToggleButton,
@@ -39,7 +38,7 @@ import {
 } from "@mui/lab";
 import Link from "next/link";
 import CippFormComponent from "../../../../components/CippComponents/CippFormComponent";
-import CippButtonCard from "../../../../components/CippCards/CippButtonCard";
+
 import { ApiPostCall } from "../../../../api/ApiCall";
 import { useSettings } from "../../../../hooks/use-settings";
 import { CippHead } from "../../../../components/CippComponents/CippHead.jsx";
@@ -231,11 +230,11 @@ const Page = () => {
             </Grid>
 
             <Card>
-              <CardHeader title="Troubleshoot Details" />
               <CardContent>
                 <form onSubmit={formHook.handleSubmit(onSubmit)}>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
+                  <Stack spacing={3}>
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>Guest Email Address</Typography>
                       <CippFormComponent
                         formControl={formHook}
                         type="textField"
@@ -250,8 +249,9 @@ const Page = () => {
                           },
                         }}
                       />
-                    </Grid>
-                    <Grid item xs={12}>
+                    </Box>
+
+                    <Box>
                       <Typography variant="subtitle2" sx={{ mb: 1 }}>Resource Type</Typography>
                       <ToggleButtonGroup
                         value={watchedResourceType}
@@ -280,17 +280,22 @@ const Page = () => {
                           <Typography variant="body2">Teams</Typography>
                         </ToggleButton>
                       </ToggleButtonGroup>
-                    </Grid>
-                    <Grid item xs={12}>
+                    </Box>
+
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                        {watchedResourceType === "teams" ? "Team (Optional)" : "SharePoint Site (Optional)"}
+                      </Typography>
                       {watchedResourceType === "teams" ? (
                         <CippFormComponent
                           key="troubleshoot-teams"
                           formControl={formHook}
                           type="autoComplete"
                           name="resourceUrl"
-                          label="Team (Optional)"
+                          label="Search or enter a Team"
                           multiple={false}
                           creatable={true}
+                          size="medium"
                           api={{
                             url: "/api/ListTeams",
                             data: { type: "list" },
@@ -305,9 +310,10 @@ const Page = () => {
                           formControl={formHook}
                           type="autoComplete"
                           name="resourceUrl"
-                          label="SharePoint Site (Optional)"
+                          label="Search or enter a site URL"
                           multiple={false}
                           creatable={true}
+                          size="medium"
                           api={{
                             url: "/api/ListSites",
                             data: { type: "SharePointSiteUsage" },
@@ -317,18 +323,21 @@ const Page = () => {
                           }}
                         />
                       )}
-                    </Grid>
-                    <Grid item xs={12}>
+                    </Box>
+
+                    <Stack direction="row" justifyContent="flex-end">
                       <Button
                         variant="contained"
                         type="submit"
+                        size="large"
                         disabled={!formHook.formState.isValid || isLoading}
-                        startIcon={isLoading ? <CircularProgress size={16} /> : <Search />}
+                        startIcon={isLoading ? <CircularProgress size={18} /> : <Search />}
+                        sx={{ px: 4 }}
                       >
                         {isLoading ? "Running Checks..." : "Run Troubleshooter"}
                       </Button>
-                    </Grid>
-                  </Grid>
+                    </Stack>
+                  </Stack>
                 </form>
               </CardContent>
             </Card>

@@ -297,8 +297,8 @@ const Page = () => {
               <Card>
                 <CardHeader title="Where should they have access?" subheader="Select the target resource." />
                 <CardContent>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
+                  <Stack spacing={3}>
+                    <Box>
                       <Typography variant="subtitle2" sx={{ mb: 1 }}>Resource Type</Typography>
                       <ToggleButtonGroup
                         value={watchedResourceType}
@@ -329,17 +329,22 @@ const Page = () => {
                           </ToggleButton>
                         )}
                       </ToggleButtonGroup>
-                    </Grid>
-                    <Grid item xs={12}>
+                    </Box>
+
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                        {watchedResourceType === "sharepoint" ? "SharePoint Site" : "Team"}
+                      </Typography>
                       {watchedResourceType === "sharepoint" ? (
                         <CippFormComponent
                           key="sharepoint-picker"
                           formControl={formHook}
                           type="autoComplete"
                           name="resourceId"
-                          label="SharePoint Site"
+                          label="Search or enter a site URL"
                           multiple={false}
                           creatable={true}
+                          size="medium"
                           api={{
                             url: "/api/ListSites",
                             data: { type: "SharePointSiteUsage" },
@@ -359,9 +364,10 @@ const Page = () => {
                           formControl={formHook}
                           type="autoComplete"
                           name="resourceId"
-                          label="Team"
+                          label="Search or enter a Team name"
                           multiple={false}
                           creatable={true}
+                          size="medium"
                           api={{
                             url: "/api/ListTeams",
                             data: { type: "list" },
@@ -375,24 +381,23 @@ const Page = () => {
                           validators={{ required: "Please select a Team" }}
                         />
                       )}
-                    </Grid>
-                    <Grid item xs={12}>
+                    </Box>
+
+                    <Box>
                       <CippFormComponent
                         formControl={formHook}
                         type="switch"
                         name="sendInvite"
                         label="Send email invitation to guests"
                       />
-                    </Grid>
-                  </Grid>
+                    </Box>
 
-                  {hasConsumerEmails && (
-                    <Alert severity="info" sx={{ mt: 2 }}>
-                      Some guests have personal email addresses. Teams shared channels are not available as a target since they require work/school accounts.
-                    </Alert>
-                  )}
+                    {hasConsumerEmails && (
+                      <Alert severity="info">
+                        Some guests have personal email addresses. Teams shared channels are not available as a target since they require work/school accounts.
+                      </Alert>
+                    )}
 
-                  <Box sx={{ mt: 3 }}>
                     <CippAccessTypeGuide
                       variant="decision"
                       context={
@@ -401,7 +406,7 @@ const Page = () => {
                         "teamsStandard"
                       }
                     />
-                  </Box>
+                  </Stack>
                 </CardContent>
               </Card>
             )}

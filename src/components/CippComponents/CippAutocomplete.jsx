@@ -83,6 +83,7 @@ export const CippAutoComplete = React.forwardRef((props, ref) => {
     required = false,
     isFetching = false,
     sx,
+    size = 'small',
     removeOptions = [],
     sortOptions = false,
     preselectedValue,
@@ -376,7 +377,7 @@ export const CippAutoComplete = React.forwardRef((props, ref) => {
 
           return filtered
         }}
-        size="small"
+        size={size}
         defaultValue={
           Array.isArray(defaultValue)
             ? defaultValue.map((item) =>
