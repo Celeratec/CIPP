@@ -66,7 +66,7 @@ const MemoTextField = React.memo(function MemoTextField({
 
 export const CippAutoComplete = React.forwardRef((props, ref) => {
   const {
-    size,
+    size = 'small',
     api,
     label,
     multiple = true,
@@ -83,7 +83,6 @@ export const CippAutoComplete = React.forwardRef((props, ref) => {
     required = false,
     isFetching = false,
     sx,
-    size = 'small',
     removeOptions = [],
     sortOptions = false,
     preselectedValue,
