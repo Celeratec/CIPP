@@ -1,0 +1,65 @@
+wing: cipp
+rooms:
+- name: github_assets
+  description: Files from github_assets/
+  keywords:
+  - github_assets
+  - github_assets
+- name: scripts
+  description: Files from Tools/
+  keywords:
+  - scripts
+  - tools
+- name: out
+  description: Files from out/
+  keywords:
+  - out
+  - out
+- name: testing
+  description: Files from Tests/
+  keywords:
+  - testing
+  - tests
+- name: documentation
+  description: Files from docs/
+  keywords:
+  - documentation
+  - docs
+- name: public
+  description: Files from public/
+  keywords:
+  - public
+  - public
+- name: deployment
+  description: Files from deployment/
+  keywords:
+  - deployment
+  - deployment
+- name: src
+  description: Files from src/
+  keywords:
+  - src
+  - src
+- name: design
+  description: Files from assets/
+  keywords:
+  - design
+  - assets
+- name: planning
+  description: Files from specs/
+  keywords:
+  - planning
+  - specs
+- name: frontend
+  description: Files from components/
+  keywords:
+  - frontend
+  - components
+- name: backend
+  description: Files from api/
+  keywords:
+  - backend
+  - api
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []
