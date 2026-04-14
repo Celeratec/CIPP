@@ -25,7 +25,7 @@ import {
 } from "@mui/icons-material";
 import { useSettings } from "../../../../hooks/use-settings.js";
 import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall.jsx";
-import { CippDataTable } from "../../../../components/CippTable/CippDataTable.jsx";
+import { CippDataTable } from "../../../../components/CippTable/CippDataTable.js";
 import { getCippError } from "../../../../utils/get-cipp-error.js";
 
 const STATUS_CONFIG = {
