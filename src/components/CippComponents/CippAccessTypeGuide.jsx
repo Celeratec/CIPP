@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import { ExpandMore, ExpandLess, OpenInNew, InfoOutlined } from "@mui/icons-material";
 import Link from "next/link";
-import { ACCESS_TYPES, ACCESS_TYPE_CONTEXTS } from "../../data/accessTypes";
+import { ACCESS_TYPES, ACCESS_TYPE_CONTEXTS, DECISION_TREE } from "../../data/accessTypes";
 
 const SettingsLinks = ({ links }) => {
   if (!links?.length) return null;
@@ -183,12 +183,129 @@ const PanelVariant = ({ context, showSettingsLinks }) => {
   );
 };
 
+const DecisionTreeResult = ({ result }) => (
+  <Card variant="outlined" sx={{ mt: 2 }}>
+    <CardContent>
+      <Stack spacing={2}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Chip
+            label={result.accessType === "guest" ? "Guest Access" : "External Access"}
+            color={result.accessType === "guest" ? "info" : "warning"}
+            size="small"
+          />
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            {result.title}
+          </Typography>
+        </Stack>
+        <Typography variant="body2" color="text.secondary">
+          {result.description}
+        </Typography>
+        {result.supported?.length > 0 && (
+          <Box>
+            <Typography variant="caption" sx={{ fontWeight: 600, color: "success.main" }}>
+              Supported:
+            </Typography>
+            <Stack component="ul" sx={{ m: 0, pl: 2.5 }} spacing={0.25}>
+              {result.supported.map((item, i) => (
+                <Typography key={i} component="li" variant="body2">
+                  {item}
+                </Typography>
+              ))}
+            </Stack>
+          </Box>
+        )}
+        {result.notSupported?.length > 0 && (
+          <Box>
+            <Typography variant="caption" sx={{ fontWeight: 600, color: "error.main" }}>
+              Not Supported:
+            </Typography>
+            <Stack component="ul" sx={{ m: 0, pl: 2.5 }} spacing={0.25}>
+              {result.notSupported.map((item, i) => (
+                <Typography key={i} component="li" variant="body2">
+                  {item}
+                </Typography>
+              ))}
+            </Stack>
+          </Box>
+        )}
+        {result.nextSteps?.length > 0 && (
+          <Alert severity="info" variant="outlined" icon={false} sx={{ mt: 1 }}>
+            <Typography variant="caption" sx={{ fontWeight: 600, display: "block", mb: 0.5 }}>
+              Next Steps:
+            </Typography>
+            <Stack component="ol" sx={{ m: 0, pl: 2.5 }} spacing={0.25}>
+              {result.nextSteps.map((step, i) => (
+                <Typography key={i} component="li" variant="body2">
+                  {step}
+                </Typography>
+              ))}
+            </Stack>
+          </Alert>
+        )}
+      </Stack>
+    </CardContent>
+  </Card>
+);
+
+const DecisionTreeInteractive = ({ tree }) => {
+  const [path, setPath] = useState([]);
+
+  const getCurrentNode = () => {
+    let node = tree;
+    for (const idx of path) {
+      if (node.options && node.options[idx]) {
+        node = node.options[idx];
+      }
+    }
+    return node;
+  };
+
+  const currentNode = getCurrentNode();
+  const hasResult = Boolean(currentNode.result);
+  const hasQuestion = Boolean(currentNode.question) && !hasResult;
+
+  const handleSelect = (idx) => {
+    setPath([...path, idx]);
+  };
+
+  const handleReset = () => {
+    setPath([]);
+  };
+
+  return (
+    <Box>
+      {path.length > 0 && (
+        <Button size="small" onClick={handleReset} sx={{ mb: 1, textTransform: "none" }}>
+          Start Over
+        </Button>
+      )}
+      {hasQuestion && (
+        <Stack spacing={1.5}>
+          <Typography variant="subtitle2">{currentNode.question}</Typography>
+          {currentNode.options.map((option, idx) => (
+            <Button
+              key={idx}
+              variant="outlined"
+              onClick={() => handleSelect(idx)}
+              sx={{ justifyContent: "flex-start", textTransform: "none", textAlign: "left", py: 1.5 }}
+              fullWidth
+            >
+              {option.label}
+            </Button>
+          ))}
+        </Stack>
+      )}
+      {hasResult && <DecisionTreeResult result={currentNode.result} />}
+    </Box>
+  );
+};
+
 /**
- * Reusable access type coaching component with three rendering modes.
+ * Reusable access type coaching component with four rendering modes.
  *
  * @param {"guest"|"external"} type - Which access type (for chip/banner variants)
- * @param {"chip"|"banner"|"panel"} variant - Rendering mode
- * @param {string} [context] - Context key from ACCESS_TYPE_CONTEXTS
+ * @param {"chip"|"banner"|"panel"|"decision"} variant - Rendering mode
+ * @param {string} [context] - Context key from ACCESS_TYPE_CONTEXTS or DECISION_TREE
  * @param {boolean} [showSettingsLinks=true] - Whether to show navigation links
  */
 const CippAccessTypeGuide = ({ type, variant = "chip", context, showSettingsLinks = true }) => {
@@ -199,6 +316,13 @@ const CippAccessTypeGuide = ({ type, variant = "chip", context, showSettingsLink
       return <BannerVariant type={type} context={context} showSettingsLinks={showSettingsLinks} />;
     case "panel":
       return <PanelVariant context={context} showSettingsLinks={showSettingsLinks} />;
+    case "decision": {
+      const tree = DECISION_TREE[context] || DECISION_TREE.general;
+      if (tree.result) {
+        return <DecisionTreeResult result={tree.result} />;
+      }
+      return <DecisionTreeInteractive tree={tree} />;
+    }
     default:
       return null;
   }

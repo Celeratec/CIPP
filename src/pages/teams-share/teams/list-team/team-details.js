@@ -69,6 +69,12 @@ import { showToast } from "../../../../store/toasts";
 import { Send } from "@mui/icons-material";
 import CippAccessTypeGuide from "../../../../components/CippComponents/CippAccessTypeGuide";
 
+const CONSUMER_DOMAINS = new Set([
+  "gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "aol.com",
+  "icloud.com", "live.com", "msn.com", "protonmail.com", "zoho.com",
+  "ymail.com", "mail.com", "gmx.com", "fastmail.com",
+]);
+
 // Risk metadata for settings that could reduce security or cause data loss
 const settingsRiskInfo = {
   allowDeleteChannels: {
@@ -426,7 +432,16 @@ const ChannelRow = ({ channel, teamId, teamName, tenantFilter, sharePointSiteId,
         ? "Search users or type an external email address..."
         : "Search users...",
       validators: {
-        validate: (value) => (!value ? "Please select a user" : true),
+        validate: (value) => {
+          if (!value) return "Please select a user";
+          if (isSharedChannel && typeof value === "string" && value.includes("@")) {
+            const domain = value.split("@")[1]?.toLowerCase();
+            if (domain && CONSUMER_DOMAINS.has(domain)) {
+              return `Personal email domains (${domain}) cannot be added to shared channels. Shared channels use B2B Direct Connect which only supports work or school accounts. Use a private channel or invite as a tenant guest instead.`;
+            }
+          }
+          return true;
+        },
       },
     },
     {

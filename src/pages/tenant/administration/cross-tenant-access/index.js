@@ -1,12 +1,18 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { CippHead } from "../../../../components/CippComponents/CippHead.jsx";
 import {
+  Alert,
   Box,
   Card,
   CardContent,
   CardHeader,
   Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Grid,
   LinearProgress,
@@ -24,10 +30,14 @@ import {
   WarningAmberOutlined,
   ErrorOutline,
   OpenInNew,
+  PersonAdd,
+  Send,
 } from "@mui/icons-material";
 import { useSettings } from "../../../../hooks/use-settings.js";
 import { ApiGetCall } from "../../../../api/ApiCall.jsx";
 import Link from "next/link";
+import axios from "axios";
+import { buildVersionedHeaders } from "../../../../utils/cippVersion";
 import CippAccessTypeGuide from "../../../../components/CippComponents/CippAccessTypeGuide";
 
 const HealthScoreCard = ({ healthData, isFetching }) => {
@@ -265,6 +275,140 @@ const QuickLinksCard = () => {
   );
 };
 
+const GuestReadyCard = ({ tenantFilter }) => {
+  const [open, setOpen] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const handleApply = async () => {
+    setApplying(true);
+    setResult(null);
+    const results = [];
+    const headers = await buildVersionedHeaders();
+
+    try {
+      await axios.post(
+        "/api/EditExternalCollaboration",
+        { tenantFilter, allowInvitesFrom: "adminsAndGuestInviters" },
+        { headers }
+      );
+      results.push({ step: "Entra guest invite policy", status: "success" });
+    } catch (err) {
+      results.push({
+        step: "Entra guest invite policy",
+        status: "error",
+        detail: err?.response?.data?.Results || err?.message,
+      });
+    }
+
+    try {
+      await axios.post(
+        "/api/EditSharepointSettings",
+        { tenantFilter, sharingCapability: "externalUserAndGuestSharing" },
+        { headers }
+      );
+      results.push({ step: "SharePoint external sharing", status: "success" });
+    } catch (err) {
+      results.push({
+        step: "SharePoint external sharing",
+        status: "error",
+        detail: err?.response?.data?.Results || err?.message,
+      });
+    }
+
+    try {
+      await axios.post(
+        "/api/EditTeamsSettings",
+        { tenantFilter, AllowGuestUser: true },
+        { headers }
+      );
+      results.push({ step: "Teams guest access", status: "success" });
+    } catch (err) {
+      results.push({
+        step: "Teams guest access",
+        status: "error",
+        detail: err?.response?.data?.Results || err?.message,
+      });
+    }
+
+    setResult(results);
+    setApplying(false);
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader title="Quick Setup: Guest-Ready Configuration" />
+        <CardContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Configure this tenant for external guest collaboration in one click. This sets up Entra,
+            SharePoint, and Teams to allow guest users with secure defaults.
+          </Typography>
+          <Button variant="contained" onClick={() => setOpen(true)} startIcon={<PersonAdd />}>
+            Configure for Guest Access
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Dialog open={open} onClose={() => !applying && setOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Configure Guest Access</DialogTitle>
+        <DialogContent>
+          {!result && (
+            <Stack spacing={2}>
+              <Typography variant="body2">This will apply the following settings:</Typography>
+              <Alert severity="info" variant="outlined" icon={false}>
+                <Stack spacing={1}>
+                  <Typography variant="body2">
+                    <strong>Entra:</strong> Guest invite restrictions &rarr; Admins and Guest Inviter
+                    role
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>SharePoint:</strong> External sharing &rarr; New and existing guests
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Teams:</strong> Guest access &rarr; Enabled
+                  </Typography>
+                </Stack>
+              </Alert>
+            </Stack>
+          )}
+          {result && (
+            <Stack spacing={1}>
+              {result.map((r, i) => (
+                <Alert key={i} severity={r.status === "success" ? "success" : "error"} sx={{ py: 0.25 }}>
+                  <Typography variant="body2">
+                    {r.step}: {r.status === "success" ? "Applied" : r.detail || "Failed"}
+                  </Typography>
+                </Alert>
+              ))}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setOpen(false);
+              setResult(null);
+            }}
+          >
+            {result ? "Close" : "Cancel"}
+          </Button>
+          {!result && (
+            <Button
+              variant="contained"
+              onClick={handleApply}
+              disabled={applying}
+              startIcon={applying ? <CircularProgress size={16} /> : <Send />}
+            >
+              {applying ? "Applying..." : "Apply Configuration"}
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+};
+
 const Page = () => {
   const settings = useSettings();
   const currentTenant = settings.currentTenant;
@@ -317,7 +461,10 @@ const Page = () => {
             </Stack>
           </Grid>
           <Grid item xs={12} md={6}>
-            <QuickLinksCard />
+            <Stack spacing={3}>
+              <QuickLinksCard />
+              <GuestReadyCard tenantFilter={currentTenant} />
+            </Stack>
           </Grid>
         </Grid>
       )}

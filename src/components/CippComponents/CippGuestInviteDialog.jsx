@@ -261,6 +261,8 @@ const CippGuestInviteDialog = ({
   const [quickFixAttempted, setQuickFixAttempted] = useState(false);
   const [nonGroupSiteWarning, setNonGroupSiteWarning] = useState(false);
   const [teamsAddWarning, setTeamsAddWarning] = useState(false);
+  const [preflightResult, setPreflightResult] = useState(null);
+  const [preflightLoading, setPreflightLoading] = useState(false);
 
   const isTeamsMode = Boolean(teamId);
   const diagContext = isTeamsMode ? "teams" : "sharepoint";
@@ -290,6 +292,8 @@ const CippGuestInviteDialog = ({
     setQuickFixMessage("");
     setNonGroupSiteWarning(false);
     setTeamsAddWarning(false);
+    setPreflightResult(null);
+    setPreflightLoading(false);
     formHook.reset({
       displayName: "",
       mail: "",
@@ -297,6 +301,40 @@ const CippGuestInviteDialog = ({
       sendInvite: true,
     });
   }, [formHook]);
+
+  const runPreflight = useCallback(
+    async (email) => {
+      if (!email || !email.includes("@") || !tenantFilter) return;
+      setPreflightLoading(true);
+      setPreflightResult(null);
+      try {
+        const headers = await buildVersionedHeaders();
+        const resp = await axios.post("/api/ExecValidateExternalDomain", {
+          email,
+          tenantFilter,
+          context: isTeamsMode ? "teams-standard" : "sharepoint",
+        }, { headers });
+        setPreflightResult(resp.data?.Results);
+      } catch {
+        // Pre-flight is best-effort
+      } finally {
+        setPreflightLoading(false);
+      }
+    },
+    [tenantFilter, isTeamsMode]
+  );
+
+  const watchedEmail = formHook.watch("mail");
+  useEffect(() => {
+    if (!watchedEmail || !watchedEmail.includes("@") || !/^[^@]+@[^@]+\.[^@]+$/.test(watchedEmail)) {
+      setPreflightResult(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      runPreflight(watchedEmail);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [watchedEmail, runPreflight]);
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -558,6 +596,54 @@ const CippGuestInviteDialog = ({
                 </Box>
               ))}
             </Stack>
+            {preflightLoading && (
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1 }}>
+                <CircularProgress size={16} />
+                <Typography variant="caption" color="text.secondary">
+                  Validating domain...
+                </Typography>
+              </Stack>
+            )}
+            {preflightResult && !preflightLoading && (
+              <Stack spacing={1} sx={{ mt: 1.5 }}>
+                {preflightResult.domainType === "consumer" && (
+                  <Alert severity="info" sx={{ py: 0.5 }}>
+                    <Typography variant="caption">
+                      <strong>{preflightResult.domain}</strong> is a personal email domain. The user will authenticate via Email One-Time Passcode (OTP).
+                    </Typography>
+                  </Alert>
+                )}
+                {preflightResult.existingGuest && (
+                  <Alert severity="success" sx={{ py: 0.5 }}>
+                    <Typography variant="caption">
+                      This user already exists as a guest: <strong>{preflightResult.existingGuest.displayName}</strong> ({preflightResult.existingGuest.externalUserState || "Active"})
+                    </Typography>
+                  </Alert>
+                )}
+                {preflightResult.policyChecks?.filter((c) => c.status === "fail").map((check, i) => (
+                  <Alert key={i} severity="error" sx={{ py: 0.5 }}>
+                    <Typography variant="caption">
+                      <strong>{check.source}:</strong> {check.detail}
+                      {check.fix && <> — <em>{check.fix}</em></>}
+                    </Typography>
+                  </Alert>
+                ))}
+                {preflightResult.policyChecks?.filter((c) => c.status === "warning").map((check, i) => (
+                  <Alert key={`w${i}`} severity="warning" sx={{ py: 0.5 }}>
+                    <Typography variant="caption">
+                      <strong>{check.source}:</strong> {check.detail}
+                    </Typography>
+                  </Alert>
+                ))}
+                {preflightResult.canProceed === false && (
+                  <Alert severity="error" sx={{ py: 0.5 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                      This invitation will likely fail due to the policy issues above. Fix them first or use the Sharing Troubleshooter for more details.
+                    </Typography>
+                  </Alert>
+                )}
+              </Stack>
+            )}
           </DialogContent>
         </Collapse>
 

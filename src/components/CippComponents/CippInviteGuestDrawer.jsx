@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Box, Button } from "@mui/material";
+import { useState, useEffect, useMemo } from "react";
+import { Alert, Box, Button, Typography } from "@mui/material";
 import { Grid } from "@mui/system";
 import { useForm, useFormState } from "react-hook-form";
 import { Send } from "@mui/icons-material";
@@ -10,6 +10,12 @@ import CippAccessTypeGuide from "./CippAccessTypeGuide";
 import { useSettings } from "../../hooks/use-settings";
 import { ApiPostCall } from "../../api/ApiCall";
 import { getCippValidator } from "../../utils/get-cipp-validator";
+
+const CONSUMER_DOMAINS = new Set([
+  "gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "aol.com",
+  "icloud.com", "live.com", "msn.com", "protonmail.com", "zoho.com",
+  "ymail.com", "mail.com", "gmx.com", "fastmail.com",
+]);
 
 export const CippInviteGuestDrawer = ({
   buttonText = "Invite Guest",
@@ -33,6 +39,13 @@ export const CippInviteGuestDrawer = ({
   });
 
   const { isValid } = useFormState({ control: formControl.control });
+
+  const watchedEmail = formControl.watch("mail");
+  const consumerDomain = useMemo(() => {
+    if (!watchedEmail || !watchedEmail.includes("@")) return null;
+    const domain = watchedEmail.split("@")[1]?.toLowerCase();
+    return domain && CONSUMER_DOMAINS.has(domain) ? domain : null;
+  }, [watchedEmail]);
 
   const inviteGuest = ApiPostCall({
     urlFromData: true,
@@ -151,6 +164,15 @@ export const CippInviteGuestDrawer = ({
               }}
             />
           </Grid>
+          {consumerDomain && (
+            <Grid size={{ md: 12, xs: 12 }}>
+              <Alert severity="info" sx={{ py: 0.5 }}>
+                <Typography variant="caption">
+                  <strong>{consumerDomain}</strong> is a personal email domain. The guest will authenticate via Email One-Time Passcode (OTP) instead of a Microsoft account.
+                </Typography>
+              </Alert>
+            </Grid>
+          )}
           <Grid size={{ md: 12, xs: 12 }}>
             <CippFormComponent
               type="textField"

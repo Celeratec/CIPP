@@ -10,7 +10,7 @@
 
 ---
 
-> **Last synced with upstream:** March 2026 (CIPP v10.2.4 / CIPP-API v10.2.5)
+> **Last synced with upstream:** April 2026 (CIPP v10.3.1 / CIPP-API v10.3.x)
 >
 > Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. This document reflects the state of both projects as of the date above.
 
@@ -32,7 +32,7 @@ Manage365 includes the complete CIPP feature set:
 - User administration (create, edit, delete, offboard with orchestrator-based batch processing and scheduler-routed task tracking)
 - User form validation with field-level constraints (max length, required, pattern)
 - Vacation mode wizard with mailbox permissions, calendar delegation, and out-of-office scheduling
-- Offboarding wizard with dialog mode, table view for all tenant offboarding tasks, and scheduler integration for proper task tracking and alerting
+- Offboarding wizard with dialog mode, table view for all tenant offboarding tasks, scheduler integration for proper task tracking and alerting, and custom tests
 - Bulk guest invitation
 - Risky users monitoring
 - Group management with templates, group detail page, and deploy group template button
@@ -45,8 +45,10 @@ Manage365 includes the complete CIPP feature set:
 - Multi-tenant management and configuration
 - Upgraded tenant onboarding experience with type selection
 - Alert configuration and audit logs (group membership change, Defender severity filtering, inactive users)
+- Alert snooze dialog and snoozed alerts management
 - Secure Score monitoring
 - Application management, consent requests, and app management policies
+- App registration and enterprise app detail pages with permissions viewer
 - GDAP relationship management with GDAP trace
 - Tenant group management with usage reporting
 - Standards alignment and drift detection (including device registration local admin controls)
@@ -61,6 +63,9 @@ Manage365 includes the complete CIPP feature set:
 - Configuration backup with restore wizard (type-filtered restoration with row count reporting)
 - Incident report and attachment options
 - Log retention settings
+- Dashboard v2: report toolbar, custom dashboards, responsive layout
+- Report builder with templates and generated reports
+- Executive report with menuItem variant support
 
 ### Security & Compliance
 - Incident and alert management (including MDO alerts)
@@ -108,6 +113,8 @@ Manage365 includes the complete CIPP feature set:
 - Template library and community repositories
 - Task scheduler with label-based action filtering
 - Guest account disable support with sign-in audit fallback
+- Script editor improvements
+- Super admin pages relocated to /cipp/advanced/super-admin/
 
 ### Settings & Administration
 - Application settings and integrations (including PWPush with CloudFlare Tunnel and default passphrase support)
@@ -238,6 +245,79 @@ All coaching content is driven by a single shared data layer (`accessTypes.js`) 
 
 Invite external guests directly from SharePoint site and Teams detail pages. Add external members to shared channels via B2B direct connect, or add guests with any email address (including personal emails like Gmail and Outlook.com) to private channels via B2B collaboration with automatic Email One-Time Passcode support. If an operation fails, the system automatically diagnoses the root cause -- checking cross-tenant access policies (B2B direct connect inbound/outbound), B2B domain restrictions, Teams guest access settings, Entra external collaboration settings, and SharePoint permissions -- and provides categorized, structured guidance with direct links to the relevant CIPP settings page. Microsoft internal error codes (e.g., "xTap") are translated to human-readable descriptions.
 
+### Pre-flight Domain Validation & Email Intelligence
+
+Real-time validation of guest email addresses before invitation, powered by a reusable domain intelligence API (`ExecValidateExternalDomain`). As administrators type an email address in any guest invitation dialog, the system:
+
+- **Classifies the email domain** via OIDC discovery as consumer (Gmail, Yahoo, Outlook.com), organizational (another M365 tenant), or unresolvable
+- **Checks for existing guest accounts** in the target tenant to avoid duplicate invitations
+- **Evaluates tenant policies** across Entra External Collaboration, B2B domain allow/block lists, SharePoint sharing settings, Teams guest access, and Cross-Tenant Access policies
+- **Returns a structured verdict** with pass/fail/warning status, recommended access type, and specific fix guidance for any blocking policies
+
+Consumer domain detection is also integrated into the guest invite drawer and the Add Channel Member dialog for shared channels, where personal emails are blocked with an explanation of why shared channels require work/school accounts and a suggestion to use a private channel instead.
+
+### Interactive Access Type Decision Tree
+
+An interactive question-and-answer flow added to the `CippAccessTypeGuide` component (`variant="decision"`) helps administrators choose between Guest Access (B2B Collaboration) and External Access (B2B Direct Connect). Context-specific trees for SharePoint, Teams standard/private/shared channels, and a general-purpose flow guide users to the correct access type based on the external user's email type and the target resource, with clear lists of what is and isn't supported and concrete next steps.
+
+### External Access Wizard
+
+A multi-step guided wizard (`/teams-share/external-access`) that unifies the entire external user onboarding flow:
+
+1. **Who** -- enter one or more guest email addresses with inline domain validation and real-time policy feedback
+2. **Where** -- select the target resource (SharePoint site, Teams standard/private/shared channel) with context-aware access type recommendations; shared channel options are automatically hidden for personal email addresses
+3. **Review** -- summary of guests, resource, access type, and any policy warnings before execution
+4. **Execute** -- sends invitations with per-guest progress tracking and individual success/error results
+
+### Sharing & Guest Troubleshooter
+
+A comprehensive diagnostic tool (`/teams-share/troubleshooting/sharing-troubleshooter`) that performs a structured sequence of 10 checks to identify why an external user cannot access a shared resource:
+
+1. Domain type classification (consumer vs organizational via OIDC)
+2. Guest account existence in the tenant
+3. Guest account status (enabled, disabled, pending acceptance)
+4. Entra External Collaboration invite restrictions
+5. Entra B2B domain allow/block lists
+6. Email One-Time Passcode authentication method status
+7. SharePoint tenant sharing settings and domain restrictions
+8. Teams guest access configuration
+9. Cross-Tenant Access policies (for organizational domains and shared channels)
+10. Site-level membership verification (when a resource URL is provided)
+
+Results are displayed in a visual timeline with color-coded pass/fail/warning status, detailed explanations, fix recommendations with links to the relevant settings page, and quick presets for common troubleshooting scenarios. The backend (`ExecSharingTroubleshoot`) returns a structured timeline that can be consumed by other components.
+
+### SharePoint Document Library Sharing Links
+
+A new backend endpoint (`ExecCreateSharingLink`) enables creation of sharing links for specific SharePoint drive items using the Microsoft Graph `createLink` API. Supports view, edit, and embed link types with anonymous, organization, or specific-people scopes, optional expiration dates, and password protection.
+
+### Guest Lifecycle Dashboard
+
+A dedicated guest user management page (`/identity/administration/guest-users`) providing visibility into all guest accounts across a tenant:
+
+- **Summary cards** showing total guests and counts by status: Active, Stale (no sign-in for 90+ days), Pending Acceptance, Disabled, and Never Signed In
+- **Status classification** computed from sign-in activity data via the Graph beta API
+- **Filterable table** with one-click status filter buttons to quickly isolate problematic guests
+- **Row actions** including re-invite for pending or stale guests
+
+### Guest-Ready Bulk Configuration
+
+A "Quick Setup: Guest-Ready Configuration" card on the Cross-Tenant Access page that configures a tenant for external guest collaboration in one click. Applies secure defaults across three services:
+
+- **Entra:** Guest invite restrictions set to Admins and Guest Inviter role
+- **SharePoint:** External sharing enabled for new and existing guests
+- **Teams:** Guest access enabled
+
+Includes a confirmation dialog showing exactly what will be changed and per-step success/error reporting.
+
+### Enhanced Cross-Tenant Health Checks
+
+Four new health checks (12-15) added to the Cross-Tenant Health endpoint:
+
+- **Teams guest access** -- warns if guest access is disabled in Teams client configuration
+- **Email OTP status** -- warns if Email One-Time Passcode authentication is not enabled, which blocks personal email guests
+- **SharePoint/Entra sharing mismatch** -- detects when Entra allows guests but SharePoint sharing is disabled (or vice versa)
+- **Domain restriction divergence** -- detects when Entra and SharePoint have mismatched allowed/blocked domain lists
+
 ### eDiscovery Case Management
 
 End-to-end eDiscovery workflow for managing legal holds, content searches, and evidence exports directly from the portal -- eliminating the need to switch to the Microsoft Purview compliance portal or write PowerShell scripts for each client:
@@ -292,7 +372,7 @@ The navigation is restructured with Troubleshooting as the first submenu under E
 
 ### Organized Navigation
 
-Deeply nested navigation menus that group related pages together, reducing menu length and making features easier to find -- Email & Exchange Troubleshooting with Email Troubleshooter, Quarantine, Message Viewer, and Mailbox Restores; Groups with Group Templates; Users with Offboarding Wizard and Risky Users; Business Voice with Phone Numbers, Call Queues, Auto Attendants, and Dial Plans; File Management with File Search, File Browser, and File Transfer; and more.
+Deeply nested navigation menus that group related pages together, reducing menu length and making features easier to find -- External Access with External Access Wizard and Sharing Troubleshooter; Email & Exchange Troubleshooting with Email Troubleshooter, Quarantine, Message Viewer, and Mailbox Restores; Groups with Group Templates; Users with Offboarding Wizard, Risky Users, and Guest Users; Business Voice with Phone Numbers, Call Queues, Auto Attendants, and Dial Plans; File Management with File Search, File Browser, and File Transfer; and more.
 
 ### Bulk Domain Migration
 

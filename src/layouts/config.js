@@ -44,6 +44,11 @@ export const nativeMenuItems = [
                 permissions: ["Identity.User.*"],
               },
               {
+                title: "Guest Users",
+                path: "/identity/administration/guest-users",
+                permissions: ["Identity.User.*"],
+              },
+              {
                 title: "Risky Users",
                 path: "/identity/administration/risky-users",
                 permissions: ["Identity.User.*"],
@@ -583,6 +588,22 @@ export const nativeMenuItems = [
             title: "Temp File Cleanup",
             path: "/teams-share/sharepoint/temp-file-cleanup",
             permissions: ["Sharepoint.Site.ReadWrite"],
+          },
+        ],
+      },
+      {
+        title: "External Access",
+        permissions: ["Sharepoint.Site.*"],
+        items: [
+          {
+            title: "External Access Wizard",
+            path: "/teams-share/external-access",
+            permissions: ["Sharepoint.Site.ReadWrite"],
+          },
+          {
+            title: "Sharing Troubleshooter",
+            path: "/teams-share/troubleshooting/sharing-troubleshooter",
+            permissions: ["Sharepoint.Site.*"],
           },
         ],
       },
