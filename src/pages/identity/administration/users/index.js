@@ -118,7 +118,7 @@ const Page = () => {
 
   const mailboxRequest = ApiGetCall({
     url: `/api/ListMailboxes?tenantFilter=${tenant}`,
-    queryKey: `ListMailboxes-${tenant}`,
+    queryKey: `ListMailboxes-enrichment-${tenant}`,
     waiting: advancedBadgesEnabled && enrichmentReady && !!tenant && tenant !== "AllTenants",
     staleTime: STALE_TIMES.STABLE,
     retry: 1,

@@ -250,15 +250,14 @@ const Page = () => {
                   Auto-Purge Date
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {row.deletedDateTime
-                    ? getCippFormatting(
-                        new Date(
-                          new Date(row.deletedDateTime).getTime() +
-                            93 * 24 * 60 * 60 * 1000
-                        ).toISOString(),
-                        "purgeDate"
-                      )
-                    : "Unknown"}
+                  {(() => {
+                    const deleted = new Date(row.deletedDateTime);
+                    if (!row.deletedDateTime || isNaN(deleted.getTime())) return "Unknown";
+                    return getCippFormatting(
+                      new Date(deleted.getTime() + 93 * 24 * 60 * 60 * 1000).toISOString(),
+                      "purgeDate"
+                    );
+                  })()}
                 </Typography>
               </Stack>
             </Stack>
