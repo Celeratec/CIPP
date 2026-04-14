@@ -181,8 +181,9 @@ const Page = () => {
   const storageColor = getStorageStatusColor(storagePct);
   const inactive = isInactiveSite(lastActivityDate);
 
-  // Resolve associated M365 Group for group-connected sites
-  const isGroupConnected = rootWebTemplate?.includes("Group");
+  // Resolve associated M365 Group — always attempt the lookup so we have the
+  // group GUID ready even when rootWebTemplate is unknown (e.g. placeholder or
+  // usage data hasn't loaded). The query is cheap and returns empty for non-group sites.
   const sitePathName = webUrl ? decodeURIComponent(webUrl.split("/sites/")[1]?.split("/")[0] || "") : "";
   const groupLookup = ApiGetCall({
     url: "/api/ListGraphRequest",
@@ -194,15 +195,15 @@ const Page = () => {
       tenantFilter: tenantFilter,
     },
     queryKey: `site-group-lookup-${siteId}`,
-    waiting: !!(isGroupConnected && sitePathName && tenantFilter && siteId),
+    waiting: !!(sitePathName && tenantFilter && siteId),
   });
   const associatedGroup = groupLookup?.data?.Results?.[0];
+  const isGroupConnected = !!associatedGroup || rootWebTemplate?.includes("Group");
   const isTeamEnabled =
     associatedGroup?.resourceProvisioningOptions?.includes("Team") ?? false;
   const associatedTeamId = isTeamEnabled ? associatedGroup.id : null;
   const associatedTeamName = isTeamEnabled ? associatedGroup.displayName : null;
 
-  // Prefer the resolved M365 Group GUID over ownerPrincipalName for API calls
   const groupIdForApi = associatedGroup?.id || ownerPrincipalName;
 
   // Add Member dialog
