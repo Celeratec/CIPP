@@ -623,12 +623,12 @@ export const CIPPM365OAuthButton = ({
                 {authInProgress ? (
                   <>
                     When asked to log onto an account, please use a{" "}
-                    <strong>CIPP Service Account</strong>. Enter this code to authenticate:{" "}
+                    <strong>Manage365 Service Account</strong>. Enter this code to authenticate:{" "}
                   </>
                 ) : (
                   <>
                     Click the button below to authenticate. When asked to log onto an account,
-                    please use a <strong>CIPP Service Account</strong>. You will need to enter this
+                    please use a <strong>Manage365 Service Account</strong>. You will need to enter this
                     code:{" "}
                   </>
                 )}
@@ -680,7 +680,7 @@ export const CIPPM365OAuthButton = ({
                 <Alert severity="warning" sx={{ mt: 1 }}>
                   <Typography variant="subtitle2">Service Account Required</Typography>
                   <Typography variant="body2">
-                    CIPP requires a service account for authentication. The account you're using (
+                    Manage365 requires a service account for authentication. The account you're using (
                     <strong>{tokens.username}</strong>) does not appear to be a service account.
                   </Typography>
                   <Typography variant="body2">

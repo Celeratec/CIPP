@@ -121,7 +121,7 @@ export const CippBreadcrumbNav = () => {
         return;
       }
 
-      let pageTitle = document.title.replace(" - CIPP", "").trim();
+      let pageTitle = document.title.replace(" - Manage365", "").trim();
 
       // Remove tenant domain from title (e.g., "Groups - domain.onmicrosoft.com" -> "Groups")
       // But only if it looks like a domain (contains a dot)
@@ -136,7 +136,7 @@ export const CippBreadcrumbNav = () => {
       // Skip if title is empty, generic, or error page
       if (
         !pageTitle ||
-        pageTitle === "CIPP" ||
+        pageTitle === "Manage365" ||
         pageTitle.toLowerCase().includes("error") ||
         pageTitle === "404" ||
         pageTitle === "500"
@@ -282,7 +282,7 @@ export const CippBreadcrumbNav = () => {
           return;
         }
 
-        let pageTitle = document.title.replace(" - CIPP", "").trim();
+        let pageTitle = document.title.replace(" - Manage365", "").trim();
         const parts = pageTitle.split(" - ");
         const cleanTitle =
           parts.length > 1 && parts[parts.length - 1].includes(".")
@@ -292,7 +292,7 @@ export const CippBreadcrumbNav = () => {
         // Clean AllTenants from title
         const finalTitle = cleanPageTitle(cleanTitle);
 
-        if (finalTitle && finalTitle !== "CIPP" && !finalTitle.toLowerCase().includes("loading")) {
+        if (finalTitle && finalTitle !== "Manage365" && !finalTitle.toLowerCase().includes("loading")) {
           setCurrentPageTitle(finalTitle);
           // Stop checking once we have a valid title
           if (hierarchicalTitleCheckRef.current) {
@@ -475,7 +475,7 @@ export const CippBreadcrumbNav = () => {
       const lastItem = result[result.length - 1];
       if (lastItem.path && lastItem.path !== currentPath && currentPath.startsWith(lastItem.path)) {
         // Use the tracked page title if available, otherwise fall back to document.title
-        let tabTitle = currentPageTitle || document.title.replace(" - CIPP", "").trim();
+        let tabTitle = currentPageTitle || document.title.replace(" - Manage365", "").trim();
 
         // Clean AllTenants from title
         tabTitle = cleanPageTitle(tabTitle);
@@ -593,7 +593,7 @@ export const CippBreadcrumbNav = () => {
         // If we have a current page title from document.title, use it for the last breadcrumb
         if (
           currentPageTitle &&
-          currentPageTitle !== "CIPP" &&
+          currentPageTitle !== "Manage365" &&
           !currentPageTitle.toLowerCase().includes("loading")
         ) {
           breadcrumbs[breadcrumbs.length - 1].title = cleanPageTitle(currentPageTitle);

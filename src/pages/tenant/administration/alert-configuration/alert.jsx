@@ -545,9 +545,9 @@ const AlertWizard = () => {
               <Card>
                 <CardActionArea onClick={() => setAlertType('script')}>
                   <CardContent>
-                    <Typography variant="h6">Scripted CIPP Alert</Typography>
+                    <Typography variant="h6">Scripted Manage365 Alert</Typography>
                     <Typography variant="body2">
-                      Select this option to set up an alert based on data processed by CIPP.
+                      Select this option to set up an alert based on data processed by Manage365.
                     </Typography>
                   </CardContent>
                 </CardActionArea>
@@ -892,7 +892,7 @@ const AlertWizard = () => {
               </Grid>
             )}
 
-            {/* Scripted CIPP Alert Form */}
+            {/* Scripted Manage365 Alert Form */}
             {alertType === 'script' && (
               <Grid container spacing={3} sx={{ mt: 2, width: '100%' }}>
                 <Grid size={12}>

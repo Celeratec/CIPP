@@ -194,7 +194,7 @@ export const getAppRegistrationPostAndDestructiveActions = (canWriteApplication)
 export const getAppRegistrationListActions = (canWriteApplication) => [
   {
     icon: <Visibility />,
-    label: 'View in CIPP',
+    label: 'View in Manage365',
     link: '/tenant/administration/applications/app-registration?appId=[appId]&tenantFilter=[Tenant]',
     color: 'info',
     multiPost: false,

@@ -369,7 +369,7 @@ const Page = () => {
     placeholder: 'Select how test results are rendered',
     options: returnTypeOptions,
     creatable: false,
-    helperText: 'Choose how failed test results are rendered in CIPP test details.',
+    helperText: 'Choose how failed test results are rendered in Manage365 test details.',
   }
 
   const markdownTemplateField = {

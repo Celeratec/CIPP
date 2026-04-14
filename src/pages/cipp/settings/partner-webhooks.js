@@ -138,7 +138,7 @@ const Page = () => {
           <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
             Subscribe to Microsoft Partner center webhooks to enable automatic tenant onboarding and
             alerting. Updating the settings will replace any existing webhook subscription with one
-            pointing to CIPP. Refer to the{" "}
+            pointing to Manage365. Refer to the{" "}
             <Link
               href="https://learn.microsoft.com/en-us/partner-center/developer/partner-center-webhooks"
               target="_blank"

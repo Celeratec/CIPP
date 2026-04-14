@@ -225,7 +225,7 @@ export const CippAutopilotProfileDrawer = ({
               name="HideChangeAccount"
               formControl={formControl}
               disabled={true}
-              helperText="This setting requires Hybrid Azure AD Join which is not supported in CIPP"
+              helperText="This setting requires Hybrid Azure AD Join which is not supported in Manage365"
             />
             <CippFormComponent
               type="switch"

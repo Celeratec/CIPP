@@ -282,7 +282,7 @@ export const ReleaseNotesDialog = forwardRef((_props, ref) => {
   const requestedVersionLabel =
     selectedReleaseData?.releaseTag ?? selectedReleaseTag ?? releaseMeta.currentTag
   const releaseName =
-    selectedReleaseData?.name || selectedReleaseValue?.label || `CIPP ${releaseMeta.currentTag}`
+    selectedReleaseData?.name || selectedReleaseValue?.label || `Manage365 ${releaseMeta.currentTag}`
   const releaseHeading = releaseName || requestedVersionLabel
   const releaseBody = typeof selectedReleaseData?.body === 'string' ? selectedReleaseData.body : ''
   const releaseUrl =

@@ -116,7 +116,7 @@ const Page = () => {
           <Grid size={12}>
             <Typography variant="body2">
               This mode enables offloading some of the more processor intensive functions to a
-              separate function app. This can be useful in environments where the CIPP server is
+              separate function app. This can be useful in environments where the Manage365 server is
               under heavy load. Please review{" "}
               <Link
                 component={NextLink}
@@ -131,7 +131,7 @@ const Page = () => {
           </Grid>
           <Grid size={12}>
             <Alert severity="info">
-              If you are self-hosted, you must deploy the additional function app(s) to your CIPP
+              If you are self-hosted, you must deploy the additional function app(s) to your Manage365
               resource group and enable CI/CD or all background tasks will fail.
             </Alert>
           </Grid>

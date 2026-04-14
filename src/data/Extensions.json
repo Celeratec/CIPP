@@ -1,17 +1,17 @@
 [
   {
-    "name": "CIPP-API",
+    "name": "Manage365 API",
     "id": "cippapi",
     "type": "CIPP-API",
     "cat": "API",
     "logo": "/assets/integrations/cipp-api.png",
     "forceSyncButton": false,
     "hideTestButton": true,
-    "description": "The CIPP API allows you to access CIPP data outside of CIPP using a RESTful API.",
-    "helpText": "This integration allows you to enable CIPP-API access outside of CIPP. This is useful for integrations with other systems or custom scripts.",
+    "description": "The Manage365 API allows you to access Manage365 data outside of Manage365 using a RESTful API.",
+    "helpText": "This integration allows you to enable Manage365 API access outside of Manage365. This is useful for integrations with other systems or custom scripts.",
     "links": [
       {
-        "name": "CIPP API Documentation",
+        "name": "Manage365 API Documentation",
         "url": "https://docs.cipp.app/api-documentation/setup-and-authentication"
       }
     ],
@@ -726,8 +726,8 @@
     "cat": "Source Control",
     "logo": "/assets/integrations/github.png",
     "logoDark": "/assets/integrations/github_dark.png",
-    "description": "Enable the GitHub integration to manage your repositories from CIPP.",
-    "helpText": "This integration allows you to manage GitHub repositories from CIPP, including the Community Repositories functionality. Requires a GitHub Personal Access Token (PAT) with a minimum of repo:public_repo permissions. If you plan on saving your templates to GitHub or accessing private/internal repositories, you will need to grant the whole repo scope. You can create a PAT in your GitHub account settings, see the GitHub Token documentation for more info. If you do not enable the extension, a read-only API will be provided.",
+    "description": "Enable the GitHub integration to manage your repositories from Manage365.",
+    "helpText": "This integration allows you to manage GitHub repositories from Manage365, including the Community Repositories functionality. Requires a GitHub Personal Access Token (PAT) with a minimum of repo:public_repo permissions. If you plan on saving your templates to GitHub or accessing private/internal repositories, you will need to grant the whole repo scope. You can create a PAT in your GitHub account settings, see the GitHub Token documentation for more info. If you do not enable the extension, a read-only API will be provided.",
     "links": [
       {
         "name": "GitHub Token",

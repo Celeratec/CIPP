@@ -73,7 +73,7 @@ const Page = () => {
       label: "Single Tenant - Own Tenant Mode",
       value: "owntenant",
       description:
-        "Configure CIPP to manage only your own tenant. No GDAP or partner relationships required.",
+        "Configure Manage365 to manage only your own tenant. No GDAP or partner relationships required.",
       icon: <BuildingOfficeIcon />,
       features: [
         "Manage single tenant only",
@@ -145,7 +145,7 @@ const Page = () => {
         {/* Info Alert */}
         <Alert severity="info">
           <Typography variant="body2">
-            Tenant mode determines how CIPP connects to and manages Microsoft 365 tenants. Choose the
+            Tenant mode determines how Manage365 connects to and manages Microsoft 365 tenants. Choose the
             mode that best fits your organization's needs.{" "}
             <Link
               component={NextLink}

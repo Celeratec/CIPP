@@ -184,7 +184,7 @@ export const StepConfirmDelete = ({ data, onBack }) => {
 
       <Alert severity="warning" icon={<Warning />}>
         This action will move the selected files to the recycle bin. This cannot be undone from
-        CIPP, but files can be restored manually from SharePoint/OneDrive for 93 days.
+        Manage365, but files can be restored manually from SharePoint/OneDrive for 93 days.
       </Alert>
 
       <FormControlLabel

@@ -30,11 +30,11 @@ const Page = () => {
           <Alert severity="info" sx={{ height: "100%", alignItems: "flex-start" }}>
             <Box>
               <Typography variant="body2" fontWeight={500} gutterBottom>
-                About CIPP Roles
+                About Manage365 Roles
               </Typography>
               <Typography variant="body2">
                 Custom roles restrict permissions for users with 'editor' or 'readonly' access in
-                CIPP. Roles can limit access to specific tenants and API permissions. Both built-in
+                Manage365. Roles can limit access to specific tenants and API permissions. Both built-in
                 and custom roles can be assigned to Entra security groups for granular access
                 control.{" "}
                 <Link
@@ -178,7 +178,7 @@ const Page = () => {
                     API Permissions
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Control which CIPP API endpoints each role can access
+                    Control which Manage365 API endpoints each role can access
                   </Typography>
                 </Box>
               </Stack>

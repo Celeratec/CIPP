@@ -54,7 +54,7 @@ const Page = () => {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={12}>
           <Alert severity="info">
-            Configure the timezone for CIPP. This setting will determine which timezone is used when
+            Configure the timezone for Manage365. This setting will determine which timezone is used when
             background tasks run. If no timezone is selected, UTC will be used by default.
           </Alert>
         </Grid>

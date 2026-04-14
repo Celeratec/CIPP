@@ -78,7 +78,7 @@ const SingleTenantView = ({ tenant }) => {
                   queryKey={`MDEOnboarding-${tenant}`}
                   title="MDE Onboarding Sync"
                 />
-                <Tooltip title="This report displays cached data from the CIPP reporting database. Click the Sync button to update the cache for the current tenant.">
+                <Tooltip title="This report displays cached data from the Manage365 reporting database. Click the Sync button to update the cache for the current tenant.">
                   <IconButton size="small">
                     <Info fontSize="small" />
                   </IconButton>
@@ -177,7 +177,7 @@ const Page = () => {
         queryKey="MDEOnboarding-AllTenants"
         title="MDE Onboarding Sync"
       />
-      <Tooltip title="This report displays cached data from the CIPP reporting database. Click the Sync button to update the cache for all tenants.">
+      <Tooltip title="This report displays cached data from the Manage365 reporting database. Click the Sync button to update the cache for all tenants.">
         <IconButton size="small">
           <Info fontSize="small" />
         </IconButton>

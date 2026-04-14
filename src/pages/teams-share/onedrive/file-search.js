@@ -84,7 +84,7 @@ const DestinationPickerDialog = ({ open, onClose, items = [], actionType, tenant
   const [itemStatuses, setItemStatuses] = useState({});
   const [transferComplete, setTransferComplete] = useState(false);
   const [conflictBehavior, setConflictBehavior] = useState("rename");
-  const [zipFileName, setZipFileName] = useState(`CIPP-Archive-${new Date().toISOString().slice(0, 10)}.zip`);
+  const [zipFileName, setZipFileName] = useState(`Manage365-Archive-${new Date().toISOString().slice(0, 10)}.zip`);
 
   const userValue = formControl.watch("destUser");
   const siteValue = formControl.watch("destSite");
@@ -268,7 +268,7 @@ const DestinationPickerDialog = ({ open, onClose, items = [], actionType, tenant
     setItemStatuses({});
     setConflictBehavior("rename");
     setTransferComplete(false);
-    setZipFileName(`CIPP-Archive-${new Date().toISOString().slice(0, 10)}.zip`);
+    setZipFileName(`Manage365-Archive-${new Date().toISOString().slice(0, 10)}.zip`);
   };
 
   const successCount = Object.values(itemStatuses).filter((s) => s.status === "success").length;
@@ -683,7 +683,7 @@ const Page = () => {
       const payload = {
         TenantFilter: tenantFilter,
         Items: items.map((it) => ({ DriveId: it.driveId, ItemId: it.id, Name: it.name })),
-        ZipFileName: `CIPP-Archive-${new Date().toISOString().slice(0, 10)}.zip`,
+        ZipFileName: `Manage365-Archive-${new Date().toISOString().slice(0, 10)}.zip`,
       };
       const resp = await axios.post("/api/ExecZipFiles", payload, {
         headers: await buildVersionedHeaders(),
@@ -698,7 +698,7 @@ const Page = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = zipFileName || "CIPP-Archive.zip";
+        a.download = zipFileName || "Manage365-Archive.zip";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -1074,7 +1074,7 @@ const Page = () => {
                   This usually means the <strong>Files.Read.All</strong>{" "}
                   permission has not been granted for this tenant. Go to{" "}
                   <strong>
-                    CIPP Settings &gt; SAM Permissions &gt; CPV Refresh
+                    Manage365 Settings &gt; SAM Permissions &gt; CPV Refresh
                   </strong>{" "}
                   to push the updated permissions to this tenant, then try again.
                 </Typography>
@@ -1101,7 +1101,7 @@ const Page = () => {
                   This usually means the <strong>Files.Read.All</strong>{" "}
                   permission has not been granted for this tenant. Go to{" "}
                   <strong>
-                    CIPP Settings &gt; SAM Permissions &gt; CPV Refresh
+                    Manage365 Settings &gt; SAM Permissions &gt; CPV Refresh
                   </strong>{" "}
                   to push the updated permissions to this tenant, then try again.
                 </Typography>

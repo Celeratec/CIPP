@@ -383,7 +383,7 @@ const Page = () => {
                               size="small"
                               variant="outlined"
                             >
-                              Open app registration in CIPP
+                              Open app registration in Manage365
                             </Button>
                           </Grid>
                         )}

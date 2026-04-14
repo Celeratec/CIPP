@@ -105,7 +105,7 @@ const Page = () => {
           <DialogTitle>Add Domain</DialogTitle>
           <DialogContent>
             <Typography variant="body2">
-              To add a domain to your instance, set your preferred CNAME to your CIPP default
+              To add a domain to your instance, set your preferred CNAME to your Manage365 default
               domain, then add the domain here.
             </Typography>
             <Stack spacing={3}>

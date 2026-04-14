@@ -51,7 +51,7 @@ const Page = () => {
         queryKey={`mailbox-forwarding-${currentTenant}`}
         title="Mailbox Forwarding Sync"
       />
-      <Tooltip title="This report displays cached mailbox data from the CIPP reporting database. Cache timestamps are shown in the table. Click the Sync button to update the mailbox cache for the current tenant.">
+      <Tooltip title="This report displays cached mailbox data from the Manage365 reporting database. Cache timestamps are shown in the table. Click the Sync button to update the mailbox cache for the current tenant.">
         <IconButton size="small">
           <Info fontSize="small" />
         </IconButton>

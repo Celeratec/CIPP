@@ -154,7 +154,7 @@ const FormattedResultText = ({ text, severity }) => {
             </li>
             <li>Verify the site does not have restricted or unique permissions in SharePoint</li>
             <li>
-              If the issue persists, check that the CIPP SAM app has the necessary SharePoint
+              If the issue persists, check that the Manage365 SAM app has the necessary SharePoint
               delegated permissions
             </li>
           </ol>
@@ -195,11 +195,11 @@ const FormattedResultText = ({ text, severity }) => {
             {isPermission && (
               <>
                 <li>
-                  Run a <strong>CPV Refresh</strong> from CIPP Settings to push eDiscovery
+                  Run a <strong>CPV Refresh</strong> from Manage365 Settings to push eDiscovery
                   permissions to this tenant
                 </li>
                 <li>
-                  Assign the <strong>eDiscovery Administrator</strong> role to the CIPP service
+                  Assign the <strong>eDiscovery Administrator</strong> role to the Manage365 service
                   principal in the tenant&apos;s{" "}
                   <strong>Purview portal &gt; Roles &amp; Scopes &gt; Permissions</strong>
                 </li>
@@ -212,7 +212,7 @@ const FormattedResultText = ({ text, severity }) => {
               </li>
             )}
             <li>
-              If the issue persists, verify the CIPP SAM app registration includes{" "}
+              If the issue persists, verify the Manage365 SAM app registration includes{" "}
               <strong>eDiscovery.ReadWrite.All</strong> application permission
             </li>
           </ol>
@@ -292,7 +292,7 @@ const FormattedResultText = ({ text, severity }) => {
                           mt: 0.5,
                         }}
                       >
-                        Open CIPP Settings
+                        Open Manage365 Settings
                       </Button>
                     )}
                   </Box>

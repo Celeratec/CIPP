@@ -266,7 +266,7 @@ const Page = () => {
               },
             };
 
-            downloadContent = `// CIPP Backup Validation Report\n// ${JSON.stringify(
+            downloadContent = `// Manage365 Backup Validation Report\n// ${JSON.stringify(
               report,
               null,
               2

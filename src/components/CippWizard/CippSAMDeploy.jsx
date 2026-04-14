@@ -83,7 +83,7 @@ export const CippSAMDeploy = (props) => {
       <Alert severity="info">
         To run this setup you will need the following prerequisites:
         <li>
-          A CIPP Service Account. For more information on how to create a service account, click{" "}
+          A Manage365 Service Account. For more information on how to create a service account, click{" "}
           <Link
             href="https://docs.cipp.app/setup/installation/creating-the-cipp-service-account-gdap-ready"
             rel="noreferrer"
@@ -97,7 +97,7 @@ export const CippSAMDeploy = (props) => {
           <li>User Administrator</li>
         </li>
         <li>
-          Multi-factor authentication enabled for the CIPP Service Account, with no trusted
+          Multi-factor authentication enabled for the Manage365 Service Account, with no trusted
           locations or other exclusions.
         </li>
       </Alert>

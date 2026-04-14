@@ -76,7 +76,7 @@ const Page = () => {
       condition: (row) => row.displayName !== "*Partner Tenant",
     },
     {
-      label: "Refresh CIPPDB Cache",
+      label: "Refresh Manage365 DB Cache",
       type: "GET",
       url: "/api/ExecCIPPDBCache",
       icon: <Refresh />,

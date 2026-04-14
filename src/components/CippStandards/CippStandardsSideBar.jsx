@@ -315,7 +315,7 @@ const CippStandardsSideBar = ({
               <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
                 • Monitors all security standards, Conditional Access policies, and Intune policies
                 <br />
-                • Detects changes made outside of CIPP
+                • Detects changes made outside of Manage365
                 <br />
                 • Configurable webhook and email notifications
                 <br />• Granular control over deviation acceptance

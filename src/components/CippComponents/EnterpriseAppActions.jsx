@@ -159,7 +159,7 @@ export const getEnterpriseAppPostActions = (canWriteApplication) => [
 export const getEnterpriseAppListActions = (canWriteApplication) => [
   {
     icon: <Visibility />,
-    label: 'View in CIPP',
+    label: 'View in Manage365',
     link: '/tenant/administration/applications/enterprise-app?spId=[id]&tenantFilter=[Tenant]',
     color: 'info',
     multiPost: false,

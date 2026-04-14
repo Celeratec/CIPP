@@ -307,7 +307,7 @@ const Page = () => {
               queryKey={`ListMailboxes-${currentTenant}`}
               title="Mailboxes Sync"
             />
-            <Tooltip title="This report displays cached data from the CIPP reporting database. Click the Sync button to update the cache for the current tenant.">
+            <Tooltip title="This report displays cached data from the Manage365 reporting database. Click the Sync button to update the cache for the current tenant.">
               <IconButton size="small">
                 <Info fontSize="small" />
               </IconButton>

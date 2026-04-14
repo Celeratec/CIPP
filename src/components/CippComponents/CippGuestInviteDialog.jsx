@@ -135,8 +135,8 @@ const runClientDiagnostics = async (tenantFilter, domain, context = "sharepoint"
           source: "Entra External Collaboration",
           issue: `Domain '${domain}' is blocked by a collaboration restriction`,
           detail:
-            "This tenant has a domain collaboration restriction that is blocking this invitation. The restriction was likely configured in the Azure portal (External Identities > External collaboration settings > Collaboration restrictions) and is not currently managed through CIPP. You can take over management of this setting in CIPP by configuring the domain restrictions below.",
-          fix: `Open External Collaboration settings and configure a domain allow-list that includes '${domain}'. This will create the policy through the Graph API so CIPP can manage it going forward.`,
+            "This tenant has a domain collaboration restriction that is blocking this invitation. The restriction was likely configured in the Azure portal (External Identities > External collaboration settings > Collaboration restrictions) and is not currently managed through Manage365. You can take over management of this setting in Manage365 by configuring the domain restrictions below.",
+          fix: `Open External Collaboration settings and configure a domain allow-list that includes '${domain}'. This will create the policy through the Graph API so Manage365 can manage it going forward.`,
           settingsPage: "/tenant/administration/cross-tenant-access/external-collaboration",
           severity: "error",
           canQuickFix: true,
@@ -171,7 +171,7 @@ const runClientDiagnostics = async (tenantFilter, domain, context = "sharepoint"
           issue: "Guest access is disabled for Microsoft Teams",
           detail:
             "The Teams tenant setting 'Allow guest access' is currently disabled. Guests cannot be added to any teams until this is enabled.",
-          fix: "Enable guest access in Teams Settings > Guest & Cloud Storage, or use the CIPP Teams Settings page.",
+          fix: "Enable guest access in Teams Settings > Guest & Cloud Storage, or use the Manage365 Teams Settings page.",
           settingsPage: "/teams-share/teams/teams-settings",
           severity: "error",
         });
@@ -692,7 +692,7 @@ const CippGuestInviteDialog = ({
                               SharePoint
                             </li>
                             <li>
-                              If the issue persists, check that the CIPP SAM app has the necessary
+                              If the issue persists, check that the Manage365 SAM app has the necessary
                               SharePoint delegated permissions
                             </li>
                           </ol>

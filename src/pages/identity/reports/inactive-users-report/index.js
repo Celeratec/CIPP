@@ -252,7 +252,7 @@ const Page = () => {
 
   const pageActions = [
     <Stack direction="row" spacing={2} alignItems="center" key="actions-stack">
-      <Tooltip title="This report displays cached data from the CIPP reporting database. Cache timestamps are shown in the table. Click the Sync button to update the user cache for the current tenant.">
+      <Tooltip title="This report displays cached data from the Manage365 reporting database. Cache timestamps are shown in the table. Click the Sync button to update the user cache for the current tenant.">
         <IconButton size="small">
           <Info fontSize="small" />
         </IconButton>

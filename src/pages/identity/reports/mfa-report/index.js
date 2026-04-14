@@ -145,7 +145,7 @@ const Page = () => {
       >
         Sync
       </Button>
-      <Tooltip title="This page always uses cached data from the CIPP reporting database.">
+      <Tooltip title="This page always uses cached data from the Manage365 reporting database.">
         <span>
           <Chip
             icon={<CloudDone />}

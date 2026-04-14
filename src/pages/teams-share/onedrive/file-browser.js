@@ -1520,7 +1520,7 @@ const Page = () => {
       const payload = {
         TenantFilter: tenantFilter,
         Items: items.map((it) => ({ DriveId: it.driveId || driveId, ItemId: it.id, Name: it.name })),
-        ZipFileName: `CIPP-Archive-${new Date().toISOString().slice(0, 10)}.zip`,
+        ZipFileName: `Manage365-Archive-${new Date().toISOString().slice(0, 10)}.zip`,
       };
       const resp = await axios.post("/api/ExecZipFiles", payload, {
         headers: await buildVersionedHeaders(),
@@ -1535,7 +1535,7 @@ const Page = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = zipFileName || "CIPP-Archive.zip";
+        a.download = zipFileName || "Manage365-Archive.zip";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

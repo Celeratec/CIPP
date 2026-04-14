@@ -85,7 +85,7 @@ const Page = () => {
         }
       >
         <AlertTitle>Tenant Setup Required</AlertTitle>
-        Before using eDiscovery, each client tenant needs a one-time setup: the CIPP service
+        Before using eDiscovery, each client tenant needs a one-time setup: the Manage365 service
         principal must be assigned the <strong>eDiscovery Administrator</strong> role in the
         tenant&apos;s Purview portal. Go to{" "}
         <Link
@@ -95,9 +95,9 @@ const Page = () => {
         >
           Purview &gt; Settings &gt; Roles &amp; Scopes &gt; Permissions
         </Link>
-        , find the <strong>eDiscovery Manager</strong> role group, and add the CIPP app as an{" "}
+        , find the <strong>eDiscovery Manager</strong> role group, and add the Manage365 app as an{" "}
         <strong>eDiscovery Administrator</strong>. You also need to run a{" "}
-        <strong>CPV Refresh</strong> from CIPP Settings to push the eDiscovery permissions to the
+        <strong>CPV Refresh</strong> from Manage365 Settings to push the eDiscovery permissions to the
         tenant.
       </Alert>
     </Collapse>

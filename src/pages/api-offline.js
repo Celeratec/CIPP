@@ -104,13 +104,13 @@ const ApiOfflinePage = () => {
                       <SvgIcon sx={{ verticalAlign: "middle", mr: 1, color: "error.main" }}>
                         <ErrorOutlineOutlined />
                       </SvgIcon>
-                      CIPP API Unreachable
+                      Manage365 API Unreachable
                     </Typography>
                   }
                   text={
                     <Box sx={{ mt: 2 }}>
                       <Typography variant="body1">
-                        The CIPP API appears to be offline or out of date.
+                        The Manage365 API appears to be offline or out of date.
                         {apiVersion && (
                           <Typography
                             component="span"
@@ -122,7 +122,7 @@ const ApiOfflinePage = () => {
                       </Typography>
 
                       <Typography variant="body1" sx={{ mt: 2 }}>
-                        If you are self-hosting CIPP, please ensure your Function App is running and
+                        If you are self-hosting Manage365, please ensure your Function App is running and
                         up to date. If you are using the hosted version, please check your
                         subscription in GitHub.
                       </Typography>

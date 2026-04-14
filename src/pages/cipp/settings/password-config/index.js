@@ -39,18 +39,18 @@ const DEFAULT_VALUES = {
 
 function normalizeConfigForBackend(config) {
   return {
-    passwordType: String(config.passwordType || PASSWORD_TYPES.CLASSIC),
-    charCount: String(parseInt(config.charCount, 10) || DEFAULT_VALUES.CHAR_COUNT),
-    includeUppercase: String(Boolean(config.includeUppercase)),
-    includeLowercase: String(Boolean(config.includeLowercase)),
-    includeDigits: String(Boolean(config.includeDigits)),
-    includeSpecialChars: String(Boolean(config.includeSpecialChars)),
-    specialCharSet: String(config.specialCharSet || DEFAULT_VALUES.SPECIAL_CHAR_SET),
-    wordCount: String(parseInt(config.wordCount, 10) || DEFAULT_VALUES.WORD_COUNT),
+    passwordType: config.passwordType || PASSWORD_TYPES.CLASSIC,
+    charCount: parseInt(config.charCount, 10) || DEFAULT_VALUES.CHAR_COUNT,
+    includeUppercase: Boolean(config.includeUppercase),
+    includeLowercase: Boolean(config.includeLowercase),
+    includeDigits: Boolean(config.includeDigits),
+    includeSpecialChars: Boolean(config.includeSpecialChars),
+    specialCharSet: config.specialCharSet || DEFAULT_VALUES.SPECIAL_CHAR_SET,
+    wordCount: parseInt(config.wordCount, 10) || DEFAULT_VALUES.WORD_COUNT,
     separator: config.separator !== undefined && config.separator !== null ? String(config.separator) : DEFAULT_VALUES.SEPARATOR,
-    capitalizeWords: String(Boolean(config.capitalizeWords)),
-    appendNumber: String(Boolean(config.appendNumber)),
-    appendSpecialChar: String(Boolean(config.appendSpecialChar)),
+    capitalizeWords: Boolean(config.capitalizeWords),
+    appendNumber: Boolean(config.appendNumber),
+    appendSpecialChar: Boolean(config.appendSpecialChar),
   };
 }
 

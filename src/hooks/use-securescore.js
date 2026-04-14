@@ -70,7 +70,7 @@ export function useSecureScore({ waiting = true } = {}) {
               "/tenant/standards"
             : translation?.actionUrl,
           remediation: remediation
-            ? `1. Enable the CIPP Standard: ${remediation.label}`
+            ? `1. Enable the Manage365 Standard: ${remediation.label}`
             : translation?.remediation,
           remediationImpact: translation?.remediationImpact,
           implementationCost: translation?.implementationCost,

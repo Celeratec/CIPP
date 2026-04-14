@@ -66,7 +66,7 @@ export const CippTenantModeDeploy = (props) => {
           </Tooltip>
         </Stack>
         <Typography variant="body2" sx={{ mt: 2, mb: 2 }}>
-          CIPP uses the partner center to automatically retrieve your tenants, however you can also
+          Manage365 uses the partner center to automatically retrieve your tenants, however you can also
           authenticate to individual tenants.
         </Typography>
         <Typography variant="body2" sx={{ mt: 2, mb: 2 }}>
@@ -75,7 +75,7 @@ export const CippTenantModeDeploy = (props) => {
           button below.
         </Typography>
         <Typography variant="body2" sx={{ mt: 2, mb: 2 }}>
-          Please remember to log onto a service account dedicated for CIPP. More info? Check out the{" "}
+          Please remember to log onto a service account dedicated for Manage365. More info? Check out the{" "}
           <Link
             href="https://docs.cipp.app/setup/installation/creating-the-cipp-service-account-gdap-ready"
             target="_blank"

@@ -69,7 +69,7 @@ export const CippAddTenantTypeSelection = (props) => {
       <Stack spacing={1}>
         <Typography variant="h6">Select Tenant Type</Typography>
         <Typography color="text.secondary" variant="body2">
-          Choose how you want to add the tenant to your CIPP environment.
+          Choose how you want to add the tenant to your Manage365 environment.
         </Typography>
       </Stack>
       <Stack spacing={2}>
