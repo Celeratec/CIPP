@@ -1,5 +1,5 @@
 import { Layout as DashboardLayout } from "../../../layouts/index.js";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import {
   Alert,
@@ -58,8 +58,8 @@ const Page = () => {
   const formHook = useForm({
     defaultValues: {
       guests: [{ email: "", displayName: "" }],
-      resourceType: "sharepoint",
-      resourceId: "",
+      resourceType: { label: "SharePoint Site", value: "sharepoint" },
+      resourceId: null,
       resourceName: "",
       sendInvite: true,
     },
@@ -73,6 +73,12 @@ const Page = () => {
 
   const inviteApi = ApiPostCall({});
 
+  const watchedResourceType = formHook.watch("resourceType");
+
+  useEffect(() => {
+    formHook.setValue("resourceId", null);
+  }, [watchedResourceType]);
+
   const validateEmail = useCallback(
     async (email, index) => {
       if (!email || !email.includes("@") || !currentTenant) return;
@@ -81,7 +87,7 @@ const Page = () => {
         const headers = await buildVersionedHeaders();
         const resp = await axios.post(
           "/api/ExecValidateExternalDomain",
-          { email, tenantFilter: currentTenant, context: formHook.getValues("resourceType") === "teams-shared" ? "teams-shared" : "general" },
+          { email, tenantFilter: currentTenant, context: (formHook.getValues("resourceType")?.value || formHook.getValues("resourceType")) === "teams-shared" ? "teams-shared" : "general" },
           { headers }
         );
         setValidations((prev) => ({ ...prev, [index]: resp.data?.Results }));
@@ -126,12 +132,15 @@ const Page = () => {
           sendInvite: data.sendInvite,
         };
 
-        if (data.resourceType === "sharepoint") {
-          payload.URL = data.resourceId;
-          payload.SharePointType = data.sharePointType || "Group";
+        const resourceTypeValue = data.resourceType?.value || data.resourceType;
+        const resourceIdValue = data.resourceId?.value || data.resourceId;
+
+        if (resourceTypeValue === "sharepoint") {
+          payload.URL = resourceIdValue;
+          payload.SharePointType = data.resourceId?.SharePointType || data.sharePointType || "Group";
           payload.groupId = data.groupId;
-        } else if (data.resourceType.startsWith("teams")) {
-          payload.TeamID = data.resourceId;
+        } else if (resourceTypeValue?.startsWith("teams")) {
+          payload.TeamID = resourceIdValue;
         }
 
         const resp = await axios.post("/api/ExecSharePointInviteGuest", payload, { headers });
@@ -160,8 +169,10 @@ const Page = () => {
         const guests = formHook.getValues("guests");
         return guests.length > 0 && guests.every((g) => g.email && g.email.includes("@"));
       }
-      case 1:
-        return Boolean(formHook.getValues("resourceId"));
+      case 1: {
+        const rid = formHook.getValues("resourceId");
+        return Boolean(rid?.value || rid);
+      }
       case 2:
         return !hasBlockedPolicies;
       default:
@@ -283,12 +294,14 @@ const Page = () => {
                 <CardHeader title="Where should they have access?" subheader="Select the target resource." />
                 <CardContent>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid item xs={12}>
                       <CippFormComponent
                         formControl={formHook}
-                        type="select"
+                        type="autoComplete"
                         name="resourceType"
                         label="Resource Type"
+                        multiple={false}
+                        creatable={false}
                         options={[
                           { label: "SharePoint Site", value: "sharepoint" },
                           { label: "Teams (Standard/Private Channel)", value: "teams-standard" },
@@ -296,15 +309,53 @@ const Page = () => {
                         ]}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <CippFormComponent
-                        formControl={formHook}
-                        type="textField"
-                        name="resourceId"
-                        label={formHook.watch("resourceType") === "sharepoint" ? "Site URL" : "Team ID"}
-                        placeholder={formHook.watch("resourceType") === "sharepoint" ? "https://contoso.sharepoint.com/sites/teamsite" : "Team ID or display name"}
-                        validators={{ required: "Resource is required" }}
-                      />
+                    <Grid item xs={12}>
+                      {watchedResourceType?.value === "sharepoint" || watchedResourceType === "sharepoint" ? (
+                        <CippFormComponent
+                          key="sharepoint-picker"
+                          formControl={formHook}
+                          type="autoComplete"
+                          name="resourceId"
+                          label="SharePoint Site"
+                          multiple={false}
+                          creatable={true}
+                          api={{
+                            url: "/api/ListSites",
+                            data: { type: "SharePointSiteUsage" },
+                            queryKey: `extaccess-sites-${currentTenant}`,
+                            dataKey: "Results",
+                            labelField: (site) => site.displayName ? `${site.displayName} (${site.webUrl})` : site.webUrl,
+                            valueField: "webUrl",
+                            addedField: {
+                              SharePointType: "rootWebTemplate",
+                              displayName: "displayName",
+                            },
+                          }}
+                          validators={{ required: "Please select a SharePoint site" }}
+                        />
+                      ) : (
+                        <CippFormComponent
+                          key="teams-picker"
+                          formControl={formHook}
+                          type="autoComplete"
+                          name="resourceId"
+                          label="Team"
+                          multiple={false}
+                          creatable={true}
+                          api={{
+                            url: "/api/ListTeams",
+                            data: { type: "list" },
+                            queryKey: `extaccess-teams-${currentTenant}`,
+                            dataKey: "Results",
+                            labelField: (team) => team.displayName || team.id,
+                            valueField: "id",
+                            addedField: {
+                              displayName: "displayName",
+                            },
+                          }}
+                          validators={{ required: "Please select a Team" }}
+                        />
+                      )}
                     </Grid>
                     <Grid item xs={12}>
                       <CippFormComponent
@@ -326,8 +377,8 @@ const Page = () => {
                     <CippAccessTypeGuide
                       variant="decision"
                       context={
-                        formHook.watch("resourceType") === "sharepoint" ? "sharepoint" :
-                        formHook.watch("resourceType") === "teams-shared" ? "teamsShared" :
+                        (watchedResourceType?.value || watchedResourceType) === "sharepoint" ? "sharepoint" :
+                        (watchedResourceType?.value || watchedResourceType) === "teams-shared" ? "teamsShared" :
                         "teamsStandard"
                       }
                     />
@@ -365,7 +416,8 @@ const Page = () => {
 
                     <Typography variant="subtitle2">Target Resource:</Typography>
                     <Typography variant="body2">
-                      {formHook.getValues("resourceType") === "sharepoint" ? "SharePoint Site" : "Teams"}: {formHook.getValues("resourceId")}
+                      {(formHook.getValues("resourceType")?.value || formHook.getValues("resourceType")) === "sharepoint" ? "SharePoint Site" : "Teams"}:{" "}
+                      {formHook.getValues("resourceId")?.label || formHook.getValues("resourceId")?.value || formHook.getValues("resourceId")}
                     </Typography>
 
                     <Divider />
@@ -373,7 +425,7 @@ const Page = () => {
                     <Typography variant="subtitle2">Access Type:</Typography>
                     <Alert severity="info" variant="outlined">
                       <Typography variant="body2">
-                        {formHook.getValues("resourceType") === "teams-shared"
+                        {(formHook.getValues("resourceType")?.value || formHook.getValues("resourceType")) === "teams-shared"
                           ? "External Access (B2B Direct Connect) — users access from their own tenant."
                           : "Guest Access (B2B Collaboration) — users are invited to your directory."}
                       </Typography>
