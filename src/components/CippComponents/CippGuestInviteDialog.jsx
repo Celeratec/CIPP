@@ -664,14 +664,22 @@ const CippGuestInviteDialog = ({
           <DialogContent>
             <Stack spacing={1.5}>
               {resultMessages.map((msg, i) => {
+                const isGraphFallback =
+                  typeof msg === "string" && msg.includes("Graph API fallback");
                 const isWarning =
                   typeof msg === "string" &&
+                  !isGraphFallback &&
                   (msg.includes("could not add") || msg.includes("not available for automatic"));
                 const isSharePointAccessError =
                   typeof msg === "string" &&
+                  !isGraphFallback &&
                   (msg.includes("Failed to obtain a SharePoint token") || msg.includes("SharePoint denied access"));
                 return (
-                  <Alert key={i} severity={isWarning ? "warning" : "success"} icon={isWarning ? <WarningAmber /> : <CheckCircle />}>
+                  <Alert
+                    key={i}
+                    severity={isGraphFallback ? "info" : isWarning ? "warning" : "success"}
+                    icon={isGraphFallback ? <WarningAmber /> : isWarning ? <WarningAmber /> : <CheckCircle />}
+                  >
                     {isSharePointAccessError ? (
                       <Stack spacing={1}>
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -696,6 +704,18 @@ const CippGuestInviteDialog = ({
                               SharePoint delegated permissions
                             </li>
                           </ol>
+                        </Typography>
+                      </Stack>
+                    ) : isGraphFallback ? (
+                      <Stack spacing={0.5}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          Guest added via fallback method
+                        </Typography>
+                        <Typography variant="body2">
+                          The SharePoint REST API denied access, so document library access was granted
+                          via the Graph API instead. The guest can access the site&apos;s document
+                          library, but may not have full site membership. Consider running a{" "}
+                          <strong>CPV Refresh</strong> to resolve the underlying permission issue.
                         </Typography>
                       </Stack>
                     ) : (
