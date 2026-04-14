@@ -194,8 +194,8 @@ const Page = () => {
       label: "Re-invite Guest",
       icon: <Send />,
       color: "info",
-      condition: (row) => row.original.mail,
-      onClick: (row) => handleReinvite(row.original),
+      condition: (row) => row?.mail,
+      onClick: (row) => handleReinvite(row),
     },
   ];
 
