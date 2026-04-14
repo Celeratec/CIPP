@@ -17,6 +17,8 @@ import {
   Step,
   StepLabel,
   Stepper,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import {
@@ -26,8 +28,11 @@ import {
   CheckCircle,
   Close,
   ErrorOutline,
+  Groups,
+  Language,
   PersonAdd,
   Send,
+  Share,
   Warning,
 } from "@mui/icons-material";
 import CippFormComponent from "../../../components/CippComponents/CippFormComponent";
@@ -58,7 +63,7 @@ const Page = () => {
   const formHook = useForm({
     defaultValues: {
       guests: [{ email: "", displayName: "" }],
-      resourceType: { label: "SharePoint Site", value: "sharepoint" },
+      resourceType: "sharepoint",
       resourceId: null,
       resourceName: "",
       sendInvite: true,
@@ -87,7 +92,7 @@ const Page = () => {
         const headers = await buildVersionedHeaders();
         const resp = await axios.post(
           "/api/ExecValidateExternalDomain",
-          { email, tenantFilter: currentTenant, context: (formHook.getValues("resourceType")?.value || formHook.getValues("resourceType")) === "teams-shared" ? "teams-shared" : "general" },
+          { email, tenantFilter: currentTenant, context: formHook.getValues("resourceType") === "teams-shared" ? "teams-shared" : "general" },
           { headers }
         );
         setValidations((prev) => ({ ...prev, [index]: resp.data?.Results }));
@@ -132,14 +137,13 @@ const Page = () => {
           sendInvite: data.sendInvite,
         };
 
-        const resourceTypeValue = data.resourceType?.value || data.resourceType;
         const resourceIdValue = data.resourceId?.value || data.resourceId;
 
-        if (resourceTypeValue === "sharepoint") {
+        if (data.resourceType === "sharepoint") {
           payload.URL = resourceIdValue;
-          payload.SharePointType = data.resourceId?.addedFields?.SharePointType || data.sharePointType || "Group";
+          payload.SharePointType = data.resourceId?.addedFields?.SharePointType || "Group";
           payload.groupId = data.groupId;
-        } else if (resourceTypeValue?.startsWith("teams")) {
+        } else if (data.resourceType?.startsWith("teams")) {
           payload.TeamID = resourceIdValue;
         }
 
@@ -295,22 +299,39 @@ const Page = () => {
                 <CardContent>
                   <Grid container spacing={2}>
                     <Grid item xs={12}>
-                      <CippFormComponent
-                        formControl={formHook}
-                        type="autoComplete"
-                        name="resourceType"
-                        label="Resource Type"
-                        multiple={false}
-                        creatable={false}
-                        options={[
-                          { label: "SharePoint Site", value: "sharepoint" },
-                          { label: "Teams (Standard/Private Channel)", value: "teams-standard" },
-                          ...(hasConsumerEmails ? [] : [{ label: "Teams (Shared Channel)", value: "teams-shared" }]),
-                        ]}
-                      />
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>Resource Type</Typography>
+                      <ToggleButtonGroup
+                        value={watchedResourceType}
+                        exclusive
+                        onChange={(_, val) => { if (val !== null) formHook.setValue("resourceType", val); }}
+                        fullWidth
+                        sx={{
+                          "& .MuiToggleButton-root": {
+                            textTransform: "none",
+                            py: 1.5,
+                            flexDirection: "column",
+                            gap: 0.5,
+                          },
+                        }}
+                      >
+                        <ToggleButton value="sharepoint">
+                          <Language />
+                          <Typography variant="body2">SharePoint Site</Typography>
+                        </ToggleButton>
+                        <ToggleButton value="teams-standard">
+                          <Groups />
+                          <Typography variant="body2">Teams (Standard)</Typography>
+                        </ToggleButton>
+                        {!hasConsumerEmails && (
+                          <ToggleButton value="teams-shared">
+                            <Share />
+                            <Typography variant="body2">Teams (Shared Channel)</Typography>
+                          </ToggleButton>
+                        )}
+                      </ToggleButtonGroup>
                     </Grid>
                     <Grid item xs={12}>
-                      {watchedResourceType?.value === "sharepoint" || watchedResourceType === "sharepoint" ? (
+                      {watchedResourceType === "sharepoint" ? (
                         <CippFormComponent
                           key="sharepoint-picker"
                           formControl={formHook}
@@ -323,7 +344,6 @@ const Page = () => {
                             url: "/api/ListSites",
                             data: { type: "SharePointSiteUsage" },
                             queryKey: `extaccess-sites-${currentTenant}`,
-                            dataKey: "Results",
                             labelField: (site) => site.displayName ? `${site.displayName} (${site.webUrl})` : site.webUrl,
                             valueField: "webUrl",
                             addedField: {
@@ -346,7 +366,6 @@ const Page = () => {
                             url: "/api/ListTeams",
                             data: { type: "list" },
                             queryKey: `extaccess-teams-${currentTenant}`,
-                            dataKey: "Results",
                             labelField: (team) => team.displayName || team.id,
                             valueField: "id",
                             addedField: {
@@ -377,8 +396,8 @@ const Page = () => {
                     <CippAccessTypeGuide
                       variant="decision"
                       context={
-                        (watchedResourceType?.value || watchedResourceType) === "sharepoint" ? "sharepoint" :
-                        (watchedResourceType?.value || watchedResourceType) === "teams-shared" ? "teamsShared" :
+                        watchedResourceType === "sharepoint" ? "sharepoint" :
+                        watchedResourceType === "teams-shared" ? "teamsShared" :
                         "teamsStandard"
                       }
                     />
@@ -416,7 +435,7 @@ const Page = () => {
 
                     <Typography variant="subtitle2">Target Resource:</Typography>
                     <Typography variant="body2">
-                      {(formHook.getValues("resourceType")?.value || formHook.getValues("resourceType")) === "sharepoint" ? "SharePoint Site" : "Teams"}:{" "}
+                      {formHook.getValues("resourceType") === "sharepoint" ? "SharePoint Site" : "Teams"}:{" "}
                       {formHook.getValues("resourceId")?.label || formHook.getValues("resourceId")?.value || formHook.getValues("resourceId")}
                     </Typography>
 
@@ -425,7 +444,7 @@ const Page = () => {
                     <Typography variant="subtitle2">Access Type:</Typography>
                     <Alert severity="info" variant="outlined">
                       <Typography variant="body2">
-                        {(formHook.getValues("resourceType")?.value || formHook.getValues("resourceType")) === "teams-shared"
+                        {formHook.getValues("resourceType") === "teams-shared"
                           ? "External Access (B2B Direct Connect) — users access from their own tenant."
                           : "Guest Access (B2B Collaboration) — users are invited to your directory."}
                       </Typography>

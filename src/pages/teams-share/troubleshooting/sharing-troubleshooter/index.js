@@ -1,5 +1,5 @@
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import {
   Alert,
@@ -13,6 +13,8 @@ import {
   Collapse,
   Grid,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import {
@@ -23,6 +25,9 @@ import {
   Search,
   Refresh,
   OpenInNew,
+  Language,
+  Groups,
+  AutoFixHigh,
 } from "@mui/icons-material";
 import {
   Timeline,
@@ -118,6 +123,12 @@ const Page = () => {
 
   const troubleshootApi = ApiPostCall({});
 
+  const watchedResourceType = formHook.watch("resourceType");
+
+  useEffect(() => {
+    formHook.setValue("resourceUrl", null);
+  }, [watchedResourceType]);
+
   const onSubmit = (data) => {
     setResults(null);
     troubleshootApi.mutate(
@@ -126,6 +137,7 @@ const Page = () => {
         data: {
           tenantFilter: currentTenant,
           ...data,
+          resourceUrl: data.resourceUrl?.value || data.resourceUrl || "",
         },
       },
       {
@@ -223,7 +235,7 @@ const Page = () => {
               <CardContent>
                 <form onSubmit={formHook.handleSubmit(onSubmit)}>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid item xs={12}>
                       <CippFormComponent
                         formControl={formHook}
                         type="textField"
@@ -239,27 +251,72 @@ const Page = () => {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <CippFormComponent
-                        formControl={formHook}
-                        type="textField"
-                        name="resourceUrl"
-                        label="Resource URL (Optional)"
-                        placeholder="https://contoso.sharepoint.com/sites/teamsite"
-                      />
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>Resource Type</Typography>
+                      <ToggleButtonGroup
+                        value={watchedResourceType}
+                        exclusive
+                        onChange={(_, val) => { if (val !== null) formHook.setValue("resourceType", val); }}
+                        fullWidth
+                        sx={{
+                          "& .MuiToggleButton-root": {
+                            textTransform: "none",
+                            py: 1.5,
+                            flexDirection: "column",
+                            gap: 0.5,
+                          },
+                        }}
+                      >
+                        <ToggleButton value="auto">
+                          <AutoFixHigh />
+                          <Typography variant="body2">Auto-detect</Typography>
+                        </ToggleButton>
+                        <ToggleButton value="sharepoint">
+                          <Language />
+                          <Typography variant="body2">SharePoint</Typography>
+                        </ToggleButton>
+                        <ToggleButton value="teams">
+                          <Groups />
+                          <Typography variant="body2">Teams</Typography>
+                        </ToggleButton>
+                      </ToggleButtonGroup>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <CippFormComponent
-                        formControl={formHook}
-                        type="select"
-                        name="resourceType"
-                        label="Resource Type"
-                        options={[
-                          { label: "Auto-detect", value: "auto" },
-                          { label: "SharePoint", value: "sharepoint" },
-                          { label: "Teams", value: "teams" },
-                        ]}
-                      />
+                    <Grid item xs={12}>
+                      {watchedResourceType === "teams" ? (
+                        <CippFormComponent
+                          key="troubleshoot-teams"
+                          formControl={formHook}
+                          type="autoComplete"
+                          name="resourceUrl"
+                          label="Team (Optional)"
+                          multiple={false}
+                          creatable={true}
+                          api={{
+                            url: "/api/ListTeams",
+                            data: { type: "list" },
+                            queryKey: `troubleshoot-teams-${currentTenant}`,
+                            labelField: (team) => team.displayName || team.id,
+                            valueField: "id",
+                          }}
+                        />
+                      ) : (
+                        <CippFormComponent
+                          key="troubleshoot-sites"
+                          formControl={formHook}
+                          type="autoComplete"
+                          name="resourceUrl"
+                          label="SharePoint Site (Optional)"
+                          multiple={false}
+                          creatable={true}
+                          api={{
+                            url: "/api/ListSites",
+                            data: { type: "SharePointSiteUsage" },
+                            queryKey: `troubleshoot-sites-${currentTenant}`,
+                            labelField: (site) => site.displayName ? `${site.displayName} (${site.webUrl})` : site.webUrl,
+                            valueField: "webUrl",
+                          }}
+                        />
+                      )}
                     </Grid>
                     <Grid item xs={12}>
                       <Button
