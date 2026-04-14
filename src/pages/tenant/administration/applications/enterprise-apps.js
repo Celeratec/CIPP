@@ -1,9 +1,7 @@
 // this page is going to need some love for accounting for filters: https://github.com/KelvinTegelaar/CIPP/blob/main/src/views/tenant/administration/ListEnterpriseApps.jsx#L83
-import { Layout as DashboardLayout } from "../../../../layouts/index.js";
-import { TabbedLayout } from "../../../../layouts/TabbedLayout";
-import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
-import { CippFormComponent } from "../../../../components/CippComponents/CippFormComponent.jsx";
-import { CertificateCredentialRemovalForm } from "../../../../components/CippComponents/CertificateCredentialRemovalForm.jsx";
+import { Layout as DashboardLayout } from '../../../../layouts/index.js'
+import { TabbedLayout } from '../../../../layouts/TabbedLayout'
+import { CippTablePage } from '../../../../components/CippComponents/CippTablePage.jsx'
 import {
   Paper,
   Avatar,
@@ -16,186 +14,42 @@ import {
 import { alpha } from "@mui/material/styles";
 import { Box, Stack } from "@mui/system";
 import {
-  Launch,
-  Delete,
-  Edit,
-  Key,
-  Security,
-  Block,
   CheckCircle,
-  ContentCopy,
   RocketLaunch,
   Apps,
-  Business,
-  CalendarToday,
   VpnKey,
   Cancel,
   Language,
 } from "@mui/icons-material";
-import { usePermissions } from "../../../../hooks/use-permissions.js";
-import tabOptions from "./tabOptions";
-import Link from "next/link";
+import { usePermissions } from '../../../../hooks/use-permissions.js'
+import tabOptions from './tabOptions'
+import Link from 'next/link'
+import { getEnterpriseAppListActions } from '../../../../components/CippComponents/EnterpriseAppActions.jsx'
 import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
 import { getInitials, stringToColor } from "../../../../utils/get-initials";
 
 const Page = () => {
-  const pageTitle = "Enterprise Applications";
-  const apiUrl = "/api/ListGraphRequest";
+  const pageTitle = 'Enterprise Applications'
+  const apiUrl = '/api/ListGraphRequest'
   const theme = useTheme();
 
-  const { checkPermissions } = usePermissions();
-  const canWriteApplication = checkPermissions(["Tenant.Application.ReadWrite"]);
+  const { checkPermissions } = usePermissions()
+  const canWriteApplication = checkPermissions(['Tenant.Application.ReadWrite'])
 
-  const actions = [
-    {
-      icon: <Launch />,
-      label: "View Application",
-      link: `https://entra.microsoft.com/[Tenant]/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/Overview/objectId/[id]/appId/[appId]`,
-      color: "info",
-      target: "_blank",
-      multiPost: false,
-      external: true,
-      category: "view",
-    },
-    {
-      icon: <ContentCopy />,
-      label: "Create Template from App",
-      type: "POST",
-      color: "info",
-      multiPost: false,
-      url: "/api/ExecCreateAppTemplate",
-      data: {
-        AppId: "appId",
-        DisplayName: "displayName",
-        Type: "servicePrincipal",
-      },
-      fields: [
-        {
-          type: "switch",
-          name: "Overwrite",
-          label: "Overwrite Existing Template",
-        },
-      ],
-      confirmText:
-        "Create a deployment template from '[displayName]'? This will copy all permissions and create a reusable template.",
-      condition: (row) => canWriteApplication && row?.signInAudience === "AzureADMultipleOrgs",
-      category: "edit",
-    },
-    {
-      icon: <Key />,
-      label: "Remove Password Credentials",
-      type: "POST",
-      color: "warning",
-      multiPost: false,
-      url: "/api/ExecApplication",
-      data: {
-        Id: "id",
-        Type: "servicePrincipals",
-        Action: "RemovePassword",
-      },
-      children: ({ formHook, row }) => {
-        return (
-          <CippFormComponent
-            name="KeyIds"
-            formControl={formHook}
-            type="autoComplete"
-            label="Select Password Credentials to Remove"
-            multiple
-            creatable={false}
-            validators={{ required: "Please select at least one password credential" }}
-            options={
-              row?.passwordCredentials?.map((cred) => ({
-                label: `${cred.displayName || "Unnamed"} (Expiration: ${new Date(
-                  cred.endDateTime,
-                ).toLocaleDateString()})`,
-                value: cred.keyId,
-              })) || []
-            }
-          />
-        );
-      },
-      confirmText: "Are you sure you want to remove the selected password credentials?",
-      condition: (row) => canWriteApplication && row?.passwordCredentials?.length > 0,
-      category: "security",
-    },
-    {
-      icon: <Security />,
-      label: "Remove Certificate Credentials",
-      type: "POST",
-      color: "warning",
-      multiPost: false,
-      url: "/api/ExecApplication",
-      data: {
-        Id: "id",
-        Type: "servicePrincipals",
-        Action: "RemoveKey",
-      },
-      children: ({ formHook, row }) => {
-        return <CertificateCredentialRemovalForm formHook={formHook} row={row} />;
-      },
-      confirmText: "Are you sure you want to remove the selected certificate credentials?",
-      condition: (row) => canWriteApplication && row?.keyCredentials?.length > 0,
-      category: "security",
-    },
-    {
-      icon: <Block />,
-      label: "Disable Service Principal",
-      type: "POST",
-      color: "warning",
-      multiPost: false,
-      url: "/api/ExecApplication",
-      data: {
-        Id: "id",
-        Type: "servicePrincipals",
-        Action: "Update",
-        Payload: {
-          accountEnabled: false,
-        },
-      },
-      confirmText:
-        "Are you sure you want to disable this service principal? Users will not be able to sign in to this application.",
-      condition: (row) => canWriteApplication && row?.accountEnabled === true,
-      category: "manage",
-    },
-    {
-      icon: <CheckCircle />,
-      label: "Enable Service Principal",
-      type: "POST",
-      color: "success",
-      multiPost: false,
-      url: "/api/ExecApplication",
-      data: {
-        Id: "id",
-        Type: "servicePrincipals",
-        Action: "Update",
-        Payload: {
-          accountEnabled: true,
-        },
-      },
-      confirmText: "Are you sure you want to enable this service principal?",
-      condition: (row) => canWriteApplication && row?.accountEnabled === false,
-      category: "manage",
-    },
-    {
-      icon: <Delete />,
-      label: "Delete Service Principal",
-      type: "POST",
-      color: "error",
-      multiPost: false,
-      url: "/api/ExecApplication",
-      data: {
-        Id: "id",
-        Type: "servicePrincipals",
-        Action: "Delete",
-      },
-      confirmText:
-        "Are you sure you want to delete this service principal? This will remove the application from this tenant but will not affect the app registration.",
-      condition: () => canWriteApplication,
-      category: "danger",
-    },
-  ];
+  const actions = getEnterpriseAppListActions(canWriteApplication)
 
   const offCanvas = {
+    extendedInfoFields: [
+      'displayName',
+      'createdDateTime',
+      'accountEnabled',
+      'publisherName',
+      'replyUrls',
+      'appOwnerOrganizationId',
+      'tags',
+      'passwordCredentials',
+      'keyCredentials',
+    ],
     actions: actions,
     children: (row) => {
       const isEnabled = row.accountEnabled !== false;
@@ -205,7 +59,6 @@ const Page = () => {
       
       return (
         <Stack spacing={3}>
-          {/* Hero Section */}
           <Paper 
             elevation={0}
             sx={{ 
@@ -247,15 +100,7 @@ const Page = () => {
             </Stack>
           </Paper>
 
-          {/* Status */}
           <Box>
-            <Typography 
-              variant="overline" 
-              color="text.secondary" 
-              sx={{ fontWeight: 600, letterSpacing: 1, mb: 1.5, display: "block" }}
-            >
-              Application Status
-            </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               <Chip
                 icon={isEnabled ? <CheckCircle fontSize="small" /> : <Cancel fontSize="small" />}
@@ -287,7 +132,6 @@ const Page = () => {
 
           <Divider />
 
-          {/* Application Details */}
           <Box>
             <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
               <Apps fontSize="small" color="action" />
@@ -330,7 +174,6 @@ const Page = () => {
             </Stack>
           </Box>
 
-          {/* Credentials */}
           {(hasPasswords || hasCerts) && (
             <>
               <Divider />
@@ -365,7 +208,6 @@ const Page = () => {
             </>
           )}
 
-          {/* Reply URLs */}
           {row.replyUrls?.length > 0 && (
             <>
               <Divider />
@@ -398,7 +240,6 @@ const Page = () => {
             </>
           )}
 
-          {/* Tags */}
           {row.tags?.length > 0 && (
             <>
               <Divider />
@@ -417,27 +258,27 @@ const Page = () => {
         </Stack>
       );
     },
-  };
+  }
 
   const simpleColumns = [
-    "info.logoUrl",
-    "displayName",
-    "appId",
-    "accountEnabled",
-    "createdDateTime",
-    "publisherName",
-    "homepage",
-    "passwordCredentials",
-    "keyCredentials",
-  ];
+    'info.logoUrl',
+    'displayName',
+    'appId',
+    'accountEnabled',
+    'createdDateTime',
+    'publisherName',
+    'homepage',
+    'passwordCredentials',
+    'keyCredentials',
+  ]
 
   const apiParams = {
-    Endpoint: "servicePrincipals",
+    Endpoint: 'servicePrincipals',
     $select:
-      "id,appId,displayName,createdDateTime,accountEnabled,homepage,publisherName,signInAudience,replyUrls,verifiedPublisher,info,api,appOwnerOrganizationId,tags,passwordCredentials,keyCredentials",
+      'id,appId,displayName,createdDateTime,accountEnabled,homepage,publisherName,signInAudience,replyUrls,verifiedPublisher,info,api,appOwnerOrganizationId,tags,passwordCredentials,keyCredentials',
     $count: true,
     $top: 999,
-  };
+  }
 
   return (
     <CippTablePage
@@ -456,13 +297,13 @@ const Page = () => {
         </>
       }
     />
-  );
-};
+  )
+}
 
 Page.getLayout = (page) => (
   <DashboardLayout>
     <TabbedLayout tabOptions={tabOptions}>{page}</TabbedLayout>
   </DashboardLayout>
-);
+)
 
-export default Page;
+export default Page

@@ -5,14 +5,18 @@ import { showToast } from "../store/toasts";
 import { getCippError } from "../utils/get-cipp-error";
 import { buildVersionedHeaders } from "../utils/cippVersion";
 
-// Stale time constants for different data types (in milliseconds)
 export const STALE_TIMES = {
-  FAST: 60000,           // 1 minute - for rapidly changing data
-  DEFAULT: 600000,       // 10 minutes - default for most data
-  STABLE: 1800000,       // 30 minutes - for data that rarely changes (tenants, org info)
-  STATIC: 3600000,       // 1 hour - for nearly static data (templates, configs)
-  INFINITE: Infinity,    // Never stale - for truly static data (user photos)
+  FAST: 60000,
+  DEFAULT: 600000,
+  STABLE: 1800000,
+  STATIC: 3600000,
+  INFINITE: Infinity,
 };
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const wildcardToRegExp = (pattern) =>
+  new RegExp(`^${pattern.split("*").map(escapeRegExp).join(".*")}$`);
+const matchesWildcardPattern = (queryKey, pattern) => wildcardToRegExp(pattern).test(queryKey);
 
 export function ApiGetCall(props) {
   const {
@@ -102,10 +106,8 @@ export function ApiGetCall(props) {
           const clearKeys = Array.isArray(relatedQueryKeys) ? relatedQueryKeys : [relatedQueryKeys];
           setTimeout(() => {
             // Separate wildcard patterns from exact keys
-            const wildcardPatterns = clearKeys
-              .filter((key) => key.endsWith("*"))
-              .map((key) => key.slice(0, -1));
-            const exactKeys = clearKeys.filter((key) => !key.endsWith("*"));
+            const wildcardPatterns = clearKeys.filter((key) => key.includes("*"));
+            const exactKeys = clearKeys.filter((key) => !key.includes("*"));
 
             // Use single predicate call for all wildcard patterns
             if (wildcardPatterns.length > 0) {
@@ -113,7 +115,9 @@ export function ApiGetCall(props) {
                 predicate: (query) => {
                   if (!query.queryKey || !query.queryKey[0]) return false;
                   const queryKeyStr = String(query.queryKey[0]);
-                  return wildcardPatterns.some((pattern) => queryKeyStr.startsWith(pattern));
+                  return wildcardPatterns.some((pattern) =>
+                    matchesWildcardPattern(queryKeyStr, pattern),
+                  );
                 },
               });
             }
@@ -151,10 +155,8 @@ export function ApiGetCall(props) {
           const clearKeys = Array.isArray(relatedQueryKeys) ? relatedQueryKeys : [relatedQueryKeys];
           setTimeout(() => {
             // Separate wildcard patterns from exact keys
-            const wildcardPatterns = clearKeys
-              .filter((key) => key.endsWith("*"))
-              .map((key) => key.slice(0, -1));
-            const exactKeys = clearKeys.filter((key) => !key.endsWith("*"));
+            const wildcardPatterns = clearKeys.filter((key) => key.includes("*"));
+            const exactKeys = clearKeys.filter((key) => !key.includes("*"));
 
             // Use single predicate call for all wildcard patterns
             if (wildcardPatterns.length > 0) {
@@ -162,7 +164,9 @@ export function ApiGetCall(props) {
                 predicate: (query) => {
                   if (!query.queryKey || !query.queryKey[0]) return false;
                   const queryKeyStr = String(query.queryKey[0]);
-                  return wildcardPatterns.some((pattern) => queryKeyStr.startsWith(pattern));
+                  return wildcardPatterns.some((pattern) =>
+                    matchesWildcardPattern(queryKeyStr, pattern),
+                  );
                 },
               });
             }
@@ -227,10 +231,8 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
             queryClient.invalidateQueries();
           } else {
             // Separate wildcard patterns from exact keys
-            const wildcardPatterns = clearKeys
-              .filter((key) => key.endsWith("*"))
-              .map((key) => key.slice(0, -1));
-            const exactKeys = clearKeys.filter((key) => !key.endsWith("*"));
+            const wildcardPatterns = clearKeys.filter((key) => key.includes("*"));
+            const exactKeys = clearKeys.filter((key) => !key.includes("*"));
 
             // Use single predicate call for all wildcard patterns
             if (wildcardPatterns.length > 0) {
@@ -239,7 +241,7 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
                   if (!query.queryKey || !query.queryKey[0]) return false;
                   const queryKeyStr = String(query.queryKey[0]);
                   const matches = wildcardPatterns.some((pattern) =>
-                    queryKeyStr.startsWith(pattern),
+                    matchesWildcardPattern(queryKeyStr, pattern),
                   );
 
                   // Debug logging for each query check
@@ -248,7 +250,7 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
                       queryKey: query.queryKey,
                       queryKeyStr,
                       matchedPattern: wildcardPatterns.find((pattern) =>
-                        queryKeyStr.startsWith(pattern),
+                        matchesWildcardPattern(queryKeyStr, pattern),
                       ),
                     });
                   }

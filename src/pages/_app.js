@@ -13,7 +13,6 @@ import { createTheme } from "../theme";
 import { createEmotionCache } from "../utils/create-emotion-cache";
 import "../libs/nprogress";
 
-// Self-host Inter font at build time (eliminates render-blocking Google Fonts CSS request)
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
@@ -48,16 +47,20 @@ import {
   ru,
   enAU,
   enNZ,
-} from "date-fns/locale";
-import TimeAgo from "javascript-time-ago";
-import en from "javascript-time-ago/locale/en.json";
-import CippSpeedDial from "../components/CippComponents/CippSpeedDial";
+} from 'date-fns/locale'
+import TimeAgo from 'javascript-time-ago'
+import en from 'javascript-time-ago/locale/en.json'
+import CippSpeedDial from '../components/CippComponents/CippSpeedDial'
 import {
   Help as HelpIcon,
   AutoStories,
   Gavel,
   ClearAll as ClearAllIcon,
+  BugReport as BugReportIcon,
+  Feedback as FeedbackIcon,
 } from "@mui/icons-material";
+import { SvgIcon } from '@mui/material'
+import discordIcon from '../../public/discord-mark-blue.svg'
 import React, { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/router";
@@ -65,16 +68,15 @@ import { persistQueryClient } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 
 const ReactQueryDevtoolsProduction = React.lazy(() =>
-  import("@tanstack/react-query-devtools/build/modern/production.js").then((d) => ({
+  import('@tanstack/react-query-devtools/build/modern/production.js').then((d) => ({
     default: d.ReactQueryDevtools,
   }))
-);
-TimeAgo.addDefaultLocale(en);
+)
+TimeAgo.addDefaultLocale(en)
 
 const queryClient = new QueryClient();
 const clientSideEmotionCache = createEmotionCache();
 
-// Extracted into its own component so we can use useMemo for theme creation
 const ThemedApp = ({ settings, preferredTheme, children }) => {
   const direction = settings.direction || "ltr";
   const paletteMode =
@@ -119,141 +121,173 @@ const App = (props) => {
   const [dateLocale, setDateLocale] = useState(enUS);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return
 
-    const language = navigator.language || navigator.userLanguage || "en-US";
-    const baseLang = language.split("-")[0];
+    const language = navigator.language || navigator.userLanguage || 'en-US'
+    const baseLang = language.split('-')[0]
 
     const localeMap = {
       // English variants
       en: enUS,
-      "en-US": enUS,
-      "en-GB": enGB,
-      "en-AU": enAU,
-      "en-NZ": enNZ,
+      'en-US': enUS,
+      'en-GB': enGB,
+      'en-AU': enAU,
+      'en-NZ': enNZ,
 
       // Western Europe
       nl: nl,
-      "nl-NL": nl,
+      'nl-NL': nl,
       fr: fr,
-      "fr-FR": fr,
+      'fr-FR': fr,
       de: de,
-      "de-DE": de,
+      'de-DE': de,
       es: es,
-      "es-ES": es,
+      'es-ES': es,
       it: it,
-      "it-IT": it,
+      'it-IT': it,
       pt: pt,
-      "pt-PT": pt,
-      "pt-BR": pt,
+      'pt-PT': pt,
+      'pt-BR': pt,
 
       // Scandinavia / Nordics
       sv: sv,
-      "sv-SE": sv,
+      'sv-SE': sv,
       da: da,
-      "da-DK": da,
+      'da-DK': da,
       nb: nb,
-      "nb-NO": nb,
+      'nb-NO': nb,
       fi: fi,
-      "fi-FI": fi,
+      'fi-FI': fi,
       is: is,
-      "is-IS": is,
+      'is-IS': is,
 
       // Eastern Europe
       pl: pl,
-      "pl-PL": pl,
+      'pl-PL': pl,
       cs: cs,
-      "cs-CZ": cs,
+      'cs-CZ': cs,
       sk: sk,
-      "sk-SK": sk,
+      'sk-SK': sk,
       hu: hu,
-      "hu-HU": hu,
+      'hu-HU': hu,
       ro: ro,
-      "ro-RO": ro,
+      'ro-RO': ro,
       ru: ru,
-      "ru-RU": ru,
-    };
+      'ru-RU': ru,
+    }
 
-    const resolvedLocale = localeMap[language] || localeMap[baseLang] || enUS;
-    setDateLocale(resolvedLocale);
-  }, []);
+    const resolvedLocale = localeMap[language] || localeMap[baseLang] || enUS
+    setDateLocale(resolvedLocale)
+  }, [])
 
   const excludeQueryKeys = ["authmeswa", "alertsDashboard"];
 
   // 👇 Persist TanStack Query cache to localStorage
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       const localStoragePersister = createSyncStoragePersister({
         storage: window.localStorage,
-      });
+      })
 
       persistQueryClient({
         queryClient,
         persister: localStoragePersister,
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
         staleTime: 1000 * 60 * 5, // optional: 5 minutes
-        buster: "v1",
+        buster: 'v1',
         dehydrateOptions: {
           shouldDehydrateQuery: (query) => {
-            const queryIsReadyForPersistence = query.state.status === "success";
+            const queryIsReadyForPersistence = query.state.status === 'success'
             if (queryIsReadyForPersistence) {
-              const { queryKey } = query;
+              const { queryKey } = query
               // Check if queryKey exists and has elements before accessing index 0
               if (!queryKey || !queryKey.length) {
-                return false;
+                return false
               }
-              const queryKeyString = String(queryKey[0] || "");
+              const queryKeyString = String(queryKey[0] || '')
               const excludeFromPersisting = excludeQueryKeys.some((key) =>
                 queryKeyString.includes(key)
-              );
-              return !excludeFromPersisting;
+              )
+              return !excludeFromPersisting
             }
-            return queryIsReadyForPersistence;
+            return queryIsReadyForPersistence
           },
         },
-      });
+      })
     }
   }, []);
 
   const speedDialActions = [
     {
       // add clear cache action that removes the persisted query cache from local storage and reloads the page
-      id: "clearCache",
+      id: 'clearCache',
       icon: <ClearAllIcon />,
-      name: "Clear Cache and Reload",
+      name: 'Clear Cache and Reload',
       onClick: () => {
         // Clear the TanStack Query cache
-        queryClient.clear();
+        queryClient.clear()
 
         // Remove persisted cache from localStorage
-        if (typeof window !== "undefined") {
+        if (typeof window !== 'undefined') {
           // Remove the persisted query cache keys
           Object.keys(localStorage).forEach((key) => {
-            if (key.startsWith("REACT_QUERY_OFFLINE_CACHE")) {
-              localStorage.removeItem(key);
+            if (key.startsWith('REACT_QUERY_OFFLINE_CACHE')) {
+              localStorage.removeItem(key)
             }
-          });
+          })
         }
 
         // Force refresh the page to bypass browser cache and reload JavaScript
-        window.location.reload(true);
+        window.location.reload(true)
       },
     },
     {
-      id: "license",
+      id: 'license',
       icon: <Gavel />,
-      name: "License",
-      href: "/license",
-      onClick: () => route.push("/license"),
+      name: 'License',
+      href: '/license',
+      onClick: () => route.push('/license'),
     },
     {
-      id: "documentation",
-      icon: <AutoStories />,
-      name: "Check the Documentation",
-      href: `https://docs.cipp.app/user-documentation${pathname}`,
-      onClick: () => window.open(`https://docs.cipp.app/user-documentation${pathname}`, "_blank"),
+      id: 'bug-report',
+      icon: <BugReportIcon />,
+      name: 'Report Bug',
+      href: 'https://github.com/KelvinTegelaar/CIPP/issues/new?template=bug.yml',
+      onClick: () =>
+        window.open('https://github.com/KelvinTegelaar/CIPP/issues/new?template=bug.yml', '_blank'),
     },
-  ];
+    {
+      id: 'feature-request',
+      icon: <FeedbackIcon />,
+      name: 'Request Feature',
+      href: 'https://github.com/KelvinTegelaar/CIPP/issues/new?template=feature.yml',
+      onClick: () =>
+        window.open(
+          'https://github.com/KelvinTegelaar/CIPP/issues/new?template=feature.yml',
+          '_blank'
+        ),
+    },
+    {
+      id: 'discord',
+      icon: (
+        <SvgIcon
+          component={discordIcon}
+          viewBox="0 0 127.14 96.36"
+          sx={{ fontSize: '1.5rem' }}
+        ></SvgIcon>
+      ),
+      name: 'Join the Discord!',
+      href: 'https://discord.gg/cyberdrain',
+      onClick: () => window.open('https://discord.gg/cyberdrain', '_blank'),
+    },
+    {
+      id: 'documentation',
+      icon: <AutoStories />,
+      name: 'Check the Documentation',
+      href: `https://docs.cipp.app/user-documentation${pathname}`,
+      onClick: () => window.open(`https://docs.cipp.app/user-documentation${pathname}`, '_blank'),
+    },
+  ]
 
   return (
     <div className={inter.className}>
@@ -298,4 +332,4 @@ const App = (props) => {
   );
 };
 
-export default App;
+export default App

@@ -23,14 +23,16 @@ import {
   EditAttributes,
   CloudSync,
   Block,
+  ContentCopy,
   SettingsEthernet,
   AdminPanelSettings,
 } from "@mui/icons-material";
 import { getCippLicenseTranslation } from "../../utils/get-cipp-license-translation";
 import { useSettings } from "../../hooks/use-settings.js";
 import { usePermissions } from "../../hooks/use-permissions";
-import { Tooltip, Box } from "@mui/material";
+import { Tooltip, Box, Divider, Typography } from "@mui/material";
 import CippFormComponent from "./CippFormComponent";
+import { CippFormCondition } from "./CippFormCondition";
 import { useWatch } from "react-hook-form";
 import gdaproles from "../../data/GDAPRoles.json";
 
@@ -264,6 +266,62 @@ const OutOfOfficeForm = ({ formControl }) => {
         multiline
         rows={4}
       />
+
+      {!areDateFieldsDisabled && (
+        <>
+          <Divider sx={{ my: 1 }} />
+          <Typography variant="subtitle2">Calendar Options</Typography>
+
+          <CippFormComponent
+            type="switch"
+            name="CreateOOFEvent"
+            label="Block my calendar for this period"
+            formControl={formControl}
+          />
+          <CippFormCondition
+            formControl={formControl}
+            field="CreateOOFEvent"
+            compareType="is"
+            compareValue={true}
+          >
+            <CippFormComponent
+              type="textField"
+              name="OOFEventSubject"
+              label="Calendar Event Subject"
+              formControl={formControl}
+            />
+          </CippFormCondition>
+
+          <CippFormComponent
+            type="switch"
+            name="AutoDeclineFutureRequestsWhenOOF"
+            label="Automatically decline new invitations during this period"
+            formControl={formControl}
+          />
+
+          <CippFormComponent
+            type="switch"
+            name="DeclineEventsForScheduledOOF"
+            label="Decline and cancel my meetings during this period"
+            formControl={formControl}
+          />
+          <CippFormCondition
+            formControl={formControl}
+            field="DeclineEventsForScheduledOOF"
+            compareType="is"
+            compareValue={true}
+          >
+            <CippFormComponent
+              type="richText"
+              name="DeclineMeetingMessage"
+              label="Decline Message"
+              formControl={formControl}
+              multiline
+              rows={3}
+            />
+          </CippFormCondition>
+        </>
+      )}
     </>
   );
 };
@@ -338,6 +396,58 @@ export const useCippUserActions = () => {
       icon: <EyeIcon />,
       color: "success",
       category: "view",
+    },
+    {
+      label: "Create Template from User",
+      type: "POST",
+      icon: <ContentCopy />,
+      url: "/api/AddUserDefaults",
+      fields: [
+        {
+          type: "textField",
+          name: "templateName",
+          label: "Template Name",
+          validators: { required: "Please enter a template name" },
+        },
+        {
+          type: "switch",
+          name: "defaultForTenant",
+          label: "Default for Tenant",
+        },
+      ],
+      customDataformatter: (row, action, formData) => {
+        const user = Array.isArray(row) ? row[0] : row;
+        const licenses =
+          user.assignedLicenses?.map((l) => ({
+            label: getCippLicenseTranslation([l])?.[0] || l.skuId,
+            value: l.skuId,
+          })) || [];
+        const primDomain = user.userPrincipalName?.split("@")[1] || "";
+        return {
+          tenantFilter: tenant,
+          templateName: formData.templateName,
+          defaultForTenant: formData.defaultForTenant || false,
+          sourceUserId: user.id,
+          primDomain: primDomain,
+          jobTitle: user.jobTitle || "",
+          department: user.department || "",
+          streetAddress: user.streetAddress || "",
+          city: user.city || "",
+          state: user.state || "",
+          postalCode: user.postalCode || "",
+          country: user.country || "",
+          companyName: user.companyName || "",
+          mobilePhone: user.mobilePhone || "",
+          "businessPhones[0]": user.businessPhones?.[0] || "",
+          usageLocation: user.usageLocation || "",
+          licenses: licenses,
+        };
+      },
+      confirmText:
+        "Create a new user default template based on [displayName]'s properties (job title, department, location, licenses, and group memberships).",
+      multiPost: false,
+      condition: () => canWriteUser,
+      category: "edit",
     },
     {
       label: "Research Compromised Account",

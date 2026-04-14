@@ -12,13 +12,13 @@ export const TabbedLayout = (props) => {
 
   const handleTabsChange = (event, value) => {
     // Preserve existing query parameters when changing tabs
-    const currentParams = new URLSearchParams(searchParams.toString());
-    const queryString = currentParams.toString();
-    const newPath = queryString ? `${value}?${queryString}` : value;
-    router.push(newPath);
-  };
+    const currentParams = new URLSearchParams(searchParams.toString())
+    const queryString = currentParams.toString()
+    const newPath = queryString ? `${value}?${queryString}` : value
+    router.push(newPath)
+  }
 
-  const currentTab = tabOptions.find((option) => option.path === pathname);
+  const currentTab = tabOptions.find((option) => option.path === pathname)
 
   return (
     <Box
@@ -32,7 +32,7 @@ export const TabbedLayout = (props) => {
         <Box sx={{ ml: smDown ? 1 : 3 }}>
           <Tabs
             onChange={handleTabsChange}
-            value={currentTab?.path}
+            value={currentTab?.path ?? false}
             variant="scrollable"
             scrollButtons="auto"
             allowScrollButtonsMobile
@@ -58,5 +58,5 @@ export const TabbedLayout = (props) => {
         {children}
       </Stack>
     </Box>
-  );
-};
+  )
+}

@@ -9,6 +9,7 @@ export const CippFormLicenseSelector = ({
   multiple = true,
   select,
   addedField,
+  showRefresh = false,
   ...other
 }) => {
   const userSettingsDefaults = useSettings();
@@ -36,6 +37,7 @@ export const CippFormLicenseSelector = ({
           Endpoint: "subscribedSkus",
           $count: true,
         },
+        showRefresh,
       }}
     />
   );

@@ -1,113 +1,80 @@
-import { Box, Card, CardContent, Container, Button, Tooltip, useMediaQuery, useTheme } from "@mui/material";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import { useForm, useWatch } from "react-hook-form";
-import { Grid } from "@mui/system";
-import dynamic from "next/dynamic";
-import { useSettings } from "../../hooks/use-settings";
-import { ApiGetCall } from "../../api/ApiCall.jsx";
-import Portals from "../../data/portals";
-import { BulkActionsMenu } from "../../components/bulk-actions-menu.js";
-import { ExecutiveReportButton } from "../../components/ExecutiveReportButton.js";
-
-import { TabbedLayout } from "../../layouts/TabbedLayout";
-import { Layout as DashboardLayout } from "../../layouts/index.js";
-import tabOptions from "./tabOptions";
-import { dashboardDemoData } from "../../data/dashboardv2-demo-data";
-import { MFACard } from "../../components/CippComponents/MFACard";
-import { AuthMethodCard } from "../../components/CippComponents/AuthMethodCard";
-import { LicenseCard } from "../../components/CippComponents/LicenseCard";
-import { TenantInfoCard } from "../../components/CippComponents/TenantInfoCard";
-import { TenantMetricsGrid } from "../../components/CippComponents/TenantMetricsGrid";
-import { CippChartCard } from "../../components/CippCards/CippChartCard";
-import { CippApiDialog } from "../../components/CippComponents/CippApiDialog";
-import { CippUniversalSearch } from "../../components/CippCards/CippUniversalSearch";
-import { useDashboardPrefetch } from "../../hooks/use-prefetch";
-
-// Lazy-load chart-heavy dashboard cards (Recharts ~300KB)
-const SecureScoreCard = dynamic(
-  () => import("../../components/CippComponents/SecureScoreCard").then((mod) => mod.SecureScoreCard),
-  { ssr: false }
-);
-const AssessmentCard = dynamic(
-  () => import("../../components/CippComponents/AssessmentCard").then((mod) => mod.AssessmentCard),
-  { ssr: false }
-);
 import {
-  Devices as DevicesIcon,
-  CheckCircle as CheckCircleIcon,
-  Work as BriefcaseIcon,
-  Assessment as AssessmentIcon,
-  Refresh as RefreshIcon,
-  Cloud as CloudIcon,
-} from "@mui/icons-material";
+  Box,
+  Container,
+  Button,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  SvgIcon,
+} from '@mui/material'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/router'
+import { Grid, useMediaQuery } from '@mui/system'
+import dynamic from 'next/dynamic'
+import { useSettings } from '../../hooks/use-settings'
+import { ApiGetCall } from '../../api/ApiCall.jsx'
+import Portals from '../../data/portals'
+import { BulkActionsMenu } from '../../components/bulk-actions-menu.js'
+import { ExecutiveReportButton } from '../../components/ExecutiveReportButton.js'
+import { TabbedLayout } from '../../layouts/TabbedLayout'
+import { Layout as DashboardLayout } from '../../layouts/index.js'
+import tabOptions from './tabOptions'
+import { dashboardDemoData } from '../../data/dashboardv2-demo-data'
+import { MFACard } from '../../components/CippComponents/MFACard'
+import { AuthMethodCard } from '../../components/CippComponents/AuthMethodCard'
+import { LicenseCard } from '../../components/CippComponents/LicenseCard'
+import { TenantInfoCard } from '../../components/CippComponents/TenantInfoCard'
+import { TenantMetricsGrid } from '../../components/CippComponents/TenantMetricsGrid'
+import { CippReportToolbar } from '../../components/CippComponents/CippReportToolbar'
+import { Assessment as AssessmentIcon } from '@mui/icons-material'
+import ChevronDownIcon from '@heroicons/react/24/outline/ChevronDownIcon'
+import { CippHead } from '../../components/CippComponents/CippHead.jsx'
+import { useDashboardPrefetch } from '../../hooks/use-prefetch'
+import { CippChartCard } from '../../components/CippCards/CippChartCard'
+import { Cloud as CloudIcon } from '@mui/icons-material'
+
+const SecureScoreCard = dynamic(
+  () => import('../../components/CippComponents/SecureScoreCard').then((mod) => mod.SecureScoreCard),
+  { ssr: false }
+)
+const AssessmentCard = dynamic(
+  () => import('../../components/CippComponents/AssessmentCard').then((mod) => mod.AssessmentCard),
+  { ssr: false }
+)
 
 const Page = () => {
-  const settings = useSettings();
-  const router = useRouter();
-  const theme = useTheme();
-  const mdDown = useMediaQuery(theme.breakpoints.down("md"));
-  const smDown = useMediaQuery(theme.breakpoints.down("sm"));
-  const { currentTenant } = settings;
-  const [portalMenuItems, setPortalMenuItems] = useState([]);
-  const [portalsReady, setPortalsReady] = useState(false);
-  const [deleteDialog, setDeleteDialog] = useState({ open: false });
-  const [refreshDialog, setRefreshDialog] = useState({ open: false });
+  const settings = useSettings()
+  const router = useRouter()
+  const { currentTenant } = settings
+  const [portalMenuItems, setPortalMenuItems] = useState([])
+  const [portalsReady, setPortalsReady] = useState(false)
+  const isWide = useMediaQuery('(min-width:1513px)')
+  const [reportsMenuAnchor, setReportsMenuAnchor] = useState(null)
 
-  // Prefetch commonly accessed data after dashboard loads
-  useDashboardPrefetch(currentTenant);
+  useDashboardPrefetch(currentTenant)
 
   // Get reportId from query params or default to "ztna"
   // Only use default if router is ready and reportId is still not present
   const selectedReport =
-    router.isReady && !router.query.reportId ? "ztna" : router.query.reportId || "ztna";
+    router.isReady && !router.query.reportId ? 'ztna' : router.query.reportId || 'ztna'
 
-  const formControl = useForm({
-    mode: "onChange",
-  });
-
-  const reportIdValue = useWatch({ control: formControl.control });
-
-  // Fetch available reports
+  // Fetch available reports (shared cache with CippReportToolbar)
   const reportsApi = ApiGetCall({
-    url: "/api/ListTestReports",
-    queryKey: "ListTestReports",
-  });
+    url: '/api/ListTestReports',
+    queryKey: 'ListTestReports',
+  })
 
-  const reports = reportsApi.data || [];
-
-  // Update form when selectedReport changes (from URL)
-  useEffect(() => {
-    if (selectedReport && router.isReady && reports.length > 0) {
-      const matchingReport = reports.find((r) => r.id === selectedReport);
-      if (matchingReport) {
-        formControl.setValue("reportId", {
-          value: matchingReport.id,
-          label: matchingReport.name,
-        });
-      }
-    }
-  }, [selectedReport, router.isReady, reports]);
-
-  // Update URL when form value changes (e.g., user selects different report from dropdown)
-  useEffect(() => {
-    if (reportIdValue?.reportId?.value && reportIdValue.reportId.value !== selectedReport) {
-      router.push(
-        {
-          pathname: router.pathname,
-          query: { ...router.query, reportId: reportIdValue.reportId.value },
-        },
-        undefined,
-        { shallow: true },
-      );
-    }
-  }, [reportIdValue]);
+  const reports = reportsApi.data || []
 
   const organization = ApiGetCall({
-    url: "/api/ListOrg",
-    queryKey: `${currentTenant}-ListOrg`,
-    data: { tenantFilter: currentTenant },
-  });
+    url: '/api/ListGraphRequest',
+    queryKey: `${currentTenant}-ListGraphRequest-organization`,
+    data: { tenantFilter: currentTenant, Endpoint: 'organization' },
+  })
+
+  const organizationRecord = organization.data?.Results?.[0]
 
   const sharepoint = ApiGetCall({
     url: "/api/ListSharepointQuota",
@@ -116,32 +83,46 @@ const Page = () => {
   });
 
   const testsApi = ApiGetCall({
-    url: "/api/ListTests",
+    url: '/api/ListTests',
     data: { tenantFilter: currentTenant, reportId: selectedReport },
     queryKey: `${currentTenant}-ListTests-${selectedReport}`,
     waiting: !!currentTenant && !!selectedReport,
-  });
+  })
 
   const currentTenantInfo = ApiGetCall({
-    url: "/api/listTenants",
+    url: '/api/listTenants',
     data: { AllTenantSelector: true },
-    queryKey: "TenantSelector",
+    queryKey: 'TenantSelector',
     refetchOnMount: false,
     refetchOnReconnect: false,
     keepPreviousData: true,
-  });
+  })
 
   const reportData =
     testsApi.isSuccess && testsApi.data?.TenantCounts
       ? {
           ExecutedAt: testsApi.data?.LatestReportTimeStamp || null,
-          TenantName: organization.data?.displayName || "",
-          Domain: currentTenant || "",
+          TenantName: organizationRecord?.displayName || '',
+          Domain: currentTenant || '',
           TestResultSummary: {
             IdentityPassed: testsApi.data.TestCounts?.Identity?.Passed || 0,
+            IdentityFailed: testsApi.data.TestCounts?.Identity?.Failed || 0,
+            IdentitySkipped: testsApi.data.TestCounts?.Identity?.Skipped || 0,
+            IdentityInformational: testsApi.data.TestCounts?.Identity?.Informational || 0,
+            IdentityNeedsAttention: testsApi.data.TestCounts?.Identity?.NeedsAttention || 0,
             IdentityTotal: testsApi.data.TestCounts?.Identity?.Total || 0,
             DevicesPassed: testsApi.data.TestCounts?.Devices?.Passed || 0,
+            DevicesFailed: testsApi.data.TestCounts?.Devices?.Failed || 0,
+            DevicesSkipped: testsApi.data.TestCounts?.Devices?.Skipped || 0,
+            DevicesInformational: testsApi.data.TestCounts?.Devices?.Informational || 0,
+            DevicesNeedsAttention: testsApi.data.TestCounts?.Devices?.NeedsAttention || 0,
             DevicesTotal: testsApi.data.TestCounts?.Devices?.Total || 0,
+            CustomPassed: testsApi.data.TestCounts?.Custom?.Passed || 0,
+            CustomFailed: testsApi.data.TestCounts?.Custom?.Failed || 0,
+            CustomSkipped: testsApi.data.TestCounts?.Custom?.Skipped || 0,
+            CustomInformational: testsApi.data.TestCounts?.Custom?.Informational || 0,
+            CustomNeedsAttention: testsApi.data.TestCounts?.Custom?.NeedsAttention || 0,
+            CustomTotal: testsApi.data.TestCounts?.Custom?.Total || 0,
             DataPassed: 0,
             DataTotal: 0,
           },
@@ -162,7 +143,7 @@ const Page = () => {
             DeviceOverview: dashboardDemoData.TenantInfo.DeviceOverview,
           },
         }
-      : dashboardDemoData;
+      : dashboardDemoData
 
   // Function to filter portals based on user preferences
   const getFilteredPortals = () => {
@@ -178,30 +159,28 @@ const Page = () => {
       Compliance_Portal: true,
       Power_Platform_Portal: true,
       Power_BI_Portal: true,
-    };
+    }
 
-    let portalLinks;
+    let portalLinks
     if (settings.UserSpecificSettings?.portalLinks) {
-      portalLinks = { ...defaultLinks, ...settings.UserSpecificSettings.portalLinks };
+      portalLinks = { ...defaultLinks, ...settings.UserSpecificSettings.portalLinks }
     } else if (settings.portalLinks) {
-      portalLinks = { ...defaultLinks, ...settings.portalLinks };
+      portalLinks = { ...defaultLinks, ...settings.portalLinks }
     } else {
-      portalLinks = defaultLinks;
+      portalLinks = defaultLinks
     }
 
     // Filter the portals based on user settings
     return Portals.filter((portal) => {
-      const settingKey = portal.name;
-      return settingKey ? portalLinks[settingKey] === true : true;
-    });
-  };
+      const settingKey = portal.name
+      return settingKey ? portalLinks[settingKey] === true : true
+    })
+  }
 
-  // Initialize portals immediately with current tenant - don't wait for API
+  // Initialize portals immediately with current tenant
   useEffect(() => {
     if (currentTenant) {
       const filteredPortals = getFilteredPortals();
-      
-      // Use currentTenant as default for URL variables - works for most portals
       const menuItems = filteredPortals.map((portal) => ({
         label: portal.label,
         target: "_blank",
@@ -213,12 +192,12 @@ const Page = () => {
     }
   }, [currentTenant, settings.portalLinks, settings.UserSpecificSettings]);
 
-  // Update portal URLs with full tenant info when available (for customerId lookups)
+  // Update portal URLs with full tenant info when available
   useEffect(() => {
     if (currentTenantInfo.isSuccess && currentTenant) {
       const tenantLookup = currentTenantInfo.data?.find(
-        (tenant) => tenant.defaultDomainName === currentTenant,
-      );
+        (tenant) => tenant.defaultDomainName === currentTenant
+      )
 
       if (tenantLookup) {
         const filteredPortals = getFilteredPortals();
@@ -234,12 +213,12 @@ const Page = () => {
   }, [currentTenantInfo.isSuccess, currentTenantInfo.data, currentTenant]);
 
   const formatNumber = (num) => {
-    if (!num && num !== 0) return "0";
+    if (!num && num !== 0) return '0'
     if (num >= 1000) {
-      return (num / 1000).toFixed(1) + "K";
+      return (num / 1000).toFixed(1) + 'K'
     }
-    return num.toLocaleString();
-  };
+    return num.toLocaleString()
+  }
 
   const formatStorageSize = (sizeInMB) => {
     if (!sizeInMB && sizeInMB !== 0) return "0 MB";
@@ -254,22 +233,25 @@ const Page = () => {
     return `${sizeInMB.toFixed(0)} MB`;
   };
 
-  const compactCardHeight = smDown ? "auto" : 360;
-  const compactWideCardHeight = smDown ? "auto" : 340;
-
   return (
     <Container maxWidth={false} sx={{ mt: 12, mb: 4 }}>
-      <Box sx={{ width: "100%", mx: "auto" }}>
-        <Grid container spacing={1.5} sx={{ mb: 2 }}>
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Card sx={{ height: "100%" }}>
-              <CardContent 
-                sx={{ 
-                  display: "flex", 
-                  flexWrap: "wrap",
-                  alignItems: "center", 
-                  gap: smDown ? 1 : 2, 
-                  p: smDown ? 1.5 : 2 
+      <CippHead title="Dashboard" />
+      <Box sx={{ width: '100%', mx: 'auto' }}>
+        <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 1.5}}>
+              <Box
+                sx={{
+                  flex: '0.7 1 0',
+                  minWidth: 0,
+                  display: 'flex',
+                  '& .MuiButtonBase-root': {
+                    width: '100%',
+                    minWidth: 0,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  },
                 }}
               >
                 <BulkActionsMenu
@@ -277,44 +259,113 @@ const Page = () => {
                   actions={portalMenuItems}
                   disabled={!portalsReady || portalMenuItems.length === 0}
                 />
-                <ExecutiveReportButton disabled={organization.isFetching} />
-                <Tooltip title="Coming soon!" arrow>
-                  <span>
+              </Box>
+              {isWide ? (
+                <>
+                  <Box
+                    sx={{
+                      flex: '1.15 1 0',
+                      minWidth: 0,
+                      display: 'flex',
+                      '& .MuiButtonBase-root': {
+                        width: '100%',
+                        minWidth: 0,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      },
+                    }}
+                  >
+                    <ExecutiveReportButton disabled={organization.isFetching} />
+                  </Box>
+                  <Box sx={{ flex: '1.15 1 0', minWidth: 0, display: 'flex' }}>
                     <Button
+                      component={Link}
+                      href="/tools/report-builder/generated"
                       variant="contained"
-                      startIcon={!smDown && <AssessmentIcon />}
-                      disabled
+                      startIcon={<AssessmentIcon />}
                       sx={{
-                        fontWeight: "bold",
-                        textTransform: "none",
+                        width: '100%',
+                        minWidth: 0,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        fontWeight: 'bold',
+                        textTransform: 'none',
                         borderRadius: 2,
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                        transition: "all 0.2s ease-in-out",
-                        minWidth: smDown ? "auto" : undefined,
-                        px: smDown ? 1.5 : 2,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                        transition: 'all 0.2s ease-in-out',
                       }}
                     >
-                      {smDown ? <AssessmentIcon /> : "Report Builder"}
+                      <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        Report Builder
+                      </Box>
                     </Button>
-                  </span>
-                </Tooltip>
-              </CardContent>
-            </Card>
+                  </Box>
+                </>
+              ) : (
+                <>
+                  <Box sx={{ flex: 1, minWidth: 0, display: 'flex' }}>
+                    <Button
+                      variant="contained"
+                      onClick={(e) => setReportsMenuAnchor(e.currentTarget)}
+                      startIcon={
+                        <SvgIcon fontSize="small">
+                          <ChevronDownIcon />
+                        </SvgIcon>
+                      }
+                      sx={{
+                        width: '100%',
+                        minWidth: 0,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        Dashboard Reports
+                      </Box>
+                    </Button>
+                  </Box>
+                  <Menu
+                    keepMounted
+                    anchorEl={reportsMenuAnchor}
+                    open={Boolean(reportsMenuAnchor)}
+                    onClose={() => setReportsMenuAnchor(null)}
+                    anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                    transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                    MenuListProps={{ dense: true, sx: { p: 1 } }}
+                  >
+                    <ExecutiveReportButton
+                      variant="menuItem"
+                      disabled={organization.isFetching}
+                      onClick={() => setReportsMenuAnchor(null)}
+                    />
+                    <MenuItem
+                      component={Link}
+                      href="/tools/report-builder/generated"
+                      onClick={() => setReportsMenuAnchor(null)}
+                    >
+                      <ListItemIcon>
+                        <AssessmentIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText>Report Builder</ListItemText>
+                    </MenuItem>
+                  </Menu>
+                </>
+              )}
+            </Box>
           </Grid>
-          <Grid size={{ xs: 12, md: 7 }}>
-            <Card sx={{ height: "100%" }}>
-              <CardContent sx={{ p: smDown ? 1.5 : 2 }}>
-                <CippUniversalSearch />
-              </CardContent>
-            </Card>
+          <Grid size={{ xs: 12, md: 8 }}>
+            <CippReportToolbar />
           </Grid>
         </Grid>
 
         {/* Tenant Overview Section - 3 Column Layout */}
-        <Grid container spacing={1.5} sx={{ mb: 3 }}>
+        <Grid container spacing={2} sx={{ mb: 2 }}>
           {/* Column 1: Tenant Information */}
           <Grid size={{ xs: 12, lg: 4 }}>
-            <TenantInfoCard data={organization.data} isLoading={organization.isFetching} />
+            <TenantInfoCard data={organizationRecord} isLoading={organization.isFetching} />
           </Grid>
 
           {/* Column 2: Tenant Metrics - 2x3 Grid */}
@@ -327,130 +378,68 @@ const Page = () => {
 
           {/* Column 3: Assessment Results */}
           <Grid size={{ xs: 12, lg: 4 }}>
-            <AssessmentCard 
-              data={reportData} 
+            <AssessmentCard
+              data={reportData}
               isLoading={testsApi.isFetching}
-              reports={reports}
-              formControl={formControl}
-              selectedReport={selectedReport}
-              onRefresh={() => {
-                setRefreshDialog({
-                  open: true,
-                  title: "Refresh Test Data",
-                  message: `Are you sure you want to refresh the test data for ${currentTenant}? This might take up to 2 hours to update.`,
-                  api: {
-                    url: "/api/ExecTestRun",
-                    data: { tenantFilter: currentTenant },
-                    method: "POST",
-                  },
-                  handleClose: () => setRefreshDialog({ open: false }),
-                });
-              }}
-              onDelete={() => {
-                const report = reports.find((r) => r.id === selectedReport);
-                if (report && report.source !== "file") {
-                  setDeleteDialog({
-                    open: true,
-                    handleClose: () => setDeleteDialog({ open: false }),
-                    row: { ReportId: selectedReport, name: report.name },
-                  });
-                }
-              }}
+              title={reports.find((r) => r.id === selectedReport)?.name}
+              description={reports.find((r) => r.id === selectedReport)?.description}
             />
           </Grid>
         </Grid>
 
         {/* Identity Section - 2 Column Grid */}
-        <Box sx={{ mt: 3, mb: 2 }}>
-          <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
-            <Grid size={{ xs: 12, lg: 4 }}>
-              <Box sx={{ height: compactCardHeight }}>
-                <SecureScoreCard data={testsApi.data?.SecureScore} isLoading={testsApi.isFetching} compact />
+        <Box>
+          <Grid container spacing={2}>
+            {/* Left Column */}
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
+                <Box sx={{ height: 450 }}>
+                  <SecureScoreCard
+                    data={testsApi.data?.SecureScore}
+                    isLoading={testsApi.isFetching}
+                    sx={{ height: '100%' }}
+                  />
+                </Box>
+                <Box sx={{ height: 450 }}>
+                  <AuthMethodCard
+                    data={testsApi.data?.MFAState}
+                    isLoading={testsApi.isFetching}
+                    sx={{ height: '100%' }}
+                  />
+                </Box>
               </Box>
             </Grid>
-            <Grid size={{ xs: 12, lg: 4 }}>
-              <Box sx={{ height: compactCardHeight }}>
-                <CippChartCard
-                  title="SharePoint Quota"
-                  headerIcon={<CloudIcon sx={{ fontSize: 20 }} />}
-                  isFetching={sharepoint.isFetching}
-                  chartType="donut"
-                  compact
-                  showHeaderDivider={false}
-                  horizontalLayout
-                  chartSeries={[
-                    Number(sharepoint.data?.TenantStorageMB - sharepoint.data?.GeoUsedStorageMB) || 0,
-                    Number(sharepoint.data?.GeoUsedStorageMB) || 0,
-                  ]}
-                  labels={["Free", "Used"]}
-                  formatValue={formatStorageSize}
-                  colors={["hsl(140, 50%, 72%)", "hsl(210, 55%, 58%)"]}
-                />
+
+            {/* Right Column */}
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
+                <Box sx={{ height: 450 }}>
+                  <MFACard
+                    data={testsApi.data?.MFAState}
+                    isLoading={testsApi.isFetching}
+                    sx={{ height: '100%' }}
+                  />
+                </Box>
+                <Box sx={{ height: 450 }}>
+                  <LicenseCard
+                    data={testsApi.data?.LicenseData}
+                    isLoading={testsApi.isFetching}
+                    sx={{ height: '100%' }}
+                  />
+                </Box>
               </Box>
-            </Grid>
-            <Grid size={{ xs: 12, lg: 4 }}>
-              <Box sx={{ height: compactCardHeight }}>
-                <MFACard data={testsApi.data?.MFAState} isLoading={testsApi.isFetching} compact />
-              </Box>
-            </Grid>
-          </Grid>
-          <Grid container spacing={1.5} sx={{ alignItems: "stretch" }}>
-            <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex" }}>
-              <LicenseCard
-                data={testsApi.isFetching ? undefined : testsApi.data?.LicenseData}
-                isLoading={testsApi.isFetching || !testsApi.isSuccess}
-                compact
-              />
-            </Grid>
-            <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex" }}>
-              <AuthMethodCard
-                data={testsApi.data?.MFAState}
-                isLoading={testsApi.isFetching}
-                compact
-              />
             </Grid>
           </Grid>
         </Box>
       </Box>
-
-      {/* Delete Report Dialog */}
-      <CippApiDialog
-        createDialog={deleteDialog}
-        title="Delete Custom Report"
-        fields={[]}
-        row={reportIdValue}
-        api={{
-          url: "/api/DeleteTestReport",
-          type: "POST",
-          data: {
-            ReportId: reportIdValue.reportId?.value,
-          },
-          confirmText: "Are you sure you want to delete this report? This action cannot be undone.",
-          relatedQueryKeys: ["ListTestReports"],
-        }}
-      />
-
-      {/* Refresh Data Dialog */}
-      <CippApiDialog
-        createDialog={refreshDialog}
-        title={refreshDialog.title}
-        fields={[]}
-        api={{
-          url: refreshDialog.api?.url,
-          type: "POST",
-          data: refreshDialog.api?.data,
-          confirmText: refreshDialog.message,
-          relatedQueryKeys: [`${currentTenant}-ListTests-${selectedReport}`],
-        }}
-      />
     </Container>
-  );
-};
+  )
+}
 
 Page.getLayout = (page) => (
   <DashboardLayout allTenantsSupport={false}>
     <TabbedLayout tabOptions={tabOptions}>{page}</TabbedLayout>
   </DashboardLayout>
-);
+)
 
-export default Page;
+export default Page

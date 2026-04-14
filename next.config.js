@@ -11,16 +11,18 @@ const config = {
   },
   turbopack: {
     rules: {
-      "*.svg": {
-        loaders: ["@svgr/webpack"],
-        as: "*.js",
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
       },
     },
   },
   transpilePackages: ["react-syntax-highlighter", "refractor", "parse-entities"],
-  output: "export",
-  distDir: "./out",
   experimental: {
+    webpackMemoryOptimizations: true,
+    preloadEntriesOnStart: false,
+    turbopackFileSystemCacheForDev: false,
+    turbopackMemoryLimit: 4096,
     optimizePackageImports: [
       "@mui/material",
       "@mui/icons-material",
@@ -31,6 +33,11 @@ const config = {
       "recharts",
     ],
   },
+  async redirects() {
+    return []
+  },
+  output: 'export',
+  distDir: './out',
 };
 
-module.exports = config;
+module.exports = config

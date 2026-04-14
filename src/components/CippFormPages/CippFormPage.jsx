@@ -1,4 +1,4 @@
-import { useRouter } from "next/router";
+import { useRouter } from 'next/router'
 import {
   Box,
   Container,
@@ -43,7 +43,7 @@ const CippFormPage = (props) => {
     title,
     backButtonTitle,
     titleButton,
-    formPageType = "Add",
+    formPageType = 'Add',
     children,
     queryKey,
     formControl,
@@ -56,45 +56,51 @@ const CippFormPage = (props) => {
     hideSubmit = false,
     allowResubmit = false,
     addedButtons,
+    onSubmitResult,
     ...other
-  } = props;
-  const router = useRouter();
+  } = props
+  const router = useRouter()
   //check if there are
   const postCall = ApiPostCall({
     datafromUrl: true,
     relatedQueryKeys: queryKey,
-  });
+    onResult: (result) => {
+      if (onSubmitResult) {
+        onSubmitResult(result)
+      }
+    },
+  })
 
-  const { isValid, isDirty } = useFormState({ control: formControl.control });
+  const { isValid, isDirty } = useFormState({ control: formControl.control })
 
   useEffect(() => {
     if (router.query) {
-      const { tenantFilter: _tenantFilter, ...queryWithoutTenant } = router.query;
+      const { tenantFilter: _tenantFilter, ...queryWithoutTenant } = router.query
       const resetValues = {
         ...formControl.getValues(),
         ...queryWithoutTenant,
-      };
-      formControl.reset(resetValues);
+      }
+      formControl.reset(resetValues)
     }
-  }, [router]);
+  }, [router])
 
   const handleBackClick = () => {
-    router.back(); // Navigate to the previous page when the button is clicked
-  };
+    router.back() // Navigate to the previous page when the button is clicked
+  }
 
   useEffect(() => {
     if (postCall.isSuccess) {
       if (resetForm) {
-        formControl.reset();
+        formControl.reset()
       }
     }
-  }, [postCall.isSuccess]);
+  }, [postCall.isSuccess]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = () => {
-    formControl.trigger();
+    formControl.trigger()
     // Check if the form is valid before proceeding
     if (!isValid) {
-      return;
+      return
     }
     const values = customDataformatter
       ? customDataformatter(formControl.getValues())
@@ -141,7 +147,7 @@ const CippFormPage = (props) => {
             {!hideTitle && (
               <Stack spacing={2}>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                 >
                   <Typography variant="h4">
                     {!hidePageType && <>{formPageType} - </>}
@@ -155,10 +161,12 @@ const CippFormPage = (props) => {
             <Card>
               <CardContent>
                 {children}
-                <CippApiResults apiObject={postCall} />
+                <Box sx={{ mt: postCall.isIdle ? 0 : 2 }}>
+                  <CippApiResults apiObject={postCall} />
+                </Box>
               </CardContent>
               {!hideSubmit && (
-                <CardActions sx={{ justifyContent: "flex-end" }}>
+                <CardActions sx={{ justifyContent: 'flex-end' }}>
                   <Stack spacing={2} direction="row">
                     {addedButtons && addedButtons}
                     <SubmitButton
@@ -177,7 +185,7 @@ const CippFormPage = (props) => {
         </Container>
       </Box>
     </>
-  );
-};
+  )
+}
 
-export default CippFormPage;
+export default CippFormPage

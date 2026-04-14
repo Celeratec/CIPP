@@ -1,4 +1,4 @@
-import { Layout as DashboardLayout } from "../../../layouts/index.js";
+import { Layout as DashboardLayout } from '../../../layouts/index.js'
 import {
   Box,
   Button,
@@ -44,11 +44,11 @@ const Page = () => {
   const [filterCategory, setFilterCategory] = useState("all");
 
   const integrations = ApiGetCall({
-    url: "/api/ListExtensionsConfig",
-    queryKey: "Integrations",
+    url: '/api/ListExtensionsConfig',
+    queryKey: 'Integrations',
     refetchOnMount: false,
     refetchOnReconnect: false,
-  });
+  })
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -305,7 +305,7 @@ const Page = () => {
   };
 
   return (
-    <Container maxWidth={"xl"}>
+    <Container maxWidth={'xl'}>
       <CippHead title="Integrations" noTenant={true} />
 
       <Stack spacing={2}>
@@ -449,9 +449,9 @@ const Page = () => {
         )}
       </Stack>
     </Container>
-  );
-};
+  )
+}
 
-Page.getLayout = (page) => <DashboardLayout>{page}</DashboardLayout>;
+Page.getLayout = (page) => <DashboardLayout>{page}</DashboardLayout>
 
-export default Page;
+export default Page
