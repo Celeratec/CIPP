@@ -405,6 +405,7 @@ Located under Tenant Administration > Applications > Integration Templates.
 - **Enhanced CippEntrypoints** with function-existence validation before invocation, detailed error logging with stack traces, queue trigger support, and Premium SKU FanOut mode
 - **Durable SDK 2.2.0** with fan-out/fan-in/fan-out orchestration pattern for DB cache collection
 - **Channel filesFolder batch-fetch** -- Teams detail API returns per-channel SharePoint siteId/driveId via Graph batch requests, enabling direct file browsing for private/shared channels with their own SharePoint sites
+- **SharePoint REST auto-elevation** -- when adding members to non-group-connected sites (Communication, classic Team), the delegated token may lack site-level permissions. The endpoint now auto-elevates the SAM user to site collection admin via CSOM `SetSiteAdmin` (app-only admin API) and retries, with a final Graph API `drive/root/invite` fallback if CSOM is unavailable. Eliminates the manual "run CPV Refresh" step for most SharePoint member operations
 - **Selective user edit body** -- only sends properties that are explicitly set, preventing accidental field clearing during inline edits
 - **License backfill integration** -- missing licenses show formatted names immediately with asynchronous API backfill for accurate display names
 - **Power Platform Administrator** role included in GDAP role sets
