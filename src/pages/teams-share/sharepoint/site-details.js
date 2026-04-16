@@ -52,6 +52,7 @@ import { ApiGetCall } from "../../../api/ApiCall";
 import { CippHead } from "../../../components/CippComponents/CippHead";
 import { CippApiDialog } from "../../../components/CippComponents/CippApiDialog";
 import CippGuestInviteDialog from "../../../components/CippComponents/CippGuestInviteDialog";
+import CippMemberAuditDialog from "../../../components/CippComponents/CippMemberAuditDialog";
 import { useDialog } from "../../../hooks/use-dialog";
 import { getCippFormatting } from "../../../utils/get-cipp-formatting";
 import CippAccessTypeGuide from "../../../components/CippComponents/CippAccessTypeGuide";
@@ -250,6 +251,9 @@ const Page = () => {
 
   // Invite Guest dialog
   const [inviteGuestOpen, setInviteGuestOpen] = useState(false);
+
+  // Member Audit dialog
+  const [auditOpen, setAuditOpen] = useState(false);
 
   const userPickerField = [
     {
@@ -572,6 +576,9 @@ const Page = () => {
                 <Button size="small" startIcon={<AdminPanelSettings />} onClick={() => addAdminDialog.handleOpen()}>
                   Admin
                 </Button>
+                <Button size="small" startIcon={<QueryStats />} onClick={() => setAuditOpen(true)}>
+                  Audit
+                </Button>
               </Stack>
             </Stack>
             <Box sx={{ px: 0 }}>
@@ -690,6 +697,16 @@ const Page = () => {
         tenantFilter={tenantFilter}
         groupId={groupIdForApi}
         webUrl={webUrl}
+        sharePointType={rootWebTemplate}
+        relatedQueryKeys={[`site-members-${siteId}`]}
+      />
+      <CippMemberAuditDialog
+        open={auditOpen}
+        onClose={() => setAuditOpen(false)}
+        tenantFilter={tenantFilter}
+        siteId={siteId}
+        siteUrl={webUrl}
+        groupId={isGroupConnected ? groupIdForApi : ""}
         sharePointType={rootWebTemplate}
         relatedQueryKeys={[`site-members-${siteId}`]}
       />
