@@ -21,7 +21,7 @@ import {
   Refresh,
   AutoFixHigh,
 } from "@mui/icons-material";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import { buildVersionedHeaders } from "../../utils/cippVersion";
@@ -66,6 +66,7 @@ export default function CippMemberAuditDialog({
   const [repairingAll, setRepairingAll] = useState(false);
   const [repairMessages, setRepairMessages] = useState({});
   const [error, setError] = useState(null);
+  const pendingTimerRef = useRef(null);
 
   const invalidateRelated = useCallback(() => {
     relatedQueryKeys.forEach((key) => {
@@ -117,9 +118,14 @@ export default function CippMemberAuditDialog({
     if (open) {
       runAudit();
     } else {
+      if (pendingTimerRef.current) {
+        clearTimeout(pendingTimerRef.current);
+        pendingTimerRef.current = null;
+      }
       setAuditResult(null);
       setError(null);
       setRepairMessages({});
+      setRepairingAll(false);
     }
   }, [open, runAudit]);
 
@@ -193,14 +199,16 @@ export default function CippMemberAuditDialog({
         },
       });
       invalidateRelated();
-      setTimeout(() => runAudit(), 1500);
+      pendingTimerRef.current = setTimeout(() => {
+        pendingTimerRef.current = null;
+        runAudit();
+      }, 1500);
     } catch (err) {
       const msg =
         err.response?.data?.Results?.error ||
         err.message ||
         "Repair all failed.";
       setRepairMessages({ all: { success: false, text: msg } });
-    } finally {
       setRepairingAll(false);
     }
   };
