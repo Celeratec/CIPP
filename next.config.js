@@ -42,7 +42,8 @@ const config = {
       },
     },
   },
-  transpilePackages: ["react-syntax-highlighter", "refractor", "parse-entities"],
+  transpilePackages: ["react-syntax-highlighter", "refractor", "parse-entities", "devlop", "hast-util-to-text", "unist-util-find-after"],
+  serverExternalPackages: [],
   async redirects() {
     return []
   },

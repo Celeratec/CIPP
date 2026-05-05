@@ -10,7 +10,7 @@
 
 ---
 
-> **Last synced with upstream:** April 2026 (CIPP v10.3.1 / CIPP-API v10.3.x)
+> **Last synced with upstream:** May 2026 (CIPP v10.4.3 / CIPP-API v10.4.3)
 >
 > Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. This document reflects the state of both projects as of the date above.
 

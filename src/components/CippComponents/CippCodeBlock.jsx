@@ -1,9 +1,9 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
-import { atomDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
-import json from "react-syntax-highlighter/dist/cjs/languages/prism/json";
-import powershell from "react-syntax-highlighter/dist/cjs/languages/prism/powershell";
+import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/prism-light";
+import atomDark from "react-syntax-highlighter/dist/esm/styles/prism/atom-dark";
+import json from "react-syntax-highlighter/dist/esm/languages/prism/json";
+import powershell from "react-syntax-highlighter/dist/esm/languages/prism/powershell";
 import { CippCopyToClipBoard } from "./CippCopyToClipboard";
 import { styled } from "@mui/system";
 import { Skeleton } from "@mui/material";
