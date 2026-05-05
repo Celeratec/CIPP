@@ -1192,7 +1192,7 @@ export const nativeMenuItems = [
         items: [
           {
             title: "Super Admin",
-            path: "/cipp/super-admin/tenant-mode",
+            path: "/cipp/advanced/super-admin/tenant-mode",
             roles: ["superadmin"],
             permissions: ["CIPP.SuperAdmin.*"],
           },
