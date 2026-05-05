@@ -235,11 +235,11 @@ export const CIPPM365OAuthButton = ({
           tenantId = idTokenPayload.tid;
         }
 
-        if (username && username.includes("@") && username.includes(".onmicrosoft.com")) {
-          onmicrosoftDomain = username.split("@")[1];
-        } else if (idTokenPayload.iss) {
-          const issuerMatch = idTokenPayload.iss.match(/https:\/\/sts\.windows\.net\/([^/]+)\//);
-          if (issuerMatch && issuerMatch[1]) {
+        if (username && username.includes("@")) {
+          const domain = username.split("@")[1];
+          // Validate domain ends with .onmicrosoft.com (not just contains it)
+          if (domain && domain.toLowerCase().endsWith(".onmicrosoft.com")) {
+            onmicrosoftDomain = domain;
           }
         }
         setIsServiceAccount(checkIsServiceAccount(username));

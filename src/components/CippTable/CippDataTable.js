@@ -299,9 +299,14 @@ const CardView = ({
   };
 
   const cancelEditing = (itemId, fieldName) => {
+    // Prevent prototype pollution by validating keys
+    const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
+    if (dangerousKeys.includes(itemId) || dangerousKeys.includes(fieldName)) {
+      return;
+    }
     setEditingFields(prev => {
       const newState = { ...prev };
-      if (newState[itemId]) {
+      if (Object.hasOwn(newState, itemId) && newState[itemId]) {
         delete newState[itemId][fieldName];
         if (Object.keys(newState[itemId]).length === 0) {
           delete newState[itemId];

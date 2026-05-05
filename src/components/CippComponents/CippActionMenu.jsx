@@ -503,9 +503,20 @@ export const CippQuickActions = ({
         encodeURIComponent(data?.[key] ?? "")
       );
       if (action.external || action.target === "_blank") {
-        window.open(link, "_blank");
+        // Validate external URLs to prevent open redirect vulnerabilities
+        try {
+          const url = new URL(link);
+          if (url.protocol === "https:" || url.protocol === "http:") {
+            window.open(url.href, "_blank", "noopener,noreferrer");
+          }
+        } catch {
+          // Invalid URL, don't open
+        }
       } else {
-        router.push(link);
+        // Internal links starting with / are safe for router.push
+        if (link.startsWith("/")) {
+          router.push(link);
+        }
       }
       if (onActionClick) onActionClick(action);
       return;

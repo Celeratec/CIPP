@@ -3,6 +3,8 @@ name: "Issue volunteer assignment"
 on:
   issue_comment:
     types: [created]
+permissions:
+  issues: write
 jobs:
   volunteer:
     runs-on: ubuntu-slim

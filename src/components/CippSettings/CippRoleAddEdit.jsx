@@ -99,7 +99,11 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
   const tenants = pages[0] || [];
 
   const matchPattern = (pattern, value) => {
-    const regex = new RegExp(`^${pattern.replace("*", ".*")}$`);
+    // Escape regex special characters except *, then convert * to .*
+    const regexPattern = pattern
+      .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/\*/g, '.*');
+    const regex = new RegExp(`^${regexPattern}$`);
     return regex.test(value);
   };
 

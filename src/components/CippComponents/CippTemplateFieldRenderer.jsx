@@ -230,8 +230,10 @@ const CippTemplateFieldRenderer = ({
   const isFieldBlacklisted = (fieldName) => {
     return blacklistedFields.some((pattern) => {
       if (pattern.includes("*")) {
-        // Convert wildcard pattern to regex
-        const regexPattern = pattern.replace(/\*/g, ".*").replace(/\./g, "\\.");
+        // Convert wildcard pattern to regex - escape all regex special chars except *, then convert *
+        const regexPattern = pattern
+          .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+          .replace(/\*/g, ".*");
         const regex = new RegExp(`^${regexPattern}$`, "i");
         return regex.test(fieldName);
       }

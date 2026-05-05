@@ -310,7 +310,15 @@ export const CippApiDialog = (props) => {
       if (linkWithData.startsWith("/") && !api?.external) {
         router.push(linkWithData, undefined, { shallow: true });
       } else {
-        window.open(linkWithData, api.target || "_blank");
+        // Validate external URLs to prevent open redirect vulnerabilities
+        try {
+          const url = new URL(linkWithData);
+          if (url.protocol === "https:" || url.protocol === "http:") {
+            window.open(url.href, api.target || "_blank", "noopener,noreferrer");
+          }
+        } catch {
+          // Invalid URL, don't open
+        }
       }
       createDialog.handleClose();
     }

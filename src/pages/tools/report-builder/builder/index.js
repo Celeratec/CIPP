@@ -675,7 +675,7 @@ const formatDatabaseContent = (data, selectedHeaders, format) => {
           const val = row[h]
           if (val === null || val === undefined) return ''
           if (typeof val === 'object') return JSON.stringify(val)
-          return String(val).replace(/\|/g, '\\|').replace(/\n/g, ' ')
+          return String(val).replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\n/g, ' ')
         })
         .join(' | ') +
       ' |'

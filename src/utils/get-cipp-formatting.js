@@ -215,13 +215,18 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
   }
 
   if (cellName === 'info.logoUrl') {
-    return isText ? (
-      data
-    ) : data ? (
-      <img src={data} alt="logo" style={{ width: '16px', height: '16px' }} />
-    ) : (
-      ''
-    )
+    if (isText) return data
+    if (!data) return ''
+    // Validate URL to prevent XSS via javascript: or data: URLs
+    try {
+      const url = new URL(data, window.location.origin)
+      if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+        return ''
+      }
+      return <img src={url.href} alt="logo" style={{ width: '16px', height: '16px' }} />
+    } catch {
+      return ''
+    }
   }
 
   const timeAgoArray = [
