@@ -1,6 +1,31 @@
+const disableOptimizePackageImports = process.env.NEXT_DISABLE_OPTIMIZE_PACKAGE_IMPORTS === '1'
+
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: false,
+  experimental: {
+    optimizePackageImports: disableOptimizePackageImports
+      ? []
+      : [
+          '@mui/material',
+          '@mui/icons-material',
+          '@mui/lab',
+          '@mui/system',
+          '@mui/x-date-pickers',
+          '@heroicons/react',
+          'material-react-table',
+          'mui-tiptap',
+          'recharts',
+          '@react-pdf/renderer',
+          'lodash',
+          'date-fns',
+          'date-fns/locale',
+        ],
+    webpackMemoryOptimizations: true,
+    preloadEntriesOnStart: false,
+    turbopackFileSystemCacheForDev: false,
+    turbopackMemoryLimit: 4096,
+  },
   images: {
     unoptimized: true,
   },
@@ -18,21 +43,6 @@ const config = {
     },
   },
   transpilePackages: ["react-syntax-highlighter", "refractor", "parse-entities"],
-  experimental: {
-    webpackMemoryOptimizations: true,
-    preloadEntriesOnStart: false,
-    turbopackFileSystemCacheForDev: false,
-    turbopackMemoryLimit: 4096,
-    optimizePackageImports: [
-      "@mui/material",
-      "@mui/icons-material",
-      "@heroicons/react",
-      "lodash",
-      "date-fns",
-      "date-fns/locale",
-      "recharts",
-    ],
-  },
   async redirects() {
     return []
   },

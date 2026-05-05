@@ -122,6 +122,17 @@ const Page = () => {
     enabled: !!templateId, // Only run the query if templateId is available
   })
 
+  // Fetch drift deviation data for drift templates
+  const isDriftTemplate = selectedTemplate?.type === 'drift'
+  const driftApi = ApiGetCall({
+    url: '/api/listTenantDrift',
+    data: {
+      tenantFilter: currentTenant,
+    },
+    queryKey: `TenantDrift-applied-${currentTenant}`,
+    enabled: isDriftTemplate && !!currentTenant,
+  })
+
   useEffect(() => {
     if (templateId && templateDetails.isSuccess && templateDetails.data) {
       const selectedTemplate = templateDetails.data.find((template) => template.GUID === templateId)
@@ -1166,6 +1177,50 @@ const Page = () => {
           })
         }
 
+        // For drift templates, cross-reference with drift deviation data
+        if (isDriftTemplate && driftApi.isSuccess && driftApi.data) {
+          const tenantDriftItems = Array.isArray(driftApi.data)
+            ? driftApi.data.filter((item) => item.tenantFilter === currentTenant)
+            : []
+
+          // Build a lookup of standardName -> deviation status
+          const deviationLookup = {}
+          tenantDriftItems.forEach((item) => {
+            if (item.acceptedDeviations) {
+              item.acceptedDeviations.forEach((dev) => {
+                if (dev?.standardName) {
+                  deviationLookup[dev.standardName] = 'Accepted'
+                  deviationLookup[`standards.${dev.standardName}`] = 'Accepted'
+                }
+              })
+            }
+            if (item.customerSpecificDeviations) {
+              item.customerSpecificDeviations.forEach((dev) => {
+                if (dev?.standardName) {
+                  deviationLookup[dev.standardName] = 'CustomerSpecific'
+                  deviationLookup[`standards.${dev.standardName}`] = 'CustomerSpecific'
+                }
+              })
+            }
+          })
+
+          // Update compliance status for accepted deviations
+          allStandards.forEach((standard) => {
+            if (standard.complianceStatus === 'Non-Compliant') {
+              const devStatus =
+                deviationLookup[standard.standardId] ||
+                deviationLookup[standard.standardId?.replace(/^standards\./, '')]
+              if (devStatus === 'Accepted') {
+                standard.complianceStatus = 'Accepted Deviation'
+                standard.deviationStatus = 'Accepted'
+              } else if (devStatus === 'CustomerSpecific') {
+                standard.complianceStatus = 'Customer Specific'
+                standard.deviationStatus = 'CustomerSpecific'
+              }
+            }
+          })
+        }
+
         setComparisonData(allStandards)
       } else {
         setComparisonData([])
@@ -1180,6 +1235,10 @@ const Page = () => {
     comparisonApi.isSuccess,
     comparisonApi.data,
     comparisonApi.isError,
+    isDriftTemplate,
+    driftApi.isSuccess,
+    driftApi.data,
+    currentTenant,
   ])
   const comparisonModeOptions = [{ label: 'Compare Tenant to Standard', value: 'standard' }]
 
@@ -1234,6 +1293,9 @@ const Page = () => {
           (filter === 'compliant' && standard.complianceStatus === 'Compliant') ||
           (filter === 'nonCompliant' && standard.complianceStatus === 'Non-Compliant') ||
           (filter === 'overridden' && standard.complianceStatus === 'Overridden') ||
+          (filter === 'acceptedDeviation' &&
+            (standard.complianceStatus === 'Accepted Deviation' ||
+              standard.complianceStatus === 'Customer Specific')) ||
           (filter === 'nonCompliantWithLicense' &&
             standard.complianceStatus === 'Non-Compliant' &&
             !hasLicenseMissing) ||
@@ -1263,6 +1325,12 @@ const Page = () => {
     comparisonData?.filter((standard) => standard.complianceStatus === 'Compliant').length || 0
   const nonCompliantCount =
     comparisonData?.filter((standard) => standard.complianceStatus === 'Non-Compliant').length || 0
+  const acceptedDeviationCount =
+    comparisonData?.filter(
+      (standard) =>
+        standard.complianceStatus === 'Accepted Deviation' ||
+        standard.complianceStatus === 'Customer Specific'
+    ).length || 0
   const reportingDisabledCount =
     comparisonData?.filter((standard) => standard.complianceStatus === 'Reporting Disabled')
       .length || 0
@@ -1298,7 +1366,9 @@ const Page = () => {
   const compliancePercentage =
     allCount > 0
       ? Math.round(
-          (compliantCount / (allCount - reportingDisabledCount - overriddenCount || 1)) * 100
+          ((compliantCount + acceptedDeviationCount) /
+            (allCount - reportingDisabledCount - overriddenCount || 1)) *
+            100
         )
       : 0
 
@@ -1372,7 +1442,7 @@ const Page = () => {
       backUrl="/tenant/standards"
       actions={actions}
       actionsData={{}}
-      isFetching={comparisonApi.isFetching || templateDetails.isFetching}
+      isFetching={comparisonApi.isFetching || templateDetails.isFetching || driftApi.isFetching}
     >
       <CippHead title={title} />
       <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -1607,6 +1677,17 @@ const Page = () => {
                     combinedScore >= 80 ? 'success' : combinedScore >= 60 ? 'warning' : 'error'
                   }
                 />
+                <Chip
+                  icon={
+                    <SvgIcon fontSize="small">
+                      {isDriftTemplate ? <Policy /> : <FactCheck />}
+                    </SvgIcon>
+                  }
+                  label={isDriftTemplate ? 'Drift Standard' : 'Classic Standard'}
+                  size="small"
+                  color={isDriftTemplate ? 'info' : 'default'}
+                  variant="outlined"
+                />
               </Stack>
             )}
             <Menu
@@ -1650,6 +1731,17 @@ const Page = () => {
               >
                 Overridden ({overriddenCount})
               </MenuItem>
+              {isDriftTemplate && acceptedDeviationCount > 0 && (
+                <MenuItem
+                  selected={filter === 'acceptedDeviation'}
+                  onClick={() => {
+                    setFilter('acceptedDeviation')
+                    setFilterMenuAnchor(null)
+                  }}
+                >
+                  Accepted Deviations ({acceptedDeviationCount})
+                </MenuItem>
+              )}
               <MenuItem
                 selected={filter === 'nonCompliantWithLicense'}
                 onClick={() => {
@@ -1781,7 +1873,10 @@ const Page = () => {
                                           ? 'warning.main'
                                           : standard.complianceStatus === 'Reporting Disabled'
                                             ? 'grey.500'
-                                            : 'error.main',
+                                            : standard.complianceStatus === 'Accepted Deviation' ||
+                                                standard.complianceStatus === 'Customer Specific'
+                                              ? 'info.main'
+                                              : 'error.main',
                                   }}
                                 >
                                   {standard.complianceStatus === 'Compliant' ? (
@@ -1790,6 +1885,9 @@ const Page = () => {
                                     <Info sx={{ color: 'white' }} />
                                   ) : standard.complianceStatus === 'Reporting Disabled' ? (
                                     <Info sx={{ color: 'white' }} />
+                                  ) : standard.complianceStatus === 'Accepted Deviation' ||
+                                    standard.complianceStatus === 'Customer Specific' ? (
+                                    <Check sx={{ color: 'white' }} />
                                   ) : (
                                     <Cancel sx={{ color: 'white' }} />
                                   )}
@@ -2033,7 +2131,11 @@ const Page = () => {
                                             ? 'warning.main'
                                             : standard.complianceStatus === 'Reporting Disabled'
                                               ? 'grey.500'
-                                              : 'error.main',
+                                              : standard.complianceStatus ===
+                                                    'Accepted Deviation' ||
+                                                  standard.complianceStatus === 'Customer Specific'
+                                                ? 'info.main'
+                                                : 'error.main',
                                       borderRadius: '50%',
                                       width: 8,
                                       height: 8,
@@ -2501,7 +2603,10 @@ const Page = () => {
                                         ? 'warning.main'
                                         : standard.complianceStatus === 'Reporting Disabled'
                                           ? 'text.secondary'
-                                          : 'error.main',
+                                          : standard.complianceStatus === 'Accepted Deviation' ||
+                                              standard.complianceStatus === 'Customer Specific'
+                                            ? 'info.main'
+                                            : 'error.main',
                                   fontWeight:
                                     standard.complianceStatus === 'Non-Compliant'
                                       ? 'medium'

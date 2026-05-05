@@ -2433,6 +2433,12 @@ export const CippDataTable = (props) => {
         return compareNullable(aNumeric, bNumeric);
       },
     },
+    layoutMode: 'grid-no-grow',
+    enableColumnResizing: true,
+    columnResizeMode: 'onChange',
+    rowVirtualizerOptions: {
+      overscan: 5,
+    },
     filterFns: {
       notContains: (row, columnId, value) => {
         const rowValue = row.getValue(columnId);
