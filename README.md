@@ -49,18 +49,21 @@ Manage365 includes the complete CIPP feature set:
 - Secure Score monitoring
 - Application management, consent requests, and app management policies
 - App registration and enterprise app detail pages with permissions viewer
-- GDAP relationship management with GDAP trace
+- GDAP relationship management with GDAP trace and AI Administrator role support
 - Tenant group management with usage reporting
 - Standards alignment and drift detection (including device registration local admin controls)
-- New standard: Restrict User Device Registration
+- Standards with custom variable support and requiredCapabilities filtering
+- New standards: Restrict User Device Registration, AdminSSPR
 - Standards dialog with enabled/disabled status filter and severity color mapping
 - Best Practice Analyser and Domains Analyser (with DKIM selector rotation)
 - Conditional Access policy management, templates, and vacation mode with authentication flow selection
 - Licence reporting and management with granular control and dynamic license backfill
+- CSP license reporting page for Cloud Solution Provider scenarios
 - BitLocker recovery key search and caching
 - Feature flags
 - Reusable settings standards with templates
 - Configuration backup with restore wizard (type-filtered restoration with row count reporting)
+- GitHub import/export for templates and cache explorer
 - Incident report and attachment options
 - Log retention settings
 - Dashboard v2: report toolbar, custom dashboards, responsive layout
@@ -79,7 +82,7 @@ Manage365 includes the complete CIPP feature set:
 - Application management and deployment queue (including Win32/custom apps)
 - Application assignment filter options
 - Managed device administration with NinjaOne hardware enrichment (CPU, RAM, agent status)
-- Device detail page
+- Device detail page with Intune policy setting descriptions (hover to see what each setting does)
 - DEP sync
 - Autopilot device management, profiles, and status pages
 - Configuration and compliance policies with templates
@@ -123,6 +126,7 @@ Manage365 includes the complete CIPP feature set:
 - Setup wizard and onboarding
 - Enhanced bookmark management with sidebar, drag-and-drop reordering, lock, and sort options
 - Compact navigation mode for denser sidebar layout
+- Resizable table columns across all data tables
 - Logbook with severity color mapping
 - Custom data / directory extensions
 - Super admin tools (tenant mode, exchange cmdlets, timers, table maintenance)
