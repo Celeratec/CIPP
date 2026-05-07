@@ -12,6 +12,7 @@ import {
   Info as InfoIcon,
   Key,
   Password,
+  Person,
   PhonelinkSetup,
   PersonOff,
   Search,
@@ -148,7 +149,11 @@ const Page = () => {
       type: "POST",
       icon: <Clear />,
       url: "/api/ExecDismissRiskyUser",
-      data: { userId: "id", userDisplayName: "userDisplayName" },
+      data: {
+        userId: "id",
+        userDisplayName: "userDisplayName",
+        userPrincipalName: "userPrincipalName",
+      },
       confirmText: "Are you sure you want to dismiss the risk for this user?",
       multiPost: false,
       category: "security",
@@ -273,7 +278,10 @@ const Page = () => {
       const severityInfo = getSeverityInfo(row);
       const stateChip = getRiskStateChip(row.riskState);
       const levelChip = getRiskLevelChip(row.riskLevel);
-      
+      const isDismissed = String(row?.riskState || "").toLowerCase() === "dismissed";
+      const dismissedBy = row?.dismissedBy;
+      const dismissedDateTime = row?.dismissedDateTime;
+
       return (
         <Stack spacing={3}>
           {/* Hero Section with severity indicator */}
@@ -334,6 +342,64 @@ const Page = () => {
               />
             </Stack>
           </Box>
+
+          {isDismissed && (dismissedBy || dismissedDateTime) && (
+            <>
+              <Divider />
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                  <Person fontSize="small" color="action" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Dismissal
+                  </Typography>
+                </Stack>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 1.5,
+                    backgroundColor: alpha(theme.palette.background.default, 0.5),
+                  }}
+                >
+                  <Stack spacing={1}>
+                    {dismissedBy && (
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        spacing={2}
+                      >
+                        <Typography variant="body2" color="text.secondary">
+                          Dismissed by
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 500, textAlign: "right", wordBreak: "break-all" }}
+                        >
+                          {dismissedBy}
+                        </Typography>
+                      </Stack>
+                    )}
+                    {dismissedDateTime && (
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        spacing={2}
+                      >
+                        <Typography variant="body2" color="text.secondary">
+                          Dismissed at
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {getCippFormatting(dismissedDateTime, "dismissedDateTime")}
+                        </Typography>
+                      </Stack>
+                    )}
+                  </Stack>
+                </Paper>
+              </Box>
+            </>
+          )}
 
           <Divider />
 
@@ -404,11 +470,13 @@ const Page = () => {
   // Using simpleColumns approach to avoid Cell function issues
   const simpleColumns = [
     "userDisplayName",
-    "userPrincipalName", 
+    "userPrincipalName",
     "riskState",
     "riskLevel",
     "riskDetail",
     "riskLastUpdatedDateTime",
+    "dismissedBy",
+    "dismissedDateTime",
   ];
 
   // ============ CARD CONFIG ============
@@ -449,6 +517,8 @@ const Page = () => {
     customContent: (item) => {
       const stateChip = getRiskStateChip(item.riskState);
       const levelChip = getRiskLevelChip(item.riskLevel);
+      const isDismissed = String(item?.riskState || "").toLowerCase() === "dismissed";
+      const dismissedBy = item?.dismissedBy;
       return (
         <Box sx={{ mb: 1.5 }}>
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -467,6 +537,18 @@ const Page = () => {
               variant={levelChip.variant}
             />
           </Stack>
+          {isDismissed && dismissedBy && (
+            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 1 }}>
+              <Person sx={{ fontSize: 14, color: "text.secondary" }} />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ wordBreak: "break-all" }}
+              >
+                Dismissed by <strong>{dismissedBy}</strong>
+              </Typography>
+            </Stack>
+          )}
         </Box>
       );
     },
@@ -534,14 +616,7 @@ const Page = () => {
   return (
     <CippTablePage
       title={pageTitle}
-      apiUrl="/api/ListGraphRequest"
-      apiData={{
-        Endpoint: "identityProtection/riskyUsers",
-        manualPagination: true,
-        $count: true,
-        $orderby: "riskLastUpdatedDateTime desc",
-        $top: 500,
-      }}
+      apiUrl="/api/ListRiskyUsers"
       apiDataKey="Results"
       actions={actions}
       offCanvas={offCanvas}

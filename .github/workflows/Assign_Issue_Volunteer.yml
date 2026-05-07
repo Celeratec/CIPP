@@ -1,0 +1,12 @@
+---
+name: "Issue volunteer assignment"
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  volunteer:
+    runs-on: ubuntu-slim
+    steps:
+      - uses: kris6673/issue-volunteer@v0.2.0
+        with:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
