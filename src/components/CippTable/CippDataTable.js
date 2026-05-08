@@ -167,8 +167,8 @@ const stringToColor = (string) => {
 };
 
 // Default cards per page for pagination
-const DEFAULT_CARDS_PER_PAGE = 10;
-const PAGE_SIZE_OPTIONS = [10, 25, 50, "All"];
+const DEFAULT_CARDS_PER_PAGE = 12;
+const PAGE_SIZE_OPTIONS = [12, 21, 50, "All"];
 
 // Unified Card View Component (works for both mobile and desktop)
 const CardView = ({
@@ -807,9 +807,9 @@ const CardView = ({
               )}
               
               {/* Header: Avatar + Name + Badges + Info Icon */}
-              {/* Only load photos when showing 10 or 25 items to optimize performance */}
+              {/* Only load photos when showing 12 or 21 items to optimize performance */}
               <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1, width: "100%", overflow: "hidden" }}>
-                {config.avatar?.photoField && tenant && item.id && (pageSize === 10 || pageSize === 25) ? (
+                {config.avatar?.photoField && tenant && item.id && (pageSize === 12 || pageSize === 21) ? (
                   <CippUserAvatar
                     userId={item.id}
                     tenantFilter={tenant}
