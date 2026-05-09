@@ -16,16 +16,28 @@ const getInitials = (name) => {
 
 /**
  * Generates a consistent color from a string
+ * Uses a curated palette that ensures good contrast and visual harmony
  */
 const stringToColor = (string) => {
-  if (!string) return "#757575";
+  if (!string) return "#6B7280"; // neutral gray fallback
   let hash = 0;
   for (let i = 0; i < string.length; i++) {
     hash = string.charCodeAt(i) + ((hash << 5) - hash);
   }
+  // Curated palette: balanced hues, good contrast with white text
   const colors = [
-    "#1976d2", "#388e3c", "#d32f2f", "#7b1fa2", "#c2185b",
-    "#0288d1", "#00796b", "#f57c00", "#5d4037", "#455a64",
+    "#3B82F6", // blue
+    "#10B981", // emerald
+    "#8B5CF6", // violet
+    "#F59E0B", // amber
+    "#EF4444", // red
+    "#06B6D4", // cyan
+    "#EC4899", // pink
+    "#6366F1", // indigo
+    "#84CC16", // lime
+    "#F97316", // orange
+    "#14B8A6", // teal
+    "#A855F7", // purple
   ];
   return colors[Math.abs(hash) % colors.length];
 };

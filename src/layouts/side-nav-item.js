@@ -5,6 +5,7 @@ import ChevronRightIcon from "@heroicons/react/24/outline/ChevronRightIcon";
 import ChevronDownIcon from "@heroicons/react/24/outline/ChevronDownIcon";
 import ArrowTopRightOnSquareIcon from "@heroicons/react/24/outline/ArrowTopRightOnSquareIcon";
 import { Box, ButtonBase, Collapse, SvgIcon, Stack } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import LanguageIcon from "@mui/icons-material/Language";
@@ -83,12 +84,9 @@ export const SideNavItem = (props) => {
               textAlign: "left",
               whiteSpace: "nowrap",
               width: "100%",
-              transition: "all 0.2s ease-in-out",
+              transition: "all 150ms ease-out",
               "&:hover": {
-                backgroundColor: (theme) => 
-                  theme.palette.mode === "dark" 
-                    ? "rgba(255, 255, 255, 0.08)" 
-                    : "rgba(0, 0, 0, 0.04)",
+                backgroundColor: (theme) => alpha(theme.palette.action.active, 0.08),
                 transform: "translateX(4px)",
               },
             }}
@@ -185,21 +183,15 @@ export const SideNavItem = (props) => {
             justifyContent: "flex-start",
             textAlign: "left",
             whiteSpace: "nowrap",
-            width: "calc(100% - 20px)", // Adjust the width to leave space for the bookmark icon
+            width: "calc(100% - 20px)",
             py: navItemPy,
-            transition: "all 0.2s ease-in-out",
+            transition: "all 150ms ease-out",
             "&:hover": {
-              backgroundColor: (theme) => 
-                theme.palette.mode === "dark" 
-                  ? "rgba(255, 255, 255, 0.08)" 
-                  : "rgba(0, 0, 0, 0.04)",
+              backgroundColor: (theme) => alpha(theme.palette.action.active, 0.08),
               transform: "translateX(4px)",
             },
             ...(active && {
-              backgroundColor: (theme) => 
-                theme.palette.mode === "dark" 
-                  ? "rgba(83, 165, 219, 0.12)" 
-                  : "rgba(83, 165, 219, 0.08)",
+              backgroundColor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.12 : 0.08),
             }),
           }}
           {...linkProps}

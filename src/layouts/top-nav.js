@@ -12,6 +12,7 @@ import {
   SvgIcon,
   useMediaQuery,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { Logo } from "../components/logo";
 import { useSettings } from "../hooks/use-settings";
 import { useUserBookmarks } from "../hooks/use-user-bookmarks";
@@ -98,10 +99,7 @@ export const TopNav = memo((props) => {
             <Divider
               orientation="vertical"
               sx={{
-                borderColor: (theme) => 
-                  theme.palette.mode === 'dark' 
-                    ? 'rgba(255, 255, 255, 0.2)' 
-                    : 'rgba(0, 0, 0, 0.2)',
+                borderColor: (theme) => alpha(theme.palette.divider, 0.5),
                 height: 36,
               }}
             />

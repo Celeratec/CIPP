@@ -13,6 +13,7 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { ActionsMenu } from "../actions-menu";
 import { Chart } from "../chart";
+import { chartPink } from "../../theme/colors";
 
 const useChartOptions = (labels, chartType, customColors = null) => {
   const theme = useTheme();
@@ -21,7 +22,7 @@ const useChartOptions = (labels, chartType, customColors = null) => {
     theme.palette.success.main,
     theme.palette.warning.main,
     theme.palette.error.main,
-    "#F472B6",
+    chartPink,
   ];
 
   return {
@@ -199,7 +200,7 @@ export const CippChartCard = ({
       onClick={onClick}
       sx={{
         cursor: onClick ? "pointer" : "default",
-        transition: "all 0.2s ease-in-out",
+        transition: "all 150ms ease-out",
         "&:hover": onClick ? {
           boxShadow: (theme) => theme.shadows[8],
           transform: "translateY(-2px)",
