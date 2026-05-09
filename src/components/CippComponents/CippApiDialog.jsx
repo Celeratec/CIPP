@@ -277,9 +277,12 @@ export const CippApiDialog = (props) => {
 
   const escapeHtml = (text) => {
     if (typeof text !== "string") return text;
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   };
 
   const getRawNestedValue = (obj, path) => {
@@ -307,9 +310,9 @@ export const CippApiDialog = (props) => {
         /\[([^\]]+)\]/g,
         (_, key) => getRawNestedValue(row, key) || `[${key}]`,
       );
-      if (linkWithData.startsWith("/") && !api?.external) {
+      if (linkWithData.startsWith("/") && !linkWithData.startsWith("//") && !api?.external) {
         router.push(linkWithData, undefined, { shallow: true });
-      } else {
+      } else if (api?.external || linkWithData.startsWith("//")) {
         // Validate external URLs to prevent open redirect vulnerabilities
         try {
           const url = new URL(linkWithData);

@@ -514,7 +514,8 @@ export const CippQuickActions = ({
         }
       } else {
         // Internal links starting with / are safe for router.push
-        if (link.startsWith("/")) {
+        // Exclude protocol-relative URLs (//evil.com) which would bypass origin
+        if (link.startsWith("/") && !link.startsWith("//")) {
           router.push(link);
         }
       }
