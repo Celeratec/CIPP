@@ -52,6 +52,7 @@ import { useRouter } from "next/router";
 import { getCippTranslation } from "../../utils/get-cipp-translation";
 import CippUserAvatar from "../CippComponents/CippUserAvatar";
 import { useLicenseBackfill } from "../../hooks/use-license-backfill";
+import { resolvePaletteMainColor } from "../../theme/utils";
 
 // Helper functions for row action category grouping and styling
 const getCategoryIcon = (category) => {
@@ -2221,10 +2222,10 @@ export const CippDataTable = (props) => {
               const categoryColor = getCategoryColor(category);
               const headerBgColor = categoryColor === "text.secondary" 
                 ? (theme) => alpha(theme.palette.grey[500], 0.08)
-                : (theme) => alpha(theme.palette[categoryColor].main, 0.08);
+                : (theme) => alpha(resolvePaletteMainColor(theme, categoryColor), 0.08);
               const headerTextColor = categoryColor === "text.secondary"
                 ? "text.secondary"
-                : `${categoryColor}.main`;
+                : (theme) => resolvePaletteMainColor(theme, categoryColor);
               
               return [
                 <ListSubheader
@@ -2252,7 +2253,7 @@ export const CippDataTable = (props) => {
                   const iconSx =
                     actionColor === "text.secondary"
                       ? { minWidth: "30px", color: actionColor }
-                      : { minWidth: "30px", color: `${actionColor}.main` };
+                      : { minWidth: "30px", color: (theme) => resolvePaletteMainColor(theme, actionColor) };
                   
                   return (
                     <MenuItem

@@ -21,6 +21,7 @@ import {
   Circle,
 } from "@mui/icons-material";
 import { GlobeAltIcon, UsersIcon, ServerIcon } from "@heroicons/react/24/outline";
+import { resolvePaletteMainColor } from "../theme/utils";
 
 function getIconByName(iconName) {
   switch (iconName) {
@@ -155,10 +156,10 @@ export const BulkActionsMenu = (props) => {
           const categoryColor = getCategoryColor(category);
           const headerBgColor = categoryColor === "text.secondary" 
             ? (theme) => alpha(theme.palette.grey[500], 0.08)
-            : (theme) => alpha(theme.palette[categoryColor].main, 0.08);
+            : (theme) => alpha(resolvePaletteMainColor(theme, categoryColor), 0.08);
           const headerTextColor = categoryColor === "text.secondary"
             ? "text.secondary"
-            : `${categoryColor}.main`;
+            : (theme) => resolvePaletteMainColor(theme, categoryColor);
             
           return (
             <Box key={category}>
@@ -189,7 +190,7 @@ export const BulkActionsMenu = (props) => {
                 const iconSx =
                   actionColor === "text.secondary"
                     ? { mr: 1, color: actionColor }
-                    : { mr: 1, color: (theme) => theme.palette[actionColor].main };
+                    : { mr: 1, color: (theme) => resolvePaletteMainColor(theme, actionColor) };
 
                 if (action.link) {
                   return (

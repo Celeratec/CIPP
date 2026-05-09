@@ -65,6 +65,7 @@ import { ApiGetCall } from "../../api/ApiCall";
 import GraphExplorerPresets from "../../data/GraphExplorerPresets.json";
 import CippGraphExplorerFilter from "./CippGraphExplorerFilter";
 import { Stack } from "@mui/system";
+import { resolvePaletteMainColor } from "../../theme/utils";
 
 // Styled components for modern design
 const ModernSearchContainer = styled(Paper)(({ theme }) => ({
@@ -1434,10 +1435,10 @@ export const CIPPTableToptoolbar = ({
             const categoryColor = getCategoryColor(category);
             const headerBgColor = categoryColor === "text.secondary" 
               ? (theme) => alpha(theme.palette.grey[500], 0.08)
-              : (theme) => alpha(theme.palette[categoryColor].main, 0.08);
+              : (theme) => alpha(resolvePaletteMainColor(theme, categoryColor), 0.08);
             const headerTextColor = categoryColor === "text.secondary"
               ? "text.secondary"
-              : `${categoryColor}.main`;
+              : (theme) => resolvePaletteMainColor(theme, categoryColor);
 
             return (
               <Box key={category}>
@@ -1468,7 +1469,7 @@ export const CIPPTableToptoolbar = ({
                   const iconSx =
                     actionColor === "text.secondary"
                       ? { minWidth: "30px", color: actionColor }
-                      : { minWidth: "30px", color: (theme) => theme.palette[actionColor]?.main || actionColor };
+                      : { minWidth: "30px", color: (theme) => resolvePaletteMainColor(theme, actionColor) };
 
                   return (
                     <MenuItem
