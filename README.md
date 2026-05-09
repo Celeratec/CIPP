@@ -31,20 +31,21 @@ Manage365 includes the complete CIPP feature set:
 ### Identity Management
 - User administration (create, edit, delete, offboard with orchestrator-based batch processing and scheduler-routed task tracking)
 - User form validation with field-level constraints (max length, required, pattern)
-- Vacation mode wizard with mailbox permissions, calendar delegation, and out-of-office scheduling
+- User patching with manager and sponsor property support
+- Vacation mode wizard with mailbox permissions, calendar delegation, and out-of-office scheduling with timezone-aware response formatting
 - Offboarding wizard with dialog mode, table view for all tenant offboarding tasks, scheduler integration for proper task tracking and alerting, and custom tests
 - Bulk guest invitation
 - Risky users monitoring
 - Group management with templates, group detail page, and deploy group template button
 - Device management (Entra ID devices with NinjaOne enrichment, cross-linked to Intune)
 - Per-user device view with hardware details and NinjaOne agent status
-- Role management and JIT Admin
+- Role management and JIT Admin with usage location support and TAP lifetime policy bounds
 - Reports: MFA (with role-targeted CA policy detection), inactive users, sign-in logs, Entra Connect, risk detections, BEC remediation
 
 ### Tenant Administration
 - Multi-tenant management and configuration
-- Upgraded tenant onboarding experience with type selection
-- Alert configuration and audit logs (group membership change, Defender severity filtering, inactive users)
+- Upgraded tenant onboarding experience with type selection and Indirect Reseller Link support
+- Alert configuration and audit logs (group membership change, Defender severity filtering, inactive users, TAP creation alerts)
 - Alert snooze dialog and snoozed alerts management
 - Secure Score monitoring
 - Application management, consent requests, and app management policies
@@ -82,7 +83,7 @@ Manage365 includes the complete CIPP feature set:
 - Application management and deployment queue (including Win32/custom apps)
 - Application assignment filter options
 - Managed device administration with NinjaOne hardware enrichment (CPU, RAM, agent status)
-- Device detail page with Intune policy setting descriptions (hover to see what each setting does)
+- Device detail page with Intune policy setting descriptions (hover to see what each setting does) for both Settings Catalog and Administrative Templates
 - DEP sync
 - Autopilot device management, profiles, and status pages
 - Configuration and compliance policies with templates
@@ -111,10 +112,11 @@ Manage365 includes the complete CIPP feature set:
 - Universal Search v2 with user and group search
 - Application approval workflow
 - Tenant and IP lookup
-- Domain health checks
+- Domain health checks with AutoDiscover validation
 - Dark web breach lookups (tenant and individual)
 - Template library and community repositories
 - Task scheduler with label-based action filtering
+- Custom tests with result mode options (Auto, AlwaysPass, AlwaysInfo, AlwaysInvestigate)
 - Guest account disable support with sign-in audit fallback
 - Script editor improvements
 - Super admin pages relocated to /cipp/advanced/super-admin/
@@ -127,6 +129,7 @@ Manage365 includes the complete CIPP feature set:
 - Enhanced bookmark management with sidebar, drag-and-drop reordering, lock, and sort options
 - Compact navigation mode for denser sidebar layout
 - Resizable table columns across all data tables
+- Tenant selector hotlinks support customerId (GUID) and initialDomainName in addition to defaultDomainName
 - Logbook with severity color mapping
 - Custom data / directory extensions
 - Super admin tools (tenant mode, exchange cmdlets, timers, table maintenance)
