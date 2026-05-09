@@ -30,12 +30,14 @@ import { PlusIcon } from '@heroicons/react/24/outline'
 import { CippFormCondition } from '../../../../components/CippComponents/CippFormCondition'
 import { CippHead } from '../../../../components/CippComponents/CippHead'
 import CippRiskAlert from "../../../../components/CippComponents/CippRiskAlert"
+import { useSettings } from '../../../../hooks/use-settings'
 
 const AlertWizard = () => {
   const apiRequest = ApiPostCall({
     relatedQueryKeys: ['ListAlertsQueue', 'ListCurrentAlerts'],
   })
   const router = useRouter()
+  const tenantFilter = useSettings().currentTenant
   const [editAlert, setAlertEdit] = useState(false)
   useEffect(() => {
     if (router.query.id) {
@@ -47,6 +49,8 @@ const AlertWizard = () => {
     url: '/api/ListAlertsQueue',
     relatedQueryKeys: 'ListAlertsQueue',
     queryKey: 'ListCurrentAlerts',
+    data: { tenantFilter },
+    waiting: !!tenantFilter,
   })
   const [recurrenceOptions, setRecurrenceOptions] = useState([
     { value: '30m', label: 'Every 30 minutes' },
