@@ -9,6 +9,10 @@ export function resolvePaletteMainColor(theme, colorKey) {
     return theme.palette.primary.main;
   }
   const trimmed = colorKey.trim();
+  // App actions often use "danger"; MUI palette uses "error"
+  if (trimmed === "danger") {
+    return theme.palette.error.main;
+  }
   if (trimmed === "text.secondary") {
     return theme.palette.text.secondary;
   }
