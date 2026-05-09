@@ -65,9 +65,22 @@ export const CippPropertyListCard = (props) => {
     return false;
   };
 
+  const hasInteraction = actionItems?.length > 0 || !!actionButton || !!cardButton;
+
   return (
     <>
-      <Card sx={cardSx} {...other}>
+      <Card 
+        sx={{
+          transition: "all 150ms ease-out",
+          ...(hasInteraction && {
+            "&:hover": {
+              boxShadow: theme.shadows[4],
+            },
+          }),
+          ...cardSx,
+        }} 
+        {...other}
+      >
         <CardHeader action={actionButton} title={title} />
         <CardContent sx={{ p: 0, marginBottom: "auto" }}>
           <Divider />

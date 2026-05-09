@@ -38,8 +38,21 @@ export default function CippButtonCard({
     }
   }, [cardExpanded]);
 
+  const hasInteraction = !!CardButton || !!cardActions;
+
   return (
-    <Card variant={variant} sx={cardSx}>
+    <Card 
+      variant={variant} 
+      sx={{
+        transition: "all 150ms ease-out",
+        ...(hasInteraction && {
+          "&:hover": {
+            boxShadow: (theme) => theme.shadows[4],
+          },
+        }),
+        ...cardSx,
+      }}
+    >
       {component === "card" && (
         <>
           {title && (

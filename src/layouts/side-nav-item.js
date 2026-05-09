@@ -86,7 +86,7 @@ export const SideNavItem = (props) => {
               width: "100%",
               transition: "all 150ms ease-out",
               "&:hover": {
-                backgroundColor: (theme) => alpha(theme.palette.action.active, 0.08),
+                backgroundColor: "action.hover",
                 transform: "translateX(4px)",
               },
             }}
@@ -187,7 +187,7 @@ export const SideNavItem = (props) => {
             py: navItemPy,
             transition: "all 150ms ease-out",
             "&:hover": {
-              backgroundColor: (theme) => alpha(theme.palette.action.active, 0.08),
+              backgroundColor: "action.hover",
               transform: "translateX(4px)",
             },
             ...(active && {

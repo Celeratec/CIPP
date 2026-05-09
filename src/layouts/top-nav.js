@@ -99,7 +99,10 @@ export const TopNav = memo((props) => {
             <Divider
               orientation="vertical"
               sx={{
-                borderColor: (theme) => alpha(theme.palette.divider, 0.5),
+                borderColor: (theme) =>
+                theme.palette.mode === "dark"
+                  ? alpha(theme.palette.common.white, 0.2)
+                  : alpha(theme.palette.common.black, 0.2),
                 height: 36,
               }}
             />

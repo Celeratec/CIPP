@@ -640,7 +640,7 @@ export const CippUserInfoCard = (props) => {
                       border: `3px solid ${theme.palette.background.paper}`,
                       boxShadow: theme.shadows[2],
                       cursor: "pointer",
-                      transition: "all 0.2s ease-in-out",
+                      transition: "all 150ms ease-out",
                     }}
                     src={imageUrl}
                   >
