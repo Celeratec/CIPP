@@ -23,6 +23,7 @@ export const CippTenantAllowBlockListTemplateDrawer = ({
   buttonText = 'Add Template',
   requiredPermissions = [],
   PermissionButton = Button,
+  drawerVisible: controlledDrawerVisible,
 }) => {
   const [drawerVisible, setDrawerVisible] = useState(false)
   const formControl = useForm({
@@ -210,13 +211,15 @@ export const CippTenantAllowBlockListTemplateDrawer = ({
 
   return (
     <>
-      <PermissionButton
-        requiredPermissions={requiredPermissions}
-        onClick={() => setDrawerVisible(true)}
-        startIcon={<SaveAlt />}
-      >
-        {buttonText}
-      </PermissionButton>
+      {controlledDrawerVisible === undefined && (
+        <PermissionButton
+          requiredPermissions={requiredPermissions}
+          onClick={() => setDrawerVisible(true)}
+          startIcon={<SaveAlt />}
+        >
+          {buttonText}
+        </PermissionButton>
+      )}
 
       <CippOffCanvas
         title="Save Tenant Allow/Block List Template"
