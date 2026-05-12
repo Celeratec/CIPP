@@ -10,7 +10,7 @@
 
 ---
 
-> **Last synced with upstream:** May 2026 (CIPP v10.4.4 / CIPP-API v10.4.4)
+> **Last synced with upstream:** May 2026 (CIPP v10.4.5 / CIPP-API v10.4.4)
 >
 > Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. This document reflects the state of both projects as of the date above.
 
@@ -130,6 +130,7 @@ Manage365 includes the complete CIPP feature set:
 - Compact navigation mode for denser sidebar layout
 - Resizable table columns across all data tables
 - Tenant selector hotlinks support customerId (GUID) and initialDomainName in addition to defaultDomainName
+- PWA support with Chrome install option for desktop app experience
 - Logbook with severity color mapping
 - Custom data / directory extensions
 - Super admin tools (tenant mode, exchange cmdlets, timers, table maintenance)
