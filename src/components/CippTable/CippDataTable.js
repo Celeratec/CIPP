@@ -1900,6 +1900,38 @@ export const CippDataTable = (props) => {
         return nestedData !== undefined ? nestedData : [];
       });
 
+      // Deduplicate across paginated pages. Microsoft Graph (and other
+      // cursor-paginated APIs) can return the same record in adjacent pages
+      // when ordering by a non-unique field (e.g. $orderby=displayName) or
+      // when the underlying data shifts during pagination. Without this,
+      // duplicates appear in both the card and table views.
+      if (Array.isArray(combinedResults) && combinedResults.length > 1) {
+        const seen = new Set();
+        const deduped = [];
+        let hadDuplicates = false;
+        for (const item of combinedResults) {
+          if (!item || typeof item !== "object") {
+            deduped.push(item);
+            continue;
+          }
+          const dedupKey = item.id ?? item.RowKey ?? null;
+          if (dedupKey === null || dedupKey === undefined || dedupKey === "") {
+            deduped.push(item);
+            continue;
+          }
+          const compositeKey = `${typeof dedupKey}:${dedupKey}`;
+          if (seen.has(compositeKey)) {
+            hadDuplicates = true;
+            continue;
+          }
+          seen.add(compositeKey);
+          deduped.push(item);
+        }
+        if (hadDuplicates) {
+          combinedResults = deduped;
+        }
+      }
+
       // Apply dataFilter if provided in api config
       if (api.dataFilter && typeof api.dataFilter === "function") {
         combinedResults = api.dataFilter(combinedResults);
