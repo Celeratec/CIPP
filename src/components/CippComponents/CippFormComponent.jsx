@@ -198,7 +198,7 @@ export const CippFormComponent = (props) => {
             </Typography>
           )}
           {helperText && (
-            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700 }}>
+            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700, mt: 0.75 }}>
               {helperText}
             </Typography>
           )}
@@ -239,7 +239,7 @@ export const CippFormComponent = (props) => {
             </Typography>
           )}
           {helperText && (
-            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700 }}>
+            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700, mt: 0.75 }}>
               {helperText}
             </Typography>
           )}
@@ -346,7 +346,7 @@ export const CippFormComponent = (props) => {
             </Typography>
           )}
           {helperText && (
-            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700 }}>
+            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700, mt: 0.75 }}>
               {helperText}
             </Typography>
           )}
@@ -376,7 +376,7 @@ export const CippFormComponent = (props) => {
             </Typography>
           )}
           {helperText && (
-            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700 }}>
+            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700, mt: 0.75 }}>
               {helperText}
             </Typography>
           )}
@@ -408,7 +408,7 @@ export const CippFormComponent = (props) => {
             </Typography>
           )}
           {helperText && (
-            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700 }}>
+            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700, mt: 0.75 }}>
               {helperText}
             </Typography>
           )}
@@ -438,7 +438,7 @@ export const CippFormComponent = (props) => {
               <Stack>
                 {label}
                 {helperText && (
-                  <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700 }}>
+                  <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700, mt: 0.75 }}>
                     {helperText}
                   </Typography>
                 )}
@@ -615,7 +615,7 @@ export const CippFormComponent = (props) => {
             </Typography>
           )}
           {helperText && (
-            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700 }}>
+            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700, mt: 0.75 }}>
               {helperText}
             </Typography>
           )}
@@ -770,7 +770,7 @@ export const CippFormComponent = (props) => {
             />
           </div>
           {helperText && (
-            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700 }}>
+            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700, mt: 0.75 }}>
               {helperText}
             </Typography>
           )}
@@ -841,7 +841,7 @@ export const CippFormComponent = (props) => {
             </Typography>
           )}
           {helperText && (
-            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700 }}>
+            <Typography variant="subtitle3" color="text.secondary" sx={{ display: 'block', maxWidth: 700, mt: 0.75 }}>
               {helperText}
             </Typography>
           )}
