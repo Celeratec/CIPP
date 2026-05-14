@@ -605,10 +605,13 @@ const CardView = ({
     return result;
   }, [data, searchTerm, config, columnFilters]);
 
-  // Reset to first page when search term, filters, or data changes
+  // Reset to first page when search term or filters change (user-initiated actions).
+  // We intentionally exclude data?.length because:
+  // 1. Pagination loading more items increases length but shouldn't reset to page 0
+  // 2. Data reference changes are handled by the isEqual check in parent component
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchTerm, data?.length, columnFilters]);
+  }, [searchTerm, columnFilters]);
   
   // Clear selection when data changes (e.g., tenant switch, filter change)
   useEffect(() => {
@@ -1937,7 +1940,15 @@ export const CippDataTable = (props) => {
         combinedResults = api.dataFilter(combinedResults);
       }
 
-      setUsedData(combinedResults);
+      // Only update state if data has actually changed to prevent infinite re-renders.
+      // React Query returns a new object reference on every fetch even if data is identical,
+      // so we must deep-compare before updating state.
+      setUsedData((prevData) => {
+        if (isEqual(prevData, combinedResults)) {
+          return prevData;
+        }
+        return combinedResults;
+      });
     }
   }, [
     getRequestData.isSuccess,
