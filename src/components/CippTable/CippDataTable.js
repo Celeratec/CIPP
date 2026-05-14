@@ -193,6 +193,10 @@ const CardView = ({
   editApiUrl = null,
   queryKey = null,
   columnFilters = [],
+  // Lazy loading props for server-side pagination
+  hasNextPage = false,
+  onLoadMore = null,
+  isFetchingNextPage = false,
 }) => {
   const theme = useTheme();
   const router = useRouter();
@@ -672,18 +676,43 @@ const CardView = ({
     }
   }, [selectedItemsData, clearSelection, bulkActionDialog]);
 
-  // Pagination handlers
+  // Pagination handlers with lazy loading support
   const handlePreviousPage = useCallback(() => {
     setCurrentPage((prev) => Math.max(0, prev - 1));
   }, []);
 
   const handleNextPage = useCallback(() => {
-    setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
-  }, [totalPages]);
+    const nextPage = currentPage + 1;
+    const nextPageStartIndex = nextPage * effectivePageSize;
+    
+    // Check if we need to load more data for the next page
+    if (nextPageStartIndex >= totalItems && hasNextPage && onLoadMore && !isFetchingNextPage) {
+      // We need more data - fetch it, but also advance the page
+      // The new data will be available after the fetch completes
+      onLoadMore();
+    }
+    
+    // Allow navigation if we have data for the next page OR if we're fetching more
+    if (nextPage < totalPages || hasNextPage) {
+      setCurrentPage(nextPage);
+    }
+  }, [currentPage, effectivePageSize, totalItems, hasNextPage, onLoadMore, isFetchingNextPage, totalPages]);
 
   const handlePageChange = useCallback((newPage) => {
-    setCurrentPage(Math.max(0, Math.min(totalPages - 1, newPage)));
-  }, [totalPages]);
+    const targetStartIndex = newPage * effectivePageSize;
+    
+    // Check if we need to load more data for the target page
+    if (targetStartIndex >= totalItems && hasNextPage && onLoadMore && !isFetchingNextPage) {
+      onLoadMore();
+    }
+    
+    // Allow navigation if we have the data or are fetching
+    if (newPage < totalPages || (hasNextPage && newPage === totalPages)) {
+      setCurrentPage(Math.max(0, newPage));
+    } else {
+      setCurrentPage(Math.max(0, Math.min(totalPages - 1, newPage)));
+    }
+  }, [effectivePageSize, totalItems, hasNextPage, onLoadMore, isFetchingNextPage, totalPages]);
 
   const handlePageSizeChange = useCallback((newSize) => {
     setPageSize(newSize);
@@ -1551,7 +1580,17 @@ const CardView = ({
           {renderedCards}
         </Grid>
 
-        {filteredData?.length === 0 && (
+        {/* Show loading indicator when fetching more data for current page */}
+        {isFetchingNextPage && paginatedData?.length === 0 && (
+          <Box sx={{ textAlign: "center", py: 8 }}>
+            <CircularProgress size={32} />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              Loading more data...
+            </Typography>
+          </Box>
+        )}
+
+        {filteredData?.length === 0 && !isFetchingNextPage && (
           <Box sx={{ textAlign: "center", py: 8, color: "text.secondary" }}>
             <Typography variant="body1">
               {searchTerm ? `No results found for "${searchTerm}"` : "No data available"}
@@ -1560,7 +1599,8 @@ const CardView = ({
         )}
 
         {/* Pagination Controls - hidden when "All" is selected */}
-        {pageSize !== "All" && totalPages > 1 && (
+        {/* Show pagination if we have multiple pages OR if there's more data to load */}
+        {pageSize !== "All" && (totalPages > 1 || hasNextPage) && (
           <Box 
             sx={{ 
               display: "flex", 
@@ -1573,7 +1613,7 @@ const CardView = ({
           >
             <IconButton 
               onClick={handlePreviousPage} 
-              disabled={currentPage === 0}
+              disabled={currentPage === 0 || isFetchingNextPage}
               size="small"
               sx={{ 
                 border: 1, 
@@ -1586,6 +1626,7 @@ const CardView = ({
             
             <Stack direction="row" spacing={0.5} alignItems="center">
               {/* Show page numbers with ellipsis for large page counts */}
+              {/* When hasNextPage is true, we show "..." to indicate more pages available */}
               {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
                 let pageNum;
                 if (totalPages <= 7) {
@@ -1606,6 +1647,7 @@ const CardView = ({
                   <IconButton
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
+                    disabled={isFetchingNextPage}
                     size="small"
                     sx={{
                       minWidth: 32,
@@ -1622,11 +1664,20 @@ const CardView = ({
                   </IconButton>
                 );
               })}
+              {/* Show ellipsis and loading indicator if more data is available */}
+              {hasNextPage && (
+                <>
+                  <Typography variant="body2" color="text.secondary">...</Typography>
+                  {isFetchingNextPage && (
+                    <CircularProgress size={16} sx={{ ml: 0.5 }} />
+                  )}
+                </>
+              )}
             </Stack>
             
             <IconButton 
               onClick={handleNextPage} 
-              disabled={currentPage >= totalPages - 1}
+              disabled={(currentPage >= totalPages - 1 && !hasNextPage) || isFetchingNextPage}
               size="small"
               sx={{ 
                 border: 1, 
@@ -1634,7 +1685,11 @@ const CardView = ({
                 "&:disabled": { opacity: 0.5 },
               }}
             >
-              <Typography variant="body2">→</Typography>
+              {isFetchingNextPage ? (
+                <CircularProgress size={14} />
+              ) : (
+                <Typography variant="body2">→</Typography>
+              )}
             </IconButton>
           </Box>
         )}
@@ -1881,7 +1936,14 @@ export const CippDataTable = (props) => {
     }
   }, [data, api?.url, usedData]);
 
+  // Auto-pagination: automatically fetch all pages for table view.
+  // For card view, we use lazy loading instead - only fetch when user needs more data.
   useEffect(() => {
+    // Skip auto-pagination when in card view mode - CardView handles its own pagination
+    if (showCardView) {
+      return;
+    }
+    
     if (getRequestData.isSuccess && !getRequestData.isFetching) {
       const pages = getRequestData.data?.pages;
       if (pages && pages.length > 0) {
@@ -1892,7 +1954,7 @@ export const CippDataTable = (props) => {
         }
       }
     }
-  }, [getRequestData.data?.pages?.length, getRequestData.isFetching, queryKey]);
+  }, [getRequestData.data?.pages?.length, getRequestData.isFetching, queryKey, showCardView]);
 
   useEffect(() => {
     if (getRequestData.isSuccess && getRequestData.data?.pages) {
@@ -2717,6 +2779,10 @@ export const CippDataTable = (props) => {
               editApiUrl={effectiveCardConfig?.editApiUrl}
               queryKey={effectiveQueryKey}
               columnFilters={columnFilters}
+              // Lazy loading props - only fetch more data when user navigates past loaded data
+              hasNextPage={getRequestData.hasNextPage}
+              onLoadMore={getRequestData.fetchNextPage}
+              isFetchingNextPage={getRequestData.isFetchingNextPage}
             />
           )}
         </Card>
