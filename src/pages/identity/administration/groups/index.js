@@ -22,6 +22,7 @@ import {
   Sync,
   DynamicFeed,
   Description,
+  ContactMail,
 } from "@mui/icons-material";
 import { Stack } from "@mui/system";
 import { useState } from "react";
@@ -43,6 +44,7 @@ const Page = () => {
       icon: <EyeIcon />,
       multiPost: false,
       category: "view",
+      quickAction: true,
     },
     {
       label: "Edit Group",
@@ -50,6 +52,7 @@ const Page = () => {
       multiPost: false,
       icon: <Edit />,
       category: "edit",
+      quickAction: true,
     },
     {
       label: "Add Member",
@@ -113,6 +116,54 @@ const Page = () => {
       quickAction: true,
     },
     {
+      label: "Add Contact",
+      type: "POST",
+      icon: <ContactMail />,
+      url: "/api/EditGroup",
+      customDataformatter: (row, action, formData) => {
+        const groups = Array.isArray(row) ? row : [row];
+        const contact = formData.ContactID;
+        const addContact = [contact];
+        return groups.map((group) => ({
+          AddContact: addContact,
+          tenantFilter: currentTenant,
+          groupId: group.id,
+          groupType: group.groupType,
+          groupName: group.displayName,
+        }));
+      },
+      fields: [
+        {
+          type: "autoComplete",
+          name: "ContactID",
+          label: "Select Contact",
+          multiple: false,
+          creatable: false,
+          validators: { required: "Please select a contact" },
+          api: {
+            url: "/api/ListContacts",
+            labelField: (option) =>
+              `${option.displayName || option.DisplayName} (${
+                option.mail || option.WindowsEmailAddress
+              })`,
+            valueField: "WindowsEmailAddress",
+            addedField: {
+              Guid: "Guid",
+              displayName: "displayName",
+              WindowsEmailAddress: "WindowsEmailAddress",
+            },
+          },
+        },
+      ],
+      confirmText: "Select a contact to add to the selected group(s).",
+      multiPost: false,
+      category: "edit",
+      quickAction: true,
+      condition: (row) =>
+        row?.calculatedGroupType === "distribution" ||
+        row?.calculatedGroupType === "mailenabledsecurity",
+    },
+    {
       label: "Set Global Address List Visibility",
       type: "POST",
       url: "/api/ExecGroupsHideFromGAL",
@@ -139,7 +190,7 @@ const Page = () => {
       category: "manage",
     },
     {
-      label: "Only allow messages from people inside the organisation",
+      label: "Block External",
       type: "POST",
       url: "/api/ExecGroupsDeliveryManagement",
       icon: <Lock />,
@@ -152,9 +203,10 @@ const Page = () => {
         "Are you sure you want to only allow messages from people inside the organisation? Remember this will not work if the group is AD Synched.",
       multiPost: false,
       category: "manage",
+      quickAction: true,
     },
     {
-      label: "Allow messages from people inside and outside the organisation",
+      label: "Allow External",
       type: "POST",
       icon: <LockOpen />,
       url: "/api/ExecGroupsDeliveryManagement",
@@ -167,6 +219,7 @@ const Page = () => {
         "Are you sure you want to allow messages from people inside and outside the organisation? Remember this will not work if the group is AD Synched.",
       multiPost: false,
       category: "manage",
+      quickAction: true,
     },
     {
       label: "Set Source of Authority",
@@ -458,12 +511,14 @@ const Page = () => {
     desktopFieldsLayout: "column",
     cardGridProps: { md: 6, lg: 4 },
     mobileQuickActions: [
+      "View Group",
       "Edit Group",
       "Add Member",
-      "Set Global Address List Visibility",
-      "Delete Group",
+      "Add Contact",
+      "Allow External",
+      "Block External",
     ],
-    maxQuickActions: 6,
+    maxQuickActions: 8,
   };
 
   const offCanvas = {
