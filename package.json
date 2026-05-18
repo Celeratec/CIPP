@@ -96,7 +96,6 @@
     "react-markdown": "10.1.0",
     "react-media-hook": "^0.5.0",
     "react-papaparse": "^4.4.0",
-    "react-quill": "^2.0.0",
     "react-redux": "9.2.0",
     "react-syntax-highlighter": "^16.1.0",
     "react-time-ago": "^7.3.3",
@@ -114,6 +113,11 @@
     "stylis-plugin-rtl": "2.1.1",
     "typescript": "5.9.3",
     "yup": "1.7.1"
+  },
+  "resolutions": {
+    "dompurify": "^3.4.3",
+    "minimatch": "^9.0.7",
+    "postcss": "^8.5.10"
   },
   "devDependencies": {
     "@svgr/webpack": "8.1.0",
