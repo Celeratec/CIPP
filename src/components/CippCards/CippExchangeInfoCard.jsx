@@ -110,14 +110,12 @@ const formatMailboxType = (type) => {
 };
 
 const LITIGATION_HOLD_ELIGIBLE_LICENSES = [
+  "Microsoft 365 Business Premium",
   "Microsoft 365 E3 or E5",
   "Office 365 E3 or E5",
   "Exchange Online Plan 2",
   "Exchange Online Plan 1 plus Exchange Online Archiving add-on",
 ];
-
-const LITIGATION_HOLD_BUSINESS_PREMIUM_NOTE =
-  "Microsoft 365 Business Premium alone does not include Litigation Hold. Add Exchange Online Plan 2 or the Exchange Online Archiving add-on to the user.";
 
 export const CippExchangeInfoCard = (props) => {
   const {
@@ -1388,9 +1386,6 @@ export const CippExchangeInfoCard = (props) => {
                           <li key={license}>{license}</li>
                         ))}
                       </ul>
-                    </Typography>
-                    <Typography variant="body2" sx={{ mt: 1.5 }}>
-                      {LITIGATION_HOLD_BUSINESS_PREMIUM_NOTE}
                     </Typography>
                     {userId && (
                       <Button

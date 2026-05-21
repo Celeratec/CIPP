@@ -188,15 +188,12 @@ const FormattedResultText = ({ text, severity }) => {
         </Typography>
         <Typography variant="body2" component="div">
           <ul style={{ margin: 0, paddingLeft: "1.2em" }}>
+            <li>Microsoft 365 Business Premium</li>
             <li>Microsoft 365 E3 or E5</li>
             <li>Office 365 E3 or E5</li>
             <li>Exchange Online Plan 2</li>
             <li>Exchange Online Plan 1 plus Exchange Online Archiving add-on</li>
           </ul>
-        </Typography>
-        <Typography variant="body2" sx={{ mt: 0.5 }}>
-          Microsoft 365 Business Premium alone does not include Litigation Hold. Add Exchange
-          Online Plan 2 or the Exchange Online Archiving add-on to the user.
         </Typography>
         <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
           Suggested steps:
