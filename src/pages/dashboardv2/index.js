@@ -31,7 +31,6 @@ import { CippReportToolbar } from '../../components/CippComponents/CippReportToo
 import { Assessment as AssessmentIcon } from '@mui/icons-material'
 import ChevronDownIcon from '@heroicons/react/24/outline/ChevronDownIcon'
 import { CippHead } from '../../components/CippComponents/CippHead.jsx'
-import { useDashboardPrefetch } from '../../hooks/use-prefetch'
 import { CippChartCard } from '../../components/CippCards/CippChartCard'
 import { Cloud as CloudIcon } from '@mui/icons-material'
 
@@ -53,7 +52,9 @@ const Page = () => {
   const isWide = useMediaQuery('(min-width:1513px)')
   const [reportsMenuAnchor, setReportsMenuAnchor] = useState(null)
 
-  useDashboardPrefetch(currentTenant)
+  // Dashboard prefetch disabled: it fired 3 extra Graph API calls with cache keys
+  // that no page reuses, adding load on top of the dashboard's own 5+ parallel calls
+  // and contributing to Azure Functions maxConcurrentRequests queueing (limit: 10).
 
   // Get reportId from query params or default to "ztna"
   // Only use default if router is ready and reportId is still not present
