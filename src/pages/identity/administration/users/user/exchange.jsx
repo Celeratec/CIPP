@@ -1325,6 +1325,7 @@ const Page = () => {
                     isFetching={userRequest.isFetching}
                     handleRefresh={() => userRequest.refetch()}
                     userPrincipalName={graphUserRequest.data?.[0]?.userPrincipalName}
+                    userId={userId}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 8 }}>

@@ -45,6 +45,8 @@ import { Stack, Grid, Box } from "@mui/system";
 import { alpha, useTheme } from "@mui/material/styles";
 import { ApiPostCall } from "../../api/ApiCall";
 import { useSettings } from "../../hooks/use-settings";
+import { CippApiResults } from "../CippComponents/CippApiResults";
+import NextLink from "next/link";
 
 // Section component for consistent styling
 const InfoSection = ({ icon: Icon, title, children }) => (
@@ -107,8 +109,26 @@ const formatMailboxType = (type) => {
   return type.replace(/([a-z])([A-Z])/g, "$1 $2");
 };
 
+const LITIGATION_HOLD_ELIGIBLE_LICENSES = [
+  "Microsoft 365 E3 or E5",
+  "Office 365 E3 or E5",
+  "Exchange Online Plan 2",
+  "Exchange Online Plan 1 plus Exchange Online Archiving add-on",
+];
+
+const LITIGATION_HOLD_BUSINESS_PREMIUM_NOTE =
+  "Microsoft 365 Business Premium alone does not include Litigation Hold. Add Exchange Online Plan 2 or the Exchange Online Archiving add-on to the user.";
+
 export const CippExchangeInfoCard = (props) => {
-  const { exchangeData, isLoading = false, isFetching = false, handleRefresh, userPrincipalName, ...other } = props;
+  const {
+    exchangeData,
+    isLoading = false,
+    isFetching = false,
+    handleRefresh,
+    userPrincipalName,
+    userId,
+    ...other
+  } = props;
   const theme = useTheme();
   const settings = useSettings();
   
@@ -174,11 +194,13 @@ export const CippExchangeInfoCard = (props) => {
   });
 
   const handleRestrictionClick = (direction, isBlocked) => {
+    toggleRestriction.reset();
     setRestrictionDialog({ open: true, direction, currentlyBlocked: isBlocked });
   };
 
   const handleRestrictionDialogClose = () => {
     setRestrictionDialog({ open: false, direction: null, currentlyBlocked: false });
+    toggleRestriction.reset();
   };
 
   const handleRestrictionToggle = async () => {
@@ -196,15 +218,18 @@ export const CippExchangeInfoCard = (props) => {
         },
       });
       if (handleRefresh) handleRefresh();
+      handleRestrictionDialogClose();
     } catch (error) {
       console.error("Failed to toggle mailbox restriction:", error);
     } finally {
       setIsTogglingRestriction(false);
-      handleRestrictionDialogClose();
     }
   };
 
+  const licensedForLitigationHold = exchangeData?.MailboxActionsData?.LicensedForLitigationHold;
+
   const handleHoldClick = (holdType, isEnabled) => {
+    toggleHold.reset();
     setLitigationDays("");
     setHoldDialog({ open: true, holdType, currentlyEnabled: isEnabled });
   };
@@ -212,6 +237,7 @@ export const CippExchangeInfoCard = (props) => {
   const handleHoldDialogClose = () => {
     setHoldDialog({ open: false, holdType: null, currentlyEnabled: false });
     setLitigationDays("");
+    toggleHold.reset();
   };
 
   const handleHoldToggle = async () => {
@@ -233,11 +259,11 @@ export const CippExchangeInfoCard = (props) => {
     try {
       await toggleHold.mutateAsync({ url, data });
       if (handleRefresh) handleRefresh();
+      handleHoldDialogClose();
     } catch (error) {
       console.error("Failed to toggle hold:", error);
     } finally {
       setIsTogglingHold(false);
-      handleHoldDialogClose();
     }
   };
 
@@ -992,9 +1018,13 @@ export const CippExchangeInfoCard = (props) => {
               {holds.filter(h => h.toggleable).map((hold) => (
                 <Tooltip
                   key={hold.name}
-                  title={userPrincipalName
-                    ? `${hold.name} Hold - Click to ${hold.enabled ? "disable" : "enable"}`
-                    : `${hold.name} Hold`}
+                  title={
+                    hold.name === "Litigation" && licensedForLitigationHold === false
+                      ? "Litigation Hold requires an eligible Exchange license — click for details"
+                      : userPrincipalName
+                        ? `${hold.name} Hold - Click to ${hold.enabled ? "disable" : "enable"}`
+                        : `${hold.name} Hold`
+                  }
                 >
                   <Chip
                     label={hold.name}
@@ -1346,6 +1376,35 @@ export const CippExchangeInfoCard = (props) => {
 
             {!holdDialog.currentlyEnabled && holdDialog.holdType === "Litigation" && (
               <>
+                {licensedForLitigationHold === false && (
+                  <Alert severity="warning" sx={{ mt: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                      This mailbox is not licensed for Litigation Hold
+                    </Typography>
+                    <Typography variant="body2" component="div">
+                      Assign one of these licenses before enabling Litigation Hold:
+                      <ul style={{ margin: "8px 0 0", paddingLeft: 20 }}>
+                        {LITIGATION_HOLD_ELIGIBLE_LICENSES.map((license) => (
+                          <li key={license}>{license}</li>
+                        ))}
+                      </ul>
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1.5 }}>
+                      {LITIGATION_HOLD_BUSINESS_PREMIUM_NOTE}
+                    </Typography>
+                    {userId && (
+                      <Button
+                        component={NextLink}
+                        href={`/identity/administration/users/user/edit?userId=${userId}`}
+                        size="small"
+                        variant="outlined"
+                        sx={{ mt: 1.5, textTransform: "none" }}
+                      >
+                        Assign License on Edit User
+                      </Button>
+                    )}
+                  </Alert>
+                )}
                 <Alert severity="info" sx={{ mt: 2 }}>
                   <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
                     Litigation Hold preserves all mailbox content
@@ -1401,11 +1460,7 @@ export const CippExchangeInfoCard = (props) => {
               </Alert>
             )}
           </DialogContentText>
-          {toggleHold.isError && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {toggleHold.error?.message || `Failed to update ${holdDialog.holdType} hold`}
-            </Alert>
-          )}
+          <CippApiResults apiObject={toggleHold} errorsOnly={true} alertSx={{ mt: 2 }} />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleHoldDialogClose} disabled={isTogglingHold}>
@@ -1505,12 +1560,7 @@ export const CippExchangeInfoCard = (props) => {
               </Alert>
             )}
           </DialogContentText>
-          {toggleRestriction.isError && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {toggleRestriction.error?.message ||
-                "Failed to update mailbox restriction"}
-            </Alert>
-          )}
+          <CippApiResults apiObject={toggleRestriction} errorsOnly={true} alertSx={{ mt: 2 }} />
         </DialogContent>
         <DialogActions>
           <Button
@@ -1548,4 +1598,5 @@ CippExchangeInfoCard.propTypes = {
   isFetching: PropTypes.bool,
   handleRefresh: PropTypes.func,
   userPrincipalName: PropTypes.string,
+  userId: PropTypes.string,
 };

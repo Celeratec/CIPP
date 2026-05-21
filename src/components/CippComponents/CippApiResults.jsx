@@ -163,6 +163,57 @@ const FormattedResultText = ({ text, severity }) => {
     );
   }
 
+  // Pattern: Litigation Hold license errors from Exchange Online
+  const isLitigationHoldLicenseError =
+    (text.includes("LitigationHold") ||
+      text.includes("litigation hold") ||
+      text.includes("Litigation Hold")) &&
+    (text.includes("license") ||
+      text.includes("License") ||
+      text.includes("doesn't permit") ||
+      text.includes("does not permit"));
+  if (isLitigationHoldLicenseError) {
+    const errorSplit = text.match(/^(.+?)\.\s*Error:\s*(.+)$/s);
+    const heading = errorSplit ? errorSplit[1] : "Litigation Hold update failed";
+    const errorDetail = errorSplit ? errorSplit[2].trim() : text;
+
+    return (
+      <Stack spacing={1}>
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {heading}
+        </Typography>
+        <Typography variant="body2">{errorDetail}</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
+          Eligible licenses for Litigation Hold:
+        </Typography>
+        <Typography variant="body2" component="div">
+          <ul style={{ margin: 0, paddingLeft: "1.2em" }}>
+            <li>Microsoft 365 E3 or E5</li>
+            <li>Office 365 E3 or E5</li>
+            <li>Exchange Online Plan 2</li>
+            <li>Exchange Online Plan 1 plus Exchange Online Archiving add-on</li>
+          </ul>
+        </Typography>
+        <Typography variant="body2" sx={{ mt: 0.5 }}>
+          Microsoft 365 Business Premium alone does not include Litigation Hold. Add Exchange
+          Online Plan 2 or the Exchange Online Archiving add-on to the user.
+        </Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
+          Suggested steps:
+        </Typography>
+        <Typography variant="body2" component="div">
+          <ol style={{ margin: 0, paddingLeft: "1.2em" }}>
+            <li>
+              Open the user&apos;s <strong>Edit User</strong> page and assign an eligible license
+            </li>
+            <li>Wait a few minutes for Exchange Online to sync the new license</li>
+            <li>Retry enabling Litigation Hold on this mailbox</li>
+          </ol>
+        </Typography>
+      </Stack>
+    );
+  }
+
   // Pattern: eDiscovery permission / license errors
   const isEdiscoveryError =
     (text.includes("eDiscovery") || text.includes("ediscovery")) &&
