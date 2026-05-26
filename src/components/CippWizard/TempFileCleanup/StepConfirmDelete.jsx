@@ -42,9 +42,13 @@ export const StepConfirmDelete = ({ data, onBack }) => {
     setIsDeleting(true);
     setError(null);
 
+    const fileCount = data.selectedFiles?.length || 0;
+    const deleteTimeoutMs = Math.min(300000, Math.max(120000, fileCount * 2000));
+
     deleteMutation.mutate(
       {
         url: "/api/ExecTempFileCleanup",
+        timeout: deleteTimeoutMs,
         data: {
           tenantFilter: data.tenant?.value,
           files: data.selectedFiles.map((f) => ({

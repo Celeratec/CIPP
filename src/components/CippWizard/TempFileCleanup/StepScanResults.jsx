@@ -12,6 +12,8 @@ import { useEffect, useState, useRef } from "react";
 import { ApiPostCall } from "../../../api/ApiCall";
 import { getCippError } from "../../../utils/get-cipp-error";
 
+const SCAN_TIMEOUT_MS = 300000;
+
 const formatFileSize = (bytes) => {
   if (bytes === 0 || bytes === null || bytes === undefined) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -35,6 +37,7 @@ export const StepScanResults = ({ data, onUpdate, onNext, onBack }) => {
     scanMutation.mutate(
       {
         url: "/api/ExecTempFileScan",
+        timeout: SCAN_TIMEOUT_MS,
         data: {
           tenantFilter: data.tenant?.value,
           scope: data.scope,
@@ -57,7 +60,16 @@ export const StepScanResults = ({ data, onUpdate, onNext, onBack }) => {
           const errorMsg = getCippError(err);
           const status = err?.response?.status;
           const statusText = err?.response?.statusText;
-          if (status) {
+          const isTimeout =
+            err?.code === "ECONNABORTED" ||
+            /timeout/i.test(err?.message || "") ||
+            status === 504;
+
+          if (isTimeout) {
+            setError(
+              "The scan timed out before it could finish. Try a single site or OneDrive instead of scanning all locations, or reduce the number of file types selected."
+            );
+          } else if (status) {
             setError(`${errorMsg || "Scan failed"} (HTTP ${status}${statusText ? `: ${statusText}` : ""})`);
           } else {
             setError(errorMsg || err?.message || "Scan failed - please check your connection");
