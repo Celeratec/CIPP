@@ -8,11 +8,12 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import { useEffect, useState, useRef } from "react";
-import { ApiPostCall } from "../../../api/ApiCall";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { ApiGetCall, ApiPostCall } from "../../../api/ApiCall";
 import { getCippError } from "../../../utils/get-cipp-error";
 
-const SCAN_TIMEOUT_MS = 300000;
+const SCAN_TIMEOUT_MS = 30000;
+const QUEUE_POLL_INTERVAL_MS = 3000;
 
 const formatFileSize = (bytes) => {
   if (bytes === 0 || bytes === null || bytes === undefined) return "0 B";
@@ -26,13 +27,63 @@ const formatFileSize = (bytes) => {
 export const StepScanResults = ({ data, onUpdate, onNext, onBack }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState(null);
+  const [queueId, setQueueId] = useState(null);
+  const [fetchResults, setFetchResults] = useState(false);
   const scanStartedRef = useRef(false);
 
   const scanMutation = ApiPostCall({});
 
+  const applyScanResults = useCallback(
+    (results) => {
+      setIsScanning(false);
+      onUpdate({
+        scanResults: results,
+        selectedFiles: results,
+      });
+    },
+    [onUpdate]
+  );
+
+  const queuePoll = ApiGetCall({
+    url: "/api/ListCippQueue",
+    data: { QueueId: queueId },
+    queryKey: `TempFileScanQueue-${queueId}`,
+    waiting: !!queueId && isScanning && !fetchResults,
+    refetchInterval: (pollData) => {
+      const status = pollData?.[0]?.Status;
+      if (
+        status === "Completed" ||
+        status === "Failed" ||
+        status === "Completed (with errors)"
+      ) {
+        return false;
+      }
+      return QUEUE_POLL_INTERVAL_MS;
+    },
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
+  const resultsPoll = ApiGetCall({
+    url: "/api/ListTempFileScanResults",
+    data: { queueId, tenantFilter: data.tenant?.value },
+    queryKey: `TempFileScanResults-${queueId}`,
+    waiting: fetchResults && !!queueId,
+    refetchInterval: (pollData) => {
+      if (pollData?.Status === "Completed" || pollData?.Results) {
+        return false;
+      }
+      return QUEUE_POLL_INTERVAL_MS;
+    },
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
   const startScan = () => {
     setIsScanning(true);
     setError(null);
+    setQueueId(null);
+    setFetchResults(false);
 
     scanMutation.mutate(
       {
@@ -48,12 +99,14 @@ export const StepScanResults = ({ data, onUpdate, onNext, onBack }) => {
       },
       {
         onSuccess: (response) => {
-          setIsScanning(false);
-          const results = response?.data?.Results || [];
-          onUpdate({
-            scanResults: results,
-            selectedFiles: results,
-          });
+          const body = response?.data;
+          if (body?.Queued && body?.QueueId) {
+            setQueueId(body.QueueId);
+            return;
+          }
+
+          const results = body?.Results || [];
+          applyScanResults(results);
         },
         onError: (err) => {
           setIsScanning(false);
@@ -67,12 +120,16 @@ export const StepScanResults = ({ data, onUpdate, onNext, onBack }) => {
 
           if (isTimeout) {
             setError(
-              "The scan timed out before it could finish. Try a single site or OneDrive instead of scanning all locations, or reduce the number of file types selected."
+              "The scan could not be started in time. Please try again."
             );
           } else if (status) {
-            setError(`${errorMsg || "Scan failed"} (HTTP ${status}${statusText ? `: ${statusText}` : ""})`);
+            setError(
+              `${errorMsg || "Scan failed"} (HTTP ${status}${statusText ? `: ${statusText}` : ""})`
+            );
           } else {
-            setError(errorMsg || err?.message || "Scan failed - please check your connection");
+            setError(
+              errorMsg || err?.message || "Scan failed - please check your connection"
+            );
           }
         },
       }
@@ -86,15 +143,54 @@ export const StepScanResults = ({ data, onUpdate, onNext, onBack }) => {
     }
   }, []);
 
+  useEffect(() => {
+    const queueStatus = queuePoll.data?.[0]?.Status;
+    if (!queueStatus || !isScanning || fetchResults) return;
+
+    if (queueStatus === "Completed") {
+      setFetchResults(true);
+      return;
+    }
+
+    if (queueStatus === "Failed" || queueStatus === "Completed (with errors)") {
+      setIsScanning(false);
+      setError("Temp file scan failed. Please try again or choose a smaller scope.");
+    }
+  }, [queuePoll.data, isScanning, fetchResults]);
+
+  useEffect(() => {
+    if (!fetchResults || !resultsPoll.data) return;
+
+    const payload = resultsPoll.data;
+    if (payload?.Status === "Running") return;
+
+    if (payload?.Status === "Completed" || Array.isArray(payload?.Results)) {
+      applyScanResults(payload.Results || []);
+      return;
+    }
+
+    const errorMsg = getCippError({ response: { data: payload } });
+    if (errorMsg) {
+      setIsScanning(false);
+      setError(
+        typeof errorMsg === "string"
+          ? errorMsg
+          : "Temp file scan failed. Please try again."
+      );
+    }
+  }, [resultsPoll.data, fetchResults, applyScanResults]);
+
   const totalSize =
     data.scanResults?.reduce((sum, file) => sum + (file.size || 0), 0) || 0;
   const fileCount = data.scanResults?.length || 0;
+  const queueStatus = queuePoll.data?.[0]?.Status;
+  const queueProgress = queuePoll.data?.[0]?.PercentComplete;
 
   return (
     <Stack spacing={3}>
       <Typography variant="h6">
         {isScanning
-          ? "Scanning... This may take a moment for large sites."
+          ? "Scanning... Large sites may take several minutes."
           : error
             ? "Scan Failed"
             : "Scan Complete"}
@@ -102,9 +198,18 @@ export const StepScanResults = ({ data, onUpdate, onNext, onBack }) => {
 
       {isScanning && (
         <Box>
-          <LinearProgress />
+          <LinearProgress
+            variant={queueProgress ? "determinate" : "indeterminate"}
+            value={queueProgress || 0}
+          />
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Searching for temp files...
+            {queueId
+              ? queueStatus === "Running" || queueStatus === "Queued"
+                ? "Scan running in the background..."
+                : fetchResults
+                  ? "Loading scan results..."
+                  : "Searching for temp files..."
+              : "Starting scan..."}
           </Typography>
         </Box>
       )}
