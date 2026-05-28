@@ -23,24 +23,27 @@ import tabOptions from "./tabOptions";
 import { CippCopyToClipBoard } from "../../../../../components/CippComponents/CippCopyToClipboard";
 import { Box, Stack } from "@mui/system";
 import { Grid } from "@mui/system";
-import { SvgIcon, Typography, Card, CardHeader, Divider } from "@mui/material";
+import { SvgIcon, Typography, Card, CardHeader, Divider, Button, CircularProgress, Alert } from "@mui/material";
 import { CippBannerListCard } from "../../../../../components/CippCards/CippBannerListCard";
 import { CippTimeAgo } from "../../../../../components/CippComponents/CippTimeAgo";
 import { useEffect, useState } from "react";
 import { EyeIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-import { CippDataTable } from "../../../../../components/CippTable/CippDataTable";
 import { PropertyList } from "../../../../../components/property-list";
 import { PropertyListItem } from "../../../../../components/property-list-item";
 import { getCippFormatting } from "../../../../../utils/get-cipp-formatting";
 import { CippHead } from "../../../../../components/CippComponents/CippHead";
-import { Button } from "@mui/material";
-import { Edit } from "@mui/icons-material";
+import { Edit, AlternateEmail, Delete, Star, Check, Error } from "@mui/icons-material";
+import { CippApiDialog } from "../../../../../components/CippComponents/CippApiDialog";
+import { useDialog } from "../../../../../hooks/use-dialog";
+import CippAliasDialog from "../../../../../components/CippComponents/CippAliasDialog";
+import { CippPropertyListCard } from "../../../../../components/CippCards/CippPropertyListCard";
 
 const Page = () => {
   const userSettingsDefaults = useSettings();
   const router = useRouter();
   const { groupId } = router.query;
   const [waiting, setWaiting] = useState(false);
+  const aliasDialog = useDialog();
 
   useEffect(() => {
     if (groupId) {
@@ -191,6 +194,16 @@ const Page = () => {
 
   // Calculate group type and add to data for actions
   const { groupType, calculatedGroupType } = calculateGroupType(groupData);
+  const supportsEmailAliases =
+    !!groupData?.mailEnabled &&
+    ["Distribution List", "Mail-Enabled Security", "Microsoft 365"].includes(groupType);
+
+  const groupAliasesRequest = ApiGetCall({
+    url: `/api/ListGroupAliases?groupId=${groupId}&groupType=${encodeURIComponent(groupType ?? "")}&tenantFilter=${router.query.tenantFilter ?? userSettingsDefaults.currentTenant}`,
+    queryKey: `GroupAliases-${groupId}`,
+    waiting: waiting && groupRequest.isSuccess && supportsEmailAliases,
+  });
+
   const data = groupData
     ? {
         ...groupData,
@@ -489,6 +502,123 @@ const Page = () => {
   };
 
   const groupActions = groupData ? getGroupActions() : [];
+
+  const aliasApiConfig = {
+    type: "POST",
+    url: "/api/EditGroupAliases",
+    relatedQueryKeys: `GroupAliases-${groupId}`,
+    confirmText: "Add the specified proxy addresses to this group?",
+    customDataformatter: (row, action, formData) => ({
+      id: groupId,
+      tenantFilter: router.query.tenantFilter ?? userSettingsDefaults.currentTenant,
+      GroupType: groupType,
+      AddedAliases: formData?.AddedAliases?.join(",") || "",
+      displayName: groupData?.displayName,
+    }),
+  };
+
+  const proxyAddressActions = [
+    {
+      label: "Make Primary",
+      type: "POST",
+      icon: <Star />,
+      url: "/api/EditGroupAliases",
+      data: {
+        id: groupId,
+        tenantFilter: router.query.tenantFilter ?? userSettingsDefaults.currentTenant,
+        GroupType: groupType,
+        MakePrimary: "Address",
+      },
+      confirmText: "Are you sure you want to make this the primary proxy address?",
+      multiPost: false,
+      relatedQueryKeys: `GroupAliases-${groupId}`,
+      condition: (row) => row && row.Type !== "Primary",
+    },
+    {
+      label: "Remove Proxy Address",
+      type: "POST",
+      icon: <Delete />,
+      url: "/api/EditGroupAliases",
+      data: {
+        id: groupId,
+        tenantFilter: router.query.tenantFilter ?? userSettingsDefaults.currentTenant,
+        GroupType: groupType,
+        RemovedAliases: "Address",
+      },
+      confirmText: "Are you sure you want to remove this proxy address?",
+      multiPost: false,
+      relatedQueryKeys: `GroupAliases-${groupId}`,
+      condition: (row) => row && row.Type !== "Primary",
+    },
+  ];
+
+  const proxyAddresses = groupAliasesRequest.data?.proxyAddresses ?? [];
+  const aliasCount = proxyAddresses.filter(
+    (address) => typeof address === "string" && !address.startsWith("SMTP:"),
+  ).length;
+
+  const proxyAddressesCard = [
+    {
+      id: 1,
+      cardLabelBox: {
+        cardLabelBoxHeader: groupAliasesRequest.isFetching ? (
+          <CircularProgress size="25px" color="inherit" />
+        ) : aliasCount > 0 ? (
+          <Check />
+        ) : (
+          <Error />
+        ),
+      },
+      text: "Email Aliases",
+      subtext:
+        aliasCount > 0
+          ? "Email aliases are configured for this group"
+          : "No additional email aliases configured for this group",
+      statusColor: "green.main",
+      cardLabelBoxActions: (
+        <Button
+          startIcon={<AlternateEmail />}
+          onClick={() => aliasDialog.handleOpen()}
+          variant="outlined"
+          color="primary"
+          size="small"
+        >
+          Add Alias
+        </Button>
+      ),
+      table: {
+        title: "Email Aliases",
+        hideTitle: true,
+        data: proxyAddresses.map((address) => ({
+          Address: address,
+          Type: typeof address === "string" && address.startsWith("SMTP:") ? "Primary" : "Alias",
+        })),
+        refreshFunction: () => groupAliasesRequest.refetch(),
+        isFetching: groupAliasesRequest.isFetching,
+        simpleColumns: ["Address", "Type"],
+        actions: proxyAddressActions,
+        offCanvas: {
+          children: (rowData) => (
+            <CippPropertyListCard
+              cardSx={{ p: 0, m: -2 }}
+              title="Address Details"
+              propertyItems={[
+                {
+                  label: "Address",
+                  value: rowData.Address,
+                },
+                {
+                  label: "Type",
+                  value: rowData.Type,
+                },
+              ]}
+              actionItems={proxyAddressActions}
+            />
+          ),
+        },
+      },
+    },
+  ];
 
   // Prepare members items
   const membersItems =
@@ -795,6 +925,23 @@ const Page = () => {
             </Grid>
             <Grid size={8}>
               <Stack spacing={3}>
+                {supportsEmailAliases && (
+                  <>
+                    <Typography variant="h6">Email Aliases</Typography>
+                    {groupAliasesRequest.isError && (
+                      <Alert severity="error">
+                        {groupAliasesRequest.error?.message ||
+                          groupAliasesRequest.data?.Results ||
+                          "Failed to load group aliases."}
+                      </Alert>
+                    )}
+                    <CippBannerListCard
+                      isFetching={groupAliasesRequest.isFetching}
+                      items={proxyAddressesCard}
+                      isCollapsible={true}
+                    />
+                  </>
+                )}
                 <Typography variant="h6">Members</Typography>
                 <CippBannerListCard
                   isFetching={groupBulkRequest.isPending}
@@ -818,6 +965,14 @@ const Page = () => {
           </Grid>
         </Box>
       )}
+      <CippApiDialog
+        createDialog={aliasDialog}
+        title="Add Email Aliases"
+        api={aliasApiConfig}
+        row={groupData}
+      >
+        {({ formHook }) => <CippAliasDialog formHook={formHook} entityLabel="group" />}
+      </CippApiDialog>
     </HeaderedTabbedLayout>
   );
 };
