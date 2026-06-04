@@ -36,6 +36,7 @@ export const CippFormLicenseSelector = ({
         data: {
           Endpoint: "subscribedSkus",
           $count: true,
+          IncludeExcluded: true,
         },
         showRefresh,
       }}
