@@ -2114,7 +2114,13 @@ export const CippDataTable = (props) => {
   );
   //create memoized version of usedColumns, and usedData
   const memoizedColumns = useMemo(() => usedColumns, [usedColumns]);
-  const memoizedData = useMemo(() => usedData, [usedData, updateTrigger]);
+  // Include updateTrigger in data memo to force re-render when license backfill completes.
+  // Also refresh data identity when derived columns change so TanStack re-runs filtering
+  // for searches entered before columns are available.
+  const memoizedData = useMemo(
+    () => (Array.isArray(usedData) ? usedData.slice() : usedData),
+    [usedData, updateTrigger, usedColumns]
+  );
 
   const handleActionDisabled = (row, action) => {
     if (action?.condition) {
