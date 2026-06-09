@@ -19,6 +19,7 @@ import CippFormComponent from "../CippComponents/CippFormComponent";
 import { CippFormCondition } from "../CippComponents/CippFormCondition";
 import { CippFormDomainSelector } from "../CippComponents/CippFormDomainSelector";
 import { CippFormUserSelector } from "../CippComponents/CippFormUserSelector";
+import { CippFormLicenseSelector } from "../CippComponents/CippFormLicenseSelector";
 import { useWatch } from "react-hook-form";
 import { useState } from "react";
 
@@ -624,6 +625,31 @@ const CippAddGroupForm = (props) => {
               <DynamicRuleExamplesAccordion 
                 formControl={formControl} 
                 selectedGroupType={selectedGroupType} 
+              />
+            </Grid>
+          </CippFormCondition>
+
+          <CippFormCondition
+            formControl={formControl}
+            field="groupType"
+            compareType="is"
+            compareValue="generic"
+          >
+            <Grid size={{ xs: 12 }}>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="h6" gutterBottom>
+                Licenses
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Optionally assign licenses to this security group. They will be applied to all members.
+              </Typography>
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <CippFormLicenseSelector
+                formControl={formControl}
+                name="licenses"
+                label="Licenses (optional)"
+                multiple={true}
               />
             </Grid>
           </CippFormCondition>

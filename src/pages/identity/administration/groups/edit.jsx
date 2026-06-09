@@ -33,6 +33,7 @@ import {
   ContactMail,
   Edit,
   Save,
+  VpnKey,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -47,6 +48,8 @@ import { CippApiDialog } from "../../../../components/CippComponents/CippApiDial
 import { useDialog } from "../../../../hooks/use-dialog";
 import { showToast } from "../../../../store/toasts";
 import CippFormComponent from "../../../../components/CippComponents/CippFormComponent";
+import { CippFormLicenseSelector } from "../../../../components/CippComponents/CippFormLicenseSelector";
+import { getCippLicenseTranslation } from "../../../../utils/get-cipp-license-translation";
 
 const StatBox = ({ value, label, color }) => (
   <Box sx={{ textAlign: "center", px: 2 }}>
@@ -106,8 +109,10 @@ const EditGroup = () => {
   const isM365 = computedGroupType === "Microsoft 365";
   const isDistribution = computedGroupType === "Distribution List";
   const isMailEnabledSecurity = computedGroupType === "Mail-Enabled Security";
+  const isSecurityGroup = computedGroupType === "Security";
   const showContacts = isDistribution || isMailEnabledSecurity;
   const hasSettings = isM365 || isDistribution || isMailEnabledSecurity;
+  const showLicenseManagement = isSecurityGroup && !isOnPrem;
 
   const getGroupTypeStyle = () => {
     switch (computedGroupType) {
@@ -389,6 +394,16 @@ const EditGroup = () => {
   const propertiesMutation = ApiPostCall({ relatedQueryKeys: [`ListGroups-${groupId}`] });
   const [propertiesSaving, setPropertiesSaving] = useState(false);
 
+  const licenseFormControl = useForm({
+    mode: "onChange",
+    defaultValues: {
+      AddLicenses: [],
+      RemoveLicenses: [],
+    },
+  });
+  const licenseMutation = ApiPostCall({ relatedQueryKeys: [`ListGroups-${groupId}`] });
+  const [licensesSaving, setLicensesSaving] = useState(false);
+
   useEffect(() => {
     if (groupInfo.isSuccess && group) {
       formControl.reset({
@@ -396,6 +411,10 @@ const EditGroup = () => {
         description: group.description || "",
         mailNickname: group.mailNickname || "",
         membershipRules: group.membershipRule || "",
+      });
+      licenseFormControl.reset({
+        AddLicenses: [],
+        RemoveLicenses: [],
       });
     }
   }, [groupInfo.isSuccess, groupInfo.isFetching]);
@@ -441,6 +460,71 @@ const EditGroup = () => {
       );
     },
     [tenantFilter, groupId, computedGroupType, isDynamic, propertiesMutation, dispatch, groupInfo]
+  );
+
+  const handleSaveLicenses = useCallback(
+    (formData) => {
+      const addLicenses = formData.AddLicenses || [];
+      const removeLicenses = formData.RemoveLicenses || [];
+      if (addLicenses.length === 0 && removeLicenses.length === 0) {
+        dispatch(
+          showToast({
+            message: "Select at least one license to add or remove.",
+            title: "Group Licenses",
+            toastError: { message: "No license changes selected." },
+          })
+        );
+        return;
+      }
+
+      setLicensesSaving(true);
+      licenseMutation.mutate(
+        {
+          url: "/api/EditGroup",
+          data: {
+            tenantFilter,
+            groupId,
+            groupType: computedGroupType,
+            groupName,
+            AddLicenses: addLicenses,
+            RemoveLicenses: removeLicenses,
+          },
+        },
+        {
+          onSuccess: (res) => {
+            const msg = Array.isArray(res?.data?.Results)
+              ? res.data.Results.join(", ")
+              : "License changes submitted successfully";
+            dispatch(showToast({ message: msg, title: "Group Licenses" }));
+            setLicensesSaving(false);
+            licenseFormControl.reset({ AddLicenses: [], RemoveLicenses: [] });
+            groupInfo.refetch();
+          },
+          onError: (err) => {
+            const msg =
+              err?.response?.data?.Results?.[0] || err?.message || "Failed to update group licenses";
+            dispatch(
+              showToast({
+                message: msg,
+                title: "Group Licenses",
+                toastError: { message: msg },
+              })
+            );
+            setLicensesSaving(false);
+          },
+        }
+      );
+    },
+    [
+      tenantFilter,
+      groupId,
+      computedGroupType,
+      groupName,
+      licenseMutation,
+      dispatch,
+      groupInfo,
+      licenseFormControl,
+    ]
   );
 
   // --- Loading state ---
@@ -1043,6 +1127,88 @@ const EditGroup = () => {
               </Grid>
             )}
           </Grid>
+
+          {showLicenseManagement && (
+            <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden" }}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                sx={{ px: 2, py: 1.5, bgcolor: "background.default" }}
+              >
+                <VpnKey fontSize="small" color="action" />
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Group Licenses
+                </Typography>
+              </Stack>
+              <Box sx={{ p: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Licenses assigned to this group are automatically applied to all members. Changes
+                  can take 2-5 minutes to propagate.
+                </Typography>
+
+                {group.assignedLicenses?.length > 0 && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                      Currently assigned licenses
+                    </Typography>
+                    {group.assignedLicenses.map((lic) => (
+                      <Typography key={lic.skuId} variant="body2">
+                        - {getCippLicenseTranslation([lic])}
+                      </Typography>
+                    ))}
+                  </Box>
+                )}
+
+                <form onSubmit={licenseFormControl.handleSubmit(handleSaveLicenses)}>
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <CippFormLicenseSelector
+                        formControl={licenseFormControl}
+                        name="AddLicenses"
+                        label="Add Licenses"
+                        multiple={true}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <CippFormComponent
+                        type="autoComplete"
+                        name="RemoveLicenses"
+                        label="Remove Licenses"
+                        formControl={licenseFormControl}
+                        multiple={true}
+                        creatable={false}
+                        options={
+                          group.assignedLicenses?.map((lic) => ({
+                            label: getCippLicenseTranslation([lic]),
+                            value: lic.skuId,
+                          })) || []
+                        }
+                        sortOptions={true}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12 }}>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        startIcon={
+                          licensesSaving ? (
+                            <CircularProgress size={16} color="inherit" />
+                          ) : (
+                            <Save />
+                          )
+                        }
+                        disabled={licensesSaving}
+                        size="small"
+                      >
+                        {licensesSaving ? "Saving..." : "Update Licenses"}
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </form>
+              </Box>
+            </Paper>
+          )}
 
           {/* Dynamic membership rule display */}
           {isDynamic && group.membershipRule && (
