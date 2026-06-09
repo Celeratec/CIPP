@@ -235,7 +235,11 @@ const CippVersionProperties = () => {
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {manage365Version?.data?.version
-                    ? `v${manage365Version.data.version}`
+                    ? `v${manage365Version.data.version}${
+                        manage365Version.data.upstreamBaseline
+                          ? ` (upstream baseline v${manage365Version.data.upstreamBaseline})`
+                          : ""
+                      }`
                     : "Unknown"}
                 </Typography>
               </Box>

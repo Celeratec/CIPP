@@ -10,9 +10,9 @@
 
 ---
 
-> **Last synced with upstream:** May 2026 (CIPP v10.4.5 / CIPP-API v10.4.4)
+> **Last synced with upstream:** June 2026 — selective intake from CIPP v10.5 / CIPP-API v10.5.1 (**Manage365 v5.12.15**, upstream baseline **10.5.1**)
 >
-> Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. This document reflects the state of both projects as of the date above.
+> Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. Upstream changes are merged selectively to preserve Manage365-specific UI and workflows. See [Upstream Integration](#upstream-integration) below.
 
 ## What is Manage365?
 
@@ -38,7 +38,7 @@ Manage365 includes the complete CIPP feature set:
 - Risky users monitoring
 - Group management with templates, group detail page, and deploy group template button
 - Device management (Entra ID devices with NinjaOne enrichment, cross-linked to Intune)
-- Per-user device view with hardware details and NinjaOne agent status
+- Per-user device view on the View User page (Entra device cards and Intune managed devices in one place)
 - Role management and JIT Admin with usage location support and TAP lifetime policy bounds
 - Reports: MFA (with role-targeted CA policy detection), inactive users, sign-in logs, Entra Connect, risk detections, BEC remediation
 
@@ -52,8 +52,10 @@ Manage365 includes the complete CIPP feature set:
 - App registration and enterprise app detail pages with permissions viewer
 - GDAP relationship management with GDAP trace and AI Administrator role support
 - Tenant group management with usage reporting
-- Standards alignment and drift detection (including device registration local admin controls)
-- Standards with custom variable support and requiredCapabilities filtering
+- Standards alignment and drift detection (including device registration local admin controls, CIS7 alignment, and CA template package tags)
+- Standards with custom variable support, requiredCapabilities filtering, and license capability presets
+- Group-based licensing for security groups and templates
+- Alert-only license exclusions (exclude licenses from alerting without removing them from standards checks)
 - New standards: Restrict User Device Registration, AdminSSPR
 - Standards dialog with enabled/disabled status filter and severity color mapping
 - Best Practice Analyser and Domains Analyser (with DKIM selector rotation)
@@ -67,7 +69,7 @@ Manage365 includes the complete CIPP feature set:
 - GitHub import/export for templates and cache explorer
 - Incident report and attachment options
 - Log retention settings
-- Dashboard v2: report toolbar, custom dashboards, responsive layout
+- Dashboard v2: report toolbar, custom dashboards, responsive layout, and inline universal search (legacy Dashboard v1 removed; `/dashboardv1` redirects to v2)
 - Report builder with templates and generated reports
 - Executive report with menuItem variant support
 
@@ -109,7 +111,7 @@ Manage365 includes the complete CIPP feature set:
 
 ### Tools
 - Graph Explorer with simple filter UI
-- Universal Search v2 with user and group search
+- Universal Search v2 in the top navigation (Pages default on magnifier; Cmd+K for pages, Cmd+Shift+F for users) plus dashboard inline search
 - Application approval workflow
 - Tenant and IP lookup
 - Domain health checks with AutoDiscover validation
@@ -128,7 +130,7 @@ Manage365 includes the complete CIPP feature set:
 - Setup wizard and onboarding
 - Enhanced bookmark management with sidebar, drag-and-drop reordering, lock, and sort options
 - Compact navigation mode for denser sidebar layout
-- Resizable table columns across all data tables
+- Resizable table columns across all data tables, with upstream table virtualization and column-cache optimizations while preserving Manage365 mobile card views
 - Tenant selector hotlinks support customerId (GUID) and initialDomainName in addition to defaultDomainName
 - PWA support with Chrome install option for desktop app experience
 - Logbook with severity color mapping
@@ -149,6 +151,15 @@ CIPP uses table-only views for listing data. Manage365 adds card view alternativ
 
 Comprehensive mobile responsiveness throughout the application: responsive data tables that adapt to screen size, mobile-friendly toolbars with compact controls, sticky wizard step buttons, a mobile tenant selector in the top navigation, and card views optimized for touch. The entire interface is usable on tablets and phones without horizontal scrolling.
 
+### Applied Standards Enhancements
+
+Manage365 extends upstream Applied Standards with license-aware compliance reporting:
+
+- **Missing-license visibility** -- standards blocked by licensing show warnings and dedicated filter chips (License available / License not available)
+- **Corrected scoring** -- combined compliance score uses ratio-based math (compliant + license-blocked vs scored standards) instead of additive percentages that could exceed 100%
+- **Drift integration** -- drift-template types and `createDriftManagementActions` for accepted deviations and customer-specific overrides
+- **Fork API compatibility** -- frontend normalizes `{ Results }` template responses so standards load reliably across API versions
+
 ### Enhanced Detail Pages
 
 Manage365 extends upstream's detail pages with significantly richer, purpose-built interfaces for key entities:
@@ -158,6 +169,7 @@ Manage365 extends upstream's detail pages with significantly richer, purpose-bui
 - **Groups** -- hero overview by group type, member/owner/contact management, editable properties, interactive toggle-chip settings, dynamic membership rule display, on-premises sync awareness, and add member to multiple groups at once from the groups list page (extends upstream's group page)
 - **Mailboxes / User Exchange Tab** -- mailbox type identification, aliases, archive status, direct link to Exchange settings, clickable external mail restriction tiles (independently block/allow inbound or outbound external email with confirmation dialogs and consequence warnings), one-click spam block clearing when a mailbox has been flagged by Microsoft for suspected spam activity, and **interactive hold management** -- toggle Litigation Hold and Retention Hold on/off directly from the Exchange info card with confirmation dialogs, data loss warnings, and optional duration (days) for Litigation Hold; read-only holds (eDiscovery, In-Place, Compliance Tag, Purview Retention) display with Purview portal guidance
 - **Contacts** -- editable properties form with on-premises sync awareness
+- **Users (View User)** -- Entra device cards and Intune managed devices combined on one page (replaces the separate per-user devices tab)
 - **Entra Devices** -- OS-aware hero, source presence chips (Entra, Intune, NinjaOne), NinjaOne hardware enrichment, quick actions (enable/disable, BitLocker, delete)
 - **MEM Devices** -- compliance-colored hero, NinjaOne hardware enrichment, categorized quick actions (sync, reboot, rename, LAPS, BitLocker, retire, delete), NinjaOne data merged into device listings (extends upstream's device page)
 - **Applications** -- assignment details, install experience, detection rules, and assignment quick actions
@@ -416,7 +428,76 @@ Located under Tenant Administration > Applications > Integration Templates.
 - **SharePoint REST auto-elevation** -- when adding members to non-group-connected sites (Communication, classic Team), the delegated token may lack site-level permissions. The endpoint now auto-elevates the SAM user to site collection admin via CSOM `SetSiteAdmin` (app-only admin API) and retries, with a final Graph API `drive/root/invite` fallback if CSOM is unavailable. Eliminates the manual "run CPV Refresh" step for most SharePoint member operations
 - **Selective user edit body** -- only sends properties that are explicitly set, preventing accidental field clearing during inline edits
 - **License backfill integration** -- missing licenses show formatted names immediately with asynchronous API backfill for accurate display names
+- **Applied Standards API hardening** -- `{ Results }` wrappers, `excludedTenants` corruption repair, missing `standards` key auto-init, live `TemplateList-Tags` expansion for Intune and CA partitions, and run-manually standards included in compare
 - **Power Platform Administrator** role included in GDAP role sets
+
+---
+
+## Upstream Integration
+
+Manage365 tracks [KelvinTegelaar/CIPP](https://github.com/KelvinTegelaar/CIPP) and [KelvinTegelaar/CIPP-API](https://github.com/KelvinTegelaar/CIPP-API). The June 2026 v10.5 intake was **selective** — upstream fixes and improvements were ported surgically rather than merging whole files, so fork-specific behavior stays intact.
+
+### Taken from upstream (v10.5 / v10.5.1)
+
+| Area | What changed |
+|------|----------------|
+| **Applied Standards** | Corrected compliance scoring math (ratio-based combined score, capped at 100%); license-missing filter includes `LicenseAvailable: false` standards; template lookup respects `{ Results }` API wrappers; removed debug logging |
+| **Policies Deployed** | CA template GUIDs resolve to display names via `ListCATemplates` |
+| **Standards API** | Compare includes run-manually templates; `ExecStandardsRun` accepts `templateId` or `TemplateId`; CA `TemplateList-Tags` expand from the `CATemplate` partition |
+| **Universal Search** | `CippUniversalSearchV2` in top nav (hybrid — frosted-glass header preserved); legacy `CippCentralSearch` removed |
+| **Dashboard** | Dashboard v2 only; v1 and History tab removed with redirect |
+| **CippDataTable** | Virtualization, schema-key column cache, regex filter fixes, off-canvas click guard — mobile card view and quick actions preserved |
+| **Identity / Email** | Group-based licensing; alert-only license exclusions; quarantine deny fix; dual-schema CAS mailbox endpoint; autocomplete and report-builder `tenantFilter` fixes |
+| **Auth / CI** | OAuth broadcast channel for reliable popup completion; superseded SWA deploy cancellation |
+| **Dependencies** | Low-risk package bumps aligned with upstream 10.5.1 |
+
+### Preserved Manage365 customizations
+
+- Dual **Run Standard** actions and drift-template workflows on Applied Standards (not replaced with upstream single-action tenant selector)
+- **LicenseAvailable** warnings and scoring UI on Applied Standards
+- `createDriftManagementActions` and fork drift logic on Applied Standards / Policies Deployed
+- `{ Results: ... }` API response wrappers and fork hardening in standards endpoints
+- **CippDataTable** mobile card view, lazy-load pagination, and `mobileQuickActions`
+- Dashboard inline universal search (mobile landing-page search kept alongside top-nav search)
+- Fork `excludedTenants` corruption guards and missing `standards` key auto-init in `listStandardTemplates`
+
+### Deferred (not merged)
+
+Full-file replacements for Applied Standards, CippDataTable, top-nav, and `package.json` were skipped where they would remove the items above. Worker health, MCP UI, and SSO migration repair were not taken (no fork UI or dependencies for those features).
+
+### Version tracking and out-of-date alerts
+
+Manage365 tracks **two** version numbers:
+
+| File | Purpose |
+|------|---------|
+| `public/manage365-version.json` | Manage365 fork release (shown as the primary version in Application Settings) |
+| `public/version.json` | Upstream CIPP baseline absorbed — used by `GetVersion` / `GetCippAlerts` to suppress false "out of date" toasts |
+
+After each upstream intake, bump both and redeploy:
+
+```powershell
+# Frontend (CIPP repo)
+./Tools/Update-Version.ps1 -UpstreamVersion 10.5.1 -Manage365Version 5.12.15
+
+# Backend (CIPP-API repo) — set both copies to the same upstream baseline
+# version_latest.txt
+# Config/version_latest.txt
+```
+
+Then **redeploy the Static Web App and every Function App slot** (main API, processor, standards, audit log, user tasks). Until redeployed, the settings page may still show old versions and function apps may appear "out of sync" in the Version table.
+
+Out-of-date toast notifications compare your deployed `version.json` / `version_latest.txt` against [KelvinTegelaar/CIPP](https://github.com/KelvinTegelaar/CIPP) and [KelvinTegelaar/CIPP-API](https://github.com/KelvinTegelaar/CIPP-API) on GitHub. They clear once your deployed baseline matches upstream (currently **10.5.1**).
+
+### GitHub "Sync fork" button
+
+This is **separate** from in-app version alerts. GitHub compares commit history between `Celeratec/CIPP` and `KelvinTegelaar/CIPP`. Selective cherry-pick intake leaves the fork hundreds of commits "behind" upstream even when you have absorbed the relevant changes — GitHub will keep offering **Sync fork**.
+
+Options:
+
+1. **Ignore it** (recommended for day-to-day work) — the badge is cosmetic when you cherry-pick intentionally.
+2. **Merge upstream periodically** — `git fetch upstream && git merge upstream/main` (resolve conflicts, preserve fork customizations). Clears the behind count but is a large merge.
+3. **Do not use "Sync fork" → Discard commits** — that would overwrite Manage365-specific work.
 
 ---
 
