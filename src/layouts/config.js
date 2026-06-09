@@ -219,6 +219,11 @@ export const nativeMenuItems = [
             path: "/security/defender/list-defender-tvm",
             permissions: ["Security.Alert.*"],
           },
+          {
+            title: 'CVE Management',
+            path: '/security/defender/defender-cve-exceptions',
+            permissions: ['Security.Alert.*'],
+          },
         ],
       },
       {
@@ -229,6 +234,11 @@ export const nativeMenuItems = [
             title: "Cases",
             path: "/security/ediscovery/cases",
             permissions: ["Security.Ediscovery.*"],
+          },
+          {
+            title: 'Vulnerability Report',
+            path: '/security/reports/cve-report',
+            permissions: ['Security.Defender.*'],
           },
         ],
       },
