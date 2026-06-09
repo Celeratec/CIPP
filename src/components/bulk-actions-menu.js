@@ -3,20 +3,7 @@ import ChevronDownIcon from "@heroicons/react/24/outline/ChevronDownIcon";
 import { Button, Divider, Link, ListItemText, ListSubheader, Menu, MenuItem, SvgIcon, Box, alpha } from "@mui/material";
 import { useMemo } from "react";
 import { usePopover } from "../hooks/use-popover";
-import { 
-  FilePresent, 
-  Laptop, 
-  Mail, 
-  Share, 
-  Shield, 
-  ShieldMoon, 
-  PrecisionManufacturing, 
-  BarChart,
-  Group,
-  Groups,
-  Apps,
-  VpnKey,
-  Public,
+import {
   Visibility,
   Edit,
   Security,
@@ -24,47 +11,8 @@ import {
   Warning,
   Circle,
 } from "@mui/icons-material";
-import { GlobeAltIcon, UsersIcon, ServerIcon } from "@heroicons/react/24/outline";
 import { resolvePaletteMainColor } from "../theme/utils";
-
-function getIconByName(iconName) {
-  switch (iconName) {
-    case "GlobeAltIcon":
-      return <GlobeAltIcon />;
-    case "Mail":
-      return <Mail />;
-    case "UsersIcon":
-      return <UsersIcon />;
-    case "Groups":
-      return <Groups />;
-    case "Group":
-      return <Group />;
-    case "Apps":
-      return <Apps />;
-    case "VpnKey":
-      return <VpnKey />;
-    case "Public":
-      return <Public />;
-    case "FilePresent":
-      return <FilePresent />;
-    case "ServerIcon":
-      return <ServerIcon />;
-    case "Laptop":
-      return <Laptop />;
-    case "Share":
-      return <Share />;
-    case "Shield":
-      return <Shield />;
-    case "ShieldMoon":
-      return <ShieldMoon />;
-    case "PrecisionManufacturing":
-      return <PrecisionManufacturing />;
-    case "BarChart":
-      return <BarChart />;
-    default:
-      return null;
-  }
-}
+import { getIconByName } from "../utils/icon-registry";
 
 // Get icon for category
 const getCategoryIcon = (category) => {
@@ -216,14 +164,14 @@ export const BulkActionsMenu = (props) => {
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <SvgIcon sx={iconSx}>{getIconByName(action.icon)}</SvgIcon>
+                      {getIconByName(action.icon, { sx: iconSx, fontSize: "small" })}
                       <ListItemText primary={action.label} />
                     </MenuItem>
                   );
                 }
                 return (
                   <MenuItem key={`${category}-${index}`} onClick={action.onClick}>
-                    <SvgIcon sx={iconSx}>{getIconByName(action.icon)}</SvgIcon>
+                    {getIconByName(action.icon, { sx: iconSx, fontSize: "small" })}
                     <ListItemText primary={action.label} />
                   </MenuItem>
                 );

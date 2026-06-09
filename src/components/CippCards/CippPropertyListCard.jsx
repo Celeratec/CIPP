@@ -24,6 +24,7 @@ import { useDialog } from "../../hooks/use-dialog";
 import { CippApiDialog } from "../CippComponents/CippApiDialog";
 import { CippActionMenu } from "../CippComponents/CippActionMenu";
 import { useState } from "react";
+import { getIconByName } from "../../utils/icon-registry";
 
 export const CippPropertyListCard = (props) => {
   const {
@@ -63,6 +64,12 @@ export const CippPropertyListCard = (props) => {
       return !action.condition(row);
     }
     return false;
+  };
+
+  const renderActionIcon = (icon) => {
+    if (!icon) return null;
+    if (typeof icon === "string") return getIconByName(icon, { fontSize: "small" });
+    return <SvgIcon fontSize="small">{icon}</SvgIcon>;
   };
 
   const hasInteraction = actionItems?.length > 0 || !!actionButton || !!cardButton;
@@ -219,7 +226,7 @@ export const CippPropertyListCard = (props) => {
                 {actionItems.map((item, index) => (
                   <ActionListItem
                     key={`${item.label}-${index}-ActionList-OffCanvas`}
-                    icon={<SvgIcon fontSize="small">{item.icon}</SvgIcon>}
+                    icon={renderActionIcon(item.icon)}
                     label={item.label}
                     onClick={() => {
                       setActionData({

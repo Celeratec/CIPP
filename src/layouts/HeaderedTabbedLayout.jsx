@@ -18,6 +18,7 @@ import {
 import { ActionsMenu } from "../components/actions-menu";
 import { useMediaQuery } from "@mui/material";
 import { CippCopyToClipBoard } from "../components/CippComponents/CippCopyToClipboard";
+import { getIconByName } from "../utils/icon-registry";
 
 export const HeaderedTabbedLayout = (props) => {
   const {
@@ -160,9 +161,22 @@ export const HeaderedTabbedLayout = (props) => {
                   },
                 }}
               >
-                {tabOptions.map((option) => (
-                  <Tab key={option.path} label={option.label} value={option.path} />
-                ))}
+                {tabOptions.map((option) => {
+                  const icon = getIconByName(option.icon, { fontSize: "small" });
+                  const iconPosition = option.iconPosition ?? "start";
+                  const compactIcon = icon && ["end", "start"].includes(iconPosition);
+
+                  return (
+                    <Tab
+                      key={option.path}
+                      label={option.label}
+                      value={option.path}
+                      icon={icon ?? undefined}
+                      iconPosition={icon ? iconPosition : undefined}
+                      sx={compactIcon ? { minHeight: smDown ? 40 : 48, py: smDown ? 1 : 1.5 } : undefined}
+                    />
+                  );
+                })}
               </Tabs>
               <Divider />
             </div>
