@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useRef, memo } from "react";
+import { useCallback, useEffect, useRef, memo, useState } from "react";
 import NextLink from "next/link";
 import PropTypes from "prop-types";
 import Bars3Icon from "@heroicons/react/24/outline/Bars3Icon";
 import MoonIcon from "@heroicons/react/24/outline/MoonIcon";
 import SunIcon from "@heroicons/react/24/outline/SunIcon";
+import TravelExploreIcon from "@mui/icons-material/TravelExplore";
 import {
   Box,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Divider,
   IconButton,
   Stack,
@@ -15,23 +19,28 @@ import {
 import { alpha } from "@mui/material/styles";
 import { Logo } from "../components/logo";
 import { useSettings } from "../hooks/use-settings";
-import { useUserBookmarks } from "../hooks/use-user-bookmarks";
 import { paths } from "../paths";
 import { AccountPopover } from "./account-popover";
 import { CippTenantSelector } from "../components/CippComponents/CippTenantSelector";
 import { NotificationsPopover } from "./notifications-popover";
 import { useDialog } from "../hooks/use-dialog";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { CippCentralSearch } from "../components/CippComponents/CippCentralSearch";
+import { CippUniversalSearchV2 } from "../components/CippCards/CippUniversalSearchV2";
+import { CippOffCanvas } from "../components/CippComponents/CippOffCanvas";
+import { CippLicenseDetailsDrawer } from "../components/CippComponents/CippLicenseDetailsDrawer";
 
 const TOP_NAV_HEIGHT = 64;
 
 export const TopNav = memo((props) => {
-  const searchDialog = useDialog();
+  const universalSearchDialog = useDialog();
   const { onNavOpen } = props;
   const settings = useSettings();
-  const { bookmarks, setBookmarks } = useUserBookmarks();
   const mdDown = useMediaQuery((theme) => theme.breakpoints.down("md"));
+  const [universalSearchKey, setUniversalSearchKey] = useState(0);
+  const [universalSearchDefaultType, setUniversalSearchDefaultType] = useState("Pages");
+  const [licenseDrawerVisible, setLicenseDrawerVisible] = useState(false);
+  const [licenseDrawerData, setLicenseDrawerData] = useState(null);
+
   const handleThemeSwitch = useCallback(() => {
     const themeName = settings.currentTheme?.value === "light" ? "dark" : "light";
     settings.handleUpdate({
@@ -42,41 +51,55 @@ export const TopNav = memo((props) => {
 
   const tenantSelectorRef = useRef(null);
 
-  const openSearch = useCallback(() => {
-    searchDialog.handleOpen();
-  }, [searchDialog.handleOpen]);
+  const openUniversalSearch = useCallback(
+    (defaultType = "Pages") => {
+      setUniversalSearchDefaultType(defaultType);
+      universalSearchDialog.handleOpen();
+    },
+    [universalSearchDialog.handleOpen],
+  );
+
+  const closeUniversalSearch = useCallback(() => {
+    universalSearchDialog.handleClose();
+    setUniversalSearchKey((prev) => prev + 1);
+  }, [universalSearchDialog.handleClose]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
       if ((event.metaKey || event.ctrlKey) && event.altKey && event.key === "k") {
         event.preventDefault();
         tenantSelectorRef.current?.focus();
+      } else if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === "F") {
+        event.preventDefault();
+        openUniversalSearch("Users");
       } else if ((event.metaKey || event.ctrlKey) && event.key === "k") {
         event.preventDefault();
-        openSearch();
+        openUniversalSearch("Pages");
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [openSearch]);
+  }, [openUniversalSearch]);
 
   return (
     <Box
       component="header"
       sx={{
         // Frosted glass effect like Apple
-        backgroundColor: (theme) => 
-          theme.palette.mode === 'dark' 
-            ? 'rgba(30, 30, 30, 0.3)' 
-            : 'rgba(255, 255, 255, 0.3)',
-        backdropFilter: 'saturate(180%) blur(16px)',
-        WebkitBackdropFilter: 'saturate(180%) blur(16px)',
-        borderBottom: (theme) => 
-          `1px solid ${theme.palette.mode === 'dark' 
-            ? 'rgba(255, 255, 255, 0.1)' 
-            : 'rgba(0, 0, 0, 0.1)'}`,
+        backgroundColor: (theme) =>
+          theme.palette.mode === "dark"
+            ? "rgba(30, 30, 30, 0.3)"
+            : "rgba(255, 255, 255, 0.3)",
+        backdropFilter: "saturate(180%) blur(16px)",
+        WebkitBackdropFilter: "saturate(180%) blur(16px)",
+        borderBottom: (theme) =>
+          `1px solid ${
+            theme.palette.mode === "dark"
+              ? "rgba(255, 255, 255, 0.1)"
+              : "rgba(0, 0, 0, 0.1)"
+          }`,
         color: (theme) => theme.palette.text.primary,
         position: "fixed",
         width: "100%",
@@ -100,9 +123,9 @@ export const TopNav = memo((props) => {
               orientation="vertical"
               sx={{
                 borderColor: (theme) =>
-                theme.palette.mode === "dark"
-                  ? alpha(theme.palette.common.white, 0.2)
-                  : alpha(theme.palette.common.black, 0.2),
+                  theme.palette.mode === "dark"
+                    ? alpha(theme.palette.common.white, 0.2)
+                    : alpha(theme.palette.common.black, 0.2),
                 height: 36,
               }}
             />
@@ -124,11 +147,10 @@ export const TopNav = memo((props) => {
             <CippTenantSelector ref={tenantSelectorRef} refreshButton={true} tenantButton={true} />
           )}
           {mdDown && (
-            <IconButton 
+            <IconButton
               onClick={onNavOpen}
-              sx={{ 
-                color: 'text.primary',
-                // Minimum 44px touch target for mobile accessibility
+              sx={{
+                color: "text.primary",
                 minWidth: 44,
                 minHeight: 44,
               }}
@@ -141,20 +163,26 @@ export const TopNav = memo((props) => {
         </Stack>
         <Stack alignItems="center" direction="row" spacing={mdDown ? 0.5 : 1.5}>
           {!mdDown && (
-            <IconButton 
-              onClick={handleThemeSwitch}
-              sx={{ color: 'text.secondary' }}
+            <IconButton
+              onClick={() => openUniversalSearch("Users")}
+              title="Universal search — users, groups, apps (Ctrl/Cmd+Shift+F)"
+              sx={{ color: "text.secondary" }}
             >
+              <TravelExploreIcon fontSize="small" />
+            </IconButton>
+          )}
+          {!mdDown && (
+            <IconButton onClick={handleThemeSwitch} sx={{ color: "text.secondary" }}>
               <SvgIcon fontSize="small">
                 {settings?.currentTheme?.value === "dark" ? <SunIcon /> : <MoonIcon />}
               </SvgIcon>
             </IconButton>
           )}
-          <IconButton 
-            onClick={() => openSearch()}
-            sx={{ 
-              color: 'text.secondary',
-              // Minimum 44px touch target for mobile
+          <IconButton
+            onClick={() => openUniversalSearch("Pages")}
+            title="Page search (Ctrl/Cmd+K)"
+            sx={{
+              color: "text.secondary",
               ...(mdDown && { minWidth: 44, minHeight: 44 }),
             }}
           >
@@ -162,7 +190,46 @@ export const TopNav = memo((props) => {
               <MagnifyingGlassIcon />
             </SvgIcon>
           </IconButton>
-          <CippCentralSearch open={searchDialog.open} handleClose={searchDialog.handleClose} />
+          <Dialog
+            open={universalSearchDialog.open}
+            onClose={closeUniversalSearch}
+            fullWidth
+            maxWidth="md"
+            sx={{
+              "& .MuiDialog-container": {
+                alignItems: "flex-start",
+              },
+              "& .MuiDialog-paper": {
+                mt: 8,
+              },
+            }}
+          >
+            <DialogTitle sx={{ px: 3, pt: 2, pb: 1 }}>Manage365 Search</DialogTitle>
+            <DialogContent sx={{ px: 3, pt: 1, pb: 3 }}>
+              <Box>
+                <CippUniversalSearchV2
+                  key={universalSearchKey}
+                  maxResults={12}
+                  autoFocus={true}
+                  defaultSearchType={universalSearchDefaultType}
+                  onConfirm={closeUniversalSearch}
+                  onLicenseSelect={(licenseData) => {
+                    setLicenseDrawerData(licenseData);
+                    setLicenseDrawerVisible(true);
+                  }}
+                />
+              </Box>
+            </DialogContent>
+          </Dialog>
+          <CippOffCanvas
+            title="License Details"
+            visible={licenseDrawerVisible}
+            onClose={() => setLicenseDrawerVisible(false)}
+            size="xl"
+            contentPadding={0}
+          >
+            <CippLicenseDetailsDrawer data={licenseDrawerData} />
+          </CippOffCanvas>
           <NotificationsPopover />
           <AccountPopover
             onThemeSwitch={handleThemeSwitch}
