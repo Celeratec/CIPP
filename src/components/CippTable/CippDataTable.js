@@ -143,6 +143,110 @@ const compareNullable = (aVal, bVal) => {
   return aVal > bVal ? 1 : -1;
 };
 
+// Stable MRT helpers — module-level to avoid new object refs each render.
+const SORTING_FNS = {
+  dateTimeNullsLast: (a, b, id) => {
+    const aRaw = getRowValueByColumnId(a, id);
+    const bRaw = getRowValueByColumnId(b, id);
+    const aDate = aRaw ? new Date(aRaw) : null;
+    const bDate = bRaw ? new Date(bRaw) : null;
+    const aTime = aDate && !Number.isNaN(aDate.getTime()) ? aDate.getTime() : null;
+    const bTime = bDate && !Number.isNaN(bDate.getTime()) ? bDate.getTime() : null;
+
+    return compareNullable(aTime, bTime);
+  },
+  number: (a, b, id) => {
+    const aRaw = getRowValueByColumnId(a, id);
+    const bRaw = getRowValueByColumnId(b, id);
+    const aNum = typeof aRaw === "number" ? aRaw : Number(aRaw);
+    const bNum = typeof bRaw === "number" ? bRaw : Number(bRaw);
+    const aVal = Number.isNaN(aNum) ? null : aNum;
+    const bVal = Number.isNaN(bNum) ? null : bNum;
+
+    return compareNullable(aVal, bVal);
+  },
+  boolean: (a, b, id) => {
+    const aRaw = getRowValueByColumnId(a, id);
+    const bRaw = getRowValueByColumnId(b, id);
+    const toBool = (value) => {
+      if (value === null || value === undefined) {
+        return null;
+      }
+      if (typeof value === "boolean") {
+        return value;
+      }
+      if (typeof value === "string") {
+        const lower = value.toLowerCase();
+        if (lower === "true" || lower === "yes") {
+          return true;
+        }
+        if (lower === "false" || lower === "no") {
+          return false;
+        }
+      }
+      if (typeof value === "number") {
+        return value !== 0;
+      }
+      return null;
+    };
+
+    const aBool = toBool(aRaw);
+    const bBool = toBool(bRaw);
+    const aNumeric = aBool === null ? null : aBool ? 1 : 0;
+    const bNumeric = bBool === null ? null : bBool ? 1 : 0;
+
+    return compareNullable(aNumeric, bNumeric);
+  },
+};
+
+const FILTER_FNS = {
+  notContains: (row, columnId, value) => {
+    const rowValue = row.getValue(columnId);
+    if (rowValue === null || rowValue === undefined) {
+      return false;
+    }
+
+    const stringValue = String(rowValue);
+    if (
+      stringValue.includes("[object Object]") ||
+      !stringValue.toLowerCase().includes(value.toLowerCase())
+    ) {
+      return true;
+    }
+    return false;
+  },
+  regex: (row, columnId, value) => {
+    try {
+      const regex = new RegExp(value, "i");
+      const rowValue = row.getValue(columnId);
+      if (typeof rowValue === "string" && !rowValue.includes("[object Object]")) {
+        return regex.test(rowValue);
+      }
+      return false;
+    } catch {
+      return true;
+    }
+  },
+};
+
+const computeSchemaKey = (data) => {
+  if (!Array.isArray(data) || data.length === 0) {
+    return "";
+  }
+  const sample = data.slice(0, 3);
+  const keys = new Set();
+  for (const row of sample) {
+    if (row && typeof row === "object") {
+      for (const key of Object.keys(row)) {
+        keys.add(key);
+      }
+    }
+  }
+  return `${[...keys].sort().join(",")}|${data.length}`;
+};
+
+const getColumnKey = (col) => col?.id ?? col?.accessorKey;
+
 // Get initials from a name string
 const getInitials = (name) => {
   if (!name || typeof name !== "string") return "?";
@@ -1834,10 +1938,6 @@ export const CippDataTable = (props) => {
     }, {});
   }, [filters]);
 
-  // Track if initial filters have been applied
-  const filtersInitializedRef = useRef(false);
-  const previousFiltersRef = useRef(null);
-
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
   const [configuredSimpleColumns, setConfiguredSimpleColumns] = useState(simpleColumns);
   const [usedData, setUsedData] = useState(data);
@@ -1863,6 +1963,8 @@ export const CippDataTable = (props) => {
   const waitingBool = api?.url ? true : false;
 
   const settings = useSettings();
+  const prevSchemaKeyRef = useRef("");
+  const prevDataRef = useRef(data);
   const theme = useTheme();
   const router = useRouter();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -1929,12 +2031,11 @@ export const CippDataTable = (props) => {
   // Do NOT auto-apply filters here as it breaks filtering functionality.
 
   useEffect(() => {
-    if (Array.isArray(data) && !api?.url) {
-      if (!isEqual(data, usedData)) {
-        setUsedData(data);
-      }
+    if (Array.isArray(data) && !api?.url && data !== prevDataRef.current) {
+      prevDataRef.current = data;
+      setUsedData(data);
     }
-  }, [data, api?.url, usedData]);
+  }, [data, api?.url]);
 
   // Auto-pagination: automatically fetch all pages for table view.
   // For card view, we use lazy loading instead - only fetch when user needs more data.
@@ -2030,11 +2131,19 @@ export const CippDataTable = (props) => {
     ) {
       return;
     }
+
+    const schemaKey = computeSchemaKey(usedData);
+    if (schemaKey === prevSchemaKeyRef.current && usedColumns.length > 0) {
+      return;
+    }
+    prevSchemaKeyRef.current = schemaKey;
+
     const apiColumns = utilColumnsFromAPI(usedData);
 
     // Apply custom filterFn to columns that have filterType === 'equal'
     const enhancedApiColumns = apiColumns.map((col) => {
-      if (filterTypeMap[col.id] === "equal") {
+      const colKey = getColumnKey(col);
+      if (colKey && filterTypeMap[colKey] === "equal") {
         return {
           ...col,
           filterFn: "equals",
@@ -2056,7 +2165,10 @@ export const CippDataTable = (props) => {
     if (columns.length === 0 && configuredSimpleColumns.length === 0) {
       finalColumns = enhancedApiColumns;
       enhancedApiColumns.forEach((col) => {
-        newVisibility[col.id] = true;
+        const colKey = getColumnKey(col);
+        if (colKey) {
+          newVisibility[colKey] = true;
+        }
       });
     } else if (configuredSimpleColumns.length > 0) {
       // Resolve any variables in the simple columns before checking visibility
@@ -2070,16 +2182,24 @@ export const CippDataTable = (props) => {
 
       finalColumns = enhancedApiColumns;
       finalColumns.forEach((col) => {
-        newVisibility[col.id] = finalResolvedColumns.includes(col.id);
+        const colKey = getColumnKey(col);
+        if (colKey) {
+          newVisibility[colKey] = finalResolvedColumns.includes(colKey);
+        }
       });
     } else {
-      const providedColumnKeys = new Set(columns.map((col) => col.id || col.header));
+      const providedColumnKeys = new Set(
+        columns.map((col) => getColumnKey(col) || col.header).filter(Boolean),
+      );
       finalColumns = [
         ...columns,
-        ...enhancedApiColumns.filter((col) => !providedColumnKeys.has(col.id)),
+        ...enhancedApiColumns.filter((col) => !providedColumnKeys.has(getColumnKey(col))),
       ];
       finalColumns.forEach((col) => {
-        newVisibility[col.id] = providedColumnKeys.has(col.id);
+        const colKey = getColumnKey(col);
+        if (colKey) {
+          newVisibility[colKey] = providedColumnKeys.has(colKey);
+        }
       });
 
       // Handle Tenant column for custom columns case
@@ -2100,19 +2220,25 @@ export const CippDataTable = (props) => {
 
   const createDialog = useDialog();
 
-  // Apply the modeInfo directly
-  const [modeInfo] = useState(
-    utilTableMode(
-      columnVisibility,
-      simple,
-      actions,
-      configuredSimpleColumns,
-      offCanvas,
-      onChange,
-      maxHeightOffset,
-    ),
+  const hasActions = !!actions;
+  const hasOffCanvas = !!offCanvas;
+  const hasOnChange = !!onChange;
+
+  const modeInfo = useMemo(
+    () =>
+      utilTableMode(
+        columnVisibility,
+        simple,
+        actions,
+        configuredSimpleColumns,
+        offCanvas,
+        onChange,
+        maxHeightOffset,
+        settings,
+      ),
+    [simple, hasActions, hasOffCanvas, hasOnChange, maxHeightOffset, settings?.tablePageSize?.value],
   );
-  //create memoized version of usedColumns, and usedData
+
   const memoizedColumns = useMemo(() => usedColumns, [usedColumns]);
   // Include updateTrigger in data memo to force re-render when license backfill completes.
   // Also refresh data identity when derived columns change so TanStack re-runs filtering
@@ -2122,16 +2248,91 @@ export const CippDataTable = (props) => {
     [usedData, updateTrigger, usedColumns]
   );
 
-  const handleActionDisabled = (row, action) => {
+  const sanitizedColumnVisibility = useMemo(() => {
+    const result = {};
+    for (const key of Object.keys(columnVisibility)) {
+      if (key !== "undefined" && key !== undefined) {
+        result[key] = columnVisibility[key];
+      }
+    }
+    return result;
+  }, [columnVisibility]);
+
+  const handleActionDisabled = useCallback((row, action) => {
     if (action?.condition) {
       return !action.condition(row);
     }
     return false;
-  };
+  }, []);
+
+  const handleSortingChange = useCallback((newSorting) => {
+    setSorting(newSorting ?? []);
+  }, []);
+
+  const muiTablePaperPropsCallback = useCallback(
+    ({ table }) => ({
+      sx: {
+        ...(table.getState().isFullScreen && {
+          position: "fixed !important",
+          top: "64px !important",
+          bottom: "0 !important",
+          left: {
+            xs: "0 !important",
+            lg: settings?.sidebarCollapse ? "73px !important" : "270px !important",
+          },
+          right: "0 !important",
+          zIndex: "1300 !important",
+          m: "0 !important",
+          p: "16px !important",
+          overflow: "auto",
+          bgcolor: "background.paper",
+          maxWidth: "none !important",
+          width: "auto !important",
+          height: "auto !important",
+        }),
+      },
+    }),
+    [settings?.sidebarCollapse],
+  );
+
+  const queueMessage = getRequestData.data?.pages?.[0]?.Metadata?.QueueMessage;
+  const renderEmptyRowsFallbackCallback = useCallback(
+    () =>
+      queueMessage ? (
+        <Box sx={{ py: 4 }}>
+          <center>
+            <Info /> {queueMessage}
+          </center>
+        </Box>
+      ) : undefined,
+    [queueMessage],
+  );
+
+  const showSkeletons = getRequestData.isFetchingNextPage
+    ? false
+    : getRequestData.isFetching
+      ? getRequestData.isFetching
+      : isFetching;
+
+  const tableState = useMemo(
+    () => ({
+      columnVisibility: sanitizedColumnVisibility,
+      sorting,
+      columnFilters,
+      showSkeletons,
+    }),
+    [sanitizedColumnVisibility, sorting, columnFilters, showSkeletons],
+  );
 
   const table = useMaterialReactTable({
-    // Mobile-responsive layout - use grid on mobile for better stacking
-    layoutMode: isMobile ? 'grid' : 'semantic',
+    layoutMode: "grid-no-grow",
+    enableRowVirtualization: true,
+    enableColumnVirtualization: true,
+    enableColumnResizing: true,
+    columnResizeMode: "onChange",
+    rowVirtualizerOptions: {
+      overscan: 5,
+    },
     // Enable density toggle so users can switch to compact on mobile
     enableDensityToggle: true,
     muiTableBodyCellProps: {
@@ -2158,39 +2359,25 @@ export const CippDataTable = (props) => {
     mrtTheme: (theme) => ({
       baseBackgroundColor: theme.palette.background.paper,
     }),
-    muiTablePaperProps: ({ table }) => ({
-      sx: {
-        ...(table.getState().isFullScreen && {
-          position: "fixed !important",
-          top: "64px !important",
-          bottom: "0 !important",
-          left: {
-            xs: "0 !important",
-            lg: settings?.sidebarCollapse ? "73px !important" : "270px !important",
-          },
-          right: "0 !important",
-          zIndex: "1300 !important",
-          m: "0 !important",
-          p: "16px !important",
-          overflow: "auto",
-          bgcolor: "background.paper",
-          maxWidth: "none !important",
-          width: "auto !important",
-          height: "auto !important",
-        }),
-      },
-    }),
+    muiTablePaperProps: muiTablePaperPropsCallback,
     muiTableBodyRowProps:
       offCanvasOnRowClick && offCanvas
         ? ({ row }) => {
             const customSx =
               typeof rowSx === "function" ? rowSx(row.original) : rowSx ? rowSx : {};
             return {
-              onClick: () => {
+              onClick: (event) => {
+                if (
+                  event.target?.closest?.(
+                    'button, a, input, textarea, select, [role="button"], [role="menuitem"], [data-no-row-click="true"]',
+                  )
+                ) {
+                  return;
+                }
                 setOffCanvasData(row.original);
                 const filteredRowsArray = table.getFilteredRowModel().rows;
                 const indexInFiltered = filteredRowsArray.findIndex(
-                  (r) => r.original === row.original
+                  (r) => r.original === row.original,
                 );
                 setOffCanvasRowIndex(indexInFiltered >= 0 ? indexInFiltered : 0);
                 setOffcanvasVisible(true);
@@ -2205,10 +2392,10 @@ export const CippDataTable = (props) => {
             };
           }
         : rowSx
-        ? ({ row }) => ({
-            sx: typeof rowSx === "function" ? rowSx(row.original) : rowSx,
-          })
-        : undefined,
+          ? ({ row }) => ({
+              sx: typeof rowSx === "function" ? rowSx(row.original) : rowSx,
+            })
+          : undefined,
     // Add global styles to target the specific filter components
     enableColumnFilterModes: true,
     muiTableHeadCellProps: {
@@ -2282,32 +2469,14 @@ export const CippDataTable = (props) => {
     // Initialize the filter chips with data attributes for tooltips
     initialState: {
       columnFilters: columnFilters,
-      columnVisibility: columnVisibility,
+      columnVisibility: sanitizedColumnVisibility,
     },
     columns: memoizedColumns,
     data: memoizedData ?? [],
-    state: {
-      columnVisibility,
-      sorting,
-      columnFilters,
-      showSkeletons: getRequestData.isFetchingNextPage
-        ? false
-        : getRequestData.isFetching
-          ? getRequestData.isFetching
-          : isFetching,
-    },
-    onSortingChange: (newSorting) => {
-      setSorting(newSorting ?? []);
-    },
+    state: tableState,
+    onSortingChange: handleSortingChange,
     onColumnFiltersChange: setColumnFilters,
-    renderEmptyRowsFallback: ({ table }) =>
-      getRequestData.data?.pages?.[0].Metadata?.QueueMessage ? (
-        <Box sx={{ py: 4 }}>
-          <center>
-            <Info /> {getRequestData.data?.pages?.[0].Metadata?.QueueMessage}
-          </center>
-        </Box>
-      ) : undefined,
+    renderEmptyRowsFallback: renderEmptyRowsFallbackCallback,
     onColumnVisibilityChange: setColumnVisibility,
     ...modeInfo,
     enableRowActions: showRowActionsMenu && (actions || offCanvas) ? true : false,
@@ -2496,97 +2665,8 @@ export const CippDataTable = (props) => {
         </>
       );
     },
-    sortingFns: {
-      dateTimeNullsLast: (a, b, id) => {
-        const aRaw = getRowValueByColumnId(a, id);
-        const bRaw = getRowValueByColumnId(b, id);
-        const aDate = aRaw ? new Date(aRaw) : null;
-        const bDate = bRaw ? new Date(bRaw) : null;
-        const aTime = aDate && !Number.isNaN(aDate.getTime()) ? aDate.getTime() : null;
-        const bTime = bDate && !Number.isNaN(bDate.getTime()) ? bDate.getTime() : null;
-
-        return compareNullable(aTime, bTime);
-      },
-      number: (a, b, id) => {
-        const aRaw = getRowValueByColumnId(a, id);
-        const bRaw = getRowValueByColumnId(b, id);
-        const aNum = typeof aRaw === "number" ? aRaw : Number(aRaw);
-        const bNum = typeof bRaw === "number" ? bRaw : Number(bRaw);
-        const aVal = Number.isNaN(aNum) ? null : aNum;
-        const bVal = Number.isNaN(bNum) ? null : bNum;
-
-        return compareNullable(aVal, bVal);
-      },
-      boolean: (a, b, id) => {
-        const aRaw = getRowValueByColumnId(a, id);
-        const bRaw = getRowValueByColumnId(b, id);
-        const toBool = (value) => {
-          if (value === null || value === undefined) {
-            return null;
-          }
-          if (typeof value === "boolean") {
-            return value;
-          }
-          if (typeof value === "string") {
-            const lower = value.toLowerCase();
-            if (lower === "true" || lower === "yes") {
-              return true;
-            }
-            if (lower === "false" || lower === "no") {
-              return false;
-            }
-          }
-          if (typeof value === "number") {
-            return value !== 0;
-          }
-          return null;
-        };
-
-        const aBool = toBool(aRaw);
-        const bBool = toBool(bRaw);
-        const aNumeric = aBool === null ? null : aBool ? 1 : 0;
-        const bNumeric = bBool === null ? null : bBool ? 1 : 0;
-
-        return compareNullable(aNumeric, bNumeric);
-      },
-    },
-    layoutMode: 'grid-no-grow',
-    enableColumnResizing: true,
-    columnResizeMode: 'onChange',
-    rowVirtualizerOptions: {
-      overscan: 5,
-    },
-    filterFns: {
-      notContains: (row, columnId, value) => {
-        const rowValue = row.getValue(columnId);
-        if (rowValue === null || rowValue === undefined) {
-          return false;
-        }
-
-        const stringValue = String(rowValue);
-        if (
-          stringValue.includes("[object Object]") ||
-          !stringValue.toLowerCase().includes(value.toLowerCase())
-        ) {
-          return true;
-        } else {
-          return false;
-        }
-      },
-      regex: (row, columnId, value) => {
-        try {
-          const regex = new RegExp(value, "i");
-          const rowValue = row.getValue(columnId);
-          if (typeof rowValue === "string" && !rowValue.includes("[object Object]")) {
-            return regex.test(rowValue);
-          }
-          return false;
-        } catch (error) {
-          // If regex is invalid, don't filter
-          return true;
-        }
-      },
-    },
+    sortingFns: SORTING_FNS,
+    filterFns: FILTER_FNS,
     globalFilterFn: "contains",
     enableGlobalFilterModes: true,
     renderGlobalFilterModeMenuItems: ({ internalFilterOptions, onSelectFilterMode }) => {
@@ -2606,7 +2686,7 @@ export const CippDataTable = (props) => {
         }
       });
 
-      internalFilterOptions.map((filterOption) => (
+      return internalFilterOptions.map((filterOption) => (
         <MenuItem
           key={filterOption.option}
           onClick={() => onSelectFilterMode(filterOption.option)}
@@ -2832,11 +2912,7 @@ export const CippDataTable = (props) => {
                   {(getRequestData.isSuccess ||
                     getRequestData.data?.pages?.length >= 0 ||
                     (data && !getRequestData.isError)) && (
-                    <MaterialReactTable
-                      enableRowVirtualization
-                      enableColumnVirtualization
-                      table={table}
-                    />
+                    <MaterialReactTable table={table} />
                   )}
                 </>
               )}
