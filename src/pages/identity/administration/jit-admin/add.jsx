@@ -380,6 +380,7 @@ const Page = () => {
                     value: Code,
                   }))}
                   formControl={formControl}
+                  creatable={false}
                 />
               </Grid>
               <Grid size={{ md: 12, xs: 12 }}>
@@ -481,6 +482,7 @@ const Page = () => {
                       return true;
                     },
                   }}
+                  creatable={false}
                 />
               </Grid>
             </CippFormCondition>
