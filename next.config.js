@@ -45,7 +45,13 @@ const config = {
   transpilePackages: ["react-syntax-highlighter", "refractor", "parse-entities", "devlop", "hast-util-to-text", "unist-util-find-after"],
   serverExternalPackages: [],
   async redirects() {
-    return []
+    return [
+      {
+        source: '/dashboardv1',
+        destination: '/dashboardv2',
+        permanent: false,
+      },
+    ]
   },
   output: 'export',
   distDir: './out',
