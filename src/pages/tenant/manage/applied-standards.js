@@ -36,6 +36,7 @@ import {
   Construction,
   Schedule,
   Check,
+  Warning,
 } from '@mui/icons-material'
 import standards from '../../../data/standards.json'
 import { CippApiDialog } from '../../../components/CippComponents/CippApiDialog'
@@ -249,7 +250,8 @@ const Page = () => {
                               TemplateId: tenantTemplateId,
                               CurrentValue: standardObject?.CurrentValue,
                               ExpectedValue: standardObject?.ExpectedValue,
-                            }
+                          LicenseAvailable: standardObject?.LicenseAvailable,
+                        }
                           : currentTenantStandard?.value,
                       standardValue: templateSettings,
                       complianceStatus: isOverridden
@@ -373,7 +375,8 @@ const Page = () => {
                               TemplateId: tenantTemplateId,
                               CurrentValue: standardObject?.CurrentValue,
                               ExpectedValue: standardObject?.ExpectedValue,
-                            }
+                          LicenseAvailable: standardObject?.LicenseAvailable,
+                        }
                           : currentTenantStandard?.value,
                       standardValue: templateSettings, // Use the template settings object instead of true
                       complianceStatus: isOverridden
@@ -505,7 +508,8 @@ const Page = () => {
                               TemplateId: tenantTemplateId,
                               CurrentValue: standardObject?.CurrentValue,
                               ExpectedValue: standardObject?.ExpectedValue,
-                            }
+                          LicenseAvailable: standardObject?.LicenseAvailable,
+                        }
                           : currentTenantStandard?.value,
                       standardValue: templateSettings,
                       complianceStatus: isOverridden
@@ -620,7 +624,8 @@ const Page = () => {
                               TemplateId: tenantTemplateId,
                               CurrentValue: standardObject?.CurrentValue,
                               ExpectedValue: standardObject?.ExpectedValue,
-                            }
+                          LicenseAvailable: standardObject?.LicenseAvailable,
+                        }
                           : currentTenantStandard?.value,
                       standardValue: templateSettings, // Use the template settings object instead of true
                       complianceStatus: isOverridden
@@ -728,6 +733,7 @@ const Page = () => {
                           TemplateId: tenantTemplateId,
                           CurrentValue: standardObject?.CurrentValue,
                           ExpectedValue: standardObject?.ExpectedValue,
+                          LicenseAvailable: standardObject?.LicenseAvailable,
                         }
                       : currentTenantStandard?.value,
                   standardValue: { displayName },
@@ -868,7 +874,8 @@ const Page = () => {
                         TemplateId: tenantTemplateId,
                         CurrentValue: standardObject?.CurrentValue,
                         ExpectedValue: standardObject?.ExpectedValue,
-                      }
+                              LicenseAvailable: standardObject?.LicenseAvailable,
+                            }
                     : currentTenantStandard?.value,
                 standardValue: templateSettings,
                 complianceStatus: isOverridden
@@ -943,7 +950,8 @@ const Page = () => {
                   Value: standardObject?.Value,
                   CurrentValue: standardObject?.CurrentValue,
                   ExpectedValue: standardObject?.ExpectedValue,
-                })
+                              LicenseAvailable: standardObject?.LicenseAvailable,
+                            })
               }
 
               // Extract the actual value from the standard object (new data structure includes .Value property)
@@ -1036,6 +1044,11 @@ const Page = () => {
                 }
               }
 
+              // If the tenant is missing the required license, treat as compliant
+              if (standardObject?.LicenseAvailable === false) {
+                isCompliant = true
+              }
+
               // Determine compliance status text based on reporting flag
               const complianceStatus = reportingDisabled
                 ? 'Reporting Disabled'
@@ -1062,7 +1075,8 @@ const Page = () => {
                         TemplateId: tenantTemplateId,
                         CurrentValue: standardObject?.CurrentValue,
                         ExpectedValue: standardObject?.ExpectedValue,
-                      }
+                              LicenseAvailable: standardObject?.LicenseAvailable,
+                            }
                     : currentTenantStandard?.value,
                 standardValue: standardSettings,
                 complianceStatus: isOverridden ? 'Overridden' : complianceStatus,
@@ -1156,7 +1170,8 @@ const Page = () => {
                   TemplateId: standardObject?.TemplateId,
                   CurrentValue: standardObject?.CurrentValue,
                   ExpectedValue: standardObject?.ExpectedValue,
-                },
+                              LicenseAvailable: standardObject?.LicenseAvailable,
+                            },
                 standardValue: {
                   templateId: itemTemplateId,
                   Template: templateDisplayName,
@@ -1340,6 +1355,9 @@ const Page = () => {
   // Calculate license-related metrics
   const missingLicenseCount =
     comparisonData?.filter((standard) => {
+      if (standard.currentTenantValue?.LicenseAvailable === false) {
+        return true
+      }
       const tenantValue = standard.currentTenantValue?.Value || standard.currentTenantValue
       return typeof tenantValue === 'string' && tenantValue.startsWith('License Missing:')
     }).length || 0
@@ -1964,6 +1982,15 @@ const Page = () => {
                           </Stack>
                           <Divider />
                           <Box sx={{ p: 3 }}>
+                            {standard.currentTenantValue?.LicenseAvailable === false ? (
+                              <Alert severity="warning" icon={<Warning />}>
+                                {typeof standard.currentTenantValue?.Value === 'string' &&
+                                standard.currentTenantValue.Value.startsWith('License Missing:')
+                                  ? standard.currentTenantValue.Value
+                                  : 'This tenant does not have the required licenses for this standard'}
+                              </Alert>
+                            ) : (
+                            <>
                             {/* Show Expected Configuration with property-by-property breakdown */}
                             {standard.currentTenantValue?.ExpectedValue !== undefined ? (
                               <Box>
@@ -2068,6 +2095,8 @@ const Page = () => {
                                 sx={{ mr: 1 }}
                               />
                             </Box>
+                            </>
+                            )}
                           </Box>
                         </Card>
                       </Grid>
@@ -2165,6 +2194,15 @@ const Page = () => {
                           </Stack>
                           <Divider />
                           <Box sx={{ p: 3 }}>
+                            {standard.currentTenantValue?.LicenseAvailable === false ? (
+                              <Alert severity="warning" icon={<Warning />}>
+                                {typeof standard.currentTenantValue?.Value === 'string' &&
+                                standard.currentTenantValue.Value.startsWith('License Missing:')
+                                  ? standard.currentTenantValue.Value
+                                  : 'This tenant does not have the required licenses for this standard'}
+                              </Alert>
+                            ) : (
+                            <>
                             {/* Existing tenant comparison content */}
                             {typeof standard.currentTenantValue?.Value === 'object' &&
                             standard.currentTenantValue?.Value !== null ? (
@@ -2925,6 +2963,8 @@ const Page = () => {
                                   </>
                                 )}
                               </Typography>
+                            )}
+                            </>
                             )}
                           </Box>
                         </Card>
