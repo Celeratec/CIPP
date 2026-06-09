@@ -52,6 +52,7 @@ import gdaproles from "../../../../../data/GDAPRoles.json";
 import { CippPropertyList } from "../../../../../components/CippComponents/CippPropertyList";
 import { CippCodeBlock } from "../../../../../components/CippComponents/CippCodeBlock";
 import { CippHead } from "../../../../../components/CippComponents/CippHead";
+import { CippUserDevicesSection } from "../../../../../components/CippComponents/CippUserDevicesSection";
 
 const SignInLogsDialog = ({ open, onClose, userId, tenantFilter }) => {
   return (
@@ -876,7 +877,17 @@ const Page = () => {
                   items={roleMembershipItems}
                   isCollapsible={true}
                 />
-                <Typography variant="h6">Managed Devices</Typography>
+
+                <Divider sx={{ my: 1 }} />
+
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Devices color="primary" />
+                  <Typography variant="h6">Devices</Typography>
+                </Stack>
+                <CippUserDevicesSection userId={userId} tenant={userSettingsDefaults.currentTenant} />
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1 }}>
+                  Intune managed devices
+                </Typography>
                 <CippBannerListCard
                   isFetching={userBulkRequest.isPending}
                   items={ownedDevicesItems}
