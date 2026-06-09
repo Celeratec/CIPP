@@ -352,8 +352,7 @@ export const CIPPM365OAuthButton = ({
     }
 
     popup.location.href = authUrl;
-    const popupGracePeriodMs = 5000;
-    const popupOpenedAt = Date.now();
+    let codeReceived = false;
 
     // Function to actually exchange the authorization code for tokens
     const handleAuthorizationCode = async (code, receivedState) => {
@@ -496,108 +495,67 @@ export const CIPPM365OAuthButton = ({
       }
     };
 
-    // Monitor for the redirect with the authorization code
-    // This is what MSAL does internally
-    const checkPopupLocation = setInterval(() => {
-      if (!popup || popup.closed) {
-        if (Date.now() - popupOpenedAt < popupGracePeriodMs) {
+    // Listen for auth result via BroadcastChannel (works regardless of COOP)
+    const channel = new BroadcastChannel("cipp_auth");
+
+    const authTimeout = setTimeout(() => {
+      if (codeReceived) {
+        return;
+      }
+      cleanup();
+      const error = {
+        errorCode: "timeout",
+        errorMessage: "Authentication timed out. Please try again.",
+        timestamp: new Date().toISOString(),
+      };
+      setAuthError(error);
+      if (onAuthError) onAuthError(error);
+      setTokens({
+        accessToken: null,
+        refreshToken: null,
+        accessTokenExpiresOn: null,
+        refreshTokenExpiresOn: null,
+        username: null,
+        tenantId: null,
+        onmicrosoftDomain: null,
+      });
+      setAuthInProgress(false);
+    }, 600000);
+
+    channel.onmessage = (event) => {
+      if (event.data?.type === "auth_code") {
+        codeReceived = true;
+        cleanup();
+        handleAuthorizationCode(event.data.code, event.data.state);
+      } else if (event.data?.type === "auth_error") {
+        codeReceived = true;
+        cleanup();
+
+        if (
+          event.data.error === "invalid_client" &&
+          event.data.errorDescription?.includes("AADSTS650051") &&
+          retryCount < maxRetries
+        ) {
+          setAuthInProgress(false);
+          setTimeout(() => handleMsalAuthentication(retryCount + 1), 2000 * (retryCount + 1));
           return;
         }
 
-        clearInterval(checkPopupLocation);
-
-        // If authentication is still in progress when popup closes, it's an error
-        if (authInProgress) {
-          const errorMessage = "Authentication was cancelled. Please try again.";
-          const error = {
-            errorCode: "user_cancelled",
-            errorMessage: errorMessage,
-            timestamp: new Date().toISOString(),
-          };
-          setAuthError(error);
-          if (onAuthError) onAuthError(error);
-
-          // Ensure we're not showing any previous success state
-          setTokens({
-            accessToken: null,
-            refreshToken: null,
-            accessTokenExpiresOn: null,
-            refreshTokenExpiresOn: null,
-            username: null,
-            tenantId: null,
-            onmicrosoftDomain: null,
-          });
-        }
-
+        const error = {
+          errorCode: event.data.error || "auth_error",
+          errorMessage: event.data.errorDescription || "Unknown authentication error",
+          timestamp: new Date().toISOString(),
+        };
+        setAuthError(error);
+        if (onAuthError) onAuthError(error);
         setAuthInProgress(false);
-        return;
       }
+    };
 
-      try {
-        // Try to access the popup location to check for the authorization code
-        const currentUrl = popup.location.href;
-
-        // Check if the URL contains a code parameter (authorization code)
-        if (currentUrl.includes("code=") && currentUrl.includes("state=")) {
-          clearInterval(checkPopupLocation);
-          // Parse the URL to extract the code and state
-          const urlParams = new URLSearchParams(popup.location.search);
-          const code = urlParams.get("code");
-          const receivedState = urlParams.get("state");
-
-          // Process the authorization code
-          handleAuthorizationCode(code, receivedState);
-        }
-
-        // Check for error in the URL
-        if (currentUrl.includes("error=")) {
-          clearInterval(checkPopupLocation);
-          // Parse the URL to extract the error details
-          const urlParams = new URLSearchParams(popup.location.search);
-          const errorCode = urlParams.get("error");
-          const errorDescription = urlParams.get("error_description");
-
-          // Check if it's the AADSTS650051 error (service principal already exists during consent)
-          if (
-            errorCode === "invalid_client" &&
-            errorDescription?.includes("AADSTS650051") &&
-            retryCount < maxRetries
-          ) {
-            // Close the popup
-            popup.close();
-            setAuthInProgress(false);
-
-            // Wait before retrying (exponential backoff)
-            setTimeout(
-              () => {
-                handleMsalAuthentication(retryCount + 1);
-              },
-              2000 * (retryCount + 1),
-            );
-            return;
-          }
-
-          // Set the error state for non-retryable errors
-          const error = {
-            errorCode: errorCode,
-            errorMessage: errorDescription || "Unknown authentication error",
-            timestamp: new Date().toISOString(),
-          };
-          setAuthError(error);
-          if (onAuthError) onAuthError(error);
-
-          // Close the popup
-          popup.close();
-          setAuthInProgress(false);
-        }
-      } catch (error) {
-        // This will throw an error when the popup is on a different domain
-        // due to cross-origin restrictions, which is normal during auth flow
-        // Just continue monitoring
-      }
-    }, 500);
-
-    // Also monitor for popup closing as a fallback
+    const cleanup = () => {
+      channel.close();
+      clearTimeout(authTimeout);
+    };
   };
 
   // Auto-start device code retrieval if requested
