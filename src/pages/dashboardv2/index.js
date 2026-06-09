@@ -1,5 +1,7 @@
 import {
   Box,
+  Card,
+  CardContent,
   Container,
   Button,
   Menu,
@@ -31,6 +33,7 @@ import { CippReportToolbar } from '../../components/CippComponents/CippReportToo
 import { Assessment as AssessmentIcon } from '@mui/icons-material'
 import ChevronDownIcon from '@heroicons/react/24/outline/ChevronDownIcon'
 import { CippHead } from '../../components/CippComponents/CippHead.jsx'
+import { CippUniversalSearchV2 } from '../../components/CippCards/CippUniversalSearchV2.jsx'
 import { CippChartCard } from '../../components/CippCards/CippChartCard'
 import { Cloud as CloudIcon } from '@mui/icons-material'
 
@@ -238,6 +241,12 @@ const Page = () => {
     <Container maxWidth={false} sx={{ mt: 12, mb: 4 }}>
       <CippHead title="Dashboard" />
       <Box sx={{ width: '100%', mx: 'auto' }}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+            <CippUniversalSearchV2 />
+          </CardContent>
+        </Card>
+
         <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
           <Grid size={{ xs: 12, md: 4 }}>
             <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 1.5}}>

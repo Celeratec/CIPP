@@ -13,6 +13,10 @@ import {
   PrecisionManufacturing, 
   BarChart,
   Group,
+  Groups,
+  Apps,
+  VpnKey,
+  Public,
   Visibility,
   Edit,
   Security,
@@ -31,6 +35,16 @@ function getIconByName(iconName) {
       return <Mail />;
     case "UsersIcon":
       return <UsersIcon />;
+    case "Groups":
+      return <Groups />;
+    case "Group":
+      return <Group />;
+    case "Apps":
+      return <Apps />;
+    case "VpnKey":
+      return <VpnKey />;
+    case "Public":
+      return <Public />;
     case "FilePresent":
       return <FilePresent />;
     case "ServerIcon":

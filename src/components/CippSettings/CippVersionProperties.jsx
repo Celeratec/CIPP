@@ -49,7 +49,7 @@ const CippVersionProperties = () => {
   });
 
   const cippVersion = ApiGetCall({
-    url: `/api/GetVersion?LocalVersion=${version?.data?.version}`,
+    url: `/api/GetVersion?LocalVersion=${encodeURIComponent(version?.data?.version ?? "")}`,
     queryKey: "CippVersion",
     waiting: false,
   });
@@ -66,7 +66,9 @@ const CippVersionProperties = () => {
     setCleaningUp(true);
     try {
       // Call API with cleanup flag
-      await fetch(`/api/GetVersion?LocalVersion=${version?.data?.version}&CleanupStale=true`);
+      await fetch(
+        `/api/GetVersion?LocalVersion=${encodeURIComponent(version?.data?.version ?? "")}&CleanupStale=true`
+      );
       // Refetch to get updated data
       await cippVersion.refetch();
     } catch (error) {
