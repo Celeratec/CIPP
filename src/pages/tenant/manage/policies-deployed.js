@@ -63,6 +63,12 @@ const PoliciesDeployedPage = () => {
     queryKey: "ListIntuneTemplates",
   });
 
+  // API call to get all CA templates for displayName lookup
+  const caTemplatesApi = ApiGetCall({
+    url: "/api/ListCATemplates",
+    queryKey: "ListCATemplates",
+  });
+
   // Find the current template from standards data (API returns { Results: [...] })
   const standardsTemplates = Array.isArray(standardsApi.data) ? standardsApi.data : standardsApi.data?.Results || [];
   const currentTemplate = standardsTemplates.find(
@@ -173,6 +179,14 @@ const PoliciesDeployedPage = () => {
       const template = intuneTemplatesApi.data.find((t) => t.GUID === templateValue);
       if (template?.Displayname) {
         return template.Displayname;
+      }
+    }
+
+    // If not found in drift data and this is a CA template, look it up in the CA templates API
+    if (templateType === "ConditionalAccessTemplate" && templateValue && caTemplatesApi.data) {
+      const template = caTemplatesApi.data.find((t) => t.GUID === templateValue);
+      if (template?.displayName) {
+        return template.displayName;
       }
     }
 

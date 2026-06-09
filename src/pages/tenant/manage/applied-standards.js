@@ -135,10 +135,7 @@ const Page = () => {
   })
 
   useEffect(() => {
-    if (templateId && templateDetails.isSuccess && templateDetails.data) {
-      const selectedTemplate = templateDetails.data.find((template) => template.GUID === templateId)
-
-      if (selectedTemplate && comparisonApi.isSuccess && comparisonApi.data) {
+    if (templateId && templateDetails.isSuccess && selectedTemplate && comparisonApi.isSuccess && comparisonApi.data) {
         const tenantData = comparisonApi.data
 
         // Find the current tenant's data by matching tenantFilter with currentTenant
@@ -148,7 +145,7 @@ const Page = () => {
         // Helper function to get template display name from GUID
         const getTemplateDisplayName = (guid) => {
           if (!guid) return null
-          const template = templateDetails.data.find((t) => t.GUID === guid)
+          const template = templates.find((t) => t.GUID === guid)
           return template?.displayName || template?.templateName || template?.name || guid
         }
 
@@ -934,26 +931,6 @@ const Page = () => {
               const standardIdWithoutPrefix = standardId.replace('standards.', '')
               const standardObject = currentTenantObj?.[standardId]
 
-              console.log(
-                'standardId:',
-                standardId,
-                'includes IntuneTag:',
-                standardId.includes('IntuneTag')
-              )
-
-              // Debug logging for Intune tags
-              if (standardId.includes('IntuneTag') || standardId.includes('intuneTag')) {
-                console.log(`[${standardId}] standardObject:`, {
-                  standardObject,
-                  hasCurrentValue: standardObject?.CurrentValue !== undefined,
-                  hasExpectedValue: standardObject?.ExpectedValue !== undefined,
-                  Value: standardObject?.Value,
-                  CurrentValue: standardObject?.CurrentValue,
-                  ExpectedValue: standardObject?.ExpectedValue,
-                              LicenseAvailable: standardObject?.LicenseAvailable,
-                            })
-              }
-
               // Extract the actual value from the standard object (new data structure includes .Value property)
               const directStandardValue = standardObject?.Value
 
@@ -1009,19 +986,6 @@ const Page = () => {
                   standardObject.CurrentValue,
                   standardObject.ExpectedValue
                 )
-                // Debug logging for Intune tags
-                if (standardId.includes('IntuneTag') || standardId.includes('intuneTag')) {
-                  console.log(`[${standardId}] Comparing CurrentValue vs ExpectedValue:`, {
-                    CurrentValue: standardObject.CurrentValue,
-                    ExpectedValue: standardObject.ExpectedValue,
-                    isCompliant,
-                    currentJSON: JSON.stringify(standardObject.CurrentValue),
-                    expectedJSON: JSON.stringify(standardObject.ExpectedValue),
-                    areEqual:
-                      JSON.stringify(standardObject.CurrentValue) ===
-                      JSON.stringify(standardObject.ExpectedValue),
-                  })
-                }
               }
               // SECOND: Check if Value is explicitly true (compliant) or false (non-compliant)
               else if (directStandardValue === true) {
@@ -1237,16 +1201,16 @@ const Page = () => {
         }
 
         setComparisonData(allStandards)
-      } else {
-        setComparisonData([])
-      }
     } else if (comparisonApi.isError) {
+      setComparisonData([])
+    } else if (templateId && templateDetails.isSuccess) {
       setComparisonData([])
     }
   }, [
     templateId,
     templateDetails.isSuccess,
-    templateDetails.data,
+    templates,
+    selectedTemplate,
     comparisonApi.isSuccess,
     comparisonApi.data,
     comparisonApi.isError,
@@ -1288,6 +1252,14 @@ const Page = () => {
   const filteredGroupedStandards = useMemo(() => {
     if (!groupedStandards) return {}
 
+    const isLicenseMissingStandard = (standard) => {
+      const tenantValue = standard.currentTenantValue?.Value || standard.currentTenantValue
+      return (
+        standard.currentTenantValue?.LicenseAvailable === false ||
+        (typeof tenantValue === 'string' && tenantValue.startsWith('License Missing:'))
+      )
+    }
+
     if (!searchQuery && filter === 'all') {
       return groupedStandards
     }
@@ -1299,9 +1271,7 @@ const Page = () => {
       const categoryMatchesSearch = !searchQuery || category.toLowerCase().includes(searchLower)
 
       const filteredStandards = groupedStandards[category].filter((standard) => {
-        const tenantValue = standard.currentTenantValue?.Value || standard.currentTenantValue
-        const hasLicenseMissing =
-          typeof tenantValue === 'string' && tenantValue.startsWith('License Missing:')
+        const hasLicenseMissing = isLicenseMissingStandard(standard)
 
         const matchesFilter =
           filter === 'all' ||
@@ -1314,9 +1284,7 @@ const Page = () => {
           (filter === 'nonCompliantWithLicense' &&
             standard.complianceStatus === 'Non-Compliant' &&
             !hasLicenseMissing) ||
-          (filter === 'nonCompliantWithoutLicense' &&
-            standard.complianceStatus === 'Non-Compliant' &&
-            hasLicenseMissing)
+          (filter === 'nonCompliantWithoutLicense' && hasLicenseMissing)
 
         const matchesSearch =
           !searchQuery ||
@@ -1352,54 +1320,58 @@ const Page = () => {
   const overriddenCount =
     comparisonData?.filter((standard) => standard.complianceStatus === 'Overridden').length || 0
 
+  const isIncludedInScoring = (standard) =>
+    standard.complianceStatus !== 'Reporting Disabled' && standard.complianceStatus !== 'Overridden'
+
+  const isLicenseMissingStandard = (standard) => {
+    const tenantValue = standard.currentTenantValue?.Value || standard.currentTenantValue
+    return (
+      standard.currentTenantValue?.LicenseAvailable === false ||
+      (typeof tenantValue === 'string' && tenantValue.startsWith('License Missing:'))
+    )
+  }
+
   // Calculate license-related metrics
   const missingLicenseCount =
-    comparisonData?.filter((standard) => {
-      if (standard.currentTenantValue?.LicenseAvailable === false) {
-        return true
-      }
-      const tenantValue = standard.currentTenantValue?.Value || standard.currentTenantValue
-      return typeof tenantValue === 'string' && tenantValue.startsWith('License Missing:')
-    }).length || 0
+    comparisonData?.filter(
+      (standard) => isIncludedInScoring(standard) && isLicenseMissingStandard(standard)
+    ).length || 0
 
   const nonCompliantWithLicenseCount =
     comparisonData?.filter((standard) => {
-      const tenantValue = standard.currentTenantValue?.Value || standard.currentTenantValue
-      return (
-        standard.complianceStatus === 'Non-Compliant' &&
-        !(typeof tenantValue === 'string' && tenantValue.startsWith('License Missing:'))
-      )
+      return standard.complianceStatus === 'Non-Compliant' && !isLicenseMissingStandard(standard)
     }).length || 0
 
   const nonCompliantWithoutLicenseCount =
-    comparisonData?.filter((standard) => {
-      const tenantValue = standard.currentTenantValue?.Value || standard.currentTenantValue
-      return (
-        standard.complianceStatus === 'Non-Compliant' &&
-        typeof tenantValue === 'string' &&
-        tenantValue.startsWith('License Missing:')
-      )
-    }).length || 0
+    comparisonData?.filter((standard) => isLicenseMissingStandard(standard)).length || 0
+
+  const compliantWithAvailableLicenseCount =
+    comparisonData?.filter(
+      (standard) =>
+        isIncludedInScoring(standard) &&
+        (standard.complianceStatus === 'Compliant' ||
+          standard.complianceStatus === 'Accepted Deviation' ||
+          standard.complianceStatus === 'Customer Specific') &&
+        !isLicenseMissingStandard(standard)
+    ).length || 0
+
+  const scoredStandardsCount = Math.max(allCount - reportingDisabledCount - overriddenCount, 0)
 
   const compliancePercentage =
-    allCount > 0
-      ? Math.round(
-          ((compliantCount + acceptedDeviationCount) /
-            (allCount - reportingDisabledCount - overriddenCount || 1)) *
-            100
-        )
+    scoredStandardsCount > 0
+      ? Math.round((compliantWithAvailableLicenseCount / scoredStandardsCount) * 100)
       : 0
 
   const missingLicensePercentage =
-    allCount > 0
+    scoredStandardsCount > 0 ? Math.round((missingLicenseCount / scoredStandardsCount) * 100) : 0
+
+  // Combined score: standards either compliant with available licensing or blocked by missing license.
+  const combinedScore =
+    scoredStandardsCount > 0
       ? Math.round(
-          (missingLicenseCount / (allCount - reportingDisabledCount - overriddenCount || 1)) * 100
+          ((compliantWithAvailableLicenseCount + missingLicenseCount) / scoredStandardsCount) * 100
         )
       : 0
-
-  // Combined score: compliance percentage + missing license percentage
-  // This represents the total "addressable" compliance (compliant + could be compliant if licensed)
-  const combinedScore = compliancePercentage + missingLicensePercentage
 
   // Simple filter for all templates (no type filtering)
   const templateOptions = templates
