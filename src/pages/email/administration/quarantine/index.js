@@ -365,6 +365,7 @@ const Page = () => {
       <CippTablePage
         title={pageTitle}
         apiUrl="/api/ListMailQuarantine"
+        apiData={{ manualPagination: true }}
         apiDataKey="Results"
         actions={actions}
         offCanvas={offCanvas}
