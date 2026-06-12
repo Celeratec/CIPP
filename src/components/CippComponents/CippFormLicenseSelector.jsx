@@ -25,7 +25,6 @@ export const CippFormLicenseSelector = ({
         addedField: addedField,
         tenantFilter: userSettingsDefaults.currentTenant ?? undefined,
         url: "/api/ListLicenses",
-        dataKey: "Results",
         labelField: (option) => {
           // Use License field from API response (already translated by backend)
           // Fall back to static translation if License field is missing
