@@ -50,6 +50,7 @@ const CippFormPage = (props) => {
     postUrl,
     customDataformatter,
     resetForm = false,
+    preserveNullValues = false,
     hideBackButton = false,
     hidePageType = false,
     hideTitle = false,
@@ -105,21 +106,26 @@ const CippFormPage = (props) => {
     const values = customDataformatter
       ? customDataformatter(formControl.getValues())
       : formControl.getValues();
+    //remove all empty values or blanks (recursively)
+    //when preserveNullValues is set, explicit nulls are kept so the API can
+    //distinguish "clear this field" from "field omitted"
+    const isEmptyValue = (value) =>
+      value === "" || value === undefined || (!preserveNullValues && value === null);
     const removeEmpty = (obj) => {
       if (Array.isArray(obj)) {
         return obj
           .map((item) => (item && typeof item === "object" ? removeEmpty(item) : item))
           .filter((item) => {
-            if (item === "" || item === null || item === undefined) return false;
+            if (isEmptyValue(item)) return false;
             if (Array.isArray(item)) return item.length > 0;
-            if (typeof item === "object") return Object.keys(item).length > 0;
+            if (item !== null && typeof item === "object") return Object.keys(item).length > 0;
             return true;
           });
       }
       Object.keys(obj).forEach((key) => {
-        if (obj[key] === "" || obj[key] === null || obj[key] === undefined) {
+        if (isEmptyValue(obj[key])) {
           delete obj[key];
-        } else if (typeof obj[key] === "object") {
+        } else if (obj[key] !== null && typeof obj[key] === "object") {
           obj[key] = removeEmpty(obj[key]);
           if (Array.isArray(obj[key]) ? obj[key].length === 0 : Object.keys(obj[key]).length === 0) {
             delete obj[key];

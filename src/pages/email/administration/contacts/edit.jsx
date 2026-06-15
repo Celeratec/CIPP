@@ -88,7 +88,12 @@ const EditContact = () => {
     if (!contact) return null;
 
     const address = contact.addresses?.[0] || {};
-    const phones = contact.phones || [];
+    // A single phone may be serialized as a bare object rather than an array
+    const phones = Array.isArray(contact.phones)
+      ? contact.phones
+      : contact.phones
+        ? [contact.phones]
+        : [];
     const phoneMap = new Map(phones.map((p) => [p.type, p.number]));
 
     return {
@@ -145,8 +150,9 @@ const EditContact = () => {
           State: values.state,
           CountryOrRegion: values.country?.value || values.country,
           Company: values.companyName,
-          mobilePhone: values.mobilePhone,
-          phone: values.businessPhone,
+          // Explicit nulls so the API can clear phone values that were un-set
+          mobilePhone: values.mobilePhone || null,
+          phone: values.businessPhone || null,
           website: values.website,
           mailTip: values.mailTip,
         },
