@@ -2047,6 +2047,7 @@ const ManageDriftPage = () => {
               type: 'textField',
               name: 'reason',
               label: 'Reason for change (Mandatory)',
+              required: true,
             },
             ...(actionData.data?.deviations?.some((d) => d.status === 'DeniedRemediate')
               ? [
