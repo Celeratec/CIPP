@@ -59,10 +59,39 @@ Validated with `python3 -m json.tool` equivalent (`json.load`):
 | `src/data/standards.json` | OK |
 | `src/data/AuditLogTemplates.json` | OK |
 
+## TAP terminology sweep (2026-06-17)
+
+Repo-wide search for user-facing legacy TAP wording in `src/` (excluding docs).
+
+### Findings
+
+| Location | String | Action |
+|----------|--------|--------|
+| `CippUserActions.jsx` | Create / confirm TAP strings | **Already fixed** (`943e57f11`, upstream `5709f856` adapted) |
+| `users/index.js` `mobileQuickActions` | `Create Temporary Access Password` | **Fixed** → `Create Temporary Access Pass` (`722b2a025`) |
+| `standards.json`, `AuditLogTemplates.json` | Temporary Access Pass | **Already correct** |
+| `jit-admin/*.jsx` | `Generate TAP`, `UseTAP`, field names | **Left unchanged** — internal/API identifiers or standard TAP acronym |
+| `/api/ExecCreateTAP` | endpoint path | **Left unchanged** — not a user-facing label |
+
+### Wording change (`722b2a025`)
+
+| File | Before | After |
+|------|--------|-------|
+| `users/index.js` | `"Create Temporary Access Password"` | `"Create Temporary Access Pass"` |
+
+### Validation
+
+- Single string in `mobileQuickActions`; no logic, permissions, or API changes.
+- Matches `CippUserActions` action label so mobile quick-action filter works.
+- No remaining user-facing `Temporary Access Password` in `src/`.
+
+## CIPP-API cycle 2 (paused)
+
+Branch `manage365/upstream-sync-cipp-api-cycle2-20260617` paused docs-only; ORCA mini-batches all empty/already implemented. No further ORCA/DB-cache work without explicit approval.
+
 ## Issues / next steps
 
-1. **Sherweb (`c15d1d0d`):** Deferred — requires upstream Sherweb `Extensions.json` block (or equivalent Manage365 integration) before conditional-field fix can apply cleanly.
-2. **Standards tags (`f768330c`):** Deferred / satisfied on fork; document CIS version divergence if BPA mapping depends on exact tag strings.
-3. **Cycle 2 continuation:** Pick next upstream frontend-only commits from delta inventory; avoid re-attempting Sherweb, `f768330c`, or full cherry-pick of `5709f856`.
-4. **Optional:** Audit other UI surfaces for legacy "Temporary Access Password" strings outside this commit scope (e.g. templates) if inventory lists them.
+1. **Sherweb (`c15d1d0d`):** Deferred — requires upstream Sherweb `Extensions.json` block.
+2. **Standards tags (`f768330c`):** Deferred / satisfied on fork.
+3. **PR:** Two small UI terminology commits ready — recommend opening a **small CIPP PR** now, or continue batching from delta inventory.
 
