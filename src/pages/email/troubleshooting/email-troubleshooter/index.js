@@ -1,5 +1,5 @@
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import {
   Alert,
@@ -7,7 +7,6 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Collapse,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -22,16 +21,9 @@ import {
 import {
   Block,
   CheckCircle,
-  ClearAll,
   Close,
   ContentCopy,
   Done,
-  DoneAll,
-  ExpandLess,
-  ExpandMore,
-  Pending,
-  Cancel,
-  Search,
 } from "@mui/icons-material";
 import {
   Timeline,
@@ -42,26 +34,36 @@ import {
   TimelineContent,
   TimelineOppositeContent,
 } from "@mui/lab";
-import { Grid } from "@mui/system";
-import { EyeIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
-import CippFormComponent from "../../../../components/CippComponents/CippFormComponent";
-import CippButtonCard from "../../../../components/CippCards/CippButtonCard";
+import { DocumentTextIcon } from "@heroicons/react/24/outline";
 import { CippDataTable } from "../../../../components/CippTable/CippDataTable";
 import { CippMessageViewer } from "../../../../components/CippComponents/CippMessageViewer.jsx";
 import { ApiPostCall, ApiGetCall } from "../../../../api/ApiCall";
 import { useSettings } from "../../../../hooks/use-settings";
-
-const daysOptions = [
-  { label: "Last 24 hours", value: 1 },
-  { label: "Last 2 days", value: 2 },
-  { label: "Last 7 days", value: 7 },
-  { label: "Last 10 days", value: 10 },
-];
+import { useDispatch } from "react-redux";
+import { showToast } from "../../../../store/toasts";
+import {
+  buildQuarantineActions,
+  buildQuarantineColumns,
+  buildQuarantineSearchPayload,
+  CippQuarantineBulkToolbar,
+  CippQuarantineDetailPanel,
+  CippQuarantineFilterPanel,
+  handleBulkBlockSenders,
+  QUARANTINE_DAYS_OPTIONS,
+  useQuarantineFilters,
+} from "../../../../components/CippComponents/quarantine";
 
 const quickPresets = [
   { key: "quarantined24h", label: "Quarantined (24h)", days: 1, status: "Quarantined" },
   { key: "failed48h", label: "Failed Delivery (48h)", days: 2, status: "Failed" },
   { key: "recent7d", label: "All Recent (7d)", days: 7, status: null },
+];
+
+const traceDaysOptions = [
+  { label: "Last 24 hours", value: 1 },
+  { label: "Last 2 days", value: 2 },
+  { label: "Last 7 days", value: 7 },
+  { label: "Last 10 days", value: 10 },
 ];
 
 const getEventColor = (event) => {
@@ -162,17 +164,11 @@ const statusColorMap = {
   Expanded: "info",
 };
 
-const releaseStatusColorMap = {
-  RELEASED: "success",
-  DENIED: "error",
-  NOTRELEASED: "warning",
-  REQUESTED: "info",
-};
-
 const Page = () => {
+  const dispatch = useDispatch();
   const tenantFilter = useSettings().currentTenant;
   const [activePreset, setActivePreset] = useState(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [searchCollapsed, setSearchCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [traceResults, setTraceResults] = useState([]);
   const [quarantineResults, setQuarantineResults] = useState([]);
@@ -191,6 +187,8 @@ const Page = () => {
   const [viewMessageId, setViewMessageId] = useState(null);
   const [messageContentsWaiting, setMessageContentsWaiting] = useState(false);
 
+  const [detailRow, setDetailRow] = useState(null);
+
   const formControl = useForm({
     defaultValues: {
       dateFilter: "relative",
@@ -201,13 +199,21 @@ const Page = () => {
       recipient: [],
       messageId: "",
       subject: "",
+      subjectExact: "",
+      senderDomain: "",
+      recipientDomain: "",
+      policyName: "",
       status: [],
       fromIP: "",
       toIP: "",
       quarantineType: [],
+      releaseStatus: [],
+      policyTypes: [],
     },
     mode: "onChange",
   });
+
+  const { syncFiltersToUrl } = useQuarantineFilters({ formControl, enabled: true });
 
   const searchApi = ApiPostCall({
     urlFromData: true,
@@ -220,6 +226,7 @@ const Page = () => {
       setTraceError(data?.TraceError ?? null);
       setQuarantineError(data?.QuarantineError ?? null);
       setHighlightMessageId(null);
+      setSearchCollapsed(true);
     },
   });
 
@@ -248,37 +255,20 @@ const Page = () => {
   const bulkReleaseApi = ApiPostCall({
     urlFromData: true,
     queryKey: "BulkQuarantineRelease",
+    onResult: () => {
+      setSelectedQuarantineRows([]);
+      onSubmit();
+    },
   });
 
   const buildSearchData = (overrides = {}) => {
     const values = { ...formControl.getValues(), ...overrides };
-    const data = { tenantFilter };
-
-    if (values.messageId) {
-      data.messageId = values.messageId;
-      return data;
-    }
-
-    if (values.sender?.length) data.sender = values.sender;
-    if (values.recipient?.length) data.recipient = values.recipient;
-    if (values.status?.length) data.status = values.status[0];
-    if (values.fromIP) data.fromIP = values.fromIP;
-    if (values.toIP) data.toIP = values.toIP;
-    if (values.subject) data.subject = values.subject;
-    if (values.quarantineType?.length)
-      data.quarantineType = values.quarantineType[0]?.value ?? values.quarantineType[0];
-
-    if (values.dateFilter === "relative") {
-      data.days = values.days?.value ?? values.days;
-    } else {
-      data.startDate = values.startDate;
-      data.endDate = values.endDate;
-    }
-
-    return data;
+    return buildQuarantineSearchPayload(values, tenantFilter, overrides);
   };
 
   const onSubmit = (overrides) => {
+    const values = { ...formControl.getValues(), ...overrides };
+    syncFiltersToUrl(values);
     searchApi.mutate({
       url: "/api/ExecEmailTroubleshoot",
       data: buildSearchData(overrides),
@@ -297,7 +287,7 @@ const Page = () => {
   };
 
   const applyPreset = (preset) => {
-    const daysOption = daysOptions.find((o) => o.value === preset.days) || {
+    const daysOption = traceDaysOptions.find((o) => o.value === preset.days) || {
       label: `Last ${preset.days} days`,
       value: preset.days,
     };
@@ -337,39 +327,12 @@ const Page = () => {
     setMessageViewerOpen(true);
   };
 
-  const handleBulkRelease = (type, addAllowEntry = false) => {
-    const identities = selectedQuarantineRows.map((r) => r.Identity);
-    if (identities.length > 50) {
-      if (
-        !window.confirm(
-          `WARNING: You are about to process ${identities.length} messages. This may take a while and could have significant impact. Continue?`
-        )
-      )
-        return;
-    } else if (identities.length > 10) {
-      if (
-        !window.confirm(
-          `You are about to ${type.toLowerCase()} ${identities.length} messages. Are you sure?`
-        )
-      )
-        return;
-    }
+  const handleBulkRelease = (rows, type, extra = {}) => {
+    const identities = rows.map((row) => row.Identity);
     bulkReleaseApi.mutate({
       url: "/api/ExecQuarantineManagement",
-      data: { tenantFilter, Identity: identities, Type: type, AddAllowEntry: addAllowEntry },
+      data: { tenantFilter, Identity: identities, Type: type, ...extra },
     });
-  };
-
-  const isMessageIdSet = !!formControl.watch("messageId");
-
-  const isIPAddress = {
-    validate: (value) =>
-      !value ||
-      /^(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(
-        value
-      ) ||
-      /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/.test(value) ||
-      "Invalid IP address",
   };
 
   const traceActions = [
@@ -433,82 +396,26 @@ const Page = () => {
     },
   ];
 
-  const quarantineActions = [
-    {
-      label: "View Message",
-      noConfirm: true,
-      customFunction: viewQuarantineMessage,
-      icon: <EyeIcon />,
-    },
-    {
-      label: "View Delivery Timeline",
-      noConfirm: true,
-      customFunction: (row) => {
-        setDetailMessageId(row.MessageId);
-        traceDetailApi.mutate({
-          url: "/api/ListMessageTrace",
-          data: { tenantFilter, messageId: row.MessageId },
-        });
-        setDetailDialogOpen(true);
-      },
-      icon: <DocumentTextIcon />,
-    },
-    {
-      label: "Release",
-      type: "POST",
-      url: "/api/ExecQuarantineManagement",
-      multiPost: true,
-      data: { Identity: "Identity", Type: "!Release" },
-      confirmText: "Release this message?",
-      icon: <Done />,
-      condition: (row) => row.ReleaseStatus !== "RELEASED",
-    },
-    {
-      label: "Deny",
-      type: "POST",
-      url: "/api/ExecQuarantineManagement",
-      multiPost: true,
-      data: { Identity: "Identity", Type: "!Deny" },
-      confirmText: "Deny this message?",
-      icon: <Block />,
-      condition: (row) => row.ReleaseStatus !== "DENIED",
-    },
-    {
-      label: "Release & Allow Sender",
-      type: "POST",
-      url: "/api/ExecQuarantineManagement",
-      multiPost: true,
-      data: { Identity: "Identity", Type: "!Release", AllowSender: true },
-      confirmText: "Release and allow this sender?",
-      icon: <DoneAll />,
-      condition: (row) => row.ReleaseStatus !== "RELEASED",
-    },
-    {
-      label: "Release & Add Allow Entry",
-      type: "POST",
-      url: "/api/ExecQuarantineManagement",
-      multiPost: true,
-      data: { Identity: "Identity", Type: "!Release", AddAllowEntry: true },
-      confirmText: "Release and add sender to Tenant Allow List?",
-      icon: <DoneAll />,
-      condition: (row) => row.ReleaseStatus !== "RELEASED",
-    },
-    {
-      label: "Block Sender",
-      type: "POST",
-      url: "/api/AddTenantAllowBlockList",
-      data: {
-        tenantID: tenantFilter,
-        entries: "SenderAddress",
-        listType: "!Sender",
-        listMethod: "!Block",
-        notes: "!Blocked via Email Troubleshooter",
-        NoExpiration: true,
-      },
-      confirmText: "Block this sender?",
-      icon: <Block />,
-    },
-  ];
+  const quarantineActions = useMemo(
+    () =>
+      buildQuarantineActions({
+        tenantFilter,
+        onPreview: viewQuarantineMessage,
+        onViewTimeline: (row) => {
+          setDetailMessageId(row.MessageId);
+          setDetailRow(row);
+          traceDetailApi.mutate({
+            url: "/api/ListMessageTrace",
+            data: { tenantFilter, messageId: row.MessageId, traceDetail: true },
+          });
+          setDetailDialogOpen(true);
+        },
+        includeExplorerLink: true,
+      }),
+    [tenantFilter]
+  );
+
+  const quarantineColumns = useMemo(() => buildQuarantineColumns(), []);
 
   const traceColumns = [
     { header: "Received", accessorKey: "Received" },
@@ -542,31 +449,6 @@ const Page = () => {
     { header: "Subject", accessorKey: "Subject" },
   ];
 
-  const quarantineColumns = [
-    { header: "Received", accessorKey: "ReceivedTime" },
-    {
-      header: "Release Status",
-      accessorKey: "ReleaseStatus",
-      Cell: ({ row }) => {
-        const status = row.original.ReleaseStatus;
-        const label = status === "NOTRELEASED" ? "Not Released" : status;
-        return (
-          <Chip
-            label={label}
-            color={releaseStatusColorMap[status] || "default"}
-            size="small"
-            variant="outlined"
-          />
-        );
-      },
-    },
-    { header: "Subject", accessorKey: "Subject" },
-    { header: "Sender", accessorKey: "SenderAddress" },
-    { header: "Recipient", accessorKey: "RecipientAddress" },
-    { header: "Type", accessorKey: "Type" },
-    { header: "Policy", accessorKey: "PolicyName" },
-  ];
-
   const displayedQuarantineResults =
     highlightMessageId && activeTab === 1
       ? quarantineResults.filter((r) => r.MessageId === highlightMessageId)
@@ -579,10 +461,9 @@ const Page = () => {
 
   return (
     <Stack spacing={2} sx={{ px: 3 }}>
-      {/* Quick Filter Presets */}
       <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
         <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-          Quick Search:
+          Trace quick search:
         </Typography>
         {quickPresets.map((preset) => (
           <Chip
@@ -597,190 +478,29 @@ const Page = () => {
         ))}
       </Stack>
 
-      {/* Search Panel */}
-      <CippButtonCard component="accordion" title="Search" accordionExpanded={true}>
-        <Grid container spacing={2}>
-          <Grid size={12}>
-            <CippFormComponent
-              type="radio"
-              row
-              name="dateFilter"
-              label="Date Range"
-              options={[
-                { label: "Relative", value: "relative" },
-                { label: "Custom", value: "startEnd" },
-              ]}
-              formControl={formControl}
-              disabled={isMessageIdSet}
-            />
-          </Grid>
-          {formControl.watch("dateFilter") === "relative" && (
-            <Grid size={{ xs: 12, md: 4 }}>
-              <CippFormComponent
-                type="autoComplete"
-                name="days"
-                label="Time Range"
-                multiple={false}
-                creatable={false}
-                options={daysOptions}
-                formControl={formControl}
-                disabled={isMessageIdSet}
-              />
-            </Grid>
-          )}
-          {formControl.watch("dateFilter") === "startEnd" && (
-            <>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <CippFormComponent
-                  type="datePicker"
-                  name="startDate"
-                  label="Start Date"
-                  dateTimeType="datetime"
-                  formControl={formControl}
-                  disabled={isMessageIdSet}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <CippFormComponent
-                  type="datePicker"
-                  name="endDate"
-                  label="End Date"
-                  dateTimeType="datetime"
-                  formControl={formControl}
-                  disabled={isMessageIdSet}
-                />
-              </Grid>
-            </>
-          )}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <CippFormComponent
-              type="autoComplete"
-              freeSolo
-              multiple
-              creatable
-              name="sender"
-              label="Sender"
-              formControl={formControl}
-              disabled={isMessageIdSet}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <CippFormComponent
-              type="autoComplete"
-              freeSolo
-              multiple
-              creatable
-              name="recipient"
-              label="Recipient"
-              formControl={formControl}
-              disabled={isMessageIdSet}
-            />
-          </Grid>
-
-          {/* Advanced Section */}
-          <Grid size={12}>
-            <Button
-              size="small"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              endIcon={showAdvanced ? <ExpandLess /> : <ExpandMore />}
-            >
-              Advanced Options
-            </Button>
-          </Grid>
-          <Grid size={12}>
-            <Collapse in={showAdvanced}>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <CippFormComponent
-                    type="textField"
-                    name="messageId"
-                    label="Message ID"
-                    formControl={formControl}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <CippFormComponent
-                    type="textField"
-                    name="subject"
-                    label="Subject"
-                    formControl={formControl}
-                    disabled={isMessageIdSet}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <CippFormComponent
-                    type="autoComplete"
-                    name="status"
-                    label="Status"
-                    options={[
-                      { label: "None", value: "None" },
-                      { label: "Delivered", value: "Delivered" },
-                      { label: "Failed", value: "Failed" },
-                      { label: "Quarantined", value: "Quarantined" },
-                      { label: "Filtered As Spam", value: "FilteredAsSpam" },
-                      { label: "Expanded", value: "Expanded" },
-                      { label: "Pending", value: "Pending" },
-                    ]}
-                    multiple
-                    formControl={formControl}
-                    disabled={isMessageIdSet}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <CippFormComponent
-                    type="autoComplete"
-                    name="quarantineType"
-                    label="Quarantine Type"
-                    options={[
-                      { label: "Spam", value: "Spam" },
-                      { label: "Phish", value: "Phish" },
-                      { label: "Malware", value: "Malware" },
-                      { label: "High Confidence Phish", value: "HighConfPhish" },
-                    ]}
-                    multiple
-                    formControl={formControl}
-                    disabled={isMessageIdSet}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <CippFormComponent
-                    type="textField"
-                    name="fromIP"
-                    label="From IP"
-                    formControl={formControl}
-                    validators={isIPAddress}
-                    disabled={isMessageIdSet}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <CippFormComponent
-                    type="textField"
-                    name="toIP"
-                    label="To IP"
-                    formControl={formControl}
-                    validators={isIPAddress}
-                    disabled={isMessageIdSet}
-                  />
-                </Grid>
-              </Grid>
-            </Collapse>
-          </Grid>
-
-          <Grid size={12} sx={{ display: "flex", gap: 1 }}>
-            <Button
-              onClick={() => onSubmit()}
-              variant="contained"
-              color="primary"
-              startIcon={<Search />}
-            >
-              Search
-            </Button>
-            <Button onClick={onClear} variant="outlined" startIcon={<ClearAll />}>
-              Clear
-            </Button>
-          </Grid>
-        </Grid>
-      </CippButtonCard>
+      {!searchCollapsed ? (
+        <CippQuarantineFilterPanel
+          formControl={formControl}
+          onSearch={() => onSubmit()}
+          onClear={onClear}
+          onPreset={(preset) => {
+            const daysOption =
+              QUARANTINE_DAYS_OPTIONS.find((option) => option.value === preset.days) ||
+              QUARANTINE_DAYS_OPTIONS[1];
+            formControl.setValue("dateFilter", "relative");
+            formControl.setValue("days", daysOption);
+            setActivePreset(preset.key);
+            onSubmit({ dateFilter: "relative", days: daysOption });
+          }}
+          activePreset={activePreset}
+          showTraceFilters
+          title="Email Troubleshooting Search"
+        />
+      ) : (
+        <Button size="small" onClick={() => setSearchCollapsed(false)}>
+          Show Search Filters
+        </Button>
+      )}
 
       {/* Error Alerts */}
       {traceError && (
@@ -854,38 +574,28 @@ const Page = () => {
               been released or expired.
             </Alert>
           )}
-          {/* Bulk Action Toolbar */}
-          {selectedQuarantineRows.length > 0 && (
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ py: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                {selectedQuarantineRows.length} selected:
-              </Typography>
-              <Button
-                size="small"
-                variant="contained"
-                startIcon={<Done />}
-                onClick={() => handleBulkRelease("Release")}
-              >
-                Release Selected
-              </Button>
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<Block />}
-                onClick={() => handleBulkRelease("Deny")}
-              >
-                Deny Selected
-              </Button>
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<DoneAll />}
-                onClick={() => handleBulkRelease("Release", true)}
-              >
-                Release & Allow All
-              </Button>
-            </Stack>
-          )}
+          <CippQuarantineBulkToolbar
+            selectedRows={selectedQuarantineRows}
+            isProcessing={bulkReleaseApi.isPending}
+            onRelease={(rows) => handleBulkRelease(rows, "Release")}
+            onDeny={(rows) => handleBulkRelease(rows, "Deny")}
+            onReleaseAllow={(rows) => handleBulkRelease(rows, "Release", { AddAllowEntry: true })}
+            onDelete={(rows) => handleBulkRelease(rows, "Delete")}
+            onSubmitToMicrosoft={(rows) =>
+              handleBulkRelease(rows, "Release", { ReportFalsePositive: true })
+            }
+            onBlockSenders={(rows) =>
+              handleBulkBlockSenders({
+                rows,
+                tenantFilter,
+                mutate: bulkReleaseApi.mutate,
+                dispatch,
+                showToast,
+                sourceLabel: "Email Troubleshooter",
+                onComplete: () => setSelectedQuarantineRows([]),
+              })
+            }
+          />
           <CippDataTable
             title="Quarantine Results"
             columns={quarantineColumns}
@@ -925,6 +635,18 @@ const Page = () => {
             <>
               <AuthSummaryCard summary={authSummary} />
               <DeliveryTimeline events={traceDetailData ?? []} />
+              {detailRow && activeTab === 1 && (
+                <Stack spacing={2} sx={{ mt: 2 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    Quarantine Details
+                  </Typography>
+                  <CippQuarantineDetailPanel
+                    row={detailRow}
+                    tenantFilter={tenantFilter}
+                    onPreview={viewQuarantineMessage}
+                  />
+                </Stack>
+              )}
             </>
           )}
         </DialogContent>

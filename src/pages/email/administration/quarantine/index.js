@@ -1,7 +1,10 @@
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useDispatch } from "react-redux";
 import {
+  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -9,51 +12,37 @@ import {
   Skeleton,
   Typography,
   CircularProgress,
-  Paper,
-  Avatar,
-  Chip,
-  Divider,
-  useTheme,
+  Button,
+  Stack,
 } from "@mui/material";
-import { alpha } from "@mui/material/styles";
-import { Box, Stack } from "@mui/system";
-import { 
-  Block, 
-  Close, 
-  Done, 
-  DoneAll,
-  Email,
-  Security,
-  CheckCircle,
-  Pending,
-  Cancel,
-  CalendarToday,
-  Person,
-} from "@mui/icons-material";
+import { Close } from "@mui/icons-material";
 import { CippMessageViewer } from "../../../../components/CippComponents/CippMessageViewer.jsx";
 import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall";
 import { useSettings } from "../../../../hooks/use-settings";
-import { EyeIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 import { CippDataTable } from "../../../../components/CippTable/CippDataTable";
-import { getCippFormatting } from "../../../../utils/get-cipp-formatting";
-import { getInitials, stringToColor } from "../../../../utils/get-initials";
+import { showToast } from "../../../../store/toasts";
+import {
+  buildQuarantineActions,
+  buildQuarantineColumns,
+  buildQuarantineExportFilename,
+  buildQuarantineListQuery,
+  buildQuarantineSearchPayload,
+  CippQuarantineBulkToolbar,
+  CippQuarantineDetailPanel,
+  CippQuarantineFilterPanel,
+  handleBulkBlockSenders,
+  hasQuarantinePostFilters,
+  QUARANTINE_DAYS_OPTIONS,
+  triggerQuarantineFileDownload,
+  useQuarantineFilters,
+} from "../../../../components/CippComponents/quarantine";
 
-const simpleColumns = [
-  "ReceivedTime",
-  "ReleaseStatus",
-  "Subject",
-  "SenderAddress",
-  "RecipientAddress",
-  "Type",
-  "PolicyName",
-  "Tenant",
-];
 const detailColumns = ["Received", "Status", "SenderAddress", "RecipientAddress"];
 const pageTitle = "Quarantine Management";
 
 const Page = () => {
+  const dispatch = useDispatch();
   const tenantFilter = useSettings().currentTenant;
-  const theme = useTheme();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogContent, setDialogContent] = useState(null);
   const [messageId, setMessageId] = useState(null);
@@ -62,6 +51,36 @@ const Page = () => {
   const [traceMessageId, setTraceMessageId] = useState(null);
   const [messageSubject, setMessageSubject] = useState(null);
   const [messageContentsWaiting, setMessageContentsWaiting] = useState(false);
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [activePreset, setActivePreset] = useState("7d");
+  const [apiFilters, setApiFilters] = useState(null);
+  const [tableKey, setTableKey] = useState(0);
+
+  const formControl = useForm({
+    defaultValues: {
+      dateFilter: "relative",
+      days: QUARANTINE_DAYS_OPTIONS[1],
+      startDate: null,
+      endDate: null,
+      sender: [],
+      recipient: [],
+      messageId: "",
+      subject: "",
+      subjectExact: "",
+      senderDomain: "",
+      recipientDomain: "",
+      policyName: "",
+      quarantineType: [],
+      releaseStatus: [],
+      policyTypes: [],
+    },
+    mode: "onChange",
+  });
+
+  const { syncFiltersToUrl } = useQuarantineFilters({ formControl, enabled: true });
+  const filterValues = formControl.watch();
+  const showPostFilterWarning = hasQuarantinePostFilters(filterValues);
+  const quarantineColumns = useMemo(() => buildQuarantineColumns(), []);
 
   const getMessageContents = ApiGetCall({
     url: "/api/ListMailQuarantineMessage",
@@ -79,6 +98,20 @@ const Page = () => {
     onResult: (result) => {
       setTraceDetails(result);
     },
+  });
+
+  const bulkApi = ApiPostCall({
+    urlFromData: true,
+    queryKey: "BulkQuarantineManagement",
+    onResult: () => {
+      setSelectedRows([]);
+      setTableKey((value) => value + 1);
+    },
+  });
+
+  const exportApi = ApiPostCall({
+    urlFromData: true,
+    queryKey: "ExportMailQuarantine",
   });
 
   const viewMessage = (row) => {
@@ -112,231 +145,149 @@ const Page = () => {
     }
   }, [getMessageContents.isSuccess, getMessageContents.data]);
 
-  const actions = [
-    {
-      label: "View Message",
-      noConfirm: true,
-      customFunction: viewMessage,
-      icon: <EyeIcon />,
-      category: "view",
-    },
-    {
-      label: "View Message Trace",
-      noConfirm: true,
-      customFunction: viewMessageTrace,
-      icon: <DocumentTextIcon />,
-      category: "view",
-    },
-    {
-      label: "Release",
-      type: "POST",
-      url: "/api/ExecQuarantineManagement",
-      multiPost: true,
-      data: {
-        Identity: "Identity",
-        Type: "!Release",
-      },
-      confirmText: "Are you sure you want to release this message?",
-      icon: <Done />,
-      condition: (row) => row.ReleaseStatus !== "RELEASED",
-      category: "manage",
-    },
-    {
-      label: "Deny",
-      type: "POST",
-      url: "/api/ExecQuarantineManagement",
-      data: {
-        Identity: "Identity",
-        Type: "!Deny",
-        RecipientAddress: "RecipientAddress",
-      },
-      confirmText: "Are you sure you want to deny this message?",
-      icon: <Block />,
-      condition: (row) => row.ReleaseStatus !== "DENIED",
-      category: "security",
-    },
-    {
-      label: "Release & Allow Sender",
-      type: "POST",
-      url: "/api/ExecQuarantineManagement",
-      data: {
-        Identity: "Identity",
-        Type: "!Release",
-        AllowSender: true,
-      },
-      confirmText:
-        "Are you sure you want to release this email and add the sender to the whitelist?",
-      icon: <DoneAll />,
-      condition: (row) => row.ReleaseStatus !== "RELEASED",
-      category: "security",
-    },
-  ];
+  const actions = useMemo(
+    () =>
+      buildQuarantineActions({
+        tenantFilter,
+        onPreview: viewMessage,
+        onViewTrace: viewMessageTrace,
+        includeExplorerLink: true,
+      }),
+    [tenantFilter]
+  );
 
-  // Helper for release status
-  const getReleaseStatusInfo = (status) => {
-    switch (String(status || "").toUpperCase()) {
-      case "RELEASED":
-        return { label: "Released", color: theme.palette.success.main, icon: <CheckCircle fontSize="small" /> };
-      case "DENIED":
-        return { label: "Denied", color: theme.palette.error.main, icon: <Cancel fontSize="small" /> };
-      case "REQUESTED":
-        return { label: "Requested", color: theme.palette.warning.main, icon: <Pending fontSize="small" /> };
-      case "NOTRELEASED":
-      default:
-        return { label: "Not Released", color: theme.palette.warning.main, icon: <Pending fontSize="small" /> };
+  const runSearch = (overrides = {}) => {
+    const values = { ...formControl.getValues(), ...overrides };
+    syncFiltersToUrl(values);
+    setApiFilters(buildQuarantineListQuery(values, tenantFilter));
+    setTableKey((value) => value + 1);
+  };
+
+  useEffect(() => {
+    if (tenantFilter) {
+      runSearch({ days: QUARANTINE_DAYS_OPTIONS[1] });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantFilter]);
+
+  const onClear = () => {
+    formControl.reset();
+    setActivePreset(null);
+    runSearch({ days: QUARANTINE_DAYS_OPTIONS[1] });
+  };
+
+  const onPreset = (preset) => {
+    const daysOption = QUARANTINE_DAYS_OPTIONS.find((option) => option.value === preset.days) || {
+      label: preset.label,
+      value: preset.days,
+    };
+    formControl.setValue("dateFilter", "relative");
+    formControl.setValue("days", daysOption);
+    setActivePreset(preset.key);
+    runSearch({ dateFilter: "relative", days: daysOption });
+  };
+
+  const runBulk = (rows, type, extra = {}) => {
+    bulkApi.mutate({
+      url: "/api/ExecQuarantineManagement",
+      data: {
+        tenantFilter,
+        Identity: rows.map((row) => row.Identity),
+        Type: type,
+        ...extra,
+      },
+    });
+  };
+
+  const handleExportResult = (responseData, format) => {
+    const metadata = responseData?.Metadata ?? {};
+    const filename = buildQuarantineExportFilename(tenantFilter, format);
+
+    if (format === "json") {
+      const exportPayload = {
+        Results: responseData?.Results ?? [],
+        Metadata: metadata,
+      };
+      triggerQuarantineFileDownload(
+        JSON.stringify(exportPayload, null, 2),
+        "application/json",
+        filename
+      );
+    } else {
+      const csvContent = typeof responseData?.Results === "string" ? responseData.Results : "";
+      triggerQuarantineFileDownload(csvContent, "text/csv", filename);
+    }
+
+    dispatch(
+      showToast({
+        message: `Export started (${metadata.FilteredRowsReturned ?? metadata.count ?? 0} rows).`,
+        title: "Quarantine Export",
+      })
+    );
+
+    if (metadata.truncated || metadata.PostFilterPaginationLimited) {
+      dispatch(
+        showToast({
+          message:
+            "Export was capped at 5,000 raw Exchange rows before post-filtering. Narrow your filters or date range for complete results.",
+          title: "Export Truncated",
+        })
+      );
     }
   };
 
-  const offCanvas = {
-    actions: actions,
-    children: (row) => {
-      const statusInfo = getReleaseStatusInfo(row.ReleaseStatus);
-      
-      return (
-        <Stack spacing={3}>
-          {/* Hero Section */}
-          <Paper 
-            elevation={0}
-            sx={{ 
-              p: 2.5,
-              borderRadius: 2,
-              background: `linear-gradient(135deg, ${alpha(statusInfo.color, 0.15)} 0%, ${alpha(statusInfo.color, 0.05)} 100%)`,
-              borderLeft: `4px solid ${statusInfo.color}`,
-            }}
-          >
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Avatar
-                sx={{
-                  bgcolor: statusInfo.color,
-                  width: 56,
-                  height: 56,
-                }}
-              >
-                <Email />
-              </Avatar>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.25, lineHeight: 1.3 }}>
-                  {row.Subject || "No Subject"}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" noWrap>
-                  From: {row.SenderAddress}
-                </Typography>
-              </Box>
-            </Stack>
-          </Paper>
+  const handleExport = (format = "csv") => {
+    const values = formControl.getValues();
+    exportApi.mutate(
+      {
+        url: "/api/ExportMailQuarantine",
+        data: { ...buildQuarantineSearchPayload(values, tenantFilter), format },
+      },
+      {
+        onSuccess: (response) => handleExportResult(response?.data, format),
+        onError: (error) => {
+          dispatch(
+            showToast({
+              message:
+                error?.response?.data?.Results ||
+                error?.message ||
+                "Failed to export quarantine results.",
+              title: "Export Failed",
+              toastError: error,
+            })
+          );
+        },
+      }
+    );
+  };
 
-          {/* Status */}
-          <Box>
-            <Typography 
-              variant="overline" 
-              color="text.secondary" 
-              sx={{ fontWeight: 600, letterSpacing: 1, mb: 1.5, display: "block" }}
-            >
-              Quarantine Status
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              <Chip
-                icon={statusInfo.icon}
-                label={statusInfo.label}
-                sx={{ 
-                  fontWeight: 600, 
-                  bgcolor: alpha(statusInfo.color, 0.1),
-                  color: statusInfo.color,
-                  borderColor: statusInfo.color,
-                }}
-                variant="outlined"
-              />
-              {row.Type && (
-                <Chip
-                  icon={<Security fontSize="small" />}
-                  label={row.Type}
-                  variant="outlined"
-                  size="small"
-                />
-              )}
-            </Stack>
-          </Box>
-
-          <Divider />
-
-          {/* Message Details */}
-          <Box>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-              <Email fontSize="small" color="action" />
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                Message Details
-              </Typography>
-            </Stack>
-            <Stack spacing={1}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="body2" color="text.secondary">Sender</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
-                  {row.SenderAddress}
-                </Typography>
-              </Stack>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="body2" color="text.secondary">Recipient</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
-                  {row.RecipientAddress}
-                </Typography>
-              </Stack>
-              {row.ReceivedTime && (
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body2" color="text.secondary">Received</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {getCippFormatting(row.ReceivedTime, "ReceivedTime")}
-                  </Typography>
-                </Stack>
-              )}
-            </Stack>
-          </Box>
-
-          {/* Policy Info */}
-          {row.PolicyName && (
-            <>
-              <Divider />
-              <Box>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-                  <Security fontSize="small" color="action" />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    Policy Information
-                  </Typography>
-                </Stack>
-                <Stack spacing={1}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body2" color="text.secondary">Policy Name</Typography>
-                    <Chip label={row.PolicyName} size="small" variant="outlined" />
-                  </Stack>
-                </Stack>
-              </Box>
-            </>
-          )}
-
-          {/* Message ID */}
-          <Divider />
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              Message ID
-            </Typography>
-            <Paper 
-              variant="outlined" 
-              sx={{ 
-                p: 1.5, 
-                borderRadius: 1.5,
-                backgroundColor: alpha(theme.palette.background.default, 0.5),
-              }}
-            >
-              <Typography 
-                variant="caption" 
-                sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
-              >
-                {row.MessageId}
-              </Typography>
-            </Paper>
-          </Box>
-        </Stack>
-      );
-    },
+  const handleExportSelected = (rows) => {
+    const header =
+      "ReceivedTime,Subject,SenderAddress,RecipientAddress,Type,ReleaseStatus,PolicyName,MessageId,Identity";
+    const lines = rows.map((row) =>
+      [
+        row.ReceivedTime,
+        `"${(row.Subject || "").replace(/"/g, '""')}"`,
+        row.SenderAddress,
+        row.RecipientAddress,
+        row.Type,
+        row.ReleaseStatus,
+        row.PolicyName,
+        row.MessageId,
+        row.Identity,
+      ].join(",")
+    );
+    triggerQuarantineFileDownload(
+      [header, ...lines].join("\n"),
+      "text/csv",
+      buildQuarantineExportFilename(tenantFilter, "csv", "selected")
+    );
+    dispatch(
+      showToast({
+        message: `Exported ${rows.length} selected row(s).`,
+        title: "Quarantine Export",
+      })
+    );
   };
 
   const filterList = [
@@ -360,17 +311,91 @@ const Page = () => {
     },
   ];
 
+  const offCanvas = {
+    actions: actions,
+    children: (row) => (
+      <CippQuarantineDetailPanel
+        row={row}
+        tenantFilter={tenantFilter}
+        onPreview={viewMessage}
+        onRunTrace={viewMessageTrace}
+      />
+    ),
+  };
+
   return (
     <>
+      <Stack spacing={2} sx={{ px: 3, pb: 2 }}>
+        <CippQuarantineFilterPanel
+          formControl={formControl}
+          onSearch={() => runSearch()}
+          onClear={onClear}
+          onPreset={onPreset}
+          activePreset={activePreset}
+        />
+        {showPostFilterWarning && (
+          <Alert severity="info">
+            Subject and sender/recipient domain filters are applied after Exchange returns results.
+            Pagination may require multiple pages, and export is the most reliable way to review
+            complete filtered results.
+          </Alert>
+        )}
+        <Stack direction="row" spacing={1}>
+          <Button
+            size="small"
+            variant="outlined"
+            disabled={exportApi.isPending}
+            onClick={() => handleExport("csv")}
+          >
+            Export Results (CSV)
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            disabled={exportApi.isPending}
+            onClick={() => handleExport("json")}
+          >
+            Export Results (JSON)
+          </Button>
+        </Stack>
+        <CippQuarantineBulkToolbar
+          selectedRows={selectedRows}
+          isProcessing={bulkApi.isPending}
+          onRelease={(rows) => runBulk(rows, "Release")}
+          onDeny={(rows) => runBulk(rows, "Deny")}
+          onReleaseAllow={(rows) => runBulk(rows, "Release", { AddAllowEntry: true })}
+          onDelete={(rows) => runBulk(rows, "Delete")}
+          onSubmitToMicrosoft={(rows) => runBulk(rows, "Release", { ReportFalsePositive: true })}
+          onBlockSenders={(rows) =>
+            handleBulkBlockSenders({
+              rows,
+              tenantFilter,
+              mutate: bulkApi.mutate,
+              dispatch,
+              showToast,
+              sourceLabel: "Quarantine Management",
+              onComplete: () => {
+                setSelectedRows([]);
+                setTableKey((value) => value + 1);
+              },
+            })
+          }
+          onExportSelected={handleExportSelected}
+        />
+      </Stack>
       <CippTablePage
+        key={tableKey}
         title={pageTitle}
         apiUrl="/api/ListMailQuarantine"
-        apiData={{ manualPagination: true }}
+        apiData={apiFilters || { tenantFilter, manualPagination: true, days: 7, pageSize: 100 }}
         apiDataKey="Results"
         actions={actions}
         offCanvas={offCanvas}
-        simpleColumns={simpleColumns}
+        columns={quarantineColumns}
         filters={filterList}
+        onChange={(rows) => setSelectedRows(rows)}
+        queryKey={`QuarantineManagement-${tableKey}`}
+        tenantInTitle
       />
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="lg" fullWidth>
         <DialogTitle sx={{ py: 2 }}>

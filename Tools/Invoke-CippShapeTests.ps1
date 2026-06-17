@@ -103,6 +103,8 @@ try {
 #   ListDirectoryObjects     - POST body with ids array
 #   ListExoRequest           - POST body with Cmdlet param
 #   ListMailQuarantineMessage - needs Identity param
+#   ExportMailQuarantine - POST endpoint; covered by Invoke-ExportMailQuarantine.Tests.ps1
+#   ExecMailboxSafeSender - POST endpoint; covered by Invoke-ExecMailboxSafeSender.Tests.ps1
 #   ListScheduledItemDetails - needs RowKey param
 #   ListSafeLinksPolicyDetails - needs PolicyName param
 #   ListGroupSenderAuthentication - needs GroupId param
@@ -195,7 +197,8 @@ $EndpointRegistry = @(
     @{ Name = 'ListLicenses';                     RequiresTenant = $true }
     @{ Name = 'ListMDEOnboarding';                RequiresTenant = $true; AllowEmpty = $true }
     @{ Name = 'ListMFAUsers';                     RequiresTenant = $true }
-    @{ Name = 'ListMailQuarantine';               RequiresTenant = $true; AllowEmpty = $true }
+    @{ Name = 'ListMailQuarantine';               RequiresTenant = $true; AllowEmpty = $true; ExtraParams = @{ manualPagination = 'true'; days = 7; pageSize = 100 } }
+    @{ Name = 'GetMailQuarantineMessage';         RequiresTenant = $true; AllowEmpty = $true; ExtraParams = @{ Identity = '00000000-0000-0000-0000-000000000000' } }
     @{ Name = 'ListMailboxCAS';                   RequiresTenant = $true; AllowEmpty = $true }
     @{ Name = 'ListMailboxForwarding';            RequiresTenant = $true }
     @{ Name = 'ListMailboxRestores';              RequiresTenant = $true; AllowEmpty = $true }

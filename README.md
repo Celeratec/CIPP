@@ -10,7 +10,7 @@
 
 ---
 
-> **Last synced with upstream:** June 2026 — selective intake from CIPP v10.5 / CIPP-API v10.5.1 (**Manage365 v5.12.15**, upstream baseline **10.5.1**)
+> **Last synced with upstream:** June 2026 — selective intake from CIPP v10.5 / CIPP-API v10.5.1 (**Manage365 v5.13.0**, upstream baseline **10.5.2**)
 >
 > Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. Upstream changes are merged selectively to preserve Manage365-specific UI and workflows. See [Upstream Integration](#upstream-integration) below.
 
@@ -97,7 +97,8 @@ Manage365 includes the complete CIPP feature set:
 ### Email & Exchange
 - Mailbox administration (active, deleted, rules, permissions)
 - Contact management with templates
-- Quarantine and restricted user management
+- **Quarantine management** -- advanced Defender-style filtering, server-side pagination (default 7 days / 100 rows), bulk actions, CSV/JSON export, lazy detail metadata, and preserved EML preview, message trace, and Threat Explorer deep links (see [Quarantine Portal](#quarantine-portal-manage365-v5130) below)
+- Restricted user management
 - Tenant Allow/Block Lists
 - Retention policies and tags
 - Transport rules and connectors with templates
@@ -379,16 +380,47 @@ A unified email troubleshooting hub under Email & Exchange > Troubleshooting tha
 
 - **Unified search** -- a single search form queries both Exchange message trace and quarantine simultaneously, returning results in a tabbed interface with badge counts showing trace results and unreleased quarantine messages
 - **Quick-filter presets** -- one-click chips for common searches: "Quarantined (24h)", "Failed Delivery (48h)", "All Recent (7d)" pre-fill the search form and execute immediately
-- **Advanced filtering** -- collapsible advanced section with Message ID, subject, status, From/To IP, and quarantine type (Spam, Phish, Malware, High Confidence Phish) filters
+- **Advanced filtering** -- shared quarantine filter panel with Message ID, subject (partial or exact), sender/recipient, sender/recipient domain, quarantine reason, release status, policy type/name, and message-trace-only sending IP filters
 - **Contextual actions on trace results** -- View Delivery Details, View in Security Explorer, Allow Sender, Block Sender, Copy Message ID, and Release from Quarantine (appears only for quarantined messages) without leaving the page
-- **Contextual actions on quarantine results** -- View Message (EML preview), View Delivery Timeline, Release, Deny, Release & Allow Sender, Release & Add Allow Entry (creates a Tenant Allow/Block List entry), and Block Sender
+- **Contextual actions on quarantine results** -- View Message (EML preview), View Message Trace, Release, Deny, Delete, Submit to Microsoft, Release & Allow Sender, Release & Add Allow Entry, Allow/Block Sender or Domain, and Copy Message ID
 - **Cross-tab linking** -- clicking a "Quarantined" status chip in the trace tab switches to the quarantine tab and filters to the matching message
-- **Bulk quarantine operations** -- select multiple quarantine entries and release, deny, or release-and-allow in bulk with tiered confirmation guardrails (10+ and 50+ messages)
+- **Bulk quarantine operations** -- select multiple quarantine entries and release, deny, release-and-allow, delete, submit to Microsoft, or block unique senders in one aggregated action with tiered confirmation guardrails (10+ and 50+ messages)
 - **Delivery timeline visualization** -- an MUI Timeline-based detail panel replaces the plain table, showing color-coded delivery events (green for delivered, red for failed, amber for quarantined) with timestamps, event names, actions, and detail text
 - **Partial failure resilience** -- the combined backend endpoint handles permission failures gracefully: if quarantine access is missing but trace works (or vice versa), partial results are shown with a guidance banner explaining which data source failed and how to fix it
 - **Guest UPN encoding** -- sender and recipient addresses containing `#EXT#` are automatically encoded for Exchange Online API compatibility
 
-The navigation is restructured with Troubleshooting as the first submenu under Email & Exchange, placing the most commonly used tools at the top. The standalone Quarantine Management page remains available for all-tenant bulk monitoring. Message Viewer and Mailbox Restores are relocated from Tools to Troubleshooting for better discoverability.
+The navigation is restructured with Troubleshooting as the first submenu under Email & Exchange, placing the most commonly used tools at the top. The standalone [Quarantine Management](#quarantine-portal-manage365-v5130) page remains available for all-tenant bulk monitoring and filtered export. Message Viewer and Mailbox Restores are relocated from Tools to Troubleshooting for better discoverability.
+
+### Quarantine Portal (Manage365 v5.13.0)
+
+Manage365 extends the upstream quarantine list with a Defender-style portal experience while preserving all existing quarantine, trace, EML preview, and allow/block workflows. Exchange Online PowerShell (`Get-QuarantineMessage`, `Release-QuarantineMessage`, etc.) is used throughout — not Microsoft Graph or Defender REST quarantine APIs.
+
+**Quarantine Management page** (`/email/administration/quarantine`):
+
+- **Server-side filters** mapped to supported `Get-QuarantineMessage` parameters: time range (default last 7 days), sender/recipient, exact subject, quarantine reason, release status, policy type/name, and message ID
+- **Post-filters** for partial subject match and sender/recipient domain (applied after EXO returns results, with UI guidance when active)
+- **Paginated grid** -- 100 rows per page with auto-pagination; `fetchAll=true` available for API consumers needing legacy full-dump behavior
+- **Shared UI module** -- `src/components/CippComponents/quarantine/` provides filter panel, grid columns, detail panel, bulk toolbar, and row actions used by both Quarantine Management and Email Troubleshooter
+- **Lazy detail metadata** -- extended message details and authentication summary load on row open via `GetMailQuarantineMessage` (not during initial grid load)
+- **Export** -- filtered CSV or JSON download (up to 5,000 raw EXO rows, with truncation warning)
+- **Bulk actions** -- release, deny, release & allow, delete, submit to Microsoft, block deduplicated senders, export selected rows
+- **Preserved actions** -- EML preview, message trace, Threat Explorer deep link, preset column filters (Not Released / Released / Requested), and all row-level allow/block/release operations
+
+**Backend (CIPP-API):**
+
+- `Build-CIPPQuarantineQueryParams.ps1` -- shared filter mapper, post-filters, EXO retry/backoff, display normalization
+- `ListMailQuarantine`, `GetMailQuarantineMessage`, `ExportMailQuarantine`, extended `ExecQuarantineManagement`, `ExecEmailTroubleshoot`
+- `ExecMailboxSafeSender` -- backend endpoint for mailbox safe-sender list (API only; no UI yet)
+- AllTenants cache paginates up to 5 × 1,000 rows per tenant (30-day window)
+- Feature matrix and API limits: `CIPP-API/docs/QUARANTINE_FEATURES.md`
+
+**Not supported / limitations** (honest API limits, not faked in UI):
+
+- Sender/recipient display name filtering (EXO list API)
+- Sending IP on quarantine list (message trace only)
+- Attachment/URL sandbox verdicts in list (EML preview when available)
+- Threat Explorer in-app (external deep link only)
+- Release to specific users and mailbox safe sender (backend/API only)
 
 ### Organized Navigation
 
@@ -426,6 +458,7 @@ Located under Tenant Administration > Applications > Integration Templates.
 - **Durable SDK 2.2.0** with fan-out/fan-in/fan-out orchestration pattern for DB cache collection
 - **Channel filesFolder batch-fetch** -- Teams detail API returns per-channel SharePoint siteId/driveId via Graph batch requests, enabling direct file browsing for private/shared channels with their own SharePoint sites
 - **SharePoint REST auto-elevation** -- when adding members to non-group-connected sites (Communication, classic Team), the delegated token may lack site-level permissions. The endpoint now auto-elevates the SAM user to site collection admin via CSOM `SetSiteAdmin` (app-only admin API) and retries, with a final Graph API `drive/root/invite` fallback if CSOM is unavailable. Eliminates the manual "run CPV Refresh" step for most SharePoint member operations
+- **Quarantine portal API (v5.13.0)** -- shared `Build-CIPPQuarantineQueryParams` helper with EXO retry/backoff, post-filter pagination metadata, export cap semantics, and Pester tests for query mapping and endpoint response shapes (`Tests/Tools`, `Tests/Endpoint`)
 - **Selective user edit body** -- only sends properties that are explicitly set, preventing accidental field clearing during inline edits
 - **License backfill integration** -- missing licenses show formatted names immediately with asynchronous API backfill for accurate display names
 - **Applied Standards API hardening** -- `{ Results }` wrappers, `excludedTenants` corruption repair, missing `standards` key auto-init, live `TemplateList-Tags` expansion for Intune and CA partitions, and run-manually standards included in compare
@@ -478,7 +511,7 @@ After each upstream intake, bump both and redeploy:
 
 ```powershell
 # Frontend (CIPP repo)
-./Tools/Update-Version.ps1 -UpstreamVersion 10.5.1 -Manage365Version 5.12.15
+./Tools/Update-Version.ps1 -UpstreamVersion 10.5.2 -Manage365Version 5.13.0
 
 # Backend (CIPP-API repo) — set both copies to the same upstream baseline
 # version_latest.txt
