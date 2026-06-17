@@ -1,10 +1,9 @@
 # Applied Commits Tracking — CIPP (Frontend)
 
 Generated: 2026-06-17  
-Status: **Inspection phase — no commits applied yet**
-
-Sync branch (not created): `manage365/upstream-sync-cipp-20260617`  
-Backup tag (not created): `backup/pre-upstream-sync-cipp-20260617`
+Branch: `manage365/upstream-sync-cipp-20260617`  
+Backup tag: `backup/pre-upstream-sync-cipp-20260617`  
+Status: **Setup complete — no CIPP frontend cherry-picks yet (deferred per plan)**
 
 ## Summary
 
