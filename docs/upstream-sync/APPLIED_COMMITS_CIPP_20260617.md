@@ -3,7 +3,7 @@
 Generated: 2026-06-17  
 Branch: `manage365/upstream-sync-cipp-20260617`  
 Backup tag: `backup/pre-upstream-sync-cipp-20260617`  
-Branch tip (after defer + drawer guard): `ac59795fb` (pending docs commit)
+Branch tip: pending checkpoint commit
 
 ## Summary
 
@@ -13,15 +13,16 @@ Branch tip (after defer + drawer guard): `ac59795fb` (pending docs commit)
 | Applied with adaptation | 3 |
 | Deferred / reverted from branch | 1 |
 | Reverted (formatting-only / no net change) | 1 |
-| Already implemented | 3 |
+| Already implemented | 5 |
 | Skipped (conflict) | 1 |
-| Conflicts | 3 (`b1902421`, `1e7aef11` cherry-pick, `2e9b9fd5` cherry-pick) |
+| Conflicts | 4 (`b1902421`, `1e7aef11`, `2e9b9fd5`, `d7e8b0b5` cherry-pick) |
 
 Mini-batch 1: `1e59d2d4`, `98d5d94a` applied; `c8d61c07` reverted after review.  
 Mini-batch 2: `7a85827e` applied; `cfbf3508`, `db57e52a` already present; `b1902421` conflict.  
 Mini-batch 3: `1cd1ef72` adapted manually (two commits); `4b9efd82`, `3734adee` cherry-picked on retry.  
 Mini-batch 4: `0c32a84e` cherry-picked cleanly; `1e7aef11` adapted after conflict; `7054bfc4` deferred (see below).  
-Post batch 4: `2e9b9fd5` drawer guard adapted after cherry-pick conflict.
+Post batch 4: `2e9b9fd5` drawer guard adapted after cherry-pick conflict.  
+Mini-batch 5: `d7e8b0b5` + `1cb6a11c` already implemented in fork `377ce394b`; verified parity, no code delta.
 
 ## Commit Log
 
@@ -41,41 +42,34 @@ Post batch 4: `2e9b9fd5` drawer guard adapted after cherry-pick conflict.
 | `1e7aef11995feb42e9872ec4aefac39fc7ba67c5` | `ad8f64688` | Applied with adaptation | Quota alert run intervals `4h` → `1d` | `src/data/alerts.json` | JSON parse OK | Cherry-pick conflicted on fork `QuotaUsed` `multipleInput` schema; manually set SharePointQuota and OneDriveQuota to `1d`. QuotaUsed already `1d`. |
 | `0c32a84eb21d3df3a719427b54d10821a94b40a4` | `52cf36559` | Applied cleanly | Hudu extension portal link toggles | `src/data/Extensions.json` | JSON parse OK | Data-only switches: Partner Center, Defender, Compliance (Purview). No navigation/branding changes. |
 | `2e9b9fd508f2e9ae6fddffa9f03db7c8edb22881` | `ac59795fb` | Applied with adaptation | Hide open button when drawer is controlled | `CippTenantAllowBlockListTemplateDrawer.jsx` | Static review | Cherry-pick conflicted: fork lacks upstream `editData`/`isEditMode` controlled-drawer stack (`bc412396b`). Adapted: optional `drawerVisible: controlledDrawerVisible` prop + `controlledDrawerVisible === undefined` guard only. Uncontrolled page usage unchanged. |
+| `d7e8b0b569c3f9243ff7e09a326ed74ccbd3a046` | `377ce394b` | **Already implemented** | Toggle button size/sx on alignment page | `standards/alignment/index.js` | Static review | Incorporated when fork ported by-standard view (`377ce394b`). Cherry-pick `-x` conflicted (formatting-only); verified identical `MuiToggleButton-root` sx on tenant filter and view-mode toggles. |
+| `1cb6a11cf22c446b952976f5200f5a3f3df689f5` | `377ce394b` | **Already implemented** | Standard name retrieval priority | `standards/alignment/index.js` | Static review | `hasExactMatch` + label/`row.standardName`/`standardKey` fallback chain already present in `377ce394b`. No code delta on sync branch. |
 
-## Mini-batch 4 Validation (2026-06-17)
-
-| Check | Result |
-|-------|--------|
-| Pre-check protected areas | All three commits limited to `alerts.json` or `Extensions.json` — no protected overlap |
-| `7054bfc4` | Applied then deferred — see defer validation below |
-| `1e7aef11` | SharePointQuota/OneDriveQuota `1d`; QuotaUsed already `1d` |
-| `0c32a84e` | Valid JSON; Hudu portal link switches added |
-| Full frontend build/lint | Not run — not required for JSON-only changes |
-
-## Defer UserReportedPhishing + Drawer Guard (2026-06-17)
+## Mini-batch 5 Validation — Standards Alignment Pair (2026-06-17)
 
 | Check | Result |
 |-------|--------|
-| `7054bfc4` defer (`b0fcc3129`) | `UserReportedPhishing` removed from `alerts.json`; valid JSON |
-| Quota intervals preserved | QuotaUsed, SharePointQuota, OneDriveQuota all `1d` |
-| `Extensions.json` | Unchanged since `52cf36559`; valid JSON |
-| `2e9b9fd5` pre-check | Single file: `CippTenantAllowBlockListTemplateDrawer.jsx`; no protected overlap |
-| Drawer guard static review | Open button wrapped in `controlledDrawerVisible === undefined`; uncontrolled `cardButton` usage passes no prop → button still renders |
-| Full frontend build/lint | Not run |
+| Pre-check protected areas | Both commits touch only `src/pages/tenant/standards/alignment/index.js` — no protected overlap |
+| `d7e8b0b5` cherry-pick | Conflict — fork already has toggle sx (`py: 0.25`, `px: 1`, `fontSize: 0.75rem`) on both ToggleButtonGroups |
+| `1cb6a11c` cherry-pick | Not attempted separately — same file; logic already present |
+| Toggle buttons | Still render; only size/style sx applied; no behavior change |
+| Standard name retrieval | `hasExactMatch ? (label ?? row.standardName ?? key) : (row.standardName ?? label ?? key)` — safe fallbacks when fields missing |
+| Data fetching / tenant / permissions | Unchanged |
+| Full frontend build/lint | Not run — known pre-existing dependency blockers |
 
-## Proposed Next Frontend Mini-batch (5)
+## Proposed Next Candidates (post-checkpoint)
 
 | Priority | SHA | Title | Notes |
 |----------|-----|-------|-------|
-| 1 | `d7e8b0b5` + `1cb6a11c` | Standards alignment page pair | Apply as pair; review scope |
-| 2 | `bc412396b` / `20e2f554d` + `2e9b9fd5` follow-on | Allow/block list edit mode | Full controlled-drawer stack if needed |
-| 3 | `7054bfc4` + API pair | UserReportedPhishing alert | Paired with CIPP-API handler + SAM permission |
+| 1 | `7054bfc4` + API pair | UserReportedPhishing alert | Paired with CIPP-API handler + SAM permission |
+| 2 | `b1902421` | Tab layout first-tab margin | Adapted manual apply only |
+| 3 | `bc412396b` / `20e2f554d` | Allow/block list edit mode | Full controlled-drawer stack |
 | 4 | `4c0c058f` | Alerts schema change | Higher risk — review before apply |
 
-**Exclude:** `16b4503f`, `b1902421` (unless adapted), dependency/build/search/table commits.
+**Exclude:** `16b4503f`, dependency/build/search/table commits unless explicitly approved.
 
 ## Next Steps
 
-1. Run mini-batch 5 (`d7e8b0b5` + `1cb6a11c` standards alignment pair).
-2. Import `Get-CIPPAlertUserReportedPhishing` + `ThreatSubmission.ReadWrite.All` on CIPP-API branch, then re-apply `7054bfc4` on frontend as paired feature.
-3. Open CIPP frontend PR when ready to pair with CIPP-API PR #1 review.
+1. Final code-review-only pass on sync branch diff vs `main`.
+2. Open CIPP frontend PR paired with CIPP-API PR #1 review.
+3. Do not continue upstream picks without explicit approval per candidate.
