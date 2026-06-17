@@ -16,7 +16,7 @@ const Page = () => {
     "TermInfo", // TODO TermInfo is not showing as a clickable json object in the table, like CApolicies does in the mfa report. IDK how to fix it. -Bobby
   ];
 
-  return <CippTablePage title={pageTitle} apiUrl={apiUrl} simpleColumns={simpleColumns} />;
+  return <CippTablePage title={pageTitle} apiUrl={apiUrl} apiDataKey="Results" simpleColumns={simpleColumns} />;
 };
 
 Page.getLayout = (page) => <DashboardLayout>{page}</DashboardLayout>;
