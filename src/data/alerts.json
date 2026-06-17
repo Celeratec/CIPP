@@ -144,7 +144,7 @@
     "inputType": "textField",
     "inputLabel": "Enter quota percentage",
     "inputName": "SharePointQuota",
-    "recommendedRunInterval": "4h"
+    "recommendedRunInterval": "1d"
   },
   {
     "name": "OneDriveQuota",
@@ -153,7 +153,7 @@
     "inputType": "textField",
     "inputLabel": "Enter quota percentage (default: 90)",
     "inputName": "OneDriveQuota",
-    "recommendedRunInterval": "4h"
+    "recommendedRunInterval": "1d"
   },
   {
     "name": "ExpiringLicenses",
