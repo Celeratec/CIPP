@@ -3,22 +3,23 @@
 Generated: 2026-06-17  
 Branch: `manage365/upstream-sync-cipp-20260617`  
 Backup tag: `backup/pre-upstream-sync-cipp-20260617`  
-Branch tip (after mini-batch 3 retry): `7a6c71950`
+Branch tip (after mini-batch 4): `ad8f64688` (pending docs commit)
 
 ## Summary
 
 | Status | Count |
 |--------|-------|
-| Applied cleanly | 5 |
-| Applied with adaptation | 1 |
+| Applied cleanly | 7 |
+| Applied with adaptation | 2 |
 | Reverted (formatting-only / no net change) | 1 |
 | Already implemented | 3 |
 | Skipped (conflict) | 1 |
-| Conflicts | 1 (`b1902421`) |
+| Conflicts | 2 (`b1902421`, `1e7aef11` cherry-pick) |
 
 Mini-batch 1: `1e59d2d4`, `98d5d94a` applied; `c8d61c07` reverted after review.  
 Mini-batch 2: `7a85827e` applied; `cfbf3508`, `db57e52a` already present; `b1902421` conflict.  
-Mini-batch 3: `1cd1ef72` adapted manually; `4b9efd82`, `3734adee` cherry-picked on retry.
+Mini-batch 3: `1cd1ef72` adapted manually (two commits); `4b9efd82`, `3734adee` cherry-picked on retry.  
+Mini-batch 4: `7054bfc4`, `0c32a84e` cherry-picked cleanly; `1e7aef11` adapted after cherry-pick conflict.
 
 ## Commit Log
 
@@ -31,33 +32,47 @@ Mini-batch 3: `1cd1ef72` adapted manually; `4b9efd82`, `3734adee` cherry-picked 
 | `db57e52a207f3e9d77974832978d88963859bf83` | — | Already implemented | TemplateList optional + non-creatable | `src/data/standards.json` | JSON compare | Skipped cherry-pick. |
 | `b19024214e96bd207640c5e63dcefb38d408e161` | — | Skipped (conflict) | Tab layout first-tab margin | `HeaderedTabbedLayout.jsx`, `TabbedLayout.jsx` | Not applied | Layout conflict; needs adapted apply. |
 | `7a85827ef1072955a48cb1d48c3ce2aafe3ab88d` | `bb5150d99` | Applied cleanly | Bulk patch wizard contact/UPN fields | `src/pages/identity/administration/users/patch-wizard.jsx` | Static review | Cherry-pick `-x` succeeded. |
-| `1cd1ef7223672170bdce1fffe88d8bb4ddb903d9` | `dc44bd9d1` + cleanup TBD | Applied with adaptation (fully adapted) | TAP audit log template filter | `src/data/AuditLogTemplates.json` | JSON parse OK | Cherry-pick conflicted; manual adaptation in two commits: (1) `like` `"*"` → `"*PassId*"`; (2) duplicate `ne []` SecuredAccessPassData filter removed. Matches upstream `1cd1ef72` intent. |
+| `1cd1ef7223672170bdce1fffe88d8bb4ddb903d9` | `dc44bd9d1` + `1688fbca0` | Applied with adaptation (fully adapted) | TAP audit log template filter | `src/data/AuditLogTemplates.json` | JSON parse OK | Cherry-pick conflicted; manual adaptation: (1) `like` `"*"` → `"*PassId*"`; (2) duplicate `ne []` SecuredAccessPassData filter removed. |
 | `4b9efd827d27a3498eca51b444934a99e78c634f` | `dce16f09c` | Applied cleanly | Licenses report `apiDataKey="Results"` | `src/pages/tenant/reports/list-licenses/index.js` | Static review | Cherry-pick `-x` succeeded on mini-batch 3 retry. |
 | `3734adeeaec92e6d83974590c36a9e91bf024a98` | `7a6c71950` | Applied cleanly | User defaults license label casing | `src/pages/tenant/manage/user-defaults.js` | Static review | Cherry-pick `-x` succeeded; `AvailableUnits` → `availableUnits`. |
+| `7054bfc42d67a7f3d86b23b036057ba98559d488` | `de565d5f9` | Applied cleanly | UserReportedPhishing alert definition | `src/data/alerts.json` | JSON parse OK | New alert entry; description notes `ThreatSubmission.ReadWrite.All`. Pairs with API `Get-CIPPAlertUserReportedPhishing` (verify SAM/CPV on API branch). |
+| `1e7aef11995feb42e9872ec4aefac39fc7ba67c5` | `ad8f64688` | Applied with adaptation | Quota alert run intervals `4h` → `1d` | `src/data/alerts.json` | JSON parse OK | Cherry-pick conflicted on fork `QuotaUsed` `multipleInput` schema; manually set SharePointQuota and OneDriveQuota to `1d`. QuotaUsed already `1d`. |
+| `0c32a84eb21d3df3a719427b54d10821a94b40a4` | `52cf36559` | Applied cleanly | Hudu extension portal link toggles | `src/data/Extensions.json` | JSON parse OK | Data-only switches: Partner Center, Defender, Compliance (Purview). No navigation/branding changes. |
 
 ## Mini-batch 3 Validation (2026-06-17)
 
 | Check | Result |
 |-------|--------|
 | Pre-check protected areas | All three commits limited to `AuditLogTemplates.json`, licenses report, or user-defaults — no protected overlap |
-| `AuditLogTemplates.json` (`1cd1ef72` adapted) | Valid JSON; TAP `like` filter Input is `"*PassId*"` |
+| `AuditLogTemplates.json` (`1cd1ef72` adapted) | Valid JSON; TAP `like` filter Input is `"*PassId*"`; duplicate `ne []` removed |
 | Licenses report (`4b9efd82`) | `CippTablePage` uses `apiDataKey="Results"` |
 | User defaults (`3734adee`) | License picker label uses `option.availableUnits` |
 | Full frontend build/lint | Not run — known pre-existing dependency/tooling issues |
 
-## Proposed Next Frontend Mini-batch (4)
+## Mini-batch 4 Validation (2026-06-17)
+
+| Check | Result |
+|-------|--------|
+| Pre-check protected areas | All three commits limited to `alerts.json` or `Extensions.json` — no protected overlap |
+| `7054bfc4` pre-check | `git show --stat` / `--name-only`: 1 file, `alerts.json` only |
+| `1e7aef11` pre-check | `git show --stat` / `--name-only`: 1 file, `alerts.json` only; cherry-pick conflict on `QuotaUsed` block |
+| `0c32a84e` pre-check | `git show --stat` / `--name-only`: 1 file, `Extensions.json` only |
+| `alerts.json` after batch | Valid JSON; `UserReportedPhishing` present; QuotaUsed/SharePointQuota/OneDriveQuota intervals all `1d` |
+| `Extensions.json` after batch | Valid JSON; Hudu switches for Partner Center, Defender, Compliance links added |
+| Full frontend build/lint | Not run — not required for JSON-only changes |
+
+## Proposed Next Frontend Mini-batch (5)
 
 | Priority | SHA | Title | Notes |
 |----------|-----|-------|-------|
-| 1 | `7054bfc4` | Add UserReportedPhishing alert | JSON-only `alerts.json` |
-| 2 | `1e7aef11` | Update alerts.json intervals | JSON-only quota interval tweaks |
-| 3 | `0c32a84e` | Extensions portal links | JSON-only `Extensions.json` |
-
-**Optional:** `2e9b9fd5` (drawer button guard), `d7e8b0b5` + `1cb6a11c` (standards alignment page pair).
+| 1 | `2e9b9fd5` | Drawer button guard | Small UI guard; review for protected nav overlap |
+| 2 | `d7e8b0b5` + `1cb6a11c` | Standards alignment page pair | Apply as pair; review scope |
+| 3 | `4c0c058f` | Alerts schema change | Higher risk — review before apply |
 
 **Exclude:** `16b4503f`, `b1902421` (unless adapted), dependency/build/search/table commits.
 
 ## Next Steps
 
-1. Run mini-batch 4 (alerts + extensions JSON).
-2. Open CIPP frontend PR when ready to pair with CIPP-API PR #1 review.
+1. Run mini-batch 5 (drawer guard or standards alignment pair).
+2. Confirm CIPP-API upstream sync includes `Get-CIPPAlertUserReportedPhishing` and `ThreatSubmission.ReadWrite.All` in SAM before enabling UserReportedPhishing alert in production.
+3. Open CIPP frontend PR when ready to pair with CIPP-API PR #1 review.
