@@ -3,7 +3,7 @@
 Generated: 2026-06-17  
 Branch: `manage365/upstream-sync-cipp-20260617`  
 Backup tag: `backup/pre-upstream-sync-cipp-20260617`  
-Branch tip: pending checkpoint commit
+Branch tip: latest on `manage365/upstream-sync-cipp-20260617` (checkpoint pass complete)
 
 ## Summary
 
