@@ -33,6 +33,7 @@ import {
   MoreHoriz,
 } from "@mui/icons-material";
 import { useRouter } from "next/router";
+import { getSafeInternalRoute, openSafeExternalUrl } from "../../utils/safe-navigation";
 import { useDialog } from "../../hooks/use-dialog";
 import { CippApiDialog } from "./CippApiDialog";
 import { useSettings } from "../../hooks/use-settings";
@@ -503,20 +504,11 @@ export const CippQuickActions = ({
         encodeURIComponent(data?.[key] ?? "")
       );
       if (action.external || action.target === "_blank") {
-        // Validate external URLs to prevent open redirect vulnerabilities
-        try {
-          const url = new URL(link);
-          if (url.protocol === "https:" || url.protocol === "http:") {
-            window.open(url.href, "_blank", "noopener,noreferrer");
-          }
-        } catch {
-          // Invalid URL, don't open
-        }
+        openSafeExternalUrl(link);
       } else {
-        // Internal links starting with / are safe for router.push
-        // Exclude protocol-relative URLs (//evil.com) which would bypass origin
-        if (link.startsWith("/") && !link.startsWith("//")) {
-          router.push(link);
+        const safeRoute = getSafeInternalRoute(link);
+        if (safeRoute) {
+          router.push(safeRoute);
         }
       }
       if (onActionClick) onActionClick(action);

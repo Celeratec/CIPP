@@ -17,6 +17,7 @@ import { CippApiResults } from "./CippApiResults";
 import { ApiGetCall, ApiPostCall } from "../../api/ApiCall";
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
+import { getSafeInternalRoute, openSafeExternalUrl } from "../../utils/safe-navigation";
 import { useForm, useFormState } from "react-hook-form";
 import { useSettings } from "../../hooks/use-settings";
 import CippFormComponent from "./CippFormComponent";
@@ -310,18 +311,11 @@ export const CippApiDialog = (props) => {
         /\[([^\]]+)\]/g,
         (_, key) => getRawNestedValue(row, key) || `[${key}]`,
       );
-      if (linkWithData.startsWith("/") && !linkWithData.startsWith("//") && !api?.external) {
-        router.push(linkWithData, undefined, { shallow: true });
+      const safeRoute = getSafeInternalRoute(linkWithData);
+      if (safeRoute && !api?.external) {
+        router.push(safeRoute, undefined, { shallow: true });
       } else if (api?.external || linkWithData.startsWith("//")) {
-        // Validate external URLs to prevent open redirect vulnerabilities
-        try {
-          const url = new URL(linkWithData);
-          if (url.protocol === "https:" || url.protocol === "http:") {
-            window.open(url.href, api.target || "_blank", "noopener,noreferrer");
-          }
-        } catch {
-          // Invalid URL, don't open
-        }
+        openSafeExternalUrl(linkWithData, api.target || "_blank");
       }
       createDialog.handleClose();
     }

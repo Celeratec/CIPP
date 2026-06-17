@@ -309,16 +309,16 @@ const createStyles = (brandColor) =>
 
 const stripTags = (html) => {
   if (!html) return ''
-  // First, fully decode &amp; entities to handle any nesting (e.g., &amp;amp;)
   let result = html
   let prev = ''
   while (prev !== result) {
     prev = result
     result = result.replace(/&amp;/g, '&')
   }
-  // Strip HTML tags (including malformed ones)
-  result = result.replace(/<[^>]*>?/g, '')
-  // Decode remaining HTML entities
+  do {
+    prev = result
+    result = result.replace(/<[^>]*>?/g, '')
+  } while (result !== prev)
   return result
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
