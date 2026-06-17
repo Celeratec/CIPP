@@ -487,7 +487,7 @@ After each upstream intake, bump both and redeploy:
 
 Then **redeploy the Static Web App and every Function App slot** (main API, processor, standards, audit log, user tasks). Until redeployed, the settings page may still show old versions and function apps may appear "out of sync" in the Version table.
 
-Out-of-date toast notifications compare your deployed `version.json` / `version_latest.txt` against [KelvinTegelaar/CIPP](https://github.com/KelvinTegelaar/CIPP) and [KelvinTegelaar/CIPP-API](https://github.com/KelvinTegelaar/CIPP-API) on GitHub. They clear once your deployed baseline matches upstream (currently **10.5.1**).
+Out-of-date toast notifications compare your deployed `version.json` / `version_latest.txt` against [KelvinTegelaar/CIPP](https://github.com/KelvinTegelaar/CIPP) and [KelvinTegelaar/CIPP-API](https://github.com/KelvinTegelaar/CIPP-API) on GitHub. They clear once your deployed baseline matches upstream (currently **10.5.2**).
 
 ### GitHub "Sync fork" button
 
