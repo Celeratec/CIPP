@@ -31,7 +31,7 @@ Mini-batch 3: `1cd1ef72` adapted manually; `4b9efd82`, `3734adee` cherry-picked 
 | `db57e52a207f3e9d77974832978d88963859bf83` | — | Already implemented | TemplateList optional + non-creatable | `src/data/standards.json` | JSON compare | Skipped cherry-pick. |
 | `b19024214e96bd207640c5e63dcefb38d408e161` | — | Skipped (conflict) | Tab layout first-tab margin | `HeaderedTabbedLayout.jsx`, `TabbedLayout.jsx` | Not applied | Layout conflict; needs adapted apply. |
 | `7a85827ef1072955a48cb1d48c3ce2aafe3ab88d` | `bb5150d99` | Applied cleanly | Bulk patch wizard contact/UPN fields | `src/pages/identity/administration/users/patch-wizard.jsx` | Static review | Cherry-pick `-x` succeeded. |
-| `1cd1ef7223672170bdce1fffe88d8bb4ddb903d9` | `dc44bd9d1` | Applied with adaptation | TAP audit log template filter | `src/data/AuditLogTemplates.json` | JSON parse OK | Cherry-pick `-x` conflicted. Upstream duplicate `ne []` SecuredAccessPassData filter removal not applied (fork retains block). Manual 1-line: `like` Input `"*"` → `"*PassId*"`. |
+| `1cd1ef7223672170bdce1fffe88d8bb4ddb903d9` | `dc44bd9d1` + cleanup TBD | Applied with adaptation (fully adapted) | TAP audit log template filter | `src/data/AuditLogTemplates.json` | JSON parse OK | Cherry-pick conflicted; manual adaptation in two commits: (1) `like` `"*"` → `"*PassId*"`; (2) duplicate `ne []` SecuredAccessPassData filter removed. Matches upstream `1cd1ef72` intent. |
 | `4b9efd827d27a3498eca51b444934a99e78c634f` | `dce16f09c` | Applied cleanly | Licenses report `apiDataKey="Results"` | `src/pages/tenant/reports/list-licenses/index.js` | Static review | Cherry-pick `-x` succeeded on mini-batch 3 retry. |
 | `3734adeeaec92e6d83974590c36a9e91bf024a98` | `7a6c71950` | Applied cleanly | User defaults license label casing | `src/pages/tenant/manage/user-defaults.js` | Static review | Cherry-pick `-x` succeeded; `AvailableUnits` → `availableUnits`. |
 
@@ -60,5 +60,4 @@ Mini-batch 3: `1cd1ef72` adapted manually; `4b9efd82`, `3734adee` cherry-picked 
 ## Next Steps
 
 1. Run mini-batch 4 (alerts + extensions JSON).
-2. Consider optional removal of duplicate TAP `ne []` filter to fully match upstream `1cd1ef72` (out of scope for adaptation).
-3. Open CIPP frontend PR when ready to pair with CIPP-API PR #1 review.
+2. Open CIPP frontend PR when ready to pair with CIPP-API PR #1 review.
