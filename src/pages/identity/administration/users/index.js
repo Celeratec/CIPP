@@ -548,7 +548,7 @@ const Page = () => {
     // Mobile quick actions: 7 buttons
     mobileQuickActions: [
       "Reset Password",
-      "Create Temporary Access Password",
+      "Create Temporary Access Pass",
       "Re-require MFA registration",
       "Set Per-User MFA",
       "Manage Licenses",
