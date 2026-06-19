@@ -92,8 +92,11 @@ const EditRoomMailbox = () => {
         ScheduleOnlyDuringWorkHours: room.ScheduleOnlyDuringWorkHours,
         AutomateProcessing: room.AutomateProcessing,
         AddOrganizerToSubject: room.AddOrganizerToSubject,
+        DeleteComments: room.DeleteComments,
         DeleteSubject: room.DeleteSubject,
+        RemovePrivateProperty: room.RemovePrivateProperty,
         RemoveCanceledMeetings: room.RemoveCanceledMeetings,
+        RemoveOldMeetingMessages: room.RemoveOldMeetingMessages,
 
         // Calendar Configuration
         WorkDays:
@@ -172,8 +175,11 @@ const EditRoomMailbox = () => {
         ScheduleOnlyDuringWorkHours: values.ScheduleOnlyDuringWorkHours,
         AutomateProcessing: values.AutomateProcessing?.value || values.AutomateProcessing,
         AddOrganizerToSubject: values.AddOrganizerToSubject,
+        DeleteComments: values.DeleteComments,
         DeleteSubject: values.DeleteSubject,
+        RemovePrivateProperty: values.RemovePrivateProperty,
         RemoveCanceledMeetings: values.RemoveCanceledMeetings,
+        RemoveOldMeetingMessages: values.RemoveOldMeetingMessages,
 
         // Calendar Configuration
         WorkDays: values.WorkDays?.map((day) => day.value).join(","),
@@ -337,8 +343,32 @@ const EditRoomMailbox = () => {
           <Grid size={{ md: 4, xs: 12 }}>
             <CippFormComponent
               type="switch"
+              label="Delete Comments"
+              name="DeleteComments"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ md: 4, xs: 12 }}>
+            <CippFormComponent
+              type="switch"
+              label="Remove Private Property"
+              name="RemovePrivateProperty"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ md: 4, xs: 12 }}>
+            <CippFormComponent
+              type="switch"
               label="Remove Canceled Meetings"
               name="RemoveCanceledMeetings"
+              formControl={formControl}
+            />
+          </Grid>
+          <Grid size={{ md: 4, xs: 12 }}>
+            <CippFormComponent
+              type="switch"
+              label="Remove Old Meeting Messages"
+              name="RemoveOldMeetingMessages"
               formControl={formControl}
             />
           </Grid>
