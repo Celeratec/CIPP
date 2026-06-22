@@ -750,6 +750,7 @@ export const useCippUserActions = () => {
       confirmText:
         "Are you sure you want to create a Temporary Access Pass for [userPrincipalName]?",
       multiPost: false,
+      allowResubmit: true,
       condition: () => canWriteUser,
       category: "security",
       quickAction: true,
