@@ -16,10 +16,11 @@ import {
   DialogTitle,
   Divider,
   Grid,
+  LinearProgress,
   Stack,
   Typography,
 } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import {
   Search as SearchIcon,
@@ -30,13 +31,16 @@ import {
 } from "@mui/icons-material";
 import { useSettings } from "../../../hooks/use-settings";
 import { useDialog } from "../../../hooks/use-dialog";
-import { ApiPostCall } from "../../../api/ApiCall";
+import { ApiGetCall, ApiPostCall } from "../../../api/ApiCall";
 import { CippFormComponent } from "../../../components/CippComponents/CippFormComponent";
 import { CippDataTable } from "../../../components/CippTable/CippDataTable";
 import { getCippError } from "../../../utils/get-cipp-error";
 
 const OPTIMIZE_URL = "/api/ExecSharePointImageOptimize";
-const RUN_TIMEOUT_MS = 600000; // 10 minutes - large libraries take time.
+const QUEUE_URL = "/api/ListCippQueue";
+const RESULTS_URL = "/api/ListImageOptimizerResults";
+const START_TIMEOUT_MS = 30000; // Queueing the job is fast; the work runs in the background.
+const POLL_INTERVAL_MS = 3000;
 
 const MODE_OPTIONS = [
   { label: "Audit only", value: "Audit" },
@@ -117,6 +121,8 @@ const ImageOptimizerPage = () => {
     defaultValues: {
       site: null,
       library: null,
+      folder: null,
+      includeSubfolders: true,
       minimumFileSizeMB: 5,
       jpegQuality: 82,
       mode: MODE_OPTIONS[0],
@@ -124,34 +130,109 @@ const ImageOptimizerPage = () => {
       whatIf: true,
       minimumSavingsPercent: 15,
       stripMetadata: true,
-      preserveModified: false,
       maxFiles: "",
     },
   });
 
   const site = useWatch({ control: formControl.control, name: "site" });
+  const library = useWatch({ control: formControl.control, name: "library" });
   const mode = getValue(useWatch({ control: formControl.control, name: "mode" }));
   const whatIf = useWatch({ control: formControl.control, name: "whatIf" });
 
   const [result, setResult] = useState(null);
   const [hasAudited, setHasAudited] = useState(false);
   const [runError, setRunError] = useState(null);
+  const [lastRunMode, setLastRunMode] = useState(null);
+  const [queueId, setQueueId] = useState(null);
+  const [isRunning, setIsRunning] = useState(false);
+  const [fetchResults, setFetchResults] = useState(false);
   const confirmDialog = useDialog();
 
   const siteId = getValue(site);
+  const driveId = getValue(library);
 
-  // Reset audit gate when the target changes.
+  // Reset audit gate + selections when the target changes.
   useEffect(() => {
     setHasAudited(false);
     setResult(null);
+    setQueueId(null);
+    setIsRunning(false);
+    setFetchResults(false);
     formControl.setValue("library", null);
+    formControl.setValue("folder", null);
   }, [siteId, tenantFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const runApi = ApiPostCall({
-    onResult: (body) => {
-      setResult(body);
+  // Changing the library invalidates the chosen folder and any prior audit.
+  useEffect(() => {
+    setHasAudited(false);
+    formControl.setValue("folder", null);
+  }, [driveId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const startApi = ApiPostCall({});
+
+  const queuePoll = ApiGetCall({
+    url: QUEUE_URL,
+    data: { QueueId: queueId },
+    queryKey: `ImageOptQueue-${queueId}`,
+    waiting: !!queueId && isRunning && !fetchResults,
+    refetchInterval: (pollData) => {
+      const status = pollData?.[0]?.Status;
+      if (status === "Completed" || status === "Failed" || status === "Completed (with errors)") {
+        return false;
+      }
+      return POLL_INTERVAL_MS;
     },
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
+
+  const resultsPoll = ApiGetCall({
+    url: RESULTS_URL,
+    data: { queueId, tenantFilter },
+    queryKey: `ImageOptResults-${queueId}`,
+    waiting: fetchResults && !!queueId,
+    refetchInterval: (pollData) => {
+      if (pollData?.Status === "Completed" || pollData?.Results) {
+        return false;
+      }
+      return POLL_INTERVAL_MS;
+    },
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
+  // Queue status drives the transition from "scanning" to "loading results".
+  useEffect(() => {
+    const status = queuePoll.data?.[0]?.Status;
+    if (!status || !isRunning || fetchResults) return;
+    if (status === "Completed" || status === "Completed (with errors)") {
+      setFetchResults(true);
+      return;
+    }
+    if (status === "Failed") {
+      setIsRunning(false);
+      setRunError("The image optimizer job failed. Check the CIPP logs for details and try again.");
+    }
+  }, [queuePoll.data, isRunning, fetchResults]);
+
+  // Results payload completes the run.
+  useEffect(() => {
+    if (!fetchResults) return;
+    if (resultsPoll.isError) {
+      setIsRunning(false);
+      setFetchResults(false);
+      setRunError(getCippError(resultsPoll.error) || "Failed to load optimizer results.");
+      return;
+    }
+    const payload = resultsPoll.data;
+    if (!payload || payload.Status === "Running") return;
+    if (payload.Status === "Completed" || Array.isArray(payload.Results)) {
+      setResult(payload);
+      setIsRunning(false);
+      setFetchResults(false);
+      if (lastRunMode === "Audit") setHasAudited(true);
+    }
+  }, [resultsPoll.data, resultsPoll.isError, resultsPoll.error, fetchResults, lastRunMode]);
 
   const numOrDefault = (raw, fallback) => {
     if (raw === "" || raw === null || raw === undefined) return fallback;
@@ -162,12 +243,15 @@ const ImageOptimizerPage = () => {
   const buildPayload = (runMode) => {
     const values = formControl.getValues();
     const maxFiles = Number(values.maxFiles);
+    const folder = values.folder;
     return {
       tenantFilter,
       SiteId: getValue(values.site),
       SiteUrl: values.site?.addedFields?.webUrl,
       DriveId: getValue(values.library),
       LibraryName: values.library?.label,
+      FolderId: getValue(folder) || "",
+      FolderPath: folder?.addedFields?.path || folder?.label || "",
       Mode: runMode,
       MinimumFileSizeMB: numOrDefault(values.minimumFileSizeMB, 5),
       JpegQuality: numOrDefault(values.jpegQuality, 82),
@@ -177,34 +261,55 @@ const ImageOptimizerPage = () => {
       VersionCleanupMode:
         runMode === "CompressAndCleanup" ? getValue(values.versionCleanupMode) : "none",
       MaxFiles: Number.isFinite(maxFiles) && maxFiles > 0 ? maxFiles : 0,
-      IncludeSubfolders: true,
+      IncludeSubfolders: !!values.includeSubfolders,
     };
   };
 
-  const executeRun = (runMode) => {
-    setRunError(null);
-    runApi.mutate(
-      { url: OPTIMIZE_URL, data: buildPayload(runMode), timeout: RUN_TIMEOUT_MS },
-      {
-        onSuccess: () => {
-          if (runMode === "Audit") setHasAudited(true);
-        },
-        onError: (err) => {
-          const message = getCippError(err);
-          setRunError(
-            (typeof message === "string" && message) ||
-              err?.message ||
-              "The run failed. Please try again."
-          );
-        },
-      }
-    );
-  };
+  const executeRun = useCallback(
+    (runMode) => {
+      setRunError(null);
+      setResult(null);
+      setQueueId(null);
+      setFetchResults(false);
+      setLastRunMode(runMode);
+      setIsRunning(true);
+      startApi.mutate(
+        { url: OPTIMIZE_URL, data: buildPayload(runMode), timeout: START_TIMEOUT_MS },
+        {
+          onSuccess: (response) => {
+            const body = response?.data;
+            if (body?.Queued && body?.QueueId) {
+              setQueueId(body.QueueId);
+              return;
+            }
+            // Backwards-compatible: a synchronous body would already contain results.
+            if (body?.Results || body?.Summary) {
+              setResult(body);
+              setIsRunning(false);
+              if (runMode === "Audit") setHasAudited(true);
+              return;
+            }
+            setIsRunning(false);
+            setRunError("The job did not start correctly. Please try again.");
+          },
+          onError: (err) => {
+            setIsRunning(false);
+            const message = getCippError(err);
+            setRunError(
+              (typeof message === "string" && message) ||
+                err?.message ||
+                "The run failed. Please try again."
+            );
+          },
+        }
+      );
+    },
+    [startApi] // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   const handleRunAudit = () => executeRun("Audit");
 
   const handleRunCompression = () => {
-    // Destructive (non-dry) runs require explicit confirmation.
     if (!whatIf) {
       confirmDialog.handleOpen();
       return;
@@ -217,15 +322,8 @@ const ImageOptimizerPage = () => {
     executeRun(mode === "CompressAndCleanup" ? "CompressAndCleanup" : "Compress");
   };
 
-  const isRunning = runApi.isPending;
-  // Disable compression in Audit-only mode, and require an audit before any live
-  // (non dry-run) compression regardless of the selected mode.
   const compressionDisabled =
-    !tenantSelected ||
-    !siteId ||
-    isRunning ||
-    mode === "Audit" ||
-    (!whatIf && !hasAudited);
+    !tenantSelected || !siteId || isRunning || mode === "Audit" || (!whatIf && !hasAudited);
 
   const summary = result?.Summary;
   const rows = useMemo(() => result?.Results || [], [result]);
@@ -247,6 +345,12 @@ const ImageOptimizerPage = () => {
     triggerDownload([header, ...lines].join("\n"), "text/csv", `${base}.csv`);
   };
 
+  const runningLabel = !queueId
+    ? "Starting job..."
+    : fetchResults
+      ? "Loading results..."
+      : "Scanning in the background — large folders may take a few minutes...";
+
   return (
     <Box sx={{ flexGrow: 1, py: 4 }}>
       <CippHead title="SharePoint Image Optimizer" />
@@ -257,14 +361,15 @@ const ImageOptimizerPage = () => {
               SharePoint Image Optimizer
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Identify large JPG/JPEG files in a SharePoint document library, compress them
-              server-side, and optionally remove old file versions to reclaim storage.
+              Identify large JPG/JPEG files in a SharePoint document library or a specific folder,
+              compress them server-side, and optionally remove old file versions to reclaim storage.
             </Typography>
           </Box>
 
           <Alert severity="info" icon={<InfoIcon />}>
-            Replacing a JPG may not reclaim SharePoint storage until old file versions are deleted
-            or retention expires. Use the version cleanup options to actually free space.
+            Runs in the background so large libraries don&apos;t time out. Replacing a JPG may not
+            reclaim SharePoint storage until old file versions are deleted or retention expires — use
+            the version cleanup options to actually free space.
           </Alert>
 
           {!tenantSelected && (
@@ -282,11 +387,11 @@ const ImageOptimizerPage = () => {
           )}
 
           <Card>
-            <CardHeader title="Configuration" />
+            <CardHeader title="Target" subheader="Choose where to look for large images." />
             <Divider />
             <CardContent>
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                   <CippFormComponent
                     name="site"
                     label="SharePoint Site"
@@ -306,7 +411,7 @@ const ImageOptimizerPage = () => {
                     }}
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                   <CippFormComponent
                     key={`library-${siteId}`}
                     name="library"
@@ -326,7 +431,36 @@ const ImageOptimizerPage = () => {
                     }}
                   />
                 </Grid>
+                <Grid item xs={12} md={4}>
+                  <CippFormComponent
+                    key={`folder-${siteId}-${driveId}`}
+                    name="folder"
+                    label="Folder (optional)"
+                    type="autoComplete"
+                    multiple={false}
+                    formControl={formControl}
+                    disabled={!siteId}
+                    helperText="Limit the run to one folder. Leave empty to scan the whole library."
+                    api={{
+                      url: "/api/ListSharePointFolders",
+                      tenantFilter,
+                      data: { SiteId: siteId, DriveId: driveId },
+                      queryKey: `SPFolders-${siteId}-${driveId}`,
+                      labelField: "path",
+                      valueField: "id",
+                      addedField: { path: "path" },
+                    }}
+                  />
+                </Grid>
 
+                <Grid item xs={12} md={4}>
+                  <CippFormComponent
+                    name="includeSubfolders"
+                    label="Include subfolders"
+                    type="switch"
+                    formControl={formControl}
+                  />
+                </Grid>
                 <Grid item xs={12} md={4}>
                   <CippFormComponent
                     name="minimumFileSizeMB"
@@ -336,6 +470,24 @@ const ImageOptimizerPage = () => {
                     validators={{ min: { value: 0, message: "Must be 0 or more" } }}
                   />
                 </Grid>
+                <Grid item xs={12} md={4}>
+                  <CippFormComponent
+                    name="maxFiles"
+                    label="Max files (optional)"
+                    type="number"
+                    formControl={formControl}
+                    helperText="Limit how many files are processed per run."
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader title="Compression settings" />
+            <Divider />
+            <CardContent>
+              <Grid container spacing={3}>
                 <Grid item xs={12} md={4}>
                   <CippFormComponent
                     name="jpegQuality"
@@ -359,6 +511,14 @@ const ImageOptimizerPage = () => {
                       min: { value: 0, message: "Must be 0 or more" },
                       max: { value: 99, message: "Must be 99 or less" },
                     }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <CippFormComponent
+                    name="stripMetadata"
+                    label="Strip EXIF metadata"
+                    type="switch"
+                    formControl={formControl}
                   />
                 </Grid>
 
@@ -392,38 +552,10 @@ const ImageOptimizerPage = () => {
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <CippFormComponent
-                    name="maxFiles"
-                    label="Max files (optional)"
-                    type="number"
-                    formControl={formControl}
-                    helperText="Limit how many files are processed per run."
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <CippFormComponent
                     name="whatIf"
                     label="Dry run (WhatIf) - no files changed"
                     type="switch"
                     formControl={formControl}
-                  />
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <CippFormComponent
-                    name="stripMetadata"
-                    label="Strip EXIF metadata"
-                    type="switch"
-                    formControl={formControl}
-                  />
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <CippFormComponent
-                    name="preserveModified"
-                    label="Preserve modified metadata (not supported)"
-                    type="switch"
-                    formControl={formControl}
-                    disabled
-                    helperText="Re-encoding always removes EXIF; preservation is not available."
                   />
                 </Grid>
               </Grid>
@@ -440,6 +572,15 @@ const ImageOptimizerPage = () => {
                 <Alert severity="error" sx={{ mt: 3 }}>
                   {String(runError)}
                 </Alert>
+              )}
+
+              {isRunning && (
+                <Box sx={{ mt: 3 }}>
+                  <LinearProgress />
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    {runningLabel}
+                  </Typography>
+                </Box>
               )}
 
               <Stack direction="row" spacing={2} sx={{ mt: 3 }} flexWrap="wrap">
@@ -462,11 +603,6 @@ const ImageOptimizerPage = () => {
                     ? "Run Compression + Version Cleanup"
                     : "Run Compression"}
                 </Button>
-                {isRunning && (
-                  <Typography variant="body2" color="text.secondary" sx={{ alignSelf: "center" }}>
-                    Running... large libraries may take several minutes.
-                  </Typography>
-                )}
               </Stack>
               {mode !== "Audit" && !whatIf && !hasAudited && (
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
@@ -562,7 +698,7 @@ const ImageOptimizerPage = () => {
 
           {result && rows.length === 0 && (
             <Alert severity="success">
-              No eligible JPG/JPEG files were found in this library for the current settings.
+              No eligible JPG/JPEG files were found for the current settings in this target.
             </Alert>
           )}
         </Stack>
