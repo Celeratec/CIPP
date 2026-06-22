@@ -693,6 +693,11 @@ export const nativeMenuItems = [
             path: "/teams-share/sharepoint/recycle-bin",
             permissions: ["Sharepoint.Site.ReadWrite"],
           },
+          {
+            title: "Image Optimizer",
+            path: "/teams-share/sharepoint/image-optimizer",
+            permissions: ["Sharepoint.Site.ReadWrite"],
+          },
         ],
       },
       {
