@@ -36,13 +36,17 @@ export const StepConfirmDelete = ({ data, onBack }) => {
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
 
+  // Defend against null entries (an empty array can serialize to JSON null on the Functions
+  // runtime and surface here as [null]).
+  const selectedFiles = (data.selectedFiles || []).filter(Boolean);
+
   const deleteMutation = ApiPostCall({ urlFromData: true });
 
   const handleDelete = () => {
     setIsDeleting(true);
     setError(null);
 
-    const fileCount = data.selectedFiles?.length || 0;
+    const fileCount = selectedFiles.length;
     const deleteTimeoutMs = Math.min(300000, Math.max(120000, fileCount * 2000));
 
     deleteMutation.mutate(
@@ -51,7 +55,7 @@ export const StepConfirmDelete = ({ data, onBack }) => {
         timeout: deleteTimeoutMs,
         data: {
           tenantFilter: data.tenant?.value,
-          files: data.selectedFiles.map((f) => ({
+          files: selectedFiles.map((f) => ({
             id: f.id,
             driveId: f.driveId,
             name: f.name,
@@ -71,15 +75,12 @@ export const StepConfirmDelete = ({ data, onBack }) => {
     );
   };
 
-  const selectedSize =
-    data.selectedFiles?.reduce((sum, f) => sum + (f.size || 0), 0) || 0;
-  const affectedSites = [
-    ...new Set(data.selectedFiles?.map((f) => f.SiteName).filter(Boolean) || []),
-  ];
+  const selectedSize = selectedFiles.reduce((sum, f) => sum + (f?.size || 0), 0);
+  const affectedSites = [...new Set(selectedFiles.map((f) => f.SiteName).filter(Boolean))];
 
   if (results) {
     const summary = results.Summary;
-    const deleteResults = results.Results || [];
+    const deleteResults = (results.Results || []).filter(Boolean);
     const failedFiles = deleteResults.filter((r) => r.status === "failed");
 
     return (
@@ -157,7 +158,7 @@ export const StepConfirmDelete = ({ data, onBack }) => {
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Typography color="text.secondary">Files to delete:</Typography>
               <Chip
-                label={data.selectedFiles?.length || 0}
+                label={selectedFiles.length}
                 color="error"
                 size="small"
                 variant="outlined"
@@ -202,8 +203,7 @@ export const StepConfirmDelete = ({ data, onBack }) => {
         }
         label={
           <Typography variant="body2">
-            I understand these {data.selectedFiles?.length || 0} files will be moved to the recycle
-            bin
+            I understand these {selectedFiles.length} files will be moved to the recycle bin
           </Typography>
         }
       />

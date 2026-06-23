@@ -59,8 +59,8 @@ export const StepSelectFiles = ({ data, onUpdate, onNext, onBack }) => {
   const [search, setSearch] = useState("");
   const [filterMenuAnchor, setFilterMenuAnchor] = useState(null);
 
-  const scanResults = data.scanResults || [];
-  const selectedFiles = data.selectedFiles || [];
+  const scanResults = (data.scanResults || []).filter(Boolean);
+  const selectedFiles = (data.selectedFiles || []).filter(Boolean);
 
   const rowSelection = useMemo(() => {
     const selection = {};
@@ -118,7 +118,7 @@ export const StepSelectFiles = ({ data, onUpdate, onNext, onBack }) => {
   };
 
   const selectedSize = useMemo(
-    () => selectedFiles.reduce((sum, f) => sum + (f.size || 0), 0),
+    () => selectedFiles.reduce((sum, f) => sum + (f?.size || 0), 0),
     [selectedFiles]
   );
 

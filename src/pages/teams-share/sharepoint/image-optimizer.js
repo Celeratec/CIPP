@@ -326,8 +326,8 @@ const ImageOptimizerPage = () => {
     !tenantSelected || !siteId || isRunning || mode === "Audit" || (!whatIf && !hasAudited);
 
   const summary = result?.Summary;
-  const rows = useMemo(() => result?.Results || [], [result]);
-  const warnings = result?.Warnings || [];
+  const rows = useMemo(() => (result?.Results || []).filter(Boolean), [result]);
+  const warnings = (result?.Warnings || []).filter(Boolean);
   const permissionIssue = rows.some(
     (r) => r.Status === "Compressed, version cleanup failed" || /permission/i.test(r.Error || "")
   );
