@@ -36,9 +36,12 @@ export const StepScanResults = ({ data, onUpdate, onNext, onBack }) => {
   const applyScanResults = useCallback(
     (results) => {
       setIsScanning(false);
+      // Defend against null entries (an empty array can serialize to JSON null on the
+      // Functions runtime, surfacing as [null] here).
+      const clean = Array.isArray(results) ? results.filter(Boolean) : [];
       onUpdate({
-        scanResults: results,
-        selectedFiles: results,
+        scanResults: clean,
+        selectedFiles: clean,
       });
     },
     [onUpdate]
@@ -181,7 +184,7 @@ export const StepScanResults = ({ data, onUpdate, onNext, onBack }) => {
   }, [resultsPoll.data, fetchResults, applyScanResults]);
 
   const totalSize =
-    data.scanResults?.reduce((sum, file) => sum + (file.size || 0), 0) || 0;
+    data.scanResults?.reduce((sum, file) => sum + (file?.size || 0), 0) || 0;
   const fileCount = data.scanResults?.length || 0;
   const queueStatus = queuePoll.data?.[0]?.Status;
   const queueProgress = queuePoll.data?.[0]?.PercentComplete;
