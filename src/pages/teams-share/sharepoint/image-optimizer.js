@@ -20,7 +20,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import {
   Search as SearchIcon,
@@ -168,6 +168,25 @@ const ImageOptimizerPage = () => {
     formControl.setValue("folder", null);
   }, [driveId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Any change to the folder or the settings that determine which files are eligible
+  // invalidates a prior audit, so a destructive live run can never execute against a
+  // different scope/settings than the audit the user actually reviewed.
+  const auditScope = useWatch({
+    control: formControl.control,
+    name: [
+      "folder",
+      "includeSubfolders",
+      "minimumFileSizeMB",
+      "jpegQuality",
+      "minimumSavingsPercent",
+      "stripMetadata",
+      "maxFiles",
+    ],
+  });
+  useEffect(() => {
+    setHasAudited(false);
+  }, auditScope); // eslint-disable-line react-hooks/exhaustive-deps
+
   const startApi = ApiPostCall({});
 
   const queuePoll = ApiGetCall({
@@ -265,47 +284,47 @@ const ImageOptimizerPage = () => {
     };
   };
 
-  const executeRun = useCallback(
-    (runMode) => {
-      setRunError(null);
-      setResult(null);
-      setQueueId(null);
-      setFetchResults(false);
-      setLastRunMode(runMode);
-      setIsRunning(true);
-      startApi.mutate(
-        { url: OPTIMIZE_URL, data: buildPayload(runMode), timeout: START_TIMEOUT_MS },
-        {
-          onSuccess: (response) => {
-            const body = response?.data;
-            if (body?.Queued && body?.QueueId) {
-              setQueueId(body.QueueId);
-              return;
-            }
-            // Backwards-compatible: a synchronous body would already contain results.
-            if (body?.Results || body?.Summary) {
-              setResult(body);
-              setIsRunning(false);
-              if (runMode === "Audit") setHasAudited(true);
-              return;
-            }
+  // Not memoized on purpose: buildPayload closes over the currently selected tenant and
+  // form values, so executeRun must be recreated each render to avoid POSTing a stale
+  // tenantFilter after the user switches tenants in the header.
+  const executeRun = (runMode) => {
+    setRunError(null);
+    setResult(null);
+    setQueueId(null);
+    setFetchResults(false);
+    setLastRunMode(runMode);
+    setIsRunning(true);
+    startApi.mutate(
+      { url: OPTIMIZE_URL, data: buildPayload(runMode), timeout: START_TIMEOUT_MS },
+      {
+        onSuccess: (response) => {
+          const body = response?.data;
+          if (body?.Queued && body?.QueueId) {
+            setQueueId(body.QueueId);
+            return;
+          }
+          // Backwards-compatible: a synchronous body would already contain results.
+          if (body?.Results || body?.Summary) {
+            setResult(body);
             setIsRunning(false);
-            setRunError("The job did not start correctly. Please try again.");
-          },
-          onError: (err) => {
-            setIsRunning(false);
-            const message = getCippError(err);
-            setRunError(
-              (typeof message === "string" && message) ||
-                err?.message ||
-                "The run failed. Please try again."
-            );
-          },
-        }
-      );
-    },
-    [startApi] // eslint-disable-line react-hooks/exhaustive-deps
-  );
+            if (runMode === "Audit") setHasAudited(true);
+            return;
+          }
+          setIsRunning(false);
+          setRunError("The job did not start correctly. Please try again.");
+        },
+        onError: (err) => {
+          setIsRunning(false);
+          const message = getCippError(err);
+          setRunError(
+            (typeof message === "string" && message) ||
+              err?.message ||
+              "The run failed. Please try again."
+          );
+        },
+      }
+    );
+  };
 
   const handleRunAudit = () => executeRun("Audit");
 
@@ -630,8 +649,16 @@ const ImageOptimizerPage = () => {
               <Grid item xs={6} md={2}>
                 <SummaryCard
                   label="Actual savings"
-                  value={result?.WhatIf ? "Dry run" : formatBytes(summary.EstimatedSavingsBytes)}
-                  color={result?.WhatIf ? "text.secondary" : "success.main"}
+                  value={
+                    result?.Mode === "Audit"
+                      ? "—"
+                      : result?.WhatIf
+                        ? "Dry run"
+                        : formatBytes(summary.ActualSavingsBytes ?? 0)
+                  }
+                  color={
+                    result?.Mode === "Audit" || result?.WhatIf ? "text.secondary" : "success.main"
+                  }
                 />
               </Grid>
               <Grid item xs={6} md={2}>
