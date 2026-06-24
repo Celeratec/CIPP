@@ -229,6 +229,7 @@ export const CIPPTableToptoolbar = ({
   dataFreshnessField = null,
   searchValue: controlledSearchValue,
   onSearchChange,
+  setColumnFilters,
 }) => {
   const popover = usePopover();
   const [filtersAnchor, setFiltersAnchor] = useState(null);
@@ -466,14 +467,16 @@ export const CIPPTableToptoolbar = ({
     };
   }, [hasSelection, customBulkActions.length, exportEnabled, filters?.length, usedColumns?.length]);
 
-  // Restore last used filter on mount if persistFilters is enabled (non-graph filters)
+  // Restore last used filter on mount if persistFilters is enabled (non-graph filters).
+  // Works for both table view (via the MRT table) and card view (via the state setters),
+  // so persisted filters survive reloads regardless of the active view.
   useEffect(() => {
-    // Wait for table to be initialized and data to be available
+    const hasFilterTarget = !!table || !!setColumnFilters || !!onSearchChange;
     if (
       settings.persistFilters &&
       settings.lastUsedFilters &&
       settings.lastUsedFilters[pageName] &&
-      table &&
+      hasFilterTarget &&
       usedColumns.length > 0 &&
       !getRequestData?.isFetching
     ) {
@@ -482,16 +485,27 @@ export const CIPPTableToptoolbar = ({
         const last = settings.lastUsedFilters[pageName];
 
         if (last.type === "global") {
-          table.setGlobalFilter(last.value);
+          if (table?.setGlobalFilter) {
+            table.setGlobalFilter(last.value);
+          } else if (onSearchChange) {
+            onSearchChange(last.value ?? "");
+          }
           setActiveFilterName(last.name);
         } else if (last.type === "column") {
-          // Only apply if all filter columns exist in the current table
-          const allColumns = table.getAllColumns().map((col) => col.id);
+          // Only apply if all filter columns exist. Validate against the live table
+          // columns when present, otherwise against the known usedColumns (card view).
+          const availableColumns = table
+            ? table.getAllColumns().map((col) => col.id)
+            : usedColumns;
           const filterColumns = Array.isArray(last.value) ? last.value.map((f) => f.id) : [];
-          const allExist = filterColumns.every((colId) => allColumns.includes(colId));
+          const allExist = filterColumns.every((colId) => availableColumns.includes(colId));
           if (allExist) {
-            table.setShowColumnFilters(true);
-            table.setColumnFilters(last.value);
+            if (table) {
+              table.setShowColumnFilters(true);
+              table.setColumnFilters(last.value);
+            } else if (setColumnFilters) {
+              setColumnFilters(last.value);
+            }
             setActiveFilterName(last.name);
           }
         }
@@ -622,6 +636,10 @@ export const CIPPTableToptoolbar = ({
     if (filterType === "global" || filterType === undefined) {
       if (table?.setGlobalFilter) {
         table.setGlobalFilter(filter);
+      } else if (onSearchChange) {
+        // Card view has no MRT table; the card list's search box is driven by
+        // onSearchChange, so route the global filter there instead of dropping it.
+        onSearchChange(filter ?? "");
       }
       setActiveFilterName(filterName);
       if (settings.persistFilters && settings.setLastUsedFilter) {
@@ -632,6 +650,10 @@ export const CIPPTableToptoolbar = ({
       if (table) {
         table.setShowColumnFilters(true);
         table.setColumnFilters(filter);
+      } else if (setColumnFilters) {
+        // Card view: apply the column filter directly to the shared columnFilters
+        // state that the card list reads from.
+        setColumnFilters(filter);
       }
       setActiveFilterName(filterName);
       if (settings.persistFilters && settings.setLastUsedFilter) {
@@ -642,6 +664,14 @@ export const CIPPTableToptoolbar = ({
       if (table) {
         table.resetGlobalFilter();
         table.resetColumnFilters();
+      } else {
+        // Card view: clear the state-backed filters the card list reads from.
+        if (setColumnFilters) {
+          setColumnFilters([]);
+        }
+        if (onSearchChange) {
+          onSearchChange("");
+        }
       }
       if (api?.data) {
         setGraphFilterData({});

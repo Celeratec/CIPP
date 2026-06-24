@@ -1678,6 +1678,50 @@ const CardView = ({
         </Box>
       )}
 
+      {/* Selection action bar for desktop card view: the search header (which
+          normally hosts the selection indicator + bulk actions) is hidden when
+          showSearch is false, yet per-card checkboxes are still shown. Without
+          this bar, selected cards would be a dead-end with no way to act on them. */}
+      {!showSearch && bulkActions.length > 0 && selectedItems.size > 0 && (
+        <Box
+          sx={{
+            px: 2,
+            py: 1,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            flexWrap: "wrap",
+          }}
+        >
+          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+            {selectedItems.size} selected
+          </Typography>
+          {selectedItems.size >= 2 && (
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={(e) => setBulkActionAnchor(e.currentTarget)}
+              startIcon={
+                <SvgIcon fontSize="small">
+                  <ChevronDownIcon />
+                </SvgIcon>
+              }
+              sx={{ height: 32, textTransform: "none", whiteSpace: "nowrap" }}
+            >
+              Bulk Actions
+            </Button>
+          )}
+          <Button
+            size="small"
+            variant="text"
+            onClick={clearSelection}
+            sx={{ height: 32, textTransform: "none", minWidth: "auto", px: 1 }}
+          >
+            Clear
+          </Button>
+        </Box>
+      )}
+
       {/* Card Grid - Uniform sizing */}
       <Box sx={{ p: 2, pt: 1 }}>
         <Grid container spacing={2}>
@@ -2809,6 +2853,10 @@ export const CippDataTable = (props) => {
         dataFreshnessField={dataFreshnessField}
         searchValue={cardSearchInput}
         onSearchChange={setCardSearchInput}
+        // In card view the toolbar has no MaterialReactTable instance (table={null}),
+        // so it cannot route column/global filters through MRT. Pass the underlying
+        // state setters so filters from the dropdown still apply to the card list.
+        setColumnFilters={setColumnFilters}
       />
     );
   };

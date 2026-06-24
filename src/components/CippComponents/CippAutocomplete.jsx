@@ -143,7 +143,11 @@ export const CippAutoComplete = React.forwardRef((props, ref) => {
     ...getRequestInfo,
   })
 
-  const currentTenant = api?.tenantFilter ? api.tenantFilter : useSettings().currentTenant
+  // Hooks must be called unconditionally; previously useSettings() lived inside the
+  // ternary below, which violated the rules of hooks (called only when api.tenantFilter
+  // was unset, so hook order changed between renders).
+  const settings = useSettings()
+  const currentTenant = api?.tenantFilter ? api.tenantFilter : settings?.currentTenant
   useEffect(() => {
     if (actionGetRequest.isSuccess && !actionGetRequest.isFetching) {
       const lastPage = actionGetRequest.data?.pages[actionGetRequest.data.pages.length - 1]
