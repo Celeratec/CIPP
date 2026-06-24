@@ -149,6 +149,13 @@ export const CippAutoComplete = React.forwardRef((props, ref) => {
   const settings = useSettings()
   const currentTenant = api?.tenantFilter ? api.tenantFilter : settings?.currentTenant
   useEffect(() => {
+    // Stop auto-paginating if a page fetch errored. A failed page is not appended to
+    // data.pages, so the last successful page still carries its nextLink; without this
+    // guard the effect retries the failing page on every render forever. On large
+    // tenants (big user/group pickers) Graph throttling makes that loop likely.
+    if (actionGetRequest.isError || actionGetRequest.isFetchNextPageError) {
+      return
+    }
     if (actionGetRequest.isSuccess && !actionGetRequest.isFetching) {
       const lastPage = actionGetRequest.data?.pages[actionGetRequest.data.pages.length - 1]
       const nextLinkExists = lastPage?.Metadata?.nextLink
@@ -156,7 +163,17 @@ export const CippAutoComplete = React.forwardRef((props, ref) => {
         actionGetRequest.fetchNextPage()
       }
     }
-  }, [actionGetRequest.data?.pages?.length, actionGetRequest.isFetching, api?.queryKey])
+    // Keyed to the specific request-state fields that drive pagination. The
+    // `actionGetRequest` object is a new reference each render, so depending on it
+    // directly would re-run (and re-fetch) on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    actionGetRequest.data?.pages?.length,
+    actionGetRequest.isFetching,
+    actionGetRequest.isError,
+    actionGetRequest.isFetchNextPageError,
+    api?.queryKey,
+  ])
 
   const apiRef = useRef(api)
   apiRef.current = api

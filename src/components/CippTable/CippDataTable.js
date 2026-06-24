@@ -114,6 +114,36 @@ const getNestedValue = (source, path) => {
   }, source);
 };
 
+// Recursively test whether any string/number leaf within a value contains the
+// (already lower-cased) search term. Traverses nested objects and arrays so card
+// view search matches nested fields (e.g. manager.displayName) and array entries
+// (e.g. proxyAddresses), matching the breadth of the table's global filter.
+// Depth-capped and cycle-guarded to keep large rows performant and safe.
+const valueContainsTerm = (value, term, depth = 0, seen = null) => {
+  if (value === null || value === undefined) {
+    return false;
+  }
+  const type = typeof value;
+  if (type === "string") {
+    return value.toLowerCase().includes(term);
+  }
+  if (type === "number" || type === "boolean") {
+    return String(value).toLowerCase().includes(term);
+  }
+  if (type !== "object" || depth > 4) {
+    return false;
+  }
+  const visited = seen || new Set();
+  if (visited.has(value)) {
+    return false;
+  }
+  visited.add(value);
+  if (Array.isArray(value)) {
+    return value.some((entry) => valueContainsTerm(entry, term, depth + 1, visited));
+  }
+  return Object.values(value).some((entry) => valueContainsTerm(entry, term, depth + 1, visited));
+};
+
 // Resolve dot-delimited column ids against the original row data so nested fields can sort/filter properly.
 const getRowValueByColumnId = (row, columnId) => {
   if (!row?.original || !columnId) {
@@ -684,19 +714,10 @@ const CardView = ({
         const titleValue = getNestedValue(item, config.title);
         const subtitleValue = config.subtitle ? getNestedValue(item, config.subtitle) : null;
         
-        // Search all string/number values in the item for comprehensive search
-        const searchAllFields = () => {
-          for (const [key, value] of Object.entries(item)) {
-            if (typeof value === "string" && value.toLowerCase().includes(term)) {
-              return true;
-            }
-            if (typeof value === "number" && String(value).includes(term)) {
-              return true;
-            }
-          }
-          return false;
-        };
-        
+        // Deep-search every field (including nested objects and arrays) so matches
+        // aren't limited to top-level string/number values.
+        const searchAllFields = () => valueContainsTerm(item, term);
+
         return (
           (titleValue && formatFieldValue(titleValue).toLowerCase().includes(term)) ||
           (subtitleValue && formatFieldValue(subtitleValue).toLowerCase().includes(term)) ||
@@ -1500,6 +1521,12 @@ const CardView = ({
         </Grid>
       );
     });
+    // Performance-critical render of the full card grid. The omitted inline helpers
+    // (getFieldHref/saveEdit/getEditState) and props (editApiUrl/onCardClick/router/
+    // filteredData) are re-created each render; including them would recompute every
+    // card on every render. paginatedData (derived from filteredData) is the meaningful
+    // trigger, and the helpers close over the state they need at call time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     paginatedData,
     pageSize,
@@ -2088,7 +2115,17 @@ export const CippDataTable = (props) => {
     if (showCardView) {
       return;
     }
-    
+
+    // Stop auto-paginating if a page fetch errored. A failed page is NOT appended
+    // to data.pages, so the last *successful* page still carries its nextLink. Without
+    // this guard the effect would call fetchNextPage() again on every render, retrying
+    // the failing page forever. On large tenants (tens of thousands of users paged 999
+    // at a time) Graph throttling/timeouts make such failures likely, which is what
+    // leaves the refresh indicator spinning and the list never finishing loading.
+    if (getRequestData.isError || getRequestData.isFetchNextPageError) {
+      return;
+    }
+
     if (getRequestData.isSuccess && !getRequestData.isFetching) {
       const pages = getRequestData.data?.pages;
       if (pages && pages.length > 0) {
@@ -2099,7 +2136,18 @@ export const CippDataTable = (props) => {
         }
       }
     }
-  }, [getRequestData.data?.pages?.length, getRequestData.isFetching, queryKey, showCardView]);
+    // Keyed to the specific request-state fields that should drive pagination. The
+    // `getRequestData` object is a new reference every render, so depending on it
+    // directly would re-run (and re-fetch) on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    getRequestData.data?.pages?.length,
+    getRequestData.isFetching,
+    getRequestData.isError,
+    getRequestData.isFetchNextPageError,
+    queryKey,
+    showCardView,
+  ]);
 
   useEffect(() => {
     if (getRequestData.isSuccess && getRequestData.data?.pages) {
@@ -2157,6 +2205,10 @@ export const CippDataTable = (props) => {
         return combinedResults;
       });
     }
+    // Keyed to the specific api fields actually used (dataKey/dataFilter) plus the
+    // request status. The `api` object itself is re-created every render by the parent,
+    // so depending on it would re-run this dedupe pass needlessly each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     getRequestData.isSuccess,
     getRequestData.data,
@@ -2260,6 +2312,11 @@ export const CippDataTable = (props) => {
     }
     setUsedColumns(finalColumns);
     setColumnVisibility(newVisibility);
+    // Intentionally rebuilds columns only when the data schema/tenant/query changes
+    // (guarded above by schemaKey). columnVisibility/columns/configuredSimpleColumns/
+    // defaultSorting are read as the latest values but are deliberately not triggers:
+    // this effect sets columnVisibility, so depending on it would risk a rebuild loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [columns.length, usedData, queryKey, settings?.currentTenant, filterTypeMap]);
 
   const createDialog = useDialog();
@@ -2280,6 +2337,10 @@ export const CippDataTable = (props) => {
         maxHeightOffset,
         settings,
       ),
+    // Intentionally keyed to stable boolean proxies (hasActions/hasOffCanvas/hasOnChange)
+    // and the page-size setting rather than the raw actions/offCanvas/onChange/settings
+    // objects, which are re-created every render and would defeat this memo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [simple, hasActions, hasOffCanvas, hasOnChange, maxHeightOffset, settings?.tablePageSize?.value],
   );
 
@@ -2289,6 +2350,9 @@ export const CippDataTable = (props) => {
   // for searches entered before columns are available.
   const memoizedData = useMemo(
     () => (Array.isArray(usedData) ? usedData.slice() : usedData),
+    // updateTrigger and usedColumns are intentional cache-busters (license backfill
+    // completion + derived-column changes) even though they aren't read in the callback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [usedData, updateTrigger, usedColumns]
   );
 
@@ -2789,24 +2853,28 @@ export const CippDataTable = (props) => {
     }
   }, [cardSearchInput, table]);
 
+  // Extract the selected-row model so the dependency is statically analyzable.
+  const selectedRowModelRows = table.getSelectedRowModel().rows;
   useEffect(() => {
-    if (onChange && table.getSelectedRowModel().rows) {
-      onChange(table.getSelectedRowModel().rows.map((row) => row.original));
+    if (onChange && selectedRowModelRows) {
+      onChange(selectedRowModelRows.map((row) => row.original));
     }
-  }, [table.getSelectedRowModel().rows]);
+    // Intentionally keyed only to the selection. `onChange` is a caller-supplied prop
+    // that is frequently re-created each render; including it would re-fire on every
+    // parent render (and risk render loops) without changing the selection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRowModelRows]);
 
+  // Extract table state slices to keep the dependency array statically analyzable.
+  const { columnFilters: tableColumnFilters, globalFilter: tableGlobalFilter, sorting: tableSorting } =
+    table.getState();
   useEffect(() => {
     // Update filtered rows whenever table filtering/sorting changes
     if (table && table.getFilteredRowModel) {
       const rows = table.getFilteredRowModel().rows;
       setFilteredRows(rows.map((row) => row.original));
     }
-  }, [
-    table,
-    table.getState().columnFilters,
-    table.getState().globalFilter,
-    table.getState().sorting,
-  ]);
+  }, [table, tableColumnFilters, tableGlobalFilter, tableSorting]);
 
   useEffect(() => {
     //check if the simplecolumns are an array,

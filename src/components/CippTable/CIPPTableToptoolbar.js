@@ -352,7 +352,7 @@ export const CIPPTableToptoolbar = ({
       const restorationKey = `${pageName}-graph`;
       restoredFiltersRef.current.delete(restorationKey);
     }
-  }, [currentTenant, pageName]);
+  }, [currentTenant, pageName, setGraphFilterData]);
 
   //useEffect to set the column visibility to the preferred columns if they exist
   useEffect(() => {
@@ -362,7 +362,7 @@ export const CIPPTableToptoolbar = ({
     ) {
       setColumnVisibility(settings?.columnDefaults?.[pageName]);
     }
-  }, [settings?.columnDefaults?.[pageName], router, usedColumns]);
+  }, [settings?.columnDefaults, pageName, router, usedColumns, setColumnVisibility]);
 
   useEffect(() => {
     setOriginalSimpleColumns(simpleColumns);
@@ -427,6 +427,10 @@ export const CIPPTableToptoolbar = ({
         }
       }
     }
+    // Runs once per page (guarded by restoredFiltersRef) to restore a saved graph
+    // filter before the data call. api.data/usedColumns are intentionally read at
+    // restore time rather than used as triggers; the setters are stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.persistFilters, settings.lastUsedFilters, pageName, api?.url, queryKey, title]);
 
   // Clear restoration tracking when page changes
@@ -521,6 +525,8 @@ export const CIPPTableToptoolbar = ({
     table,
     usedColumns,
     getRequestData?.isFetching,
+    onSearchChange,
+    setColumnFilters,
   ]);
 
   const presetList = ApiGetCall({
@@ -764,6 +770,10 @@ export const CIPPTableToptoolbar = ({
       // update filters to include graph explorer presets
       setFilterList([...filters, ...graphPresetList]);
     }
+    // Rebuilds the preset filter list when presets finish loading. `filters`/`api`
+    // are read at build time; depending on `filters` (often a fresh array each render)
+    // would risk re-running setFilterList in a loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presetList?.isSuccess, simpleColumns]);
 
   return (
