@@ -25,6 +25,25 @@ import { CippDataTable } from "../CippTable/CippDataTable";
 import React from "react";
 import { CloudUpload } from "@mui/icons-material";
 import { Stack } from "@mui/system";
+import countryList from "../../data/countryList";
+import languageList from "../../data/languageList";
+
+// ISO 3166-1 alpha-2 country/region codes (uppercase), used by the CountryCodeMultiSelect type.
+const countryCodeOptions = countryList
+  .map((c) => ({ label: `${c.Name} (${c.Code})`, value: c.Code }))
+  .sort((a, b) => a.label.localeCompare(b.label));
+
+// ISO 639-1 alpha-2 language codes (lowercase), used by the LanguageCodeMultiSelect type.
+// Derived from the locale tags in languageList.json, deduplicated to the two-letter primary subtag (e.g. "en-US" -> "en").
+const languageCodeOptions = Object.values(
+  languageList.reduce((acc, entry) => {
+    const code = entry.tag?.split("-")[0]?.toLowerCase();
+    if (code && code.length === 2 && !acc[code]) {
+      acc[code] = { label: `${entry.language} (${code})`, value: code };
+    }
+    return acc;
+  }, {}),
+).sort((a, b) => a.label.localeCompare(b.label));
 
 // Lazy-load TipTap rich text editor only when richText type is used
 const CippRichTextEditor = dynamic(() => import("./CippRichTextEditor"), {
@@ -488,6 +507,30 @@ export const CippFormComponent = (props) => {
             </Typography>
           )}
         </>
+      );
+
+    // ISO 3166-1 alpha-2 region/country code multiselect (e.g. Spam Filter RegionBlockList).
+    case "CountryCodeMultiSelect":
+      return (
+        <CippFormComponent
+          {...props}
+          type="autoComplete"
+          options={countryCodeOptions}
+          multiple={true}
+          creatable={false}
+        />
+      );
+
+    // ISO 639-1 alpha-2 language code multiselect (e.g. Spam Filter LanguageBlockList).
+    case "LanguageCodeMultiSelect":
+      return (
+        <CippFormComponent
+          {...props}
+          type="autoComplete"
+          options={languageCodeOptions}
+          multiple={true}
+          creatable={false}
+        />
       );
 
     case "autoComplete": {
