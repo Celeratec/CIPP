@@ -149,6 +149,7 @@ const Page = () => {
           return template?.displayName || template?.templateName || template?.name || guid
         }
 
+        const templateExists = (guid) => !!guid && templateDetails.data.some((t) => t.GUID === guid)
         const allStandards = []
         if (selectedTemplate.standards) {
           Object.entries(selectedTemplate.standards).forEach(([standardKey, standardConfig]) => {
@@ -229,7 +230,7 @@ const Page = () => {
 
                     // Check if this standard is overridden by another template
                     const tenantTemplateId = standardObject?.TemplateId
-                    const isOverridden = tenantTemplateId && tenantTemplateId !== templateId
+                    const isOverridden = tenantTemplateId && tenantTemplateId !== templateId && templateExists(tenantTemplateId)
                     const overridingTemplateName = isOverridden
                       ? getTemplateDisplayName(tenantTemplateId)
                       : null
@@ -354,7 +355,7 @@ const Page = () => {
 
                     // Check if this standard is overridden by another template
                     const tenantTemplateId = standardObject?.TemplateId
-                    const isOverridden = tenantTemplateId && tenantTemplateId !== templateId
+                    const isOverridden = tenantTemplateId && tenantTemplateId !== templateId && templateExists(tenantTemplateId)
                     const overridingTemplateName = isOverridden
                       ? getTemplateDisplayName(tenantTemplateId)
                       : null
@@ -443,7 +444,7 @@ const Page = () => {
                     const standardObject = currentTenantObj?.[standardId]
                     const directStandardValue = standardObject?.Value
                     const tenantTemplateId = standardObject?.TemplateId
-                    const isOverridden = tenantTemplateId && tenantTemplateId !== templateId
+                    const isOverridden = tenantTemplateId && tenantTemplateId !== templateId && templateExists(tenantTemplateId)
                     const overridingTemplateName = isOverridden
                       ? getTemplateDisplayName(tenantTemplateId)
                       : null
@@ -560,7 +561,7 @@ const Page = () => {
                     const standardObject = currentTenantObj?.[standardId]
                     const directStandardValue = standardObject?.Value
                     const tenantTemplateId = standardObject?.TemplateId
-                    const isOverridden = tenantTemplateId && tenantTemplateId !== templateId
+                    const isOverridden = tenantTemplateId && tenantTemplateId !== templateId && templateExists(tenantTemplateId)
                     const overridingTemplateName = isOverridden
                       ? getTemplateDisplayName(tenantTemplateId)
                       : null
@@ -682,7 +683,7 @@ const Page = () => {
                 const standardObject = currentTenantObj?.[standardId]
                 const directStandardValue = standardObject?.Value
                 const tenantTemplateId = standardObject?.TemplateId
-                const isOverridden = tenantTemplateId && tenantTemplateId !== templateId
+                const isOverridden = tenantTemplateId && tenantTemplateId !== templateId && templateExists(tenantTemplateId)
                 const overridingTemplateName = isOverridden
                   ? getTemplateDisplayName(tenantTemplateId)
                   : null
@@ -777,7 +778,7 @@ const Page = () => {
               const standardObject = currentTenantObj?.[standardId]
               const directStandardValue = standardObject?.Value
               const tenantTemplateId = standardObject?.TemplateId
-              const isOverridden = tenantTemplateId && tenantTemplateId !== templateId
+              const isOverridden = tenantTemplateId && tenantTemplateId !== templateId && templateExists(tenantTemplateId)
               const overridingTemplateName = isOverridden
                 ? getTemplateDisplayName(tenantTemplateId)
                 : null
@@ -1022,7 +1023,7 @@ const Page = () => {
 
               // Check if this standard is overridden by another template
               const tenantTemplateId = standardObject?.TemplateId
-              const isOverridden = tenantTemplateId && tenantTemplateId !== templateId
+              const isOverridden = tenantTemplateId && tenantTemplateId !== templateId && templateExists(tenantTemplateId)
               const overridingTemplateName = isOverridden
                 ? getTemplateDisplayName(tenantTemplateId)
                 : null
@@ -1678,6 +1679,14 @@ const Page = () => {
                   color={isDriftTemplate ? 'info' : 'default'}
                   variant="outlined"
                 />
+                {isDriftTemplate && (
+                <Chip
+                  label={'Alignment Score May Be Inaccurate For Drift Templates'}
+                  size="small"
+                  color={'warning'}
+                  variant="outlined"
+                />
+                )}
               </Stack>
             )}
             <Menu
