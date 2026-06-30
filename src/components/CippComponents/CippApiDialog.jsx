@@ -245,12 +245,15 @@ export const CippApiDialog = (props) => {
   useEffect(() => {
     if (api?.setDefaultValues && createDialog.open) {
       fields.forEach((field) => {
-        const val = row[field.name];
+        const targetName = field.name.replace(/\[(\w+)\]/g, ".$1");
+        const val = targetName
+          .split(".")
+          .reduce((acc, key) => (acc != null ? acc[key] : undefined), row);
         if (
           (typeof val === "string" && field.type === "textField") ||
           (typeof val === "boolean" && field.type === "switch")
         ) {
-          formHook.setValue(field.name, val);
+          formHook.setValue(targetName, val);
         } else if (Array.isArray(val) && field.type === "autoComplete") {
           const values = val
             .map((el) =>
@@ -261,10 +264,10 @@ export const CippApiDialog = (props) => {
                   : null,
             )
             .filter(Boolean);
-          formHook.setValue(field.name, values);
+          formHook.setValue(targetName, values);
         } else if (field.type === "autoComplete" && val) {
           formHook.setValue(
-            field.name,
+            targetName,
             typeof val === "string"
               ? { label: val, value: val }
               : val.label && val.value
