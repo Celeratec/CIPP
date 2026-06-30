@@ -153,7 +153,7 @@ const Page = () => {
     const counts = keys.map(() => new Array(b.count).fill(0));
     const tenantsByBucket = Array.from({ length: b.count }, () => ({}));
     for (const r of rows) {
-      if (r.Type === "Reconciliation") continue;
+      if (r.Type === "Reconciliation" || r.Type === "Manual") continue;
       const i = bucketIndexOf(toMs(r.WindowStart), b);
       if (i < 0) continue;
       const st = classifyRow(r);
@@ -222,7 +222,7 @@ const Page = () => {
     const recSum = new Array(b.count).fill(0);
     const matSum = new Array(b.count).fill(0);
     for (const r of rows) {
-      if (r.Type === "Reconciliation") continue;
+      if (r.Type === "Reconciliation" || r.Type === "Manual") continue;
       const i = bucketIndexOf(toMs(r.WindowStart), b);
       if (i < 0) continue;
       recSum[i] += Number(r.RecordCount) || 0;

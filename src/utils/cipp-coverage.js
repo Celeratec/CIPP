@@ -140,7 +140,7 @@ export function tenantGrid(rows, b) {
 export function windowColumns(rows) {
   const set = new Set();
   for (const r of rows) {
-    if (r.Type === "Reconciliation") continue;
+    if (r.Type === "Reconciliation" || r.Type === "Manual") continue;
     const s = toMs(r.WindowStart);
     if (s != null) set.add(s);
   }
@@ -154,7 +154,7 @@ export function tenantWindowGrid(rows, columns) {
   columns.forEach((ms, i) => colIndex.set(ms, i));
   const byTenant = new Map();
   for (const r of rows) {
-    if (r.Type === "Reconciliation") continue;
+    if (r.Type === "Reconciliation" || r.Type === "Manual") continue;
     const key = r.Tenant || r.TenantId || "?";
     if (!byTenant.has(key)) byTenant.set(key, []);
     byTenant.get(key).push(r);
@@ -184,6 +184,8 @@ export function tenantWindowGrid(rows, columns) {
 
 export function summarize(rows) {
   const num = (v) => Number(v) || 0;
+  // Manual ad-hoc searches aren't pipeline coverage windows - exclude from dashboard stats.
+  rows = (rows || []).filter((r) => r.Type !== "Manual");
   const total = rows.length;
   const processed = rows.filter((r) => r.State === "Processed").length;
   const deadletter = rows.filter((r) => r.State === "DeadLetter").length;
