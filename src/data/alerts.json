@@ -68,6 +68,11 @@
         "inputType": "switch",
         "inputLabel": "Exclude disabled users?",
         "inputName": "ExcludeDisabled"
+      },
+      {
+        "inputType": "switch",
+        "inputLabel": "Include users who have never signed in (e.g. sign-in blocked)?",
+        "inputName": "IncludeNeverSignedIn"
       }
     ]
   },
