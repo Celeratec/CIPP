@@ -606,7 +606,7 @@ const Page = () => {
   const simpleColumns = useMemo(() => 
     isMobile 
       ? ["displayName", "accountEnabled"]
-      : ["displayName", "userPrincipalName", "mail", "accountEnabled"],
+      : ["displayName", "userPrincipalName", "mail", "accountEnabled", "userType"],
     [isMobile]
   );
 
