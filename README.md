@@ -468,7 +468,20 @@ Located under Tenant Administration > Applications > Integration Templates.
 
 ## Upstream Integration
 
-Manage365 tracks [KelvinTegelaar/CIPP](https://github.com/KelvinTegelaar/CIPP) and [KelvinTegelaar/CIPP-API](https://github.com/KelvinTegelaar/CIPP-API). The June 2026 v10.5 intake was **selective** — upstream fixes and improvements were ported surgically rather than merging whole files, so fork-specific behavior stays intact.
+Manage365 tracks [KelvinTegelaar/CIPP](https://github.com/KelvinTegelaar/CIPP) and [KelvinTegelaar/CIPP-API](https://github.com/KelvinTegelaar/CIPP-API). Upstream changes are merged **selectively** (cherry-pick / surgical port), not via wholesale merge or GitHub “Discard commits” sync.
+
+**Formal process:** [docs/upstream-sync/PROCESS.md](docs/upstream-sync/PROCESS.md) — cadence, triage rules, checkpoint docs, version bump, and deploy checklist.
+
+| Cadence | When | Focus |
+|---------|------|--------|
+| **Light delta** | Monthly | Low-risk bugfixes, JSON data, tests |
+| **Major cycle** | Quarterly | Full delta inventory + dependency review |
+| **Feature intake** | Backlog | New capabilities (e.g. SSO, MCP) — design first |
+| **Hotfix** | As needed | Critical upstream security fixes |
+
+Start a cycle: `./Tools/Start-UpstreamSyncCycle.ps1 -Repo CIPP` (and the same script from CIPP-API with `-Repo CIPP-API`).
+
+The June 2026 v10.5 intake was **selective** — upstream fixes and improvements were ported surgically rather than merging whole files, so fork-specific behavior stays intact.
 
 ### Taken from upstream (v10.5 / v10.5.1)
 
