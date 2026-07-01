@@ -26,6 +26,8 @@ const reservedReplacementVariables = new Set(
     'serial',
     'systemroot',
     'systemdrive',
+    'system32',
+    'osdrive',
     'temp',
     'tenantid',
     'tenantfilter',
