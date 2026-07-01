@@ -1170,7 +1170,7 @@ const AlertWizard = () => {
                                   formControl={formControl}
                                   multiple={false}
                                   creatable={false}
-                                  helperText="Overrides the HaloPSA integration's Link Tickets to affected Users toggle for this alert. Useful for wide alerts (e.g. users without MFA) where some MSPs want one ticket per affected user and others prefer one consolidated ticket per tenant."
+                                  helperText="Overrides the HaloPSA Link Tickets to affected Users toggle for this alert. Handy for wide alerts (e.g. users without MFA) where you want one ticket per user or one ticket per tenant."
                                   options={psaStrategyDropdownOptions}
                                 />
                               </Grid>

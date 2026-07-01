@@ -170,7 +170,7 @@
         "name": "HaloPSA.TicketType",
         "label": "HaloPSA Ticket Type",
         "placeholder": "Select your HaloPSA Ticket Type, leave blank for default",
-        "helperText": "The HaloPSA ticket type that CIPP-generated alert tickets will be created against. Determines the workflow, default fields and which Outcomes are available below. Save the page after changing this so the Outcome dropdown can refresh.",
+        "helperText": "The ticket type used for CIPP alert tickets. Sets the workflow and the Outcomes available below. Save after changing so the Outcome list refreshes.",
         "fullRow": true,
         "multiple": false,
         "api": {
@@ -195,7 +195,7 @@
         "type": "switch",
         "name": "HaloPSA.ConsolidateTickets",
         "label": "Consolidate Tickets",
-        "helperText": "When enabled, repeat alerts with the same title (and same affected user, when Link Tickets to affected Users is on) are appended as a note to the existing open ticket instead of creating a new one. Enabling this reveals the HaloPSA Outcome dropdown below, which must be set to a valid private/internal note action for note-appending to succeed.",
+        "helperText": "Adds repeat alerts (same title) as a note on the existing open ticket instead of raising a new one. Turns on the Outcome dropdown below, which needs a valid private note action.",
         "condition": {
           "field": "HaloPSA.Enabled",
           "compareType": "is",
@@ -208,7 +208,7 @@
         "name": "HaloPSA.Outcome",
         "label": "HaloPSA Outcome",
         "placeholder": "Select your HaloPSA Outcome, leave blank for default",
-        "helperText": "The HaloPSA Action template applied when a duplicate alert is appended as a note to an existing ticket (only used while Consolidate Tickets is enabled). Pick a private/internal note action that the HaloPSA API user has permission to perform. The list is restricted to outcomes that exist in the selected Ticket Type's workflow, so set the Ticket Type first and save before choosing one here.",
+        "helperText": "The action applied when a duplicate alert is added to an existing ticket. Use a private note action your HaloPSA API user can run. Set the Ticket Type first and save - the list only shows outcomes from that type's workflow.",
         "fullRow": true,
         "multiple": false,
         "api": {
@@ -233,7 +233,7 @@
         "type": "switch",
         "name": "HaloPSA.LinkTicketsToUsers",
         "label": "Link Tickets to affected Users",
-        "helperText": "When an alert targets specific users, create one ticket per user and link it to the matching HaloPSA contact (matched by Azure Object ID, falling back to email/network login). Users with no matching HaloPSA contact fall back to the client's General User with the UPN noted in the ticket body.",
+        "helperText": "Raises one ticket per affected user and links it to the matching HaloPSA contact (by Azure Object ID, then email/login). No match falls back to the client's General User, with the UPN in the ticket body.",
         "condition": {
           "field": "HaloPSA.Enabled",
           "compareType": "is",
