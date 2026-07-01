@@ -153,10 +153,6 @@ export const ReleaseNotesDialog = forwardRef((_props, ref) => {
   const releaseListQuery = ApiGetCall({
     url: '/api/ListGitHubReleaseNotes',
     queryKey: 'list-github-release-options',
-    data: {
-      Owner: RELEASE_OWNER,
-      Repository: RELEASE_REPO,
-    },
     waiting: shouldFetchReleaseList,
     staleTime: 300000,
   })

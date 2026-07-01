@@ -36,6 +36,7 @@ import { getSignInErrorCodeTranslation } from "./get-cipp-signin-errorcode-trans
 import { CollapsibleChipList } from "../components/CippComponents/CollapsibleChipList";
 import countryList from "../data/countryList.json";
 import standardsData from "../data/standards.json";
+import { parseCippDate } from "./parse-cipp-date";
 
 // Helper function to convert country codes to country names
 const getCountryNameFromCode = (countryCode) => {
@@ -266,9 +267,9 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
   const matchDateTime = /([dD]ate[tT]ime|[Ee]xpiration|[Tt]imestamp|[sS]tart[Dd]ate)/
   if (timeAgoArray.includes(cellName) || matchDateTime.test(cellName)) {
     return isText && canReceive === false ? (
-      new Date(data).toLocaleString() // This runs if canReceive is false and isText is true
+      parseCippDate(data).toLocaleString() // This runs if canReceive is false and isText is true
     ) : isText && canReceive !== 'both' ? (
-      new Date(data) // This runs if isText is true and canReceive is not "both" or false
+      parseCippDate(data) // This runs if isText is true and canReceive is not "both" or false
     ) : (
       <CippTimeAgo data={data} type={type} />
     )

@@ -95,7 +95,7 @@ const TeamsAddTeamForm = () => {
       description: "",
       owner: null,
       additionalMembers: [],
-      visibility: { label: "Public - Anyone in the org can join", value: "public" },
+      visibility: { label: "Private - Invite only", value: "private" },
       templateName: { label: "Standard", value: "standard" },
       // Member settings
       allowCreateUpdateChannels: true,
