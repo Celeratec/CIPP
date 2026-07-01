@@ -47,6 +47,7 @@ import { getCippError } from "../../utils/get-cipp-error";
 import { CippQuickActions } from "../CippComponents/CippActionMenu";
 import { Box } from "@mui/system";
 import { useSettings } from "../../hooks/use-settings";
+import { parseCippDate } from "../../utils/parse-cipp-date";
 import { isEqual } from "lodash"; // Import lodash for deep comparison
 import { useRouter } from "next/router";
 import { getCippTranslation } from "../../utils/get-cipp-translation";
@@ -178,8 +179,8 @@ const SORTING_FNS = {
   dateTimeNullsLast: (a, b, id) => {
     const aRaw = getRowValueByColumnId(a, id);
     const bRaw = getRowValueByColumnId(b, id);
-    const aDate = aRaw ? new Date(aRaw) : null;
-    const bDate = bRaw ? new Date(bRaw) : null;
+    const aDate = aRaw ? parseCippDate(aRaw) : null;
+    const bDate = bRaw ? parseCippDate(bRaw) : null;
     const aTime = aDate && !Number.isNaN(aDate.getTime()) ? aDate.getTime() : null;
     const bTime = bDate && !Number.isNaN(bDate.getTime()) ? bDate.getTime() : null;
 
