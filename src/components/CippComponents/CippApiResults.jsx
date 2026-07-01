@@ -43,8 +43,7 @@ const extractAllResults = (data) => {
     if (item && typeof item === "object") {
       const text = item.resultText || "";
       const copyField = item.copyField || "";
-      const severity =
-        typeof item.state === "string" ? item.state : getSeverity(item) ? "error" : "success";
+      const severity = typeof item.state === "string" ? item.state : getSeverity(text);
       const details = item.details || null;
 
       if (text) {

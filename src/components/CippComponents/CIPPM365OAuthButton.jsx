@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Alert, Button, Typography, CircularProgress, Box } from "@mui/material";
 import { Microsoft, Login, Refresh } from "@mui/icons-material";
 import { ApiGetCall } from "../../api/ApiCall";
@@ -39,6 +39,28 @@ export const CIPPM365OAuthButton = ({
     queryKey: "listAppId",
     waiting: true,
   });
+
+  // Auth flows are started from click handlers, not effects, so their
+  // BroadcastChannel, 10-minute timeout, and device-code polling would
+  // otherwise keep running after the component unmounts.
+  const isMountedRef = useRef(true);
+  const activeAuthCleanupRef = useRef(null);
+  const devicePollTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (activeAuthCleanupRef.current) {
+        activeAuthCleanupRef.current();
+        activeAuthCleanupRef.current = null;
+      }
+      if (devicePollTimeoutRef.current) {
+        clearTimeout(devicePollTimeoutRef.current);
+        devicePollTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const handleCloseError = () => {
     setAuthError(null);
@@ -143,6 +165,9 @@ export const CIPPM365OAuthButton = ({
       const startTime = Date.now();
 
       const pollForToken = async () => {
+        if (!isMountedRef.current) {
+          return;
+        }
         // Check if we've exceeded the expiration time
         if (Date.now() - startTime >= expiresIn * 1000) {
           if (popup && !popup.closed) {
@@ -175,10 +200,10 @@ export const CIPPM365OAuthButton = ({
             tokenData.status === "pending"
           ) {
             // User hasn't completed authentication yet, continue polling
-            setTimeout(pollForToken, pollInterval * 1000);
+            devicePollTimeoutRef.current = setTimeout(pollForToken, pollInterval * 1000);
           } else if (tokenData.error === "slow_down") {
             // Server asking us to slow down polling
-            setTimeout(pollForToken, (pollInterval + 5) * 1000);
+            devicePollTimeoutRef.current = setTimeout(pollForToken, (pollInterval + 5) * 1000);
           } else {
             // Other error
             if (popup && !popup.closed) {
@@ -192,12 +217,12 @@ export const CIPPM365OAuthButton = ({
             setAuthInProgress(false);
           }
         } catch (error) {
-          setTimeout(pollForToken, pollInterval * 1000);
+          devicePollTimeoutRef.current = setTimeout(pollForToken, pollInterval * 1000);
         }
       };
 
       // Start polling
-      setTimeout(pollForToken, pollInterval * 1000);
+      devicePollTimeoutRef.current = setTimeout(pollForToken, pollInterval * 1000);
     } catch (error) {
       setAuthError({
         errorCode: "device_code_error",
@@ -555,7 +580,13 @@ export const CIPPM365OAuthButton = ({
     const cleanup = () => {
       channel.close();
       clearTimeout(authTimeout);
+      if (activeAuthCleanupRef.current === cleanup) {
+        activeAuthCleanupRef.current = null;
+      }
     };
+
+    // Register so an unmount mid-auth tears down the channel and timeout.
+    activeAuthCleanupRef.current = cleanup;
   };
 
   // Auto-start device code retrieval if requested

@@ -38,7 +38,7 @@ const Page = () => {
 
   const environmentsList = ApiGetCall({
     url: "/api/ListDynamicsEnvironments",
-    queryKey: "dynamics-environments-for-solutions",
+    queryKey: `dynamics-environments-for-solutions-${tenant}`,
     data: { tenantFilter: tenant },
     waiting: !dynamicsUrl && !!tenant,
   });

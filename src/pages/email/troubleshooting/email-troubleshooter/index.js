@@ -307,6 +307,9 @@ const Page = () => {
   };
 
   const viewTraceDetail = (row) => {
+    // Clear the previous trace so the dialog doesn't show stale rows while loading.
+    setTraceDetailData([]);
+    setAuthSummary(null);
     setDetailMessageId(row.MessageTraceId);
     traceDetailApi.mutate({
       url: "/api/ListMessageTrace",
@@ -402,6 +405,8 @@ const Page = () => {
         tenantFilter,
         onPreview: viewQuarantineMessage,
         onViewTimeline: (row) => {
+          setTraceDetailData([]);
+          setAuthSummary(null);
           setDetailMessageId(row.MessageId);
           setDetailRow(row);
           traceDetailApi.mutate({
@@ -669,7 +674,7 @@ const Page = () => {
           </IconButton>
         </DialogTitle>
         <DialogContent dividers>
-          {getMessageContents.isSuccess ? (
+          {getMessageContents.isSuccess && !getMessageContents.isFetching ? (
             <CippMessageViewer emailSource={getMessageContents?.data?.Message} />
           ) : (
             <Skeleton variant="rectangular" height={400} />

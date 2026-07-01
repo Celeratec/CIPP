@@ -47,8 +47,7 @@ const AlertWizard = () => {
 
   const existingAlert = ApiGetCall({
     url: '/api/ListAlertsQueue',
-    relatedQueryKeys: 'ListAlertsQueue',
-    queryKey: 'ListCurrentAlerts',
+    queryKey: `ListCurrentAlerts-${tenantFilter}`,
     data: { tenantFilter },
     waiting: !!tenantFilter,
   })

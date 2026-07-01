@@ -33,16 +33,29 @@ export const CippWizard = (props) => {
   }, [steps, formWatcher]);
 
   const [activeStep, setActiveStep] = useState(0);
+  // Navigation clamps against the *visible* step list: conditional steps can
+  // shrink it below the stored index (e.g. a form change hides a later step).
   const handleBack = useCallback(() => {
-    setActiveStep((prevState) => (prevState > 0 ? prevState - 1 : prevState));
-  }, []);
+    setActiveStep((prevState) => {
+      const current = Math.min(prevState, stepsWithVisibility.length - 1);
+      return current > 0 ? current - 1 : current;
+    });
+  }, [stepsWithVisibility.length]);
 
   const handleNext = useCallback(() => {
-    setActiveStep((prevState) => (prevState < steps.length - 1 ? prevState + 1 : prevState));
-  }, []);
+    setActiveStep((prevState) => {
+      const current = Math.min(prevState, stepsWithVisibility.length - 1);
+      return current < stepsWithVisibility.length - 1 ? current + 1 : current;
+    });
+  }, [stepsWithVisibility.length]);
+
+  // Conditional steps can shrink the visible list below the current index
+  // (e.g. a form change hides a later step while it is active). Clamp at
+  // render time so we never index past the filtered list and crash.
+  const boundedStep = Math.min(activeStep, Math.max(stepsWithVisibility.length - 1, 0));
 
   const content = useMemo(() => {
-    const currentStep = stepsWithVisibility[activeStep];
+    const currentStep = stepsWithVisibility[boundedStep];
     const StepComponent = currentStep.component;
 
     return (
@@ -51,7 +64,7 @@ export const CippWizard = (props) => {
         onPreviousStep={handleBack}
         formControl={formControl}
         lastStep={stepsWithVisibility.length - 1}
-        currentStep={activeStep}
+        currentStep={boundedStep}
         postUrl={postUrl}
         options={currentStep.componentProps?.options}
         title={currentStep.componentProps?.title}
@@ -60,18 +73,18 @@ export const CippWizard = (props) => {
         {...currentStep.componentProps}
       />
     );
-  }, [activeStep, handleNext, handleBack, stepsWithVisibility, formControl]);
+  }, [boundedStep, handleNext, handleBack, stepsWithVisibility, formControl]);
 
   // Get the maxWidth for the current step, fallback to global setting
   const currentStepMaxWidth = useMemo(() => {
-    const currentStep = stepsWithVisibility[activeStep];
+    const currentStep = stepsWithVisibility[boundedStep];
     return currentStep.maxWidth ?? contentMaxWidth;
-  }, [activeStep, stepsWithVisibility, contentMaxWidth]);
+  }, [boundedStep, stepsWithVisibility, contentMaxWidth]);
 
   // Calculate progress percentage
   const progressPercentage = useMemo(() => {
-    return ((activeStep + 1) / stepsWithVisibility.length) * 100;
-  }, [activeStep, stepsWithVisibility.length]);
+    return ((boundedStep + 1) / stepsWithVisibility.length) * 100;
+  }, [boundedStep, stepsWithVisibility.length]);
 
   // Get summary of selected values for display
   const selectedSummary = useMemo(() => {
@@ -110,7 +123,7 @@ export const CippWizard = (props) => {
             <Grid size={{ md: 4, xs: 12 }}>
               <WizardSteps
                 postUrl={postUrl}
-                activeStep={activeStep}
+                activeStep={boundedStep}
                 orientation={orientation}
                 steps={stepsWithVisibility}
               />
@@ -126,7 +139,7 @@ export const CippWizard = (props) => {
             <Box>
               <WizardSteps
                 postUrl={postUrl}
-                activeStep={activeStep}
+                activeStep={boundedStep}
                 orientation={orientation}
                 steps={stepsWithVisibility}
               />

@@ -40,7 +40,7 @@ const Page = () => {
   // If no dynamicsUrl provided, show a list of environments to select from
   const environmentsList = ApiGetCall({
     url: "/api/ListDynamicsEnvironments",
-    queryKey: "dynamics-environments-for-users",
+    queryKey: `dynamics-environments-for-users-${tenant}`,
     data: { tenantFilter: tenant },
     waiting: !dynamicsUrl && !!tenant,
   });

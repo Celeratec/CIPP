@@ -1,7 +1,7 @@
 import { Layout as DashboardLayout } from "../../../../layouts/index.js";
 import { CippTablePage } from "../../../../components/CippComponents/CippTablePage.jsx";
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import {
   Alert,
@@ -78,8 +78,17 @@ const Page = () => {
   });
 
   const { syncFiltersToUrl } = useQuarantineFilters({ formControl, enabled: true });
-  const filterValues = formControl.watch();
-  const showPostFilterWarning = hasQuarantinePostFilters(filterValues);
+  // Subscribe only to the post-filter fields; watching the whole form re-renders
+  // the page (filter panel, toolbar, table wrapper) on every keystroke.
+  const [watchedSubject, watchedSenderDomain, watchedRecipientDomain] = useWatch({
+    control: formControl.control,
+    name: ["subject", "senderDomain", "recipientDomain"],
+  });
+  const showPostFilterWarning = hasQuarantinePostFilters({
+    subject: watchedSubject,
+    senderDomain: watchedSenderDomain,
+    recipientDomain: watchedRecipientDomain,
+  });
   const quarantineColumns = useMemo(() => buildQuarantineColumns(), []);
 
   const getMessageContents = ApiGetCall({
@@ -125,6 +134,9 @@ const Page = () => {
   };
 
   const viewMessageTrace = (row) => {
+    // Clear the previous trace so a second dialog doesn't show stale rows
+    // under the new message's subject while the request is in flight.
+    setTraceDetails(null);
     setTraceMessageId(row.MessageId);
     getMessageTraceDetails.mutate({
       url: "/api/ListMessageTrace",
@@ -138,12 +150,14 @@ const Page = () => {
   };
 
   useEffect(() => {
-    if (getMessageContents.isSuccess) {
+    // Show the skeleton while (re)fetching so the previous message's content
+    // never flashes when opening a different message.
+    if (!getMessageContents.isFetching && getMessageContents.isSuccess) {
       setDialogContent(<CippMessageViewer emailSource={getMessageContents?.data?.Message} />);
     } else {
       setDialogContent(<Skeleton variant="rectangular" height={400} />);
     }
-  }, [getMessageContents.isSuccess, getMessageContents.data]);
+  }, [getMessageContents.isFetching, getMessageContents.isSuccess, getMessageContents.data]);
 
   const actions = useMemo(
     () =>

@@ -1,4 +1,10 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData as keepPreviousDataFn,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import axios, { isAxiosError } from "axios";
 import { useDispatch } from "react-redux";
 import { showToast } from "../store/toasts";
@@ -97,7 +103,10 @@ export function ApiGetCall(props) {
     refetchOnWindowFocus = false,
     refetchOnMount = true,
     refetchOnReconnect = true,
-    keepPreviousData = true,
+    // Off by default: showing the previous query's data while a new key loads
+    // can flash another tenant's rows in tenant-keyed queries. Callers that
+    // want smooth transitions (e.g. the tenant selector) opt in explicitly.
+    keepPreviousData = false,
     refetchInterval = false,
     responseType = "json",
     convertToDataUrl = false,
@@ -219,7 +228,9 @@ export function ApiGetCall(props) {
     refetchOnWindowFocus: refetchOnWindowFocus,
     refetchOnMount: refetchOnMount,
     refetchOnReconnect: refetchOnReconnect,
-    keepPreviousData: keepPreviousData,
+    // TanStack Query v5 removed the `keepPreviousData` option; the equivalent
+    // is passing its helper as placeholderData.
+    placeholderData: keepPreviousData ? keepPreviousDataFn : undefined,
     refetchInterval: refetchInterval,
     retry: retryFn,
   });
