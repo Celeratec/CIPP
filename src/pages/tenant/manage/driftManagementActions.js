@@ -23,6 +23,7 @@ export const createDriftManagementActions = ({
       icon: <Sync />,
       noConfirm: true,
       customFunction: onRefresh,
+      category: "manage",
     },
   ];
 
@@ -33,6 +34,7 @@ export const createDriftManagementActions = ({
       icon: <PictureAsPdf />,
       noConfirm: true,
       customFunction: onGenerateReport,
+      category: "manage",
     });
   }
 
@@ -58,6 +60,7 @@ export const createDriftManagementActions = ({
               window.location.href = `/tenant/standards/templates/template?id=${templateId}&type=${templateType}`;
             });
         },
+        category: "edit",
       });
     }
 
@@ -72,6 +75,7 @@ export const createDriftManagementActions = ({
         },
         confirmText: "Are you sure you want to force a run of this standard?",
         multiPost: false,
+        category: "manage",
       },
       {
         label: "Run Standard Now (All Tenants in Template)",
@@ -84,6 +88,7 @@ export const createDriftManagementActions = ({
         },
         confirmText: "Are you sure you want to force a run of this standard?",
         multiPost: false,
+        category: "manage",
       }
     );
   }

@@ -20,6 +20,7 @@ const Page = () => {
       confirmText: "Are you sure you want to enable this feature?",
       condition: (item) => item.AllowUserToggle && !item.Enabled,
       icon: <CheckCircle />,
+      category: "edit",
     },
     {
       label: "Disable Feature",
@@ -33,6 +34,7 @@ const Page = () => {
       confirmText: "Are you sure you want to disable this feature?",
       condition: (item) => item.AllowUserToggle && item.Enabled,
       icon: <Cancel />,
+      category: "edit",
     },
   ];
 

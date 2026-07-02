@@ -17,6 +17,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to delete this Autopilot profile? This action cannot be undone.",
       color: "danger",
+      category: "danger",
     },
   ];
 

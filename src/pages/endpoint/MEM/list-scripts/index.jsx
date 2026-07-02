@@ -203,6 +203,7 @@ const Page = () => {
         AssignTo: "allLicensedUsers",
         assignmentMode: formData?.assignmentMode || "replace",
       }),
+      category: "edit",
     },
     {
       label: "Assign to All Devices",
@@ -229,6 +230,7 @@ const Page = () => {
         AssignTo: "AllDevices",
         assignmentMode: formData?.assignmentMode || "replace",
       }),
+      category: "edit",
     },
     {
       label: "Assign Globally (All Users / All Devices)",
@@ -255,6 +257,7 @@ const Page = () => {
         AssignTo: "AllDevicesAndUsers",
         assignmentMode: formData?.assignmentMode || "replace",
       }),
+      category: "edit",
     },
     {
       label: "Assign to Custom Group",
@@ -313,6 +316,7 @@ const Page = () => {
           assignmentMode: formData?.assignmentMode || "replace",
         };
       },
+      category: "edit",
     },
     {
       label: "Edit Script",
@@ -320,6 +324,7 @@ const Page = () => {
       color: "primary",
       noConfirm: true,
       customFunction: handleScriptEdit,
+      category: "edit",
     },
     {
       label: "Delete Script",
@@ -333,6 +338,7 @@ const Page = () => {
       confirmText: "Are you sure you want to delete this script?",
       icon: <TrashIcon />,
       color: "danger",
+      category: "danger",
     },
   ];
 

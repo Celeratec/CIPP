@@ -399,6 +399,7 @@ const Page = () => {
                         confirmText: 'Remove this tenant from [Name]?',
                         customFunction: handleRemoveGroup,
                         condition: (row) => row.GroupType !== 'dynamic',
+                        category: 'danger',
                       },
                     ]}
                   />

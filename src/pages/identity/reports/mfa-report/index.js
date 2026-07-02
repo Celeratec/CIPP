@@ -124,6 +124,7 @@ const Page = () => {
       ],
       confirmText: 'Are you sure you want to set per-user MFA for these users?',
       multiPost: false,
+      category: 'security',
     },
   ]
 

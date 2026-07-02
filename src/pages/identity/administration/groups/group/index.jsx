@@ -533,6 +533,7 @@ const Page = () => {
       multiPost: false,
       relatedQueryKeys: `GroupAliases-${groupId}`,
       condition: (row) => row && row.Type !== "Primary",
+      category: "edit",
     },
     {
       label: "Remove Proxy Address",
@@ -549,6 +550,7 @@ const Page = () => {
       multiPost: false,
       relatedQueryKeys: `GroupAliases-${groupId}`,
       condition: (row) => row && row.Type !== "Primary",
+      category: "danger",
     },
   ];
 

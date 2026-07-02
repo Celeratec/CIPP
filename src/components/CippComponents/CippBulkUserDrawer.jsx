@@ -151,6 +151,7 @@ export const CippBulkUserDrawer = ({
       confirmText: "Are you sure you want to delete this row?",
       customFunction: handleRemoveItem,
       noConfirm: true,
+      category: "danger",
     },
   ];
 

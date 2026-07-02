@@ -135,6 +135,7 @@ const Page = () => {
       customFunction: () => {
         logsData.refetch();
       },
+      category: "manage",
     },
   ];
 

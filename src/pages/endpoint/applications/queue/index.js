@@ -20,6 +20,7 @@ const Page = () => {
       data: { ID: "id" },
       confirmText: "Do you want to delete the queued application?",
       color: "danger",
+      category: "danger",
     },
   ];
 

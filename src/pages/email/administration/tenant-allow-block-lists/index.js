@@ -19,6 +19,7 @@ const Page = () => {
       confirmText: "Are you sure you want to delete this entry?",
       color: "danger",
       icon: <Delete />,
+      category: "danger",
     },
   ];
 

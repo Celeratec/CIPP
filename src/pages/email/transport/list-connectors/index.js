@@ -16,6 +16,7 @@ const Page = () => {
       postEntireRow: true,
       confirmText: "Are you sure you want to create a template based on this connector?",
       color: "info",
+      category: "manage",
     },
     {
       label: "Enable Connector",
@@ -30,6 +31,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to enable this connector?",
       color: "info",
+      category: "edit",
     },
     {
       label: "Disable Connector",
@@ -44,6 +46,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to disable this connector?",
       color: "info",
+      category: "edit",
     },
     {
       label: "Delete Connector",
@@ -56,6 +59,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to delete this connector?",
       color: "danger",
+      category: "danger",
     },
   ];
 

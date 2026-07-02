@@ -35,6 +35,7 @@ const Page = () => {
       icon: <EyeIcon />,
       color: "info",
       target: "_self",
+      category: "view",
     },
     {
       label: "Edit Template",
@@ -42,6 +43,7 @@ const Page = () => {
       icon: <Edit />,
       color: "success",
       target: "_self",
+      category: "edit",
     },
     {
       label: "Clone & Edit Template",
@@ -49,6 +51,7 @@ const Page = () => {
       icon: <CopyAll />,
       color: "success",
       target: "_self",
+      category: "edit",
     },
     {
       label: "Create Drift Clone",
@@ -62,6 +65,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to create a drift clone of [templateName]? This will create a new drift template based on this template.",
       multiPost: false,
+      category: "manage",
     },
     {
       label: `Run Template Now (${currentTenant || "Currently Selected Tenant"})`,
@@ -73,6 +77,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to force a run of this template?",
       multiPost: false,
+      category: "manage",
     },
     {
       label: "Run Template Now (All Tenants in Template)",
@@ -85,6 +90,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to force a run of this template?",
       multiPost: false,
+      category: "manage",
     },
     {
       label: "Save to GitHub",
@@ -129,6 +135,7 @@ const Page = () => {
       ],
       confirmText: "Are you sure you want to save this template to the selected repository?",
       condition: () => integrations.isSuccess && integrations?.data?.GitHub?.Enabled,
+      category: "manage",
     },
     {
       label: "Delete Template",
@@ -140,6 +147,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to delete [templateName]?",
       multiPost: false,
+      category: "danger",
     },
   ];
   const conversionApi = ApiPostCall({ relatedQueryKeys: "listStandardTemplates" });

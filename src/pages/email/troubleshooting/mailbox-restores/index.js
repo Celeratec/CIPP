@@ -20,6 +20,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to resume this restore request?",
       color: "info",
+      category: "manage",
     },
     {
       label: "Suspend Restore Request",
@@ -32,6 +33,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to suspend this restore request?",
       color: "warning",
+      category: "manage",
     },
     {
       label: "Remove Restore Request",
@@ -44,6 +46,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to remove this restore request?",
       color: "danger",
+      category: "danger",
     },
   ];
 

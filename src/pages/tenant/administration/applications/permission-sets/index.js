@@ -35,12 +35,14 @@ const Page = () => {
         />
       ),
       multiPost: false,
+      category: "edit",
     },
     {
       icon: <ContentCopy />,
       label: "Copy Permission Set",
       color: "info",
       link: "/tenant/administration/applications/permission-sets/add?template=[TemplateId]&copy=true&name=[TemplateName]",
+      category: "edit",
     },
     {
       icon: <Delete />,
@@ -53,6 +55,7 @@ const Page = () => {
       },
       type: "POST",
       confirmText: "Are you sure you want to delete [TemplateName]?",
+      category: "danger",
     },
   ];
 

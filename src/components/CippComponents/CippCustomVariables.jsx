@@ -94,6 +94,7 @@ const CippCustomVariables = ({ id }) => {
         tenantId: id,
       },
       relatedQueryKeys: allRelatedKeys,
+      category: "edit",
     },
     {
       label: "Delete",
@@ -108,6 +109,7 @@ const CippCustomVariables = ({ id }) => {
       },
       relatedQueryKeys: allRelatedKeys,
       multiPost: false,
+      category: "danger",
     },
   ];
 

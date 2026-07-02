@@ -193,6 +193,7 @@ const Page = () => {
             "Are you sure you want to verify this domain? Use one of the records below to complete verification.",
           children: ({ row }) => <CippDomainVerificationRecords row={row} />,
           size: "lg",
+          category: "manage",
         },
         {
           label: "Set as Default",
@@ -204,6 +205,7 @@ const Page = () => {
           confirmText: "Are you sure you want to set [id] as the default domain?",
           multiPost: false,
           hideBulk: true,
+          category: "edit",
         },
         {
           label: "Migrate Users to This Domain",
@@ -213,6 +215,7 @@ const Page = () => {
           customFunction: (row) => {
             setMigrationTarget(row.id);
           },
+          category: "manage",
         },
         {
           label: "Delete Domain",
@@ -224,6 +227,7 @@ const Page = () => {
           confirmText: "Are you sure you want to delete [id]? This action cannot be undone.",
           color: "error",
           multiPost: false,
+          category: "danger",
         },
       ]}
     />

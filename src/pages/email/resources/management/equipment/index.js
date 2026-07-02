@@ -15,12 +15,14 @@ const Page = () => {
       icon: <Edit />,
       color: "info",
       condition: (row) => !row.isDirSynced,
+      category: "edit",
     },
     {
       label: "Edit permissions",
       link: "/identity/administration/users/user/exchange?userId=[ExternalDirectoryObjectId]",
       color: "info",
       icon: <Key />,
+      category: "edit",
     },
     {
       label: "Block Sign In",
@@ -31,6 +33,7 @@ const Page = () => {
       confirmText: "Are you sure you want to block the sign-in for this equipment mailbox?",
       multiPost: false,
       condition: (row) => !row.isDirSynced,
+      category: "security",
     },
     {
       label: "Unblock Sign In",
@@ -41,6 +44,7 @@ const Page = () => {
       confirmText: "Are you sure you want to unblock sign-in for this equipment mailbox?",
       multiPost: false,
       condition: (row) => !row.isDirSynced,
+      category: "security",
     },
     {
       label: "Delete Equipment",
@@ -51,6 +55,7 @@ const Page = () => {
       confirmText: "Are you sure you want to delete this equipment mailbox?",
       multiPost: false,
       condition: (row) => !row.isDirSynced,
+      category: "danger",
     },
   ];
 

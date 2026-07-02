@@ -54,6 +54,7 @@ const actions = [
     link: "/cipp/logs/logentry?logentry=[RowKey]&date=[PartitionKey]",
     icon: <EyeIcon />,
     color: "info",
+    category: "view",
   },
 ];
 

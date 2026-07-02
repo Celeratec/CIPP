@@ -21,6 +21,7 @@ const Page = () => {
       link: "/security/ediscovery/cases/case?caseId=[id]",
       icon: <OpenInNew />,
       color: "primary",
+      category: "view",
     },
     {
       label: "Close Case",
@@ -33,6 +34,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to close this case? Holds will remain active.",
       condition: (row) => row.status === "active",
+      category: "edit",
     },
     {
       label: "Reopen Case",
@@ -45,6 +47,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to reopen this case?",
       condition: (row) => row.status === "closed",
+      category: "edit",
     },
     {
       label: "Delete Case",
@@ -58,6 +61,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to delete this case? This action cannot be undone. The case must be closed first.",
       condition: (row) => row.status === "closed",
+      category: "danger",
     },
   ];
 

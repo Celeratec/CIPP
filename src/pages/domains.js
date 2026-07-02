@@ -81,6 +81,7 @@ const Page = () => {
                     url: "api/DeleteCustomDomain",
                     data: { domain: "Domain" },
                     icon: <TrashIcon />,
+                    category: "danger",
                   },
                 ]}
                 simple={false}

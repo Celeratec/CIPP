@@ -32,6 +32,7 @@ const Page = () => {
       confirmText: "Are you sure you want to exclude [displayName]?",
       multiPost: false,
       condition: (row) => row.displayName !== "*Partner Tenant",
+      category: "edit",
     },
     {
       label: "Include Tenants",
@@ -42,6 +43,7 @@ const Page = () => {
       confirmText: "Are you sure you want to include [displayName]?",
       multiPost: false,
       condition: (row) => row.displayName !== "*Partner Tenant",
+      category: "edit",
     },
     {
       label: "Refresh CPV Permissions",
@@ -51,6 +53,7 @@ const Page = () => {
       data: { tenantFilter: "customerId" },
       confirmText: "Are you sure you want to refresh the CPV permissions for [displayName]?",
       multiPost: false,
+      category: "manage",
     },
     {
       label: "Reset CPV Permissions",
@@ -63,6 +66,7 @@ const Page = () => {
       multiPost: false,
       condition: (row) =>
         row.displayName !== "*Partner Tenant" && row.delegatedPrivilegeStatus !== "directTenant",
+      category: "manage",
     },
     {
       label: "Remove Tenant",
@@ -74,6 +78,7 @@ const Page = () => {
         "Are you sure you want to remove [displayName]? If this is a Direct Tenant, this will no longer be accessible until you add it via the Setup Wizard.",
       multiPost: false,
       condition: (row) => row.displayName !== "*Partner Tenant",
+      category: "danger",
     },
     {
       label: "Refresh Manage365 DB Cache",
@@ -109,6 +114,7 @@ const Page = () => {
           TenantFilter: tenantFilter,
         };
       },
+      category: "manage",
     },
     traceGdapAction,
   ];

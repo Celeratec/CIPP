@@ -93,6 +93,7 @@ const Page = () => {
       icon: <Visibility />,
       target: "_blank",
       external: true,
+      category: "view",
     },
     {
       label: "Approve in Entra",
@@ -101,6 +102,7 @@ const Page = () => {
       icon: <CheckCircle />,
       target: "_blank",
       external: true,
+      category: "security",
     },
   ];
 

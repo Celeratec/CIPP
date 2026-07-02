@@ -29,6 +29,7 @@ const Page = () => {
         color: "success",
         target: "_self",
         condition: (row) => !row.IsBuiltInProtection && !row.PolicyName.startsWith("Standard Preset Security Policy") && !row.PolicyName.startsWith("Strict Preset Security Policy") && row.PolicyName !== "Built-In Protection Policy",
+        category: "edit",
       },
       {
         label: "Enable Rule",
@@ -43,6 +44,7 @@ const Page = () => {
         confirmText: "Are you sure you want to enable this rule?",
         color: "info",
         condition: (row) => row.State === "Disabled" && !row.IsBuiltInProtection && !row.PolicyName.startsWith("Standard Preset Security Policy") && !row.PolicyName.startsWith("Strict Preset Security Policy")&& row.PolicyName !== "Built-In Protection Policy",
+        category: "edit",
       },
       {
         label: "Disable Rule",
@@ -57,6 +59,7 @@ const Page = () => {
         confirmText: "Are you sure you want to disable this rule?",
         color: "info",
         condition: (row) => row.State === "Enabled" && !row.IsBuiltInProtection && !row.PolicyName.startsWith("Standard Preset Security Policy") && !row.PolicyName.startsWith("Strict Preset Security Policy")&& row.PolicyName !== "Built-In Protection Policy",
+        category: "edit",
       },
       {
         label: "Set Priority",
@@ -86,6 +89,7 @@ const Page = () => {
             },
           },
         ],
+        category: "edit",
       },
       {
         label: "Create template based on policy",
@@ -96,6 +100,7 @@ const Page = () => {
         icon: <Book />,
         hideBulk: true,
         condition: (row) => !row.IsBuiltInProtection && !row.PolicyName.startsWith("Standard Preset Security Policy") && !row.PolicyName.startsWith("Strict Preset Security Policy")&& row.PolicyName !== "Built-In Protection Policy",
+        category: "manage",
       },
       {
         label: "Delete Rule",
@@ -109,6 +114,7 @@ const Page = () => {
         confirmText: "Are you sure you want to delete this policy and rule?",
         color: "danger",
         condition: (row) => !row.IsBuiltInProtection && !row.PolicyName.startsWith("Standard Preset Security Policy") && !row.PolicyName.startsWith("Strict Preset Security Policy")&& row.PolicyName !== "Built-In Protection Policy",
+        category: "danger",
       }
     ];
 

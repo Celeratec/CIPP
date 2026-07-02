@@ -43,6 +43,7 @@ const Page = () => {
         Provider: "RawResult.vendorInformation.provider",
       },
       confirmText: "Are you sure you want to set the status to in progress?",
+      category: "edit",
     },
     {
       label: "Set status to resolved",
@@ -56,6 +57,7 @@ const Page = () => {
         Provider: "RawResult.vendorInformation.provider",
       },
       confirmText: "Are you sure you want to set the status to resolved?",
+      category: "edit",
     },
   ];
 

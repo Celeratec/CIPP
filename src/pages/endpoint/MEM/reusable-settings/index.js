@@ -13,6 +13,7 @@ const Page = () => {
     {
       label: "Edit Reusable Setting",
       link: `/endpoint/MEM/reusable-settings/edit?id=[id]&tenant=${currentTenant}&tenantFilter=${currentTenant}`,
+      category: "edit",
     },
     {
       label: "Delete Reusable Setting",
@@ -26,6 +27,7 @@ const Page = () => {
       },
       confirmText: "Delete this reusable setting from the tenant?",
       multiPost: false,
+      category: "danger",
     },
     {
       label: "Create Template from Setting",
@@ -39,6 +41,7 @@ const Page = () => {
       },
       confirmText: "Create a reusable settings template from this entry?",
       multiPost: false,
+      category: "manage",
     },
   ];
 

@@ -454,6 +454,7 @@ const Page = () => {
                       },
                       noConfirm: true,
                       hideBulk: true,
+                      category: "edit",
                     },
                     {
                       label: "Delete",
@@ -493,6 +494,7 @@ const Page = () => {
                       confirmText:
                         "Do you want to delete the selected row(s)? This action cannot be undone.",
                       multiPost: true,
+                      category: "danger",
                     },
                   ]}
                 />

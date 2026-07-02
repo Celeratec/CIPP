@@ -138,6 +138,7 @@ const CippApiClientManagement = () => {
         ClientId: "ClientId",
       },
       relatedQueryKeys: ["ApiClients"],
+      category: "edit",
     },
     {
       label: "Reset Application Secret",
@@ -150,6 +151,7 @@ const CippApiClientManagement = () => {
         ClientId: "ClientId",
       },
       hideBulk: true,
+      category: "security",
     },
     {
       label: "Copy API Scope",
@@ -160,6 +162,7 @@ const CippApiClientManagement = () => {
         navigator.clipboard.writeText(scope);
       },
       hideBulk: true,
+      category: "view",
     },
     {
       label: "Delete Client",
@@ -180,6 +183,7 @@ const CippApiClientManagement = () => {
       ],
       relatedQueryKeys: ["ApiClients"],
       multiPost: false,
+      category: "danger",
     },
   ];
 

@@ -236,6 +236,7 @@ const Page = () => {
       url: "/api/ExecAssignApp",
       icon: <UserGroupIcon />,
       color: "info",
+      category: "manage",
       confirmText: 'Select the target groups and intent for "[displayName]".',
       fields: [
         {

@@ -248,6 +248,7 @@ const Page = () => {
       color: "info",
       icon: <EyeIcon />,
       multiPost: false,
+      category: "view",
     },
     {
       label: "View in Intune",
@@ -445,6 +446,7 @@ const Page = () => {
       condition: (row) => row.operatingSystem === "iOS",
       confirmText:
         "Are you sure you want to remove the passcode from [deviceName]? This will remove the device passcode requirement.",
+      category: "security",
     },
     {
       label: "Windows Defender Full Scan",
@@ -457,6 +459,7 @@ const Page = () => {
         quickScan: false,
       },
       confirmText: "Are you sure you want to perform a full scan on [deviceName]?",
+      category: "security",
     },
     {
       label: "Windows Defender Quick Scan",
@@ -469,6 +472,7 @@ const Page = () => {
         quickScan: true,
       },
       confirmText: "Are you sure you want to perform a quick scan on [deviceName]?",
+      category: "security",
     },
     {
       label: "Update Windows Defender",
@@ -481,6 +485,7 @@ const Page = () => {
       },
       confirmText:
         "Are you sure you want to update the Windows Defender signatures for [deviceName]?",
+      category: "security",
     },
     {
       label: "Generate logs and ship to MEM",
@@ -494,6 +499,7 @@ const Page = () => {
       condition: (row) => row.operatingSystem === "Windows",
       confirmText:
         "Are you sure you want to generate logs for device [deviceName] and ship these to MEM?",
+      category: "manage",
     },
     {
       label: "Fresh Start (Remove user data)",
@@ -507,6 +513,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to Fresh Start [deviceName]?",
+      category: "danger",
     },
     {
       label: "Fresh Start (Do not remove user data)",
@@ -520,6 +527,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to Fresh Start [deviceName]?",
+      category: "danger",
     },
     {
       label: "Wipe Device, keep enrollment data",
@@ -534,6 +542,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to wipe [deviceName], and retain enrollment data?",
+      category: "danger",
     },
     {
       label: "Wipe Device, remove enrollment data",
@@ -548,6 +557,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to wipe [deviceName], and remove enrollment data?",
+      category: "danger",
     },
     {
       label: "Wipe Device, keep enrollment data, and continue at powerloss",
@@ -564,6 +574,7 @@ const Page = () => {
       condition: (row) => row.operatingSystem === "Windows",
       confirmText:
         "Are you sure you want to wipe [deviceName]? This will retain enrollment data. Continuing at powerloss may cause boot issues if wipe is interrupted.",
+      category: "danger",
     },
     {
       label: "Wipe Device, remove enrollment data, and continue at powerloss",
@@ -580,6 +591,7 @@ const Page = () => {
       condition: (row) => row.operatingSystem === "Windows",
       confirmText:
         "Are you sure you want to wipe [deviceName]? This will also remove enrollment data. Continuing at powerloss may cause boot issues if wipe is interrupted.",
+      category: "danger",
     },
     {
       label: "Autopilot Reset",
@@ -594,6 +606,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to Autopilot Reset [deviceName]?",
+      category: "danger",
     },
     {
       label: "Delete device",
@@ -605,6 +618,7 @@ const Page = () => {
         Action: "delete",
       },
       confirmText: "Are you sure you want to delete [deviceName]?",
+      category: "danger",
     },
     {
       label: "Retire device",
@@ -616,6 +630,7 @@ const Page = () => {
         Action: "retire",
       },
       confirmText: "Are you sure you want to retire [deviceName]?",
+      category: "danger",
     },
   ];
 

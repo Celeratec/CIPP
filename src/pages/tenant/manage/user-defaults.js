@@ -208,6 +208,7 @@ const Page = () => {
       confirmText: 'Edit the template and click Confirm to save.',
       relatedQueryKeys: [`ListNewUserDefaults-${userSettings.currentTenant}`],
       fields: templateFields,
+      category: "edit",
     },
     {
       label: 'Delete Template',
@@ -217,6 +218,7 @@ const Page = () => {
       data: { ID: 'GUID' },
       confirmText: 'Do you want to delete this User Default template?',
       multiPost: false,
+      category: "danger",
     },
   ]
 

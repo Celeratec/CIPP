@@ -27,6 +27,7 @@ const Page = () => {
       noConfirm: true,
       icon: <MapPinIcon />,
       hideBulk: true,
+      category: "view",
     },
     {
       label: "Add to Whitelist",
@@ -40,6 +41,7 @@ const Page = () => {
       confirmText: "Are you sure you want to add this IP to the whitelist?",
       multiPost: false,
       condition: (row) => row.state !== "Trusted",
+      category: "security",
     },
     {
       label: "Remove from Whitelist",
@@ -53,6 +55,7 @@ const Page = () => {
       confirmText: "Are you sure you want to remove this IP from the whitelist?",
       multiPost: false,
       condition: (row) => row.state !== "NotTrusted",
+      category: "security",
     },
   ];
 

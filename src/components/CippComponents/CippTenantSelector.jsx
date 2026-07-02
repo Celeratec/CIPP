@@ -51,36 +51,42 @@ export const CippTenantSelector = React.forwardRef((props, ref) => {
         label: "M365 Admin Portal",
         link: `https://admin.cloud.microsoft/?delegatedOrg=${currentTenant?.addedFields?.initialDomainName}`,
         icon: "Public",
+        category: "view",
       },
       {
         key: "Exchange_Portal",
         label: "Exchange Portal",
         link: `https://admin.cloud.microsoft/exchange?delegatedOrg=${currentTenant?.addedFields?.initialDomainName}`,
         icon: "Mail",
+        category: "view",
       },
       {
         key: "Entra_Portal",
         label: "Entra Portal",
         link: `https://entra.microsoft.com/${currentTenant?.value}`,
         icon: "Groups",
+        category: "view",
       },
       {
         key: "Teams_Portal",
         label: "Teams Portal",
         link: `https://admin.teams.microsoft.com/?delegatedOrg=${currentTenant?.addedFields?.initialDomainName}`,
         icon: "FilePresent",
+        category: "view",
       },
       {
         key: "Azure_Portal",
         label: "Azure Portal",
         link: `https://portal.azure.com/${currentTenant?.value}`,
         icon: "Dns",
+        category: "view",
       },
       {
         key: "Intune_Portal",
         label: "Intune Portal",
         link: `https://intune.microsoft.com/${currentTenant?.value}`,
         icon: "Laptop",
+        category: "view",
       },
       {
         key: "SharePoint_Admin",
@@ -88,30 +94,35 @@ export const CippTenantSelector = React.forwardRef((props, ref) => {
         link: `/api/ListSharePointAdminUrl?tenantFilter=${currentTenant?.value}`,
         icon: "Share",
         external: true,
+        category: "view",
       },
       {
         key: "Security_Portal",
         label: "Security Portal",
         link: `https://security.microsoft.com/?tid=${currentTenant?.addedFields?.customerId}`,
         icon: "Shield",
+        category: "view",
       },
       {
         key: "Compliance_Portal",
         label: "Compliance Portal",
         link: `https://purview.microsoft.com/?tid=${currentTenant?.addedFields?.customerId}`,
         icon: "ShieldMoon",
+        category: "view",
       },
       {
         key: "Power_Platform_Portal",
         label: "Power Platform Portal",
         link: `https://admin.powerplatform.microsoft.com/account/login/${currentTenant?.addedFields?.customerId}`,
         icon: "PrecisionManufacturing",
+        category: "view",
       },
       {
         key: "Power_BI_Portal",
         label: "Power BI Portal",
         link: `https://app.powerbi.com/admin-portal?ctid=${currentTenant?.addedFields?.customerId}`,
         icon: "BarChart",
+        category: "view",
       },
     ];
 
@@ -150,6 +161,7 @@ export const CippTenantSelector = React.forwardRef((props, ref) => {
       label: "Manage Tenant",
       link: `/tenant/manage/edit?tenantFilter=${currentTenant?.value}`,
       icon: "Business",
+      category: "view",
     });
 
     return filteredActions;

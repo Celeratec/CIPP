@@ -19,6 +19,7 @@ const Page = () => {
       label: "Edit Template",
       link: "/tenant/gdap-management/role-templates/edit?templateId=[TemplateId]",
       icon: <Edit />,
+      category: "edit",
     },
     {
       label: "Delete Template",
@@ -27,6 +28,7 @@ const Page = () => {
       icon: <TrashIcon />,
       data: { TemplateId: "TemplateId" },
       confirmText: "Are you sure you want to delete this Role Template?",
+      category: "danger",
     },
   ];
 

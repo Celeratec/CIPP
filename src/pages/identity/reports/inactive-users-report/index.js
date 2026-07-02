@@ -47,6 +47,7 @@ const Page = () => {
       multiPost: false,
       icon: <EyeIcon />,
       color: "success",
+      category: "view",
     },
     {
       label: "Edit User",
@@ -54,6 +55,7 @@ const Page = () => {
       icon: <Edit />,
       color: "success",
       target: "_self",
+      category: "edit",
     },
     {
       label: "Block Sign In",
@@ -63,6 +65,7 @@ const Page = () => {
       data: { ID: "azureAdUserId" },
       confirmText: "Are you sure you want to block the sign-in for this user?",
       multiPost: false,
+      category: "security",
     },
     {
       label: "Delete User",
@@ -72,6 +75,7 @@ const Page = () => {
       data: { ID: "azureAdUserId" },
       confirmText: "Are you sure you want to delete this user?",
       multiPost: false,
+      category: "danger",
     },
   ];
 

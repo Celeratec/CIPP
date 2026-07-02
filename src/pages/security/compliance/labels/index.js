@@ -21,6 +21,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to create a template based on this sensitivity label?",
       hideBulk: true,
+      category: "manage",
     },
     {
       label: "Delete Label",
@@ -33,6 +34,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to delete this sensitivity label? Labels currently published to users will be removed from policies.",
       color: "danger",
+      category: "danger",
     },
   ];
 

@@ -18,6 +18,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to enable this rule?",
       condition: (row) => row.State === "Disabled",
+      category: "edit",
     },
     {
       label: "Disable Rule",
@@ -30,6 +31,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to disable this rule?",
       condition: (row) => row.State === "Enabled",
+      category: "edit",
     },
     // Uncomment the following block if Delete Rule is to be re-enabled in the future
     /*

@@ -139,11 +139,13 @@ const Page = () => {
             label: "Edit Test",
             icon: <PencilIcon />,
             link: "/tools/custom-tests/add?ScriptGuid=[ScriptGuid]",
+            category: "edit",
           },
           {
             label: "View Versions",
             icon: <ClockIcon />,
             link: "/tools/custom-tests/versions?ScriptGuid=[ScriptGuid]",
+            category: "view",
           },
           {
             label: "Enable Test",
@@ -157,6 +159,7 @@ const Page = () => {
             },
             condition: (row) => row.Enabled !== true,
             confirmText: "Enable script '[ScriptName]'?",
+            category: "edit",
           },
           {
             label: "Disable Test",
@@ -170,6 +173,7 @@ const Page = () => {
             },
             condition: (row) => row.Enabled === true,
             confirmText: "Disable script '[ScriptName]'?",
+            category: "edit",
           },
           {
             label: "Enable Alerts",
@@ -183,6 +187,7 @@ const Page = () => {
             },
             condition: (row) => row.AlertOnFailure !== true,
             confirmText: "Enable alerts for '[ScriptName]'?",
+            category: "edit",
           },
           {
             label: "Disable Alerts",
@@ -196,6 +201,7 @@ const Page = () => {
             },
             condition: (row) => row.AlertOnFailure === true,
             confirmText: "Disable alerts for '[ScriptName]'?",
+            category: "edit",
           },
           {
             label: "Delete Test",
@@ -208,6 +214,7 @@ const Page = () => {
             },
             confirmText:
               "Are you sure you want to delete the test '[ScriptName]'? This will permanently delete ALL versions of this script.",
+            category: "danger",
           },
           {
             label: "Save to GitHub",
@@ -251,6 +258,7 @@ const Page = () => {
             confirmText:
               "Are you sure you want to save '[ScriptName]' to the selected repository?",
             condition: () => integrations.isSuccess && integrations?.data?.GitHub?.Enabled,
+            category: "manage",
           },
         ]}
       />

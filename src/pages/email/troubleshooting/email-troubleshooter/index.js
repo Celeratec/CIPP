@@ -344,12 +344,14 @@ const Page = () => {
       noConfirm: true,
       customFunction: viewTraceDetail,
       icon: <DocumentTextIcon />,
+      category: "view",
     },
     {
       label: "View in Explorer",
       noConfirm: true,
       link: `https://security.microsoft.com/realtimereportsv3?tid=${tenantFilter}&dltarget=Explorer&dlstorage=Url&viewid=allemail&query-NetworkMessageId=[MessageTraceId]`,
       icon: <DocumentTextIcon />,
+      category: "view",
     },
     {
       label: "Allow Sender",
@@ -365,6 +367,7 @@ const Page = () => {
       },
       confirmText: "Allow this sender for all users in the tenant?",
       icon: <CheckCircle />,
+      category: "security",
     },
     {
       label: "Block Sender",
@@ -380,6 +383,7 @@ const Page = () => {
       },
       confirmText: "Block this sender for all users in the tenant?",
       icon: <Block />,
+      category: "security",
     },
     {
       label: "Release from Quarantine",
@@ -390,12 +394,14 @@ const Page = () => {
       confirmText: "Release this message from quarantine?",
       icon: <Done />,
       condition: (row) => row.Status === "Quarantined",
+      category: "security",
     },
     {
       label: "Copy Message ID",
       noConfirm: true,
       customFunction: (row) => navigator.clipboard.writeText(row.MessageId || row.MessageTraceId),
       icon: <ContentCopy />,
+      category: "view",
     },
   ];
 

@@ -26,6 +26,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to create a template based on this filter?",
       multiPost: false,
+      category: "manage",
     },
     {
       label: "Edit Filter",
@@ -33,6 +34,7 @@ const Page = () => {
       multiPost: false,
       icon: <Edit />,
       color: "success",
+      category: "edit",
     },
     {
       label: "Delete Filter",
@@ -45,6 +47,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to delete this assignment filter?",
       multiPost: false,
+      category: "danger",
     },
   ];
 

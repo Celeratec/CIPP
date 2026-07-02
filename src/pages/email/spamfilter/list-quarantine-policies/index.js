@@ -175,6 +175,7 @@ const Page = () => {
       icon: <Edit />,
       color: "info",
       condition: (row) => row.Guid != "00000000-0000-0000-0000-000000000000",
+      category: "edit",
     },
     {
       label: "Delete Policy",
@@ -206,6 +207,7 @@ const Page = () => {
         </>
       ),
       condition: (row) => row.Guid != "00000000-0000-0000-0000-000000000000",
+      category: "danger",
     },
   ];
 

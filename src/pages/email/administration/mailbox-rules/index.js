@@ -43,6 +43,7 @@ const Page = () => {
       condition: (row) => !row.Enabled,
       confirmText: "Are you sure you want to enable this mailbox rule?",
       multiPost: false,
+      category: "edit",
     },
     {
       label: "Disable Mailbox Rule",
@@ -58,6 +59,7 @@ const Page = () => {
       condition: (row) => row.Enabled,
       confirmText: "Are you sure you want to disable this mailbox rule?",
       multiPost: false,
+      category: "edit",
     },
     {
       label: "Remove Mailbox Rule",
@@ -67,6 +69,7 @@ const Page = () => {
       data: { ruleId: "Identity", userPrincipalName: "OperationGuid", ruleName: "Name" },
       confirmText: "Are you sure you want to remove this mailbox rule?",
       multiPost: false,
+      category: "danger",
     },
   ];
 

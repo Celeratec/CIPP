@@ -46,6 +46,7 @@ export function useCippGDAPTrace() {
       noConfirm: true,
       customFunction: (row) => ref.current?.open(row),
       condition: (row) => row.displayName !== "*Partner Tenant",
+      category: "view",
     }),
     []
   );

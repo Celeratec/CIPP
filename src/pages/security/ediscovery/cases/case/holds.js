@@ -88,6 +88,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to remove this legal hold? Content will no longer be preserved.",
       relatedQueryKeys: [`ListEdiscoveryCaseHolds-${caseId}`],
+      category: "danger",
     },
   ];
 

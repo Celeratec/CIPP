@@ -72,6 +72,7 @@ const Page = () => {
       label: "View Templates",
       link: "/tools/community-repos/repo?name=[FullName]&branch=[DefaultBranch]",
       icon: <OpenInNew />,
+      category: "view",
     },
     {
       label: "Delete",
@@ -83,6 +84,7 @@ const Page = () => {
       multiPost: false,
       queryKey: "CommunityRepos",
       condition: (row) => row.BuiltIn !== true,
+      category: "danger",
     },
     {
       label: "Set Upload Branch",
@@ -112,6 +114,7 @@ const Page = () => {
       hideBulk: true,
       confirmText: "Are you sure you want to set the branch for this repository?",
       condition: (row) => row.WriteAccess === true,
+      category: "manage",
     },
   ];
 

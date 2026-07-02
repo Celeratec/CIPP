@@ -202,6 +202,7 @@ const Page = () => {
             noConfirm: true,
             icon: <EyeIcon />,
             hideBulk: true,
+            category: "view",
           },
           {
             label: "Import Template",
@@ -215,6 +216,7 @@ const Page = () => {
               Branch: selectedBranch,
             },
             confirmText: "Are you sure you want to import [path]?",
+            category: "manage",
           },
         ]}
         isFetching={fileTreeQuery.isFetching}

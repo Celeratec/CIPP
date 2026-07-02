@@ -38,6 +38,7 @@ const Page = () => {
       link: "/identity/administration/users/user/bec?userId=[userId]",
       confirmText: "Are you sure you want to research this compromised account?",
       multiPost: false,
+      category: "view",
     },
   ];
 

@@ -21,6 +21,7 @@ const Page = () => {
       },
       confirmText:
         "Are you sure you want to create a template based on this Sensitive Information Type?",
+      category: "manage",
     },
     {
       label: "Delete SIT",
@@ -33,6 +34,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to delete this Sensitive Information Type? Built-in Microsoft types cannot be deleted.",
       color: "danger",
+      category: "danger",
     },
   ];
 

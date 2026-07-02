@@ -58,6 +58,7 @@ const Page = () => {
       ],
       confirmText: "Are you sure you want to save this template to the selected repository?",
       condition: () => integrations.isSuccess && integrations?.data?.GitHub?.Enabled,
+      category: "manage",
     },
     {
       label: "Delete Template",
@@ -67,6 +68,7 @@ const Page = () => {
       confirmText: "Do you want to delete the template?",
       icon: <TrashIcon />,
       color: "danger",
+      category: "danger",
     },
   ];
 

@@ -38,6 +38,7 @@ const Page = () => {
       data: { ID: "id", userPrincipalName: "userPrincipalName", displayName: "displayName" },
       confirmText: "Are you sure you want to restore this object?",
       multiPost: false,
+      category: "edit",
     },
     {
       label: "Permanently Delete Object",
@@ -48,6 +49,7 @@ const Page = () => {
       confirmText:
         "Are you sure you want to permanently delete this object? This action cannot be undone.",
       multiPost: false,
+      category: "danger",
     },
   ];
 

@@ -196,6 +196,7 @@ const Page = () => {
                   label: 'View User',
                   link: `/identity/administration/users/user?userId=[id]&tenantFilter=${userSettingsDefaults.currentTenant}`,
                   condition: (row) => row?.['@odata.type'] === '#microsoft.graph.user',
+                  category: 'view',
                 },
               ],
             },

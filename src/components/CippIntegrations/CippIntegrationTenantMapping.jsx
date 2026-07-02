@@ -139,6 +139,7 @@ const CippIntegrationSettings = ({ children }) => {
       icon: <TrashIcon />,
       confirmText: "Are you sure you want to delete this mapping?",
       customFunction: handleRemoveItem,
+      category: "danger",
     },
   ];
 

@@ -629,6 +629,7 @@ const CippAppPermissionBuilder = ({
                         noConfirm: true,
                         condition: (row) => !row.required,
                         customFunction: (row) => handleRemoveRow("applicationPermissions", row),
+                        category: "danger",
                       },
                     ]}
                     isFetching={spInfoFetching}
@@ -695,6 +696,7 @@ const CippAppPermissionBuilder = ({
                     noConfirm: true,
                     condition: (row) => !row.required,
                     customFunction: (row) => handleRemoveRow("delegatedPermissions", row),
+                    category: "danger",
                   },
                 ]}
                 isFetching={spInfoFetching}

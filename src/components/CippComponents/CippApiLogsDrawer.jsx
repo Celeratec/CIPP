@@ -53,6 +53,7 @@ export const CippApiLogsDrawer = ({
       link: "/cipp/logs/logentry?logentry=[RowKey]&date=[PartitionKey]",
       icon: <EyeIcon />,
       color: 'primary',
+      category: "view",
     },
   ]
 

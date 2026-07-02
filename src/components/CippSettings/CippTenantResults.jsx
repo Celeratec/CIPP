@@ -56,6 +56,7 @@ export const CippTenantResults = (props) => {
               confirmText: "Execute the access check for the selected tenant(s)?",
               relatedQueryKeys: "ExecAccessChecks-Tenants",
               multiPost: false,
+              category: "view",
             },
             {
               label: "Repair Exchange Roles",
@@ -65,6 +66,7 @@ export const CippTenantResults = (props) => {
               icon: <Plumbing />,
               confirmText: "Repair Exchange roles for [TenantName]?",
               condition: (row) => row.OrgManagementRepairNeeded === true,
+              category: "manage",
             },
           ]}
           simpleColumns={[

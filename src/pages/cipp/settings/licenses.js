@@ -57,6 +57,7 @@ const Page = () => {
       confirmText:
         "This license will remain visible in CIPP but will be excluded from alerts. Continue?",
       icon: <NotificationsOff fontSize="small" />,
+      category: "edit",
     },
     {
       label: "Show in License Dropdowns",
@@ -71,6 +72,7 @@ const Page = () => {
       confirmText: "[Product_Display_Name] will be available in license dropdowns. Continue?",
       icon: <Visibility fontSize="small" />,
       condition: (row) => row.ShowInLicenseDropdown !== true,
+      category: "edit",
     },
     {
       label: "Hide from License Dropdowns",
@@ -85,6 +87,7 @@ const Page = () => {
       confirmText: "[Product_Display_Name] will be hidden from license dropdowns. Continue?",
       icon: <VisibilityOff fontSize="small" />,
       condition: (row) => row.ShowInLicenseDropdown === true,
+      category: "edit",
     },
     {
       label: "Delete Exclusion",
@@ -98,6 +101,7 @@ const Page = () => {
           <TrashIcon />
         </SvgIcon>
       ),
+      category: "danger",
     },
   ];
 

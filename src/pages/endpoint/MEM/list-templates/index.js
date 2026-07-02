@@ -24,6 +24,7 @@ const Page = () => {
       icon: <Edit />,
       color: "info",
       condition: (row) => row.isSynced === false,
+      category: "edit",
     },
     {
       label: "Edit Template Name and Description",
@@ -51,6 +52,7 @@ const Page = () => {
       multiPost: false,
       icon: <PencilIcon />,
       color: "info",
+      category: "edit",
     },
     {
       label: "Clone Template",
@@ -62,6 +64,7 @@ const Page = () => {
       multiPost: false,
       icon: <CopyAll />,
       color: "info",
+      category: "manage",
     },
     {
       label: "Add to package",
@@ -83,6 +86,7 @@ const Page = () => {
       multiPost: true,
       icon: <LocalOffer />,
       color: "info",
+      category: "edit",
     },
     {
       label: "Remove from package",
@@ -93,6 +97,7 @@ const Page = () => {
       multiPost: true,
       icon: <LocalOfferOutlined />,
       color: "warning",
+      category: "edit",
     },
     {
       label: "Save to GitHub",
@@ -137,6 +142,7 @@ const Page = () => {
       ],
       confirmText: "Are you sure you want to save this template to the selected repository?",
       condition: () => integrations.isSuccess && integrations?.data?.GitHub?.Enabled,
+      category: "manage",
     },
     {
       label: "Delete Template",
@@ -147,6 +153,7 @@ const Page = () => {
       multiPost: false,
       icon: <TrashIcon />,
       color: "danger",
+      category: "danger",
     },
   ];
 

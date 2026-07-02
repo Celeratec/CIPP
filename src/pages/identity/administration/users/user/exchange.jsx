@@ -572,6 +572,7 @@ const Page = () => {
       confirmText: "Are you sure you want to remove this permission?",
       multiPost: false,
       relatedQueryKeys: `Mailbox-${userId}`,
+      category: "danger",
     },
   ];
 
@@ -738,6 +739,7 @@ const Page = () => {
             multiPost: false,
             relatedQueryKeys: `CalendarPermissions-${userId}`,
             condition: (row) => row.User !== "Default" && row.User !== "Anonymous",
+            category: "danger",
           },
         ],
         offCanvas: {
@@ -787,6 +789,7 @@ const Page = () => {
                     confirmText: "Are you sure you want to remove this calendar permission?",
                     multiPost: false,
                     relatedQueryKeys: `CalendarPermissions-${userId}`,
+                    category: "danger",
                   },
                 ]}
               />
@@ -881,6 +884,7 @@ const Page = () => {
             multiPost: false,
             relatedQueryKeys: `ContactPermissions-${userId}`,
             condition: (row) => row.User !== "Default" && row.User !== "Anonymous",
+            category: "danger",
           },
         ],
         offCanvas: {
@@ -930,6 +934,7 @@ const Page = () => {
                     confirmText: "Are you sure you want to remove this contact permission?",
                     multiPost: false,
                     relatedQueryKeys: `ContactPermissions-${userId}`,
+                    category: "danger",
                   },
                 ]}
               />
@@ -958,6 +963,7 @@ const Page = () => {
       condition: (row) => row && !row.Enabled,
       confirmText: "Are you sure you want to enable this mailbox rule?",
       multiPost: false,
+      category: "edit",
     },
     {
       label: "Disable Mailbox Rule",
@@ -976,6 +982,7 @@ const Page = () => {
       condition: (row) => row && row.Enabled,
       confirmText: "Are you sure you want to disable this mailbox rule?",
       multiPost: false,
+      category: "edit",
     },
     {
       label: "Remove Mailbox Rule",
@@ -993,6 +1000,7 @@ const Page = () => {
       confirmText: "Are you sure you want to remove this mailbox rule?",
       multiPost: false,
       relatedQueryKeys: `MailboxRules-${userId}`,
+      category: "danger",
     },
   ];
 
@@ -1055,6 +1063,7 @@ const Page = () => {
                     },
                     confirmText: "Are you sure you want to enable this mailbox rule?",
                     multiPost: false,
+                    category: "edit",
                   },
                   {
                     label: "Disable Mailbox Rule",
@@ -1070,6 +1079,7 @@ const Page = () => {
                     },
                     confirmText: "Are you sure you want to disable this mailbox rule?",
                     multiPost: false,
+                    category: "edit",
                   },
                   {
                     label: "Remove Mailbox Rule",
@@ -1085,6 +1095,7 @@ const Page = () => {
                     confirmText: "Are you sure you want to remove this mailbox rule?",
                     multiPost: false,
                     relatedQueryKeys: `MailboxRules-${userId}`,
+                    category: "danger",
                   },
                 ]}
               />
@@ -1113,6 +1124,7 @@ const Page = () => {
         "Are you sure you want to remove [Value] from the [Type] list for [UserPrincipalName]?",
       multiPost: false,
       relatedQueryKeys: `JunkEmailConfig-${userId}`,
+      category: "danger",
     },
   ];
 
@@ -1185,6 +1197,7 @@ const Page = () => {
       multiPost: false,
       relatedQueryKeys: `ListUsers-${userId}`,
       condition: (row) => row && row.Type !== "Primary",
+      category: "edit",
     },
     {
       label: "Remove Proxy Address",
@@ -1200,6 +1213,7 @@ const Page = () => {
       multiPost: false,
       relatedQueryKeys: `ListUsers-${userId}`,
       condition: (row) => row && row.Type !== "Primary",
+      category: "danger",
     },
   ];
 

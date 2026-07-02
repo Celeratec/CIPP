@@ -312,6 +312,7 @@ const Page = () => {
                   ),
                   customFunction: handleRemoveMapping,
                   noConfirm: true,
+                  category: "danger",
                 },
               ]}
             />

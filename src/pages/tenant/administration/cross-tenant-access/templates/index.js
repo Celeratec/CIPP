@@ -13,6 +13,7 @@ const Page = () => {
       link: "/tenant/administration/cross-tenant-access/templates/template?GUID=[GUID]",
       color: "info",
       icon: "Edit",
+      category: "edit",
     },
     {
       label: "Apply to Tenant",
@@ -26,6 +27,7 @@ const Page = () => {
       color: "warning",
       icon: "PlayArrow",
       relatedQueryKeys: ["CrossTenantPolicy", "ExternalCollaboration", "CrossTenantHealth"],
+      category: "manage",
     },
     {
       label: "Delete Template",
@@ -38,6 +40,7 @@ const Page = () => {
       color: "danger",
       icon: "Delete",
       relatedQueryKeys: ["CrossTenantTemplates"],
+      category: "danger",
     },
   ];
 

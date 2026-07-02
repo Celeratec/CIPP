@@ -298,12 +298,14 @@ const Page = () => {
       relatedQueryKeys: ["BackupList"],
       multiPost: false,
       hideBulk: true,
+      category: "edit",
     },
     {
       label: "Download Backup",
       icon: <CloudDownload />,
       noConfirm: true,
       customFunction: handleDownloadBackupAction,
+      category: "view",
     },
   ];
 

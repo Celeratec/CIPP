@@ -30,6 +30,7 @@ const CippRoles = () => {
       ),
       link: "/cipp/advanced/super-admin/cipp-roles/edit?role=[RoleName]",
       color: "info",
+      category: "edit",
     },
     {
       label: "Clone",
@@ -59,6 +60,7 @@ const CippRoles = () => {
       confirmText: "Are you sure you want to clone this custom role?",
       condition: (row) => row?.Type === "Custom",
       color: "success",
+      category: "manage",
     },
     {
       label: "Delete",
@@ -77,6 +79,7 @@ const CippRoles = () => {
       condition: (row) => row?.Type === "Custom",
       relatedQueryKeys: ["customRoleList", "customRoleTable"],
       color: "error",
+      category: "danger",
     },
   ];
 

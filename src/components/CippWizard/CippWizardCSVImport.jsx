@@ -78,6 +78,7 @@ export const CippWizardCSVImport = (props) => {
       confirmText: "Are you sure you want to delete this row?",
       customFunction: handleRemoveItem,
       noConfirm: true,
+      category: "danger",
     },
   ];
 

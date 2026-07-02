@@ -73,6 +73,7 @@ const Page = () => {
         }))
       },
       color: 'info',
+      category: 'edit',
     },
   ]
 

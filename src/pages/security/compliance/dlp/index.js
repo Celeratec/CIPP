@@ -21,6 +21,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to create a template based on this DLP policy?",
       hideBulk: true,
+      category: "manage",
     },
     {
       label: "Enable Policy",
@@ -33,6 +34,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to enable this DLP policy?",
       condition: (row) => row.Enabled === false,
+      category: "edit",
     },
     {
       label: "Disable Policy",
@@ -45,6 +47,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to disable this DLP policy?",
       condition: (row) => row.Enabled === true,
+      category: "edit",
     },
     {
       label: "Delete Policy",
@@ -56,6 +59,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to delete this DLP policy?",
       color: "danger",
+      category: "danger",
     },
   ];
 

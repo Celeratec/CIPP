@@ -315,6 +315,7 @@ const Page = () => {
       icon: <EyeIcon />,
       color: 'info',
       target: '_self',
+      category: 'view',
     },
     {
       label: 'Edit Template',
@@ -322,6 +323,7 @@ const Page = () => {
       icon: <Edit />,
       color: 'success',
       target: '_self',
+      category: 'edit',
     },
     {
       label: 'Manage Drift',
@@ -330,6 +332,7 @@ const Page = () => {
       color: 'info',
       target: '_self',
       condition: (row) => row.standardType === 'drift',
+      category: 'manage',
     },
     {
       label: 'Remove Drift Customization',
@@ -344,6 +347,7 @@ const Page = () => {
         'Are you sure you want to remove all drift customizations? This resets the Drift Standard to the default template, and will generate alerts for the drifted items.',
       multiPost: false,
       condition: (row) => row.standardType === 'drift',
+      category: 'danger',
     },
   ]
 
@@ -354,6 +358,7 @@ const Page = () => {
       icon: <EyeIcon />,
       color: 'info',
       target: '_self',
+      category: 'view',
     },
     {
       label: 'Edit Template',
@@ -361,6 +366,7 @@ const Page = () => {
       icon: <Edit />,
       color: 'success',
       target: '_self',
+      category: 'edit',
     },
     {
       label: 'Manage Drift',
@@ -369,6 +375,7 @@ const Page = () => {
       color: 'info',
       target: '_self',
       condition: (row) => row.templateType === 'drift',
+      category: 'manage',
     },
   ]
 

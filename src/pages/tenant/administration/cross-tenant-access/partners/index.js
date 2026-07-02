@@ -13,6 +13,7 @@ const Page = () => {
       link: "/tenant/administration/cross-tenant-access/partners/partner?tenantId=[tenantId]",
       color: "info",
       icon: "Edit",
+      category: "edit",
     },
     {
       label: "Remove Partner",
@@ -25,6 +26,7 @@ const Page = () => {
       color: "danger",
       icon: "Delete",
       relatedQueryKeys: ["CrossTenantPartners"],
+      category: "danger",
     },
   ];
 

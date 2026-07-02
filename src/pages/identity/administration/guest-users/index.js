@@ -196,6 +196,7 @@ const Page = () => {
       color: "info",
       condition: (row) => row?.mail,
       onClick: (row) => handleReinvite(row),
+      category: "edit",
     },
   ];
 

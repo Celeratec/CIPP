@@ -17,6 +17,7 @@ const Page = () => {
       multiPost: false,
       icon: <Delete />,
       color: 'danger',
+      category: 'danger',
     },
   ]
 

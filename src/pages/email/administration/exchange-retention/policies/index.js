@@ -22,6 +22,7 @@ const Page = () => {
         postEntireRow: true,
         icon: <Edit />,
         color: "warning",
+        category: "edit",
       },
       {
         label: "Delete Policy",
@@ -38,6 +39,7 @@ const Page = () => {
             tenantFilter: tenant,
           };
         },
+        category: "danger",
       },
     ],
     [tenant]

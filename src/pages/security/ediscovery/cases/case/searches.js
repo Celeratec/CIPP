@@ -94,6 +94,7 @@ const Page = () => {
       },
       confirmText: "Run a search estimate? This may take several minutes.",
       relatedQueryKeys: [`ListEdiscoveryCaseSearches-${caseId}`],
+      category: "manage",
     },
     {
       label: "Export Results",
@@ -106,6 +107,7 @@ const Page = () => {
       },
       confirmText: "Start exporting search results? Check the Exports tab for progress.",
       relatedQueryKeys: [`ListEdiscoveryCaseOperations-${caseId}`],
+      category: "manage",
     },
     {
       label: "Delete Search",
@@ -119,6 +121,7 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to delete this search?",
       relatedQueryKeys: [`ListEdiscoveryCaseSearches-${caseId}`],
+      category: "danger",
     },
   ];
 

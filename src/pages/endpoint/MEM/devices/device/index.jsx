@@ -201,6 +201,7 @@ const Page = () => {
       target: "_blank",
       multiPost: false,
       external: true,
+      category: "view",
     },
     {
       label: "Change Primary User",
@@ -238,6 +239,7 @@ const Page = () => {
         },
       ],
       confirmText: "Select the User to set as the primary user for [deviceName]",
+      category: "edit",
     },
     {
       label: "Rename Device",
@@ -257,6 +259,7 @@ const Page = () => {
           required: true,
         },
       ],
+      category: "edit",
     },
     {
       label: "Sync Device",
@@ -268,6 +271,7 @@ const Page = () => {
         Action: "syncDevice",
       },
       confirmText: "Are you sure you want to sync [deviceName]?",
+      category: "manage",
     },
     {
       label: "Reboot Device",
@@ -279,6 +283,7 @@ const Page = () => {
         Action: "rebootNow",
       },
       confirmText: "Are you sure you want to reboot [deviceName]?",
+      category: "manage",
     },
     {
       label: "Locate Device",
@@ -290,6 +295,7 @@ const Page = () => {
         Action: "locateDevice",
       },
       confirmText: "Are you sure you want to locate [deviceName]?",
+      category: "manage",
     },
     {
       label: "Retrieve LAPS password",
@@ -301,6 +307,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to retrieve the local admin password for [deviceName]?",
+      category: "security",
     },
     {
       label: "Rotate Local Admin Password",
@@ -313,6 +320,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to rotate the password for [deviceName]?",
+      category: "security",
     },
     {
       label: "Retrieve BitLocker Keys",
@@ -325,6 +333,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to retrieve the BitLocker keys for [deviceName]?",
+      category: "security",
     },
     {
       label: "Retrieve FileVault Key",
@@ -337,6 +346,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "macOS",
       confirmText: "Are you sure you want to retrieve the FileVault key for [deviceName]?",
+      category: "security",
     },
     {
       label: "Reset Passcode",
@@ -350,6 +360,7 @@ const Page = () => {
       condition: (row) => row.operatingSystem === "Android",
       confirmText:
         "Are you sure you want to reset the passcode for [deviceName]? A new passcode will be generated and displayed.",
+      category: "security",
     },
     {
       label: "Remove Passcode",
@@ -363,6 +374,7 @@ const Page = () => {
       condition: (row) => row.operatingSystem === "iOS",
       confirmText:
         "Are you sure you want to remove the passcode from [deviceName]? This will remove the device passcode requirement.",
+      category: "security",
     },
     {
       label: "Windows Defender Full Scan",
@@ -375,6 +387,7 @@ const Page = () => {
         quickScan: false,
       },
       confirmText: "Are you sure you want to perform a full scan on [deviceName]?",
+      category: "security",
     },
     {
       label: "Windows Defender Quick Scan",
@@ -387,6 +400,7 @@ const Page = () => {
         quickScan: true,
       },
       confirmText: "Are you sure you want to perform a quick scan on [deviceName]?",
+      category: "security",
     },
     {
       label: "Update Windows Defender",
@@ -399,6 +413,7 @@ const Page = () => {
       },
       confirmText:
         "Are you sure you want to update the Windows Defender signatures for [deviceName]?",
+      category: "security",
     },
     {
       label: "Generate logs and ship to MEM",
@@ -412,6 +427,7 @@ const Page = () => {
       condition: (row) => row.operatingSystem === "Windows",
       confirmText:
         "Are you sure you want to generate logs for device [deviceName] and ship these to MEM?",
+      category: "manage",
     },
     {
       label: "Fresh Start (Remove user data)",
@@ -425,6 +441,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to Fresh Start [deviceName]?",
+      category: "danger",
     },
     {
       label: "Fresh Start (Do not remove user data)",
@@ -438,6 +455,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to Fresh Start [deviceName]?",
+      category: "danger",
     },
     {
       label: "Wipe Device, keep enrollment data",
@@ -452,6 +470,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to wipe [deviceName], and retain enrollment data?",
+      category: "danger",
     },
     {
       label: "Wipe Device, remove enrollment data",
@@ -466,6 +485,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to wipe [deviceName], and remove enrollment data?",
+      category: "danger",
     },
     {
       label: "Wipe Device, keep enrollment data, and continue at powerloss",
@@ -482,6 +502,7 @@ const Page = () => {
       condition: (row) => row.operatingSystem === "Windows",
       confirmText:
         "Are you sure you want to wipe [deviceName]? This will retain enrollment data. Continuing at powerloss may cause boot issues if wipe is interrupted.",
+      category: "danger",
     },
     {
       label: "Wipe Device, remove enrollment data, and continue at powerloss",
@@ -498,6 +519,7 @@ const Page = () => {
       condition: (row) => row.operatingSystem === "Windows",
       confirmText:
         "Are you sure you want to wipe [deviceName]? This will also remove enrollment data. Continuing at powerloss may cause boot issues if wipe is interrupted.",
+      category: "danger",
     },
     {
       label: "Autopilot Reset",
@@ -512,6 +534,7 @@ const Page = () => {
       },
       condition: (row) => row.operatingSystem === "Windows",
       confirmText: "Are you sure you want to Autopilot Reset [deviceName]?",
+      category: "danger",
     },
     {
       label: "Delete device",
@@ -523,6 +546,7 @@ const Page = () => {
         Action: "delete",
       },
       confirmText: "Are you sure you want to delete [deviceName]?",
+      category: "danger",
     },
     {
       label: "Retire device",
@@ -534,6 +558,7 @@ const Page = () => {
         Action: "retire",
       },
       confirmText: "Are you sure you want to retire [deviceName]?",
+      category: "danger",
     },
   ];
 
@@ -717,6 +742,7 @@ const Page = () => {
               icon: <EyeIcon />,
               label: "View User",
               link: `/identity/administration/users/user?userId=[id]&tenantFilter=${userSettingsDefaults.currentTenant}`,
+              category: "view",
             },
           ],
         },
@@ -771,6 +797,7 @@ const Page = () => {
                 icon: <PencilIcon />,
                 label: "Edit Group",
                 link: "/identity/administration/groups/edit?groupId=[id]&groupType=[calculatedGroupType]",
+                category: "edit",
               },
             ],
             data: deviceMemberOf?.filter(

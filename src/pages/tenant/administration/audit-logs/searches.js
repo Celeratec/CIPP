@@ -18,6 +18,7 @@ const actions = [
     link: "/tenant/administration/audit-logs/search-results?id=[id]&name=[displayName]",
     color: "primary",
     icon: <EyeIcon />,
+    category: "view",
   },
   {
     label: "Process Logs",
@@ -30,6 +31,7 @@ const actions = [
       SearchId: "id",
     },
     icon: <ManageSearch />,
+    category: "manage",
   },
 ];
 
