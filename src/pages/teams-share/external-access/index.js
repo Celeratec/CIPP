@@ -86,12 +86,6 @@ const Page = () => {
     formHook.setValue("resourceId", null);
   }, [watchedResourceType, formHook]);
 
-  useEffect(() => {
-    if (hasConsumerEmails && watchedResourceType === "teams-shared") {
-      formHook.setValue("resourceType", "sharepoint");
-    }
-  }, [hasConsumerEmails, watchedResourceType, formHook]);
-
   const validateEmail = useCallback(
     async (email, index) => {
       if (!email || !email.includes("@") || !currentTenant) return;
@@ -123,6 +117,16 @@ const Page = () => {
     hasConsumerByDomain || Object.values(validations).some((v) => v?.domainType === "consumer");
   const hasBlockedPolicies = Object.values(validations).some((v) => v?.canProceed === false);
   const allValidated = guestFields.every((_, i) => validations[i]);
+
+  // Shared channels (B2B Direct Connect) don't support consumer accounts; fall
+  // back to SharePoint if a personal email appears after the type was chosen.
+  // This effect must stay below the hasConsumerEmails declaration: consts are
+  // not hoisted, and referencing it earlier crashes the page at render time.
+  useEffect(() => {
+    if (hasConsumerEmails && watchedResourceType === "teams-shared") {
+      formHook.setValue("resourceType", "sharepoint");
+    }
+  }, [hasConsumerEmails, watchedResourceType, formHook]);
 
   const handleNext = () => {
     if (activeStep < STEPS.length - 1) {

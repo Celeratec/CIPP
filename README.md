@@ -10,7 +10,7 @@
 
 ---
 
-> **Last synced with upstream:** June 2026 — selective intake from CIPP v10.5 / CIPP-API v10.5.1 (**Manage365 v5.13.0**, upstream baseline **10.5.2**)
+> **Last synced with upstream:** July 2026 — light-delta intake from CIPP v10.5.5 / CIPP-API v10.5.6 (**Manage365 v5.15.2**, upstream baseline **10.5.5**)
 >
 > Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. Upstream changes are merged selectively to preserve Manage365-specific UI and workflows. See [Upstream Integration](#upstream-integration) below.
 
@@ -422,6 +422,34 @@ Manage365 extends the upstream quarantine list with a Defender-style portal expe
 - Threat Explorer in-app (external deep link only)
 - Release to specific users and mailbox safe sender (backend/API only)
 
+### Reliability & Performance Hardening (Manage365 v5.15.2)
+
+A full-app reliability audit of both repos (frontend and API) with fixes for the highest-impact bugs found:
+
+**Quarantine & email troubleshooting:**
+
+- **Quarantine outage fixed (module export bug)** -- the quarantine helper functions (`Invoke-CippQuarantineExoRequest`, `Get-CippQuarantinePagedResults`, and friends) were co-located in one file, but CIPPCore exports functions by file basename only, so the upstream module split (entrypoints moving to CIPPHTTP/CIPPActivityTriggers) made them invisible to every quarantine endpoint -- breaking quarantine for all tenants with "The term 'Invoke-CippQuarantineExoRequest' is not recognized". Helpers are now one-function-per-file so they export correctly
+- **Post-filter pagination no longer drops rows** -- when subject/domain post-filters are active, every match from a scanned Exchange page is kept (previously matches could be silently skipped when a page filled mid-scan), and "more pages" is reported correctly even when the raw-page scan limit is hit. Covered by new Pester regression tests
+- **Bulk quarantine actions endpoint repaired** -- fixed a PowerShell parse error (`return switch`) that prevented `ExecQuarantineManagement` from loading at all, and missing message identities now return a clear 400 instead of an opaque failure
+- **Accurate HTTP status codes** -- quarantine read endpoints previously returned 403 for every error (including Exchange throttling); only genuine authorization failures return 403 now, everything else is 500 so retries and monitoring behave correctly
+- **All-tenants cache dedupe** -- cache rows now use deterministic keys (hash of tenant + quarantine identity) so re-running the sync upserts instead of inserting duplicates
+- **Stale dialog data eliminated** -- opening a second message trace or EML preview no longer flashes the previous message's data while the new request loads
+
+**Frontend:**
+
+- **API result severity fixed** -- structured API results were almost always rendered as errors in dialogs and wizards due to a truthiness bug in `CippApiResults`; success results now display correctly
+- **Wizard crash fixed** -- wizards with conditional steps (`showStepWhen`/`hideStepWhen`) could index past the visible step list and crash; navigation now clamps to the filtered list
+- **React Query v5 compliance** -- the removed `keepPreviousData` option (silently ignored) is mapped to `placeholderData`, and is now opt-in to prevent cross-tenant data flashes
+- **Tenant-scoped cache keys** -- alert configuration and Dynamics 365 pages now include the tenant in their query keys, eliminating stale cross-tenant data after tenant switches
+- **OAuth popup cleanup** -- navigating away mid-authentication now tears down the `BroadcastChannel`, the 10-minute timeout, and device-code polling instead of leaking them
+- **Quarantine page render performance** -- the filter form subscribes only to the fields it needs instead of re-rendering the whole page on every keystroke
+
+**Backend:**
+
+- **Mailbox details endpoint surfaces failures** -- `ListUserMailboxDetails` returned HTTP 200 with empty data when Exchange/Graph calls failed; it now returns a proper error, and the tenant-wide user list is fetched lazily (only when Send-on-Behalf or internal forwarding resolution needs it)
+- **OData injection hardening** -- group lookups in SharePoint guest-invite and member endpoints escape single quotes in user-supplied identifiers
+- **Repo hygiene** -- removed 53 stray macOS duplicate files across both repos, including two duplicated live API endpoints
+
 ### Organized Navigation
 
 Deeply nested navigation menus that group related pages together, reducing menu length and making features easier to find -- External Access with External Access Wizard and Sharing Troubleshooter; Email & Exchange Troubleshooting with Email Troubleshooter, Quarantine, Message Viewer, and Mailbox Restores; Groups with Group Templates; Users with Offboarding Wizard, Risky Users, and Guest Users; Business Voice with Phone Numbers, Call Queues, Auto Attendants, and Dial Plans; File Management with File Search, File Browser, and File Transfer; and more.
@@ -524,7 +552,7 @@ After each upstream intake, bump both and redeploy:
 
 ```powershell
 # Frontend (CIPP repo)
-./Tools/Update-Version.ps1 -UpstreamVersion 10.5.2 -Manage365Version 5.13.0
+./Tools/Update-Version.ps1 -UpstreamVersion 10.5.5 -Manage365Version 5.15.2
 
 # Backend (CIPP-API repo) — set both copies to the same upstream baseline
 # version_latest.txt
@@ -533,7 +561,7 @@ After each upstream intake, bump both and redeploy:
 
 Then **redeploy the Static Web App and every Function App slot** (main API, processor, standards, audit log, user tasks). Until redeployed, the settings page may still show old versions and function apps may appear "out of sync" in the Version table.
 
-Out-of-date toast notifications compare your deployed `version.json` / `version_latest.txt` against [KelvinTegelaar/CIPP](https://github.com/KelvinTegelaar/CIPP) and [KelvinTegelaar/CIPP-API](https://github.com/KelvinTegelaar/CIPP-API) on GitHub. They clear once your deployed baseline matches upstream (currently **10.5.2**).
+Out-of-date toast notifications compare your deployed `version.json` / `version_latest.txt` against [KelvinTegelaar/CIPP](https://github.com/KelvinTegelaar/CIPP) and [KelvinTegelaar/CIPP-API](https://github.com/KelvinTegelaar/CIPP-API) on GitHub. They clear once your deployed baseline matches upstream (currently **10.5.5**).
 
 ### GitHub "Sync fork" button
 
