@@ -1,6 +1,7 @@
 import { CippPropertyListCard } from '../../components/CippCards/CippPropertyListCard'
 import CippFormComponent from '../../components/CippComponents/CippFormComponent'
-import { Box, Chip } from '@mui/material'
+import { Box, Chip, Typography } from '@mui/material'
+import { Grid } from '@mui/system'
 
 export const CippOffboardingDefaultSettings = (props) => {
   const { formControl, defaultsSource = null, title = 'Offboarding Default Settings' } = props
@@ -219,6 +220,39 @@ export const CippOffboardingDefaultSettings = (props) => {
             ),
           },
         ]}
+        cardButton={
+          <Box sx={{ width: '100%', px: 2, py: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+              Send results to
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <CippFormComponent
+                  type="switch"
+                  label="Webhook"
+                  name="offboardingDefaults.postExecution.webhook"
+                  formControl={formControl}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <CippFormComponent
+                  type="switch"
+                  label="E-mail"
+                  name="offboardingDefaults.postExecution.email"
+                  formControl={formControl}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <CippFormComponent
+                  type="switch"
+                  label="PSA"
+                  name="offboardingDefaults.postExecution.psa"
+                  formControl={formControl}
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        }
       />
     </>
   )
