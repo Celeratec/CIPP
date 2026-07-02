@@ -370,7 +370,9 @@ const Page = () => {
           setDefaultValues: true,
           data: {
             Name: "Name",
-            Identity: "Guid",
+            // The built-in global policy reports an all-zeros Guid which Set-QuarantinePolicy
+            // cannot resolve, so pass the name-based Identity instead.
+            Identity: "Identity",
           },
           relatedQueryKeys: [`GlobalQuarantinePolicy-${currentTenant}`],
           confirmText: "Are you sure you want to update Global Quarantine settings?",
