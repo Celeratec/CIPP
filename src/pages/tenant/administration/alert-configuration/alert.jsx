@@ -650,23 +650,17 @@ const AlertWizard = () => {
                                 }}
                               />
                             </Grid>
-                            <CippFormCondition
-                              field="tenantFilter"
-                              formControl={formControl}
-                              compareType="valueContains"
-                              compareValue="AllTenants"
-                              clearOnHide={false}
-                            >
-                              <Grid size={12}>
-                                <CippFormTenantSelector
-                                  multiple={true}
-                                  label="Excluded Tenants for alert"
-                                  formControl={formControl}
-                                  allTenants={false}
-                                  name="excludedTenants"
-                                />
-                              </Grid>
-                            </CippFormCondition>
+                            <Grid size={12}>
+                              <CippFormTenantSelector
+                                multiple={true}
+                                label="Excluded Tenants for alert"
+                                formControl={formControl}
+                                allTenants={false}
+                                includeGroups={false}
+                                name="excludedTenants"
+                                helperText="Optional. Tenants selected here are skipped even if they fall within the included tenants or group."
+                              />
+                            </Grid>
                           </Grid>
                         </CippButtonCard>
                       </Grid>
@@ -988,23 +982,17 @@ const AlertWizard = () => {
                                 }}
                               />
                             </Grid>
-                            <CippFormCondition
-                              field="tenantFilter"
-                              formControl={formControl}
-                              compareType="valueContains"
-                              compareValue="AllTenants"
-                              clearOnHide={false}
-                            >
-                              <Grid size={12}>
-                                <CippFormTenantSelector
-                                  multiple={true}
-                                  label="Excluded Tenants for alert"
-                                  formControl={formControl}
-                                  allTenants={false}
-                                  name="excludedTenants"
-                                />
-                              </Grid>
-                            </CippFormCondition>
+                            <Grid size={12}>
+                              <CippFormTenantSelector
+                                multiple={true}
+                                label="Excluded Tenants for alert"
+                                formControl={formControl}
+                                allTenants={false}
+                                includeGroups={false}
+                                name="excludedTenants"
+                                helperText="Optional. Tenants selected here are skipped even if they fall within the included tenants or group."
+                              />
+                            </Grid>
                           </Grid>
                         </CippButtonCard>
                       </Grid>
