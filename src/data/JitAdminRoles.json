@@ -27,12 +27,12 @@
   {
     "Name": "Attribute Assignment Administrator",
     "ObjectId": "58a13ea3-c632-46ae-9ee0-9c0d43cd7f3d",
-    "Description": "Assign custom security attribute keys and values to supported Azure AD objects."
+    "Description": "Assign custom security attribute keys and values to supported Microsoft Entra objects."
   },
   {
     "Name": "Attribute Assignment Reader",
     "ObjectId": "ffd52fa5-98dc-465c-991d-fc073eb59f8f",
-    "Description": "Read custom security attribute keys and values for supported Azure AD objects."
+    "Description": "Read custom security attribute keys and values for supported Microsoft Entra objects."
   },
   {
     "Name": "Attribute Definition Administrator",
@@ -107,12 +107,12 @@
   {
     "Name": "Cloud Device Administrator",
     "ObjectId": "7698a772-787b-4ac8-901f-60d6b08affd2",
-    "Description": "Full access to manage devices in Azure AD."
+    "Description": "Full access to manage devices in Microsoft Entra ID."
   },
   {
     "Name": "Compliance Administrator",
     "ObjectId": "17315797-102d-40b4-93e0-432062caca18",
-    "Description": "Can read and manage compliance configuration and reports in Azure AD and Microsoft 365."
+    "Description": "Can read and manage compliance configuration and reports in Microsoft Entra ID and Microsoft 365."
   },
   {
     "Name": "Compliance Data Administrator",
@@ -247,12 +247,12 @@
   {
     "Name": "Hybrid Identity Administrator",
     "ObjectId": "8ac3fc64-6eca-42ea-9e69-59f4c7b60eb2",
-    "Description": "Can manage AD to Azure AD cloud provisioning, Azure AD Connect, and federation settings."
+    "Description": "Can manage AD to Microsoft Entra cloud provisioning, Microsoft Entra Connect, and federation settings."
   },
   {
     "Name": "Identity Governance Administrator",
     "ObjectId": "45d8d3c5-c802-45c6-b32a-1d70b5e1e86e",
-    "Description": "Manage access using Azure AD for identity governance scenarios."
+    "Description": "Manage access using Microsoft Entra ID for identity governance scenarios."
   },
   {
     "Name": "Insights Administrator",
@@ -297,7 +297,7 @@
   {
     "Name": "Lifecycle Workflows Administrator",
     "ObjectId": "59d46f88-662b-457b-bceb-5c3809e5908f",
-    "Description": "Create and manage all aspects of workflows and tasks associated with Lifecycle Workflows in Azure AD."
+    "Description": "Create and manage all aspects of workflows and tasks associated with Lifecycle Workflows in Microsoft Entra ID."
   },
   {
     "Name": "Message Center Privacy Reader",
@@ -382,7 +382,7 @@
   {
     "Name": "Privileged Role Administrator",
     "ObjectId": "e8611ab8-c189-46e8-94e1-60213ab1f814",
-    "Description": "Can manage role assignments in Azure AD, and all aspects of Privileged Identity Management."
+    "Description": "Can manage role assignments in Microsoft Entra ID, and all aspects of Privileged Identity Management."
   },
   {
     "Name": "Reports Reader",
@@ -412,7 +412,7 @@
   {
     "Name": "Security Reader",
     "ObjectId": "5d6b6bb7-de71-4623-b4af-96380a352509",
-    "Description": "Can read security information and reports in Azure AD and Office 365."
+    "Description": "Can read security information and reports in Microsoft Entra ID and Office 365."
   },
   {
     "Name": "Service Support Administrator",
