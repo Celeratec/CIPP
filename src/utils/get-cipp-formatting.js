@@ -187,6 +187,27 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
     return <Chip variant="outlined" label={label} size="small" color={color} />
   }
 
+  // Microsoft Entra device trust type (Graph device.trustType)
+  if (cellName === 'trustType' && typeof data === 'string' && data) {
+    const trustTypeMap = {
+      workplace: 'Microsoft Entra registered',
+      azuread: 'Microsoft Entra joined',
+      serverad: 'Microsoft Entra hybrid joined',
+    }
+    return trustTypeMap[data.toLowerCase()] ?? data
+  }
+
+  // Microsoft Entra device join type (Intune managedDevice.joinType)
+  if (cellName === 'joinType' && typeof data === 'string' && data) {
+    const joinTypeMap = {
+      azureadregistered: 'Microsoft Entra registered',
+      azureadjoined: 'Microsoft Entra joined',
+      hybridazureadjoined: 'Microsoft Entra hybrid joined',
+      unknown: 'Unknown',
+    }
+    return joinTypeMap[data.toLowerCase()] ?? data
+  }
+
   //if the cellName starts with portal_, return text, or a link with an icon
   if (cellName.startsWith('portal_')) {
     const IconComponent = portalIcons[cellName]
