@@ -1448,6 +1448,12 @@ export function extractCAPolicyJSON(formValues) {
         delete cleaned.sessionControls[key];
       }
     }
+    // `disableResilienceDefaults` defaults to false from the switch even when
+    // untouched. Left in place it keeps `sessionControls` non-empty, so Graph
+    // never persists it on read
+    if (cleaned.sessionControls.disableResilienceDefaults !== true) {
+      delete cleaned.sessionControls.disableResilienceDefaults;
+    }
     // If sessionControls is now empty, remove it too
     if (Object.keys(cleaned.sessionControls).length === 0) {
       delete cleaned.sessionControls;
