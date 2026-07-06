@@ -170,9 +170,24 @@
     "Description": "Manage all aspects of Microsoft Edge."
   },
   {
+    "Name": "Entra Backup Administrator",
+    "ObjectId": "b6a27b2b-f905-4b2e-81b5-0d90e0ef1fdb",
+    "Description": "Manage all aspects of Microsoft Entra Backup, such as create recovery jobs and manage backup snapshots."
+  },
+  {
+    "Name": "Entra Backup Reader",
+    "ObjectId": "f42252d9-5400-4d7b-b9ef-cc582dbb8577",
+    "Description": "Read all aspects of Microsoft Entra Backup, such as list all preview jobs, recovery jobs, backup snapshots, and create preview jobs."
+  },
+  {
     "Name": "Exchange Administrator",
     "ObjectId": "29232cdf-9323-42fd-ade2-1d097af3e4de",
     "Description": "Can manage all aspects of the Exchange product."
+  },
+  {
+    "Name": "Exchange Backup Administrator",
+    "ObjectId": "49eb8f75-97e9-4e37-9b2b-6c3ebfcffa31",
+    "Description": "Back up and restore content (including granular restore) for Exchange in Microsoft 365 Backup."
   },
   {
     "Name": "Exchange Recipient Administrator",
@@ -295,6 +310,11 @@
     "Description": "Can read messages and updates for their organization in Office 365 Message Center only."
   },
   {
+    "Name": "Microsoft 365 Backup Administrator",
+    "ObjectId": "1707125e-0aa2-4d4d-8655-a7c786c76a25",
+    "Description": "Back up and restore content across supported services (SharePoint, OneDrive, and Exchange Online) in Microsoft 365 Backup."
+  },
+  {
     "Name": "Microsoft 365 Migration Administrator",
     "ObjectId": "8c8b803f-96e1-4129-9349-20738d9f9652",
     "Description": "Perform all migration functionality to migrate content to Microsoft 365 using Migration Manager."
@@ -403,6 +423,11 @@
     "Name": "SharePoint Administrator",
     "ObjectId": "f28a1f50-f6e7-4571-818b-6a12f2af6b6c",
     "Description": "Can manage all aspects of the SharePoint service."
+  },
+  {
+    "Name": "SharePoint Backup Administrator",
+    "ObjectId": "9d3e04ba-3ee4-4d1b-a3a7-9aef423a09be",
+    "Description": "Back up and restore content (including granular restore) for SharePoint and OneDrive in Microsoft 365 Backup."
   },
   {
     "Name": "SharePoint Embedded Administrator",
