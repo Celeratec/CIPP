@@ -241,6 +241,27 @@ const ManageDriftPage = () => {
               if (!displayName) {
                 return null
               }
+            } else if (standardName.startsWith('ReusableSettingsTemplate.')) {
+              // TemplateList is multi-select for this standard, so each entry holds an array
+              const guid = standardName.substring('ReusableSettingsTemplate.'.length)
+              const rsTemplates = item.driftSettings?.standardSettings?.ReusableSettingsTemplate
+              if (Array.isArray(rsTemplates)) {
+                for (const template of rsTemplates) {
+                  const templateList = Array.isArray(template.TemplateList)
+                    ? template.TemplateList
+                    : [template.TemplateList].filter(Boolean)
+                  const match = templateList.find((entry) => entry?.value === guid)
+                  if (match?.label) {
+                    displayName = match.label
+                    break
+                  }
+                }
+              }
+
+              // If template not found, return null to filter it out later
+              if (!displayName) {
+                return null
+              }
             } else if (standardName.startsWith('QuarantineTemplate.')) {
               // The sub-key suffix is hex-encoded — decode it to get the readable display name
               const hexSuffix = standardName.substring('QuarantineTemplate.'.length)
@@ -1568,6 +1589,7 @@ const ManageDriftPage = () => {
   const getCategory = (standardName) => {
     if (!standardName) return 'Other Standards'
     if (standardName.includes('ConditionalAccessTemplate')) return 'Conditional Access Policies'
+    if (standardName.includes('ReusableSettingsTemplate')) return 'Intune Policies'
     if (standardName.includes('IntuneTemplate')) return 'Intune Policies'
     if (standardName.includes('QuarantineTemplate')) return 'Defender Standards'
 
