@@ -317,8 +317,7 @@ export const getAppRegistrationEditActions = (canWriteApplication) => [
       },
     ],
     customDataformatter: (row, action, formData) => {
-      // Only send what actually changed. This avoids re-sending unchanged redirectUris (which Graph
-      // rejects alongside the existing redirectUriSettings) and keeps audience/URI edits independent.
+      // Only send what actually changed, so audience and URI edits stay independent.
       const Payload = {}
 
       const signInAudience = formData?.signInAudience?.value ?? formData?.signInAudience
