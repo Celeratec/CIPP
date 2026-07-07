@@ -103,6 +103,25 @@ const CippAddEditUser = (props) => {
     return [];
   }, [manualEntryMappings.isSuccess, manualEntryMappings.data]);
 
+  // Prefill manual entry custom data fields in edit mode. The fetched user's extension values sit
+  // at the top level of the form (edit.jsx resets with the spread user object), while these fields
+  // live under customData.*
+  const currentUserObjectId = useWatch({ control: formControl.control, name: 'id' })
+  useEffect(() => {
+    if (formType === 'add' || !currentUserObjectId || currentTenantManualMappings.length === 0)
+      return
+    currentTenantManualMappings.forEach((mapping) => {
+      const attribute = mapping.customDataAttribute?.value
+      if (!attribute) return
+      const existing = formControl.getValues(`customData.${attribute}`)
+      if (existing !== undefined && existing !== null && existing !== '') return
+      const value = formControl.getValues(attribute)
+      if (value !== undefined && value !== null) {
+        formControl.setValue(`customData.${attribute}`, value)
+      }
+    })
+  }, [formType, currentUserObjectId, currentTenantManualMappings])
+
   // Make new list of groups by removing userGroups from tenantGroups
   const filteredTenantGroups = useMemo(() => {
     if (tenantGroups.isSuccess && userGroups.isSuccess) {
