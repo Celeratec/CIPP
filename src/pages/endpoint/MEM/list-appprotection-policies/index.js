@@ -23,6 +23,7 @@ const Page = () => {
     extendedInfoFields: [
       'createdDateTime',
       'displayName',
+      'description',
       'lastModifiedDateTime',
       'PolicyTypeName',
       'PolicySource',
