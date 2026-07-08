@@ -34,7 +34,7 @@ import tabOptions from "./tabOptions";
 import { CippCopyToClipBoard } from "../../../../../components/CippComponents/CippCopyToClipboard";
 import { Box, Stack } from "@mui/system";
 import { Grid } from "@mui/system";
-import { SvgIcon, Typography, Card, CardHeader, Divider } from "@mui/material";
+import { SvgIcon, Typography, Card, CardHeader, Divider, Tooltip, IconButton } from "@mui/material";
 import { CippBannerListCard } from "../../../../../components/CippCards/CippBannerListCard";
 import { CippTimeAgo } from "../../../../../components/CippComponents/CippTimeAgo";
 import { useEffect, useState, useRef } from "react";
@@ -108,12 +108,21 @@ const Page = () => {
         url: `/deviceManagement/managedDevices/${deviceId}/users`,
         method: "GET",
       },
-      {
-        id: "deviceMemberOf",
-        url: `/devices/${deviceId}/transitiveMemberOf/microsoft.graph.group`,
-        method: "GET",
-      },
     ];
+
+    // /devices/{id} requires the Entra directory object, not the Intune managedDevice id,
+    // so address it by alternate key. All-zeros means the device is not Entra-joined.
+    const azureADDeviceId = deviceData?.azureADDeviceId;
+    if (azureADDeviceId && azureADDeviceId !== "00000000-0000-0000-0000-000000000000") {
+      requests.push({
+        id: "deviceMemberOf",
+        // No /microsoft.graph.group cast: OData cast is an advanced query needing
+        // ConsistencyLevel=eventual + $count, and silently returns [] without them.
+        // Groups are filtered client-side on @odata.type below.
+        url: `/devices(deviceId='${azureADDeviceId}')/transitiveMemberOf`,
+        method: "GET",
+      });
+    }
 
     deviceBulkRequest.mutate({
       url: "/api/ListGraphBulkRequest",
@@ -125,10 +134,16 @@ const Page = () => {
   }
 
   useEffect(() => {
-    if (deviceId && userSettingsDefaults.currentTenant && !deviceBulkRequest.isSuccess) {
+    // Wait for deviceRequest so azureADDeviceId is available for the memberOf request
+    if (
+      deviceId &&
+      userSettingsDefaults.currentTenant &&
+      deviceRequest.isSuccess &&
+      !deviceBulkRequest.isSuccess
+    ) {
       refreshFunction();
     }
-  }, [deviceId, userSettingsDefaults.currentTenant, deviceBulkRequest.isSuccess]);
+  }, [deviceId, userSettingsDefaults.currentTenant, deviceRequest.isSuccess, deviceBulkRequest.isSuccess]);
 
   const bulkData = deviceBulkRequest?.data?.data ?? [];
   const deviceComplianceData = bulkData?.find((item) => item.id === "deviceCompliance");
@@ -808,7 +823,7 @@ const Page = () => {
           },
         },
       ]
-    : deviceMemberOfData?.status !== 200
+    : deviceMemberOfData && deviceMemberOfData.status !== 200
     ? [
         {
           id: 1,
@@ -853,7 +868,22 @@ const Page = () => {
           <Grid container spacing={2}>
             <Grid size={4}>
               <Card>
-                <CardHeader title="Device Details" />
+                <CardHeader
+                  title="Device Details"
+                  action={
+                    <Tooltip title="Refresh">
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          deviceRequest.refetch();
+                          refreshFunction();
+                        }}
+                      >
+                        <Sync fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  }
+                />
                 <Divider />
                 <PropertyList>
                   <PropertyListItem
