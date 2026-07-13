@@ -215,7 +215,7 @@ const Page = () => {
     },
     {
       name: "portalLinks.Compliance_Portal",
-      label: "Compliance",
+      label: "Purview",
     },
     {
       name: "portalLinks.Power_Platform_Portal",

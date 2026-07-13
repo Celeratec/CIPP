@@ -39,7 +39,7 @@ export const CippTranslations = {
   portal_azure: "Azure",
   portal_intune: "Intune",
   portal_security: "Security",
-  portal_compliance: "Compliance",
+  portal_compliance: "Purview",
   portal_sharepoint: "SharePoint",
   portal_platform: "Power Platform",
   portal_bi: "Power BI",
