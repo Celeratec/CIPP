@@ -730,6 +730,7 @@ const CippAddEditUser = (props) => {
                       value: tenantGroup.id,
                       addedFields: {
                         groupType: tenantGroup.groupType,
+                        calculatedGroupType: tenantGroup.calculatedGroupType,
                       },
                     }))}
                     creatable={false}
@@ -746,7 +747,8 @@ const CippAddEditUser = (props) => {
                       label: userGroups.DisplayName,
                       value: userGroups.id,
                       addedFields: {
-                        groupType: userGroups.groupType,
+                        groupType: userGroups.calculatedGroupType || userGroups.groupType,
+                        calculatedGroupType: userGroups.calculatedGroupType,
                       },
                     }))}
                     creatable={false}
