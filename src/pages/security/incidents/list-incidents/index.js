@@ -196,9 +196,44 @@ const Page = () => {
       data: {
         GUID: "Id",
         Status: "!resolved",
-        Assigned: "AssignedTo",
       },
+      fields: [
+        {
+          type: "textField",
+          name: "Comment",
+          label: "Resolving comment (optional)",
+          multiline: true,
+          rows: 3,
+        },
+      ],
       confirmText: "Are you sure you want to set the status to resolved?",
+      category: "manage",
+    },
+    {
+      label: "Set severity",
+      type: "POST",
+      icon: <Warning />,
+      url: "/api/ExecSetSecurityIncident",
+      data: {
+        GUID: "Id",
+      },
+      fields: [
+        {
+          type: "autoComplete",
+          name: "Severity",
+          label: "Severity",
+          multiple: false,
+          creatable: false,
+          options: [
+            { value: "informational", label: "Informational" },
+            { value: "low", label: "Low" },
+            { value: "medium", label: "Medium" },
+            { value: "high", label: "High" },
+          ],
+          validators: { required: "Severity is required" },
+        },
+      ],
+      confirmText: "Select the severity to set for this incident.",
       category: "manage",
     },
   ];
