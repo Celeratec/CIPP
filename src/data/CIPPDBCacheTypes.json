@@ -328,5 +328,10 @@
     "type": "IntuneAppInstallStatus",
     "friendlyName": "Intune App Install Status",
     "description": "Per-application install status rollup (failed/installed/pending device counts) from the AppInstallStatusAggregate report"
+  },
+  {
+    "type": "HVEAccounts",
+    "friendlyName": "HVE Accounts",
+    "description": "High Volume Email accounts"
   }
 ]

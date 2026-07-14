@@ -1,18 +1,18 @@
-import { Alert, Divider, InputAdornment, Typography, Card, CardContent } from "@mui/material";
-import { Stack, Box } from "@mui/system";
-import CippFormComponent from "../CippComponents/CippFormComponent";
-import { CippFormCondition } from "../CippComponents/CippFormCondition";
-import { CippFormDomainSelector } from "../CippComponents/CippFormDomainSelector";
-import { CippFormUserSelector } from "../CippComponents/CippFormUserSelector";
-import { getCippValidator } from "../../utils/get-cipp-validator";
-import countryList from "../../data/countryList.json";
-import { CippFormLicenseSelector } from "../CippComponents/CippFormLicenseSelector";
-import { Grid } from "@mui/system";
-import { ApiGetCall } from "../../api/ApiCall";
-import { useSettings } from "../../hooks/use-settings";
-import { useWatch } from "react-hook-form";
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/router";
+import { Alert, Divider, InputAdornment, Typography, Card, CardContent } from '@mui/material'
+import { Stack, Box } from '@mui/system'
+import CippFormComponent from '../CippComponents/CippFormComponent'
+import { CippFormCondition } from '../CippComponents/CippFormCondition'
+import { CippFormDomainSelector } from '../CippComponents/CippFormDomainSelector'
+import { CippFormUserSelector } from '../CippComponents/CippFormUserSelector'
+import { getCippValidator } from '../../utils/get-cipp-validator'
+import countryList from '../../data/countryList.json'
+import { CippFormLicenseSelector } from '../CippComponents/CippFormLicenseSelector'
+import { Grid } from '@mui/system'
+import { ApiGetCall } from '../../api/ApiCall'
+import { useSettings } from '../../hooks/use-settings'
+import { useWatch } from 'react-hook-form'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/router'
 import {
   Person,
   Key,
@@ -23,7 +23,7 @@ import {
   Schedule,
   Extension,
   FileCopy,
-} from "@mui/icons-material";
+} from '@mui/icons-material'
 
 // Section Header Component for consistent styling
 const SectionHeader = ({ icon: Icon, title }) => (
@@ -33,26 +33,29 @@ const SectionHeader = ({ icon: Icon, title }) => (
       {title}
     </Typography>
   </Stack>
-);
+)
 
 // Section Card Component for visual grouping
 const FormSection = ({ icon, title, children, noPadding = false }) => (
   <Card variant="outlined" sx={{ mb: 3 }}>
-    <CardContent sx={{ p: noPadding ? 0 : 2.5, "&:last-child": { pb: noPadding ? 0 : 2.5 } }}>
+    <CardContent sx={{ p: noPadding ? 0 : 2.5, '&:last-child': { pb: noPadding ? 0 : 2.5 } }}>
       {title && <SectionHeader icon={icon} title={title} />}
       {children}
     </CardContent>
   </Card>
-);
+)
 
 const CippAddEditUser = (props) => {
-  const { formControl, userSettingsDefaults, formType = "add" } = props;
-  const tenantDomain = useSettings().currentTenant;
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [displayNameManuallySet, setDisplayNameManuallySet] = useState(false);
-  const [usernameManuallySet, setUsernameManuallySet] = useState(false);
-  const router = useRouter();
-  const { userId } = router.query;
+  const { formControl, userSettingsDefaults, formType = 'add' } = props
+  const tenantDomain = useSettings().currentTenant
+  const [selectedTemplate, setSelectedTemplate] = useState(null)
+  const [displayNameManuallySet, setDisplayNameManuallySet] = useState(false)
+  const [usernameManuallySet, setUsernameManuallySet] = useState(false)
+  // Tracks the template already applied to the form so we can tell a first
+  // apply (fill empty fields) apart from a switch (replace/clear stale values)
+  const appliedTemplateKeyRef = useRef(null)
+  const router = useRouter()
+  const { userId } = router.query
 
   // Get user default templates (only in add mode)
   const userTemplates = ApiGetCall({
@@ -60,14 +63,14 @@ const CippAddEditUser = (props) => {
     queryKey: `UserDefaults-${tenantDomain}`,
     refetchOnMount: false,
     refetchOnReconnect: false,
-    enabled: formType === "add",
-  });
+    enabled: formType === 'add',
+  })
   const integrationSettings = ApiGetCall({
-    url: "/api/ListExtensionsConfig",
-    queryKey: "ListExtensionsConfig",
+    url: '/api/ListExtensionsConfig',
+    queryKey: 'ListExtensionsConfig',
     refetchOnMount: false,
     refetchOnReconnect: false,
-  });
+  })
 
   // Get all groups the is the user is a member of
   const userGroups = ApiGetCall({
@@ -76,7 +79,7 @@ const CippAddEditUser = (props) => {
     refetchOnMount: false,
     refetchOnReconnect: false,
     waiting: !!userId,
-  });
+  })
 
   // Get all groups for the tenant
   const tenantGroups = ApiGetCall({
@@ -85,7 +88,7 @@ const CippAddEditUser = (props) => {
     refetchOnMount: false,
     refetchOnReconnect: false,
     waiting: !!userId,
-  });
+  })
 
   // Get manual entry custom data mappings for current tenant
   const manualEntryMappings = ApiGetCall({
@@ -93,186 +96,258 @@ const CippAddEditUser = (props) => {
     queryKey: `ManualEntryMappings-${tenantDomain}`,
     refetchOnMount: false,
     refetchOnReconnect: false,
-  });
+  })
 
   // Use mappings directly since they're already filtered by the API
   const currentTenantManualMappings = useMemo(() => {
     if (manualEntryMappings.isSuccess) {
-      return manualEntryMappings.data?.Results || [];
+      return manualEntryMappings.data?.Results || []
     }
-    return [];
-  }, [manualEntryMappings.isSuccess, manualEntryMappings.data]);
+    return []
+  }, [manualEntryMappings.isSuccess, manualEntryMappings.data])
+
+  // Prefill manual entry custom data fields in edit mode. The fetched user's extension values sit
+  // at the top level of the form (edit.jsx resets with the spread user object), while these fields
+  // live under customData.*
+  const currentUserObjectId = useWatch({ control: formControl.control, name: 'id' })
+  useEffect(() => {
+    if (formType === 'add' || !currentUserObjectId || currentTenantManualMappings.length === 0)
+      return
+    currentTenantManualMappings.forEach((mapping) => {
+      const attribute = mapping.customDataAttribute?.value
+      if (!attribute) return
+      const existing = formControl.getValues(`customData.${attribute}`)
+      if (existing !== undefined && existing !== null && existing !== '') return
+      const value = formControl.getValues(attribute)
+      if (value !== undefined && value !== null) {
+        formControl.setValue(`customData.${attribute}`, value)
+      }
+    })
+  }, [formType, currentUserObjectId, currentTenantManualMappings])
 
   // Make new list of groups by removing userGroups from tenantGroups
   const filteredTenantGroups = useMemo(() => {
     if (tenantGroups.isSuccess && userGroups.isSuccess) {
-      const tenantGroupsList = tenantGroups?.data || [];
+      const tenantGroupsList = tenantGroups?.data || []
 
       return tenantGroupsList.filter(
-        (tenantGroup) => !userGroups?.data?.some((userGroup) => userGroup.id === tenantGroup.id),
-      );
+        (tenantGroup) => !userGroups?.data?.some((userGroup) => userGroup.id === tenantGroup.id)
+      )
     }
-    return [];
-  }, [tenantGroups.isSuccess, userGroups.isSuccess, tenantGroups.data, userGroups.data]);
+    return []
+  }, [tenantGroups.isSuccess, userGroups.isSuccess, tenantGroups.data, userGroups.data])
 
-  const watcher = useWatch({ control: formControl.control });
+  const watcher = useWatch({ control: formControl.control })
 
   // Helper function to generate username from template format
   const generateUsername = (format, firstName, lastName) => {
-    if (!format || !firstName || !lastName) return "";
+    if (!format || !firstName || !lastName) return ''
 
     // Ensure format is a string
-    const formatString = typeof format === "string" ? format : String(format);
+    const formatString = typeof format === 'string' ? format : String(format)
 
-    let username = formatString;
+    let username = formatString
 
     // Replace %FirstName[n]% patterns (extract first n characters)
     username = username.replace(/%FirstName\[(\d+)\]%/gi, (match, num) => {
-      return firstName.substring(0, parseInt(num));
-    });
+      return firstName.substring(0, parseInt(num))
+    })
 
     // Replace %LastName[n]% patterns (extract first n characters)
     username = username.replace(/%LastName\[(\d+)\]%/gi, (match, num) => {
-      return lastName.substring(0, parseInt(num));
-    });
+      return lastName.substring(0, parseInt(num))
+    })
 
     // Replace %FirstName% and %LastName%
-    username = username.replace(/%FirstName%/gi, firstName);
-    username = username.replace(/%LastName%/gi, lastName);
+    username = username.replace(/%FirstName%/gi, firstName)
+    username = username.replace(/%LastName%/gi, lastName)
 
     // Convert to lowercase
-    return username.toLowerCase();
-  };
+    return username.toLowerCase()
+  }
 
   useEffect(() => {
     //if watch.firstname changes, and watch.lastname changes, set displayname to firstname + lastname
-    if (watcher.givenName && watcher.surname && formType === "add") {
+    if (watcher.givenName && watcher.surname && formType === 'add') {
       // Only auto-set display name if user hasn't manually changed it
       if (!displayNameManuallySet) {
         // Build base display name from first and last name
-        let displayName = `${watcher.givenName} ${watcher.surname}`;
+        let displayName = `${watcher.givenName} ${watcher.surname}`
 
         // Add template displayName as suffix if it exists
         if (selectedTemplate?.displayName) {
-          displayName += selectedTemplate.displayName;
+          displayName += selectedTemplate.displayName
         }
 
-        formControl.setValue("displayName", displayName, { shouldDirty: true });
+        formControl.setValue('displayName', displayName, { shouldDirty: true })
       }
 
       // Auto-generate username if template has usernameFormat
       if (selectedTemplate?.usernameFormat && !usernameManuallySet) {
         // Extract the actual format string - it might be an object {label, value} or a string
         const formatString =
-          typeof selectedTemplate.usernameFormat === "string"
+          typeof selectedTemplate.usernameFormat === 'string'
             ? selectedTemplate.usernameFormat
-            : selectedTemplate.usernameFormat?.value || selectedTemplate.usernameFormat?.label;
+            : selectedTemplate.usernameFormat?.value || selectedTemplate.usernameFormat?.label
 
         if (formatString) {
           const generatedUsername = generateUsername(
             formatString,
             watcher.givenName,
-            watcher.surname,
-          );
+            watcher.surname
+          )
           if (generatedUsername) {
-            formControl.setValue("username", generatedUsername, { shouldDirty: true });
+            formControl.setValue('username', generatedUsername, { shouldDirty: true })
           }
         }
       }
     }
-  }, [watcher.givenName, watcher.surname, selectedTemplate]);
+  }, [watcher.givenName, watcher.surname, selectedTemplate])
 
   // Reset manual flags and selected template when form is reset (fields become empty)
   useEffect(() => {
-    if (formType === "add" && !watcher.givenName && !watcher.surname && !watcher.userTemplate) {
-      setDisplayNameManuallySet(false);
-      setUsernameManuallySet(false);
+    if (formType === 'add' && !watcher.givenName && !watcher.surname && !watcher.userTemplate) {
+      setDisplayNameManuallySet(false)
+      setUsernameManuallySet(false)
       // Only clear selected template if it's not the default template
       if (selectedTemplate && !selectedTemplate.defaultForTenant) {
-        setSelectedTemplate(null);
+        setSelectedTemplate(null)
+        appliedTemplateKeyRef.current = null
       }
     }
-  }, [watcher.givenName, watcher.surname, watcher.userTemplate, formType, selectedTemplate]);
+  }, [watcher.givenName, watcher.surname, watcher.userTemplate, formType, selectedTemplate])
 
   // Auto-select default template for tenant
   useEffect(() => {
-    if (formType === "add" && userTemplates.isSuccess && !watcher.userTemplate) {
+    if (formType === 'add' && userTemplates.isSuccess && !watcher.userTemplate) {
       const defaultTemplate = userTemplates.data?.find(
-        (template) => template.defaultForTenant === true,
-      );
+        (template) => template.defaultForTenant === true
+      )
       if (defaultTemplate) {
-        formControl.setValue("userTemplate", {
+        formControl.setValue('userTemplate', {
           label: defaultTemplate.templateName,
           value: defaultTemplate.GUID,
           addedFields: defaultTemplate,
-        });
-        setSelectedTemplate(defaultTemplate);
+        })
+        setSelectedTemplate(defaultTemplate)
       }
     }
-  }, [userTemplates.isSuccess, formType]);
+  }, [userTemplates.isSuccess, formType])
 
   // Auto-populate fields when template selected
   useEffect(() => {
-    if (formType === "add" && watcher.userTemplate?.addedFields) {
-      const template = watcher.userTemplate.addedFields;
-      setSelectedTemplate(template);
+    if (formType !== 'add' || !watcher.userTemplate?.addedFields) return
+    const template = watcher.userTemplate.addedFields
+    const templateKey = watcher.userTemplate.value ?? template.GUID ?? template.templateName
 
-      // Reset manual edit flags when template changes
-      setDisplayNameManuallySet(false);
-      setUsernameManuallySet(false);
+    // Distinguish the first apply from a switch. On a switch we replace
+    // template-driven fields (and clear ones the new template doesn't define)
+    // so stale values from the previous template don't linger. On the first
+    // apply we only fill fields that have a template value, so we don't clobber
+    // input the user already entered or copied from another user.
+    const isSwitch =
+      appliedTemplateKeyRef.current !== null && appliedTemplateKeyRef.current !== templateKey
+    appliedTemplateKeyRef.current = templateKey
+    setSelectedTemplate(template)
 
-      // Only set fields if they don't already have values (don't override user input)
-      const setFieldIfEmpty = (fieldName, value) => {
-        if (!watcher[fieldName] && value) {
-          formControl.setValue(fieldName, value);
-        }
-      };
+    // Reset manual edit flags when template changes
+    setDisplayNameManuallySet(false)
+    setUsernameManuallySet(false)
 
-      // Populate form fields from template
-      if (template.primDomain) {
-        // If primDomain is an object, use it as-is; if it's a string, convert to object
-        const primDomainValue =
-          typeof template.primDomain === "string"
-            ? { label: template.primDomain, value: template.primDomain }
-            : template.primDomain;
-        setFieldIfEmpty("primDomain", primDomainValue);
-      }
-      if (template.usageLocation) {
-        // Handle both object and string formats
-        const usageLocationCode =
-          typeof template.usageLocation === "string"
-            ? template.usageLocation
-            : template.usageLocation?.value;
-        const country = countryList.find((c) => c.Code === usageLocationCode);
-        if (country) {
-          setFieldIfEmpty("usageLocation", {
-            label: country.Name,
-            value: country.Code,
-          });
-        }
-      }
-      setFieldIfEmpty("jobTitle", template.jobTitle);
-      setFieldIfEmpty("streetAddress", template.streetAddress);
-      setFieldIfEmpty("city", template.city);
-      setFieldIfEmpty("state", template.state);
-      setFieldIfEmpty("postalCode", template.postalCode);
-      setFieldIfEmpty("country", template.country);
-      setFieldIfEmpty("companyName", template.companyName);
-      setFieldIfEmpty("department", template.department);
-      setFieldIfEmpty("mobilePhone", template.mobilePhone);
-      setFieldIfEmpty("businessPhones[0]", template.businessPhones);
-
-      // Handle licenses - need to match the format expected by CippFormLicenseSelector
-      if (template.licenses && Array.isArray(template.licenses)) {
-        setFieldIfEmpty("licenses", template.licenses);
+    // Apply a template value to a field. When the template has a value we set
+    // it; when it doesn't and this is a switch we clear the field (emptyValue)
+    // so the previous template's value doesn't linger.
+    const applyField = (fieldName, value, emptyValue = '') => {
+      const hasValue = Array.isArray(value)
+        ? value.length > 0
+        : value !== undefined && value !== null && value !== ''
+      if (hasValue) {
+        formControl.setValue(fieldName, value, { shouldDirty: true })
+      } else if (isSwitch) {
+        formControl.setValue(fieldName, emptyValue, { shouldDirty: true })
       }
     }
-  }, [watcher.userTemplate, formType]);
+
+    // Primary domain - accept both object and string formats
+    const primDomainValue = template.primDomain
+      ? typeof template.primDomain === 'string'
+        ? { label: template.primDomain, value: template.primDomain }
+        : template.primDomain
+      : null
+    applyField('primDomain', primDomainValue, null)
+
+    // Usage location - accept both object and string formats
+    const usageLocationCode =
+      typeof template.usageLocation === 'string'
+        ? template.usageLocation
+        : template.usageLocation?.value
+    const country = usageLocationCode ? countryList.find((c) => c.Code === usageLocationCode) : null
+    applyField('usageLocation', country ? { label: country.Name, value: country.Code } : null, null)
+
+    applyField('jobTitle', template.jobTitle)
+    applyField('streetAddress', template.streetAddress)
+    applyField('city', template.city)
+    applyField('state', template.state)
+    applyField('postalCode', template.postalCode)
+    applyField('country', template.country)
+    applyField('companyName', template.companyName)
+    applyField('department', template.department)
+    applyField('mobilePhone', template.mobilePhone)
+    const templateBusinessPhone = Array.isArray(template.businessPhones)
+      ? template.businessPhones[0]
+      : template.businessPhones
+    applyField('businessPhones', templateBusinessPhone ? [templateBusinessPhone] : [], [])
+
+    // Licenses - match the format expected by CippFormLicenseSelector
+    applyField('licenses', Array.isArray(template.licenses) ? template.licenses : [], [])
+
+    // Groups from template
+    const templateGroups = template.addToGroups || template.groupMemberships
+    const rawGroups = templateGroups
+      ? Array.isArray(templateGroups)
+        ? templateGroups
+        : [templateGroups]
+      : []
+    const groups = rawGroups.map((g) => {
+      if (g.label && g.value) return g
+      const groupType = g.groupTypes?.includes('Unified')
+        ? 'Microsoft 365'
+        : g.mailEnabled && !g.groupTypes?.includes('Unified')
+          ? g.securityEnabled
+            ? 'Mail-Enabled Security'
+            : 'Distribution list'
+          : 'Security'
+      return {
+        label: g.displayName,
+        value: g.id,
+        addedFields: { groupType },
+      }
+    })
+    applyField('AddToGroups', groups, [])
+
+    // Custom user attributes. On a switch, clear every known attribute field
+    // first so attributes the new template doesn't define don't linger, then
+    // apply the template's values.
+    if (isSwitch) {
+      userSettingsDefaults?.userAttributes
+        ?.filter((attribute) => attribute.value !== 'sponsor')
+        .forEach((attribute) => {
+          formControl.setValue(`defaultAttributes.${attribute.label}.Value`, '', {
+            shouldDirty: true,
+          })
+        })
+    }
+    if (template.defaultAttributes) {
+      Object.entries(template.defaultAttributes).forEach(([key, attr]) => {
+        applyField(`defaultAttributes.${key}.Value`, attr?.Value)
+      })
+    }
+  }, [watcher.userTemplate, formType])
 
   return (
     <Box>
       {/* Template/Copy Section - Only for Add mode */}
-      {formType === "add" && (
+      {formType === 'add' && (
         <FormSection icon={FileCopy} title="Quick Setup">
           <Grid container spacing={2}>
             <Grid size={{ md: 6, xs: 12 }}>
@@ -282,27 +357,27 @@ const CippAddEditUser = (props) => {
                 label="Copy properties from another user"
                 multiple={false}
                 select={
-                  "id,userPrincipalName,displayName,givenName,surname,mailNickname,jobTitle,department,streetAddress,city,state,postalCode,companyName,mobilePhone,businessPhones,usageLocation,office"
+                  'id,userPrincipalName,displayName,givenName,surname,mailNickname,jobTitle,department,streetAddress,city,state,postalCode,companyName,mobilePhone,businessPhones,usageLocation,office'
                 }
                 addedField={{
-                  groupType: "calculatedGroupType",
-                  displayName: "displayName",
-                  userPrincipalName: "userPrincipalName",
-                  id: "id",
-                  givenName: "givenName",
-                  surname: "surname",
-                  mailNickname: "mailNickname",
-                  jobTitle: "jobTitle",
-                  department: "department",
-                  streetAddress: "streetAddress",
-                  city: "city",
-                  state: "state",
-                  postalCode: "postalCode",
-                  companyName: "companyName",
-                  mobilePhone: "mobilePhone",
-                  businessPhones: "businessPhones",
-                  usageLocation: "usageLocation",
-                  office: "office",
+                  groupType: 'calculatedGroupType',
+                  displayName: 'displayName',
+                  userPrincipalName: 'userPrincipalName',
+                  id: 'id',
+                  givenName: 'givenName',
+                  surname: 'surname',
+                  mailNickname: 'mailNickname',
+                  jobTitle: 'jobTitle',
+                  department: 'department',
+                  streetAddress: 'streetAddress',
+                  city: 'city',
+                  state: 'state',
+                  postalCode: 'postalCode',
+                  companyName: 'companyName',
+                  mobilePhone: 'mobilePhone',
+                  businessPhones: 'businessPhones',
+                  usageLocation: 'usageLocation',
+                  office: 'office',
                 }}
               />
             </Grid>
@@ -339,7 +414,7 @@ const CippAddEditUser = (props) => {
               name="givenName"
               formControl={formControl}
               validators={{
-                maxLength: { value: 64, message: "First Name must be 64 characters or less" },
+                maxLength: { value: 64, message: 'First Name must be 64 characters or less' },
               }}
             />
           </Grid>
@@ -351,7 +426,7 @@ const CippAddEditUser = (props) => {
               name="surname"
               formControl={formControl}
               validators={{
-                maxLength: { value: 64, message: "Last Name must be 64 characters or less" },
+                maxLength: { value: 64, message: 'Last Name must be 64 characters or less' },
               }}
             />
           </Grid>
@@ -363,12 +438,12 @@ const CippAddEditUser = (props) => {
               name="displayName"
               formControl={formControl}
               onChange={(e) => {
-                setDisplayNameManuallySet(true);
+                setDisplayNameManuallySet(true)
               }}
               required={true}
               validators={{
-                required: "Display Name is required",
-                maxLength: { value: 256, message: "Display Name must be 256 characters or less" },
+                required: 'Display Name is required',
+                maxLength: { value: 256, message: 'Display Name must be 256 characters or less' },
               }}
             />
           </Grid>
@@ -383,15 +458,16 @@ const CippAddEditUser = (props) => {
               name="username"
               formControl={formControl}
               onChange={(e) => {
-                setUsernameManuallySet(true);
+                setUsernameManuallySet(true)
               }}
               required={true}
               validators={{
-                required: "Username is required",
-                maxLength: { value: 64, message: "Username must be 64 characters or less" },
+                required: 'Username is required',
+                maxLength: { value: 64, message: 'Username must be 64 characters or less' },
                 pattern: {
                   value: /^[a-zA-Z0-9._-]+$/,
-                  message: "Username can only contain letters, numbers, dots, hyphens, and underscores",
+                  message:
+                    'Username can only contain letters, numbers, dots, hyphens, and underscores',
                 },
               }}
             />
@@ -402,7 +478,7 @@ const CippAddEditUser = (props) => {
               name="primDomain"
               label="Primary Domain"
               required={true}
-              validators={{ required: "Primary Domain is required" }}
+              validators={{ required: 'Primary Domain is required' }}
             />
           </Grid>
           <Grid size={{ xs: 12 }}>
@@ -455,7 +531,7 @@ const CippAddEditUser = (props) => {
               formControl={formControl}
             />
           </Grid>
-          {formType === "add" && (
+          {formType === 'add' && (
             <Grid size={{ md: 6, xs: 12 }}>
               <CippFormComponent
                 type="switch"
@@ -478,7 +554,7 @@ const CippAddEditUser = (props) => {
               label="Usage Location"
               name="usageLocation"
               multiple={false}
-              defaultValue={userSettingsDefaults?.usageLocation || "US"}
+              defaultValue={userSettingsDefaults?.usageLocation || 'US'}
               options={countryList.map(({ Code, Name }) => ({
                 label: Name,
                 value: Code,
@@ -511,7 +587,7 @@ const CippAddEditUser = (props) => {
               name="jobTitle"
               formControl={formControl}
               validators={{
-                maxLength: { value: 128, message: "Job Title must be 128 characters or less" },
+                maxLength: { value: 128, message: 'Job Title must be 128 characters or less' },
               }}
             />
           </Grid>
@@ -523,7 +599,7 @@ const CippAddEditUser = (props) => {
               name="department"
               formControl={formControl}
               validators={{
-                maxLength: { value: 64, message: "Department must be 64 characters or less" },
+                maxLength: { value: 64, message: 'Department must be 64 characters or less' },
               }}
             />
           </Grid>
@@ -535,7 +611,7 @@ const CippAddEditUser = (props) => {
               name="companyName"
               formControl={formControl}
               validators={{
-                maxLength: { value: 64, message: "Company Name must be 64 characters or less" },
+                maxLength: { value: 64, message: 'Company Name must be 64 characters or less' },
               }}
             />
           </Grid>
@@ -549,7 +625,7 @@ const CippAddEditUser = (props) => {
             />
           </Grid>
           {userSettingsDefaults?.userAttributes?.some(
-            (attribute) => attribute.value === "sponsor"
+            (attribute) => attribute.value === 'sponsor'
           ) && (
             <Grid size={{ md: 6, xs: 12 }}>
               <CippFormUserSelector
@@ -576,7 +652,7 @@ const CippAddEditUser = (props) => {
               formControl={formControl}
               defaultCountry="US"
               validators={{
-                maxLength: { value: 64, message: "Mobile Phone must be 64 characters or less" },
+                maxLength: { value: 64, message: 'Mobile Phone must be 64 characters or less' },
               }}
             />
           </Grid>
@@ -607,7 +683,10 @@ const CippAddEditUser = (props) => {
               name="streetAddress"
               formControl={formControl}
               validators={{
-                maxLength: { value: 1024, message: "Street Address must be 1024 characters or less" },
+                maxLength: {
+                  value: 1024,
+                  message: 'Street Address must be 1024 characters or less',
+                },
               }}
             />
           </Grid>
@@ -619,7 +698,7 @@ const CippAddEditUser = (props) => {
               name="city"
               formControl={formControl}
               validators={{
-                maxLength: { value: 128, message: "City must be 128 characters or less" },
+                maxLength: { value: 128, message: 'City must be 128 characters or less' },
               }}
             />
           </Grid>
@@ -631,7 +710,7 @@ const CippAddEditUser = (props) => {
               name="state"
               formControl={formControl}
               validators={{
-                maxLength: { value: 128, message: "State/Province must be 128 characters or less" },
+                maxLength: { value: 128, message: 'State/Province must be 128 characters or less' },
               }}
             />
           </Grid>
@@ -643,7 +722,7 @@ const CippAddEditUser = (props) => {
               name="postalCode"
               formControl={formControl}
               validators={{
-                maxLength: { value: 40, message: "Postal Code must be 40 characters or less" },
+                maxLength: { value: 40, message: 'Postal Code must be 40 characters or less' },
               }}
             />
           </Grid>
@@ -660,12 +739,12 @@ const CippAddEditUser = (props) => {
       </FormSection>
 
       {/* Custom Attributes Section */}
-      {userSettingsDefaults?.userAttributes?.filter((attribute) => attribute.value !== "sponsor")
+      {userSettingsDefaults?.userAttributes?.filter((attribute) => attribute.value !== 'sponsor')
         .length > 0 && (
         <FormSection icon={Extension} title="Custom Attributes">
           <Grid container spacing={2}>
             {userSettingsDefaults?.userAttributes
-              ?.filter((attribute) => attribute.value !== "sponsor")
+              ?.filter((attribute) => attribute.value !== 'sponsor')
               .map((attribute, idx) => (
                 <Grid size={{ md: 6, xs: 12 }} key={idx}>
                   <CippFormComponent
@@ -682,7 +761,7 @@ const CippAddEditUser = (props) => {
       )}
 
       {/* Group Membership Section */}
-      {(formType === "edit" || formType === "add") && (
+      {(formType === 'edit' || formType === 'add') && (
         <FormSection icon={Group} title="Group Membership">
           <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>
@@ -693,7 +772,7 @@ const CippAddEditUser = (props) => {
                 multiple={false}
               />
             </Grid>
-            {formType === "edit" && (
+            {formType === 'edit' && (
               <>
                 <Grid size={{ md: 6, xs: 12 }}>
                   <CippFormComponent
@@ -706,6 +785,7 @@ const CippAddEditUser = (props) => {
                       value: tenantGroup.id,
                       addedFields: {
                         groupType: tenantGroup.groupType,
+                        calculatedGroupType: tenantGroup.calculatedGroupType,
                       },
                     }))}
                     creatable={false}
@@ -722,7 +802,8 @@ const CippAddEditUser = (props) => {
                       label: userGroups.DisplayName,
                       value: userGroups.id,
                       addedFields: {
-                        groupType: userGroups.groupType,
+                        groupType: userGroups.calculatedGroupType || userGroups.groupType,
+                        calculatedGroupType: userGroups.calculatedGroupType,
                       },
                     }))}
                     creatable={false}
@@ -740,23 +821,23 @@ const CippAddEditUser = (props) => {
         <FormSection icon={Extension} title="Custom Data">
           <Grid container spacing={2}>
             {currentTenantManualMappings.map((mapping, index) => {
-              const fieldName = `customData.${mapping.customDataAttribute.value}`;
-              const fieldLabel = mapping.manualEntryFieldLabel;
-              const dataType = mapping.customDataAttribute.addedFields.dataType;
+              const fieldName = `customData.${mapping.customDataAttribute.value}`
+              const fieldLabel = mapping.manualEntryFieldLabel
+              const dataType = mapping.customDataAttribute.addedFields.dataType
 
               // Determine field type based on the custom data attribute type
               const getFieldType = (dataType) => {
                 switch (dataType?.toLowerCase()) {
-                  case "boolean":
-                    return "switch";
-                  case "datetime":
-                  case "date":
-                    return "datePicker";
-                  case "string":
+                  case 'boolean':
+                    return 'switch'
+                  case 'datetime':
+                  case 'date':
+                    return 'datePicker'
+                  case 'string':
                   default:
-                    return "textField";
+                    return 'textField'
                 }
-              };
+              }
 
               return (
                 <Grid size={{ md: 6, xs: 12 }} key={`manual-entry-${index}`}>
@@ -769,14 +850,14 @@ const CippAddEditUser = (props) => {
                     placeholder={`Enter ${fieldLabel.toLowerCase()}`}
                   />
                 </Grid>
-              );
+              )
             })}
           </Grid>
         </FormSection>
       )}
 
       {/* Schedule Section - Only for Add mode */}
-      {formType === "add" && (
+      {formType === 'add' && (
         <FormSection icon={Schedule} title="Scheduling">
           <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>
@@ -841,7 +922,7 @@ const CippAddEditUser = (props) => {
         </FormSection>
       )}
     </Box>
-  );
-};
+  )
+}
 
-export default CippAddEditUser;
+export default CippAddEditUser

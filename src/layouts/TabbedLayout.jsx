@@ -4,6 +4,7 @@ import { Box, Divider, Stack, Tab, Tabs, useMediaQuery, useTheme } from "@mui/ma
 import { useSearchParams } from "next/navigation";
 import { ApiGetCall } from "../api/ApiCall";
 import { getIconByName } from "../utils/icon-registry";
+import { useSettings } from "../hooks/use-settings";
 
 export const TabbedLayout = (props) => {
   const { tabOptions, children } = props;
@@ -12,6 +13,8 @@ export const TabbedLayout = (props) => {
   const searchParams = useSearchParams();
   const theme = useTheme();
   const smDown = useMediaQuery(theme.breakpoints.down("sm"));
+  const settings = useSettings();
+  const showAdvanced = settings?.showAdvancedTools === true;
 
   const featureFlags = ApiGetCall({
     url: "/api/ListFeatureFlags",
@@ -20,17 +23,21 @@ export const TabbedLayout = (props) => {
   });
 
   const visibleTabs = useMemo(() => {
-    if (!featureFlags.isSuccess || !Array.isArray(featureFlags.data)) return tabOptions;
+    // Per-user gate: tabs marked { advanced: true } are hidden unless the user enabled Advanced
+    // Views in preferences (Developer Options). Keeps diagnostic pages out of day-to-day use.
+    let tabs = showAdvanced ? tabOptions : tabOptions.filter((option) => !option.advanced);
+
+    if (!featureFlags.isSuccess || !Array.isArray(featureFlags.data)) return tabs;
 
     const disabledPages = featureFlags.data
       .filter((flag) => flag.Enabled === false || flag.enabled === false)
       .flatMap((flag) => flag.Pages || flag.pages || [])
       .filter((page) => typeof page === "string");
 
-    if (disabledPages.length === 0) return tabOptions;
+    if (disabledPages.length === 0) return tabs;
 
-    return tabOptions.filter((option) => !disabledPages.includes(option.path));
-  }, [tabOptions, featureFlags.isSuccess, featureFlags.data]);
+    return tabs.filter((option) => !disabledPages.includes(option.path));
+  }, [tabOptions, featureFlags.isSuccess, featureFlags.data, showAdvanced]);
 
   const handleTabsChange = (event, value) => {
     const currentParams = new URLSearchParams(searchParams.toString());

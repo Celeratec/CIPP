@@ -83,6 +83,7 @@ const initialSettings = {
   pinNav: true,
   currentTenant: null,
   showDevtools: false,
+  showAdvancedTools: false,
   customBranding: {
     colour: "#007BA7",
     logo: null,

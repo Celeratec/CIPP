@@ -136,7 +136,8 @@ export const CippChartCard = ({
         }))
       );
     }
-  }, [chartType, chartSeries.length, labels]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartType, chartSeries.join(","), labels.join(",")]);
 
   const renderLegend = () => (
     <Stack spacing={compact ? 0.5 : 1}>
@@ -195,7 +196,7 @@ export const CippChartCard = ({
   );
 
   return (
-    <Card 
+    <Card
       style={{ width: "100%", height: "100%" }}
       onClick={onClick}
       sx={{
