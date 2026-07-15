@@ -1,19 +1,15 @@
-import { useEffect, useState, memo, useMemo, useCallback } from "react";
+import { useEffect, useState, memo, useMemo } from "react";
 import { Layout as DashboardLayout } from "../../../../../layouts/index.js";
 import { useSettings } from "../../../../../hooks/use-settings";
 import { useRouter } from "next/router";
 import { ApiGetCall } from "../../../../../api/ApiCall";
 import CalendarIcon from "@heroicons/react/24/outline/CalendarIcon";
-import { 
-  CheckCircle, 
-  Download, 
-  Mail, 
-  Fingerprint, 
+import {
+  Download,
+  Mail,
+  Fingerprint,
   Launch,
-  Warning,
-  Info,
   Error as ErrorIcon,
-  Person,
   Security,
 } from "@mui/icons-material";
 import { ShieldExclamationIcon } from "@heroicons/react/24/outline";
@@ -25,81 +21,53 @@ import { Box, Stack } from "@mui/system";
 import { Grid } from "@mui/system";
 import CippRemediationCard from "../../../../../components/CippCards/CippRemediationCard";
 import CippButtonCard from "../../../../../components/CippCards/CippButtonCard";
-import { SvgIcon, Typography, CircularProgress, Button, Chip, Alert, Paper, Avatar, Skeleton } from "@mui/material";
+import {
+  SvgIcon,
+  Typography,
+  CircularProgress,
+  Button,
+  Chip,
+  Alert,
+  Paper,
+  Avatar,
+  Skeleton,
+} from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import { PropertyList } from "../../../../../components/property-list";
 import { PropertyListItem } from "../../../../../components/property-list-item";
 import { CippHead } from "../../../../../components/CippComponents/CippHead";
 import { useCippUserActions } from "../../../../../components/CippComponents/CippUserActions";
-import { getInitials, stringToColor } from "../../../../../utils/get-initials";
+import { BECRemediationReportButton } from "../../../../../components/BECRemediationReportButton";
+import { CippDataTable } from "../../../../../components/CippTable/CippDataTable";
 
-// Reusable BEC Check Card Component - Memoized to prevent unnecessary re-renders
-const BecCheckCard = memo(({ 
-  title, 
-  items, 
-  itemsFound,
-  noItemsMessage,
-  itemsFoundMessage,
-  renderItem,
-  infoCheck = false, // For informational checks (MFA, passwords) that aren't necessarily bad
-}) => {
-  const hasItems = items && items.length > 0;
-  
-  // Determine icon and color based on whether items were found
-  // For security checks: found = warning (potential issue), not found = success (all clear)
-  // For info checks: found = info (just information), not found = disabled (no data)
-  const getIconConfig = () => {
-    if (infoCheck) {
-      return hasItems 
-        ? { icon: <Info />, color: "info" }
-        : { icon: <CheckCircle />, color: "disabled" };
+const checkItemSx = { px: 2, py: 0.75 };
+
+// Compact collapsible check card with a count chip (amber when there are findings).
+// Memoized to prevent unnecessary re-renders.
+const BecCheckCard = memo(({ title, count, children }) => (
+  <CippButtonCard
+    variant="outlined"
+    component="accordion"
+    title={
+      <Stack
+        direction="row"
+        spacing={2}
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ width: "100%" }}
+      >
+        <Box>{title}</Box>
+        {typeof count === "number" && (
+          <Chip size="small" label={count} color={count > 0 ? "warning" : "default"} />
+        )}
+      </Stack>
     }
-    return hasItems 
-      ? { icon: <Warning />, color: "warning" }
-      : { icon: <CheckCircle />, color: "success" };
-  };
-
-  const { icon, color } = getIconConfig();
-
-  return (
-    <CippButtonCard
-      variant="outlined"
-      isFetching={false}
-      title={
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Box>{title}</Box>
-          <Stack direction="row" spacing={1} alignItems="center">
-            {hasItems && (
-              <Chip 
-                label={`${items.length} found`} 
-                size="small" 
-                color={infoCheck ? "info" : "warning"}
-                variant="outlined"
-              />
-            )}
-            <SvgIcon color={color}>
-              {icon}
-            </SvgIcon>
-          </Stack>
-        </Stack>
-      }
-    >
-      <Typography variant="body2" gutterBottom>
-        {hasItems ? itemsFoundMessage : noItemsMessage}
-      </Typography>
-      {hasItems && (
-        <Box mt={2}>
-          <PropertyList>
-            {items.map((item, index) => renderItem(item, index))}
-          </PropertyList>
-        </Box>
-      )}
-    </CippButtonCard>
-  );
-});
+  >
+    {children}
+  </CippButtonCard>
+));
 
 BecCheckCard.displayName = "BecCheckCard";
-import { BECRemediationReportButton } from "../../../../../components/BECRemediationReportButton";
 
 const Page = () => {
   const userSettingsDefaults = useSettings();
@@ -182,7 +150,92 @@ const Page = () => {
   const isFetching =
     userRequest.isLoading || becInitialCall.isLoading || becPollingCall.isLoading || isLoading;
 
+  // Helper functions to determine messages
+  const getRuleMessage = () => {
+    if (!becPollingCall.data) return null;
+    if (becPollingCall.data.NewRules && becPollingCall.data.NewRules.length > 0) {
+      const hasPotentialBreach = becPollingCall.data.NewRules.some((rule) =>
+        rule.MoveToFolder?.includes("RSS"),
+      );
+      if (hasPotentialBreach) {
+        return "Potential Breach found. The rules for this user contain classic signs of a breach.";
+      }
+      const recentCount = becPollingCall.data.NewRules.filter(
+        (rule) => rule.RecentlyChanged,
+      ).length;
+      if (recentCount > 0) {
+        return `Rules have been found, ${recentCount} of which were created or changed in the last 7 days. Please review the list below and take action as needed.`;
+      }
+      return "Rules have been found. Please review the list below and take action as needed.";
+    }
+    if (becPollingCall.data.InboxRuleChanges && becPollingCall.data.InboxRuleChanges.length > 0) {
+      return "No rules currently exist on the mailbox, but rules were created, changed or removed in the last 7 days. Please review the changes below.";
+    }
+    return "No new rules found.";
+  };
 
+  const getUserMessage = () => {
+    if (!becPollingCall.data) return null;
+    if (becPollingCall.data.NewUsers && becPollingCall.data.NewUsers.length > 0) {
+      return "New users have been found in the last 14 days. Please review the list below and take action as needed.";
+    }
+    return "No new users found.";
+  };
+
+  const getAppMessage = () => {
+    if (!becPollingCall.data) return null;
+    if (becPollingCall.data.AddedApps && becPollingCall.data.AddedApps.length > 0) {
+      return "New applications have been found. Please review the list below and take action as needed.";
+    }
+    return "No new applications found.";
+  };
+
+  const getMailboxPermissionMessage = () => {
+    if (!becPollingCall.data) return null;
+    if (
+      becPollingCall.data.MailboxPermissionChanges &&
+      becPollingCall.data.MailboxPermissionChanges.length > 0
+    ) {
+      return "Mailbox permission changes have been found.";
+    }
+    return "No mailbox permission changes found.";
+  };
+
+  const getSentMessagesMessage = () => {
+    if (!becPollingCall.data) return null;
+    if (becPollingCall.data.SentMessages && becPollingCall.data.SentMessages.length > 0) {
+      return "Sent messages have been found. Please review the list below for any suspicious activity.";
+    }
+    return "No sent messages found in the specified time range.";
+  };
+
+  const getSafelistMessage = () => {
+    if (!becPollingCall.data) return null;
+    const trustedCount = becPollingCall.data.TrustedSenders?.length || 0;
+    const blockedCount = becPollingCall.data.BlockedSenders?.length || 0;
+    const changeCount = becPollingCall.data.SafelistChanges?.length || 0;
+    if (changeCount > 0) {
+      return `Trusted/Blocked senders list was changed ${changeCount} time(s) in the last 7 days. Please review the changes below.`;
+    }
+    if (trustedCount > 0 || blockedCount > 0) {
+      return `${trustedCount} trusted and ${blockedCount} blocked sender/domain entries found. Please review the list below.`;
+    }
+    return "No trusted or blocked senders/domains found.";
+  };
+
+  const formatSafelistValue = (value) => {
+    if (!value) return "unchanged";
+    return Array.isArray(value) ? value.join(", ") || "unchanged" : String(value);
+  };
+
+  // stable identity matters — a new array each render would loop CippDataTable's data-sync effect
+  const senderRows = useMemo(
+    () => [
+      ...(becPollingCall.data?.TrustedSenders || []).map((s) => ({ Sender: s, Type: "Trusted" })),
+      ...(becPollingCall.data?.BlockedSenders || []).map((s) => ({ Sender: s, Type: "Blocked" })),
+    ],
+    [becPollingCall.data],
+  );
 
   const subtitle = userRequest.isSuccess
     ? [
@@ -246,8 +299,8 @@ const Page = () => {
       {/* No User Selected State */}
       {noUserSelected && (
         <Box sx={{ py: 4 }}>
-          <Alert 
-            severity="warning" 
+          <Alert
+            severity="warning"
             icon={<ShieldExclamationIcon style={{ width: 24, height: 24 }} />}
             sx={{ mb: 3 }}
           >
@@ -414,131 +467,266 @@ const Page = () => {
             {/* All Steps */}
             <Grid size={{ xs: 12, md: 7 }}>
               <Stack spacing={3}>
-                {/* Log Information Card */}
-                <CippButtonCard
-                  variant="outlined"
-                  isFetching={false}
-                  title={
-                    <Stack direction="row" justifyContent={"space-between"}>
-                      <Box>Log Information</Box>
-                      <SvgIcon color="success">
-                        <CheckCircle />
-                      </SvgIcon>
-                    </Stack>
-                  }
-                >
+                <BecCheckCard title="Log Information">
                   <Typography variant="body2" gutterBottom>
                     {becPollingCall.data?.ExtractResult}. The data of this log was extracted at{" "}
                     {new Date(becPollingCall.data?.ExtractedAt).toLocaleString()}. This data might
                     be cached. To get the latest version of the data, click the Refresh Data button.
                   </Typography>
-                </CippButtonCard>
+                </BecCheckCard>
 
                 {/* Check 1: Mailbox Rules */}
                 <BecCheckCard
                   title="Check 1: Mailbox Rules"
-                  items={becPollingCall.data?.NewRules}
-                  noItemsMessage="No suspicious mailbox rules found. This is a good sign."
-                  itemsFoundMessage="Mailbox rules have been found. Please review the list below - rules that forward or delete emails could indicate compromise."
-                  renderItem={(rule, index) => (
-                    <PropertyListItem
-                      key={index}
-                      label={rule?.Name}
-                      value={rule?.Description}
-                    />
+                  count={
+                    (becPollingCall.data?.NewRules?.length || 0) +
+                    (becPollingCall.data?.InboxRuleChanges?.length || 0)
+                  }
+                >
+                  <Typography variant="body2" gutterBottom>
+                    {getRuleMessage()}
+                  </Typography>
+                  {becPollingCall.data?.NewRules?.length > 0 && (
+                    <Box mt={2} sx={{ maxHeight: 300, overflowY: "auto" }}>
+                      <PropertyList>
+                        {[...becPollingCall.data.NewRules]
+                          .sort(
+                            (a, b) => (b?.RecentlyChanged === true) - (a?.RecentlyChanged === true),
+                          )
+                          .map((rule, index) => (
+                            <PropertyListItem
+                              key={index}
+                              sx={checkItemSx}
+                              label={
+                                rule?.RecentlyChanged
+                                  ? `${rule?.Name} - changed in last 7 days`
+                                  : rule?.Name
+                              }
+                              value={rule?.Description}
+                            />
+                          ))}
+                      </PropertyList>
+                    </Box>
                   )}
-                />
+                  {becPollingCall.data?.InboxRuleChanges?.length > 0 && (
+                    <Box mt={2}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Rule changes in the last 7 days
+                      </Typography>
+                      <Box sx={{ maxHeight: 300, overflowY: "auto" }}>
+                        <PropertyList>
+                          {becPollingCall.data.InboxRuleChanges.map((change, index) => (
+                            <PropertyListItem
+                              key={index}
+                              sx={checkItemSx}
+                              label={`${change?.Operation} - ${change?.RuleName}`}
+                              value={`${change?.Date} by ${change?.UserKey}${
+                                change?.Parameters ? ` | ${change.Parameters}` : ""
+                              }`}
+                            />
+                          ))}
+                        </PropertyList>
+                      </Box>
+                    </Box>
+                  )}
+                </BecCheckCard>
 
                 {/* Check 2: Recently added users */}
                 <BecCheckCard
                   title="Check 2: Recently Added Users"
-                  items={becPollingCall.data?.NewUsers}
-                  noItemsMessage="No new users have been added in the last 14 days."
-                  itemsFoundMessage="New users have been found in the last 14 days. Please verify these accounts are legitimate."
-                  renderItem={(user, index) => (
-                    <PropertyListItem
-                      key={index}
-                      label={user?.userPrincipalName}
-                      value={user?.createdDateTime}
-                    />
+                  count={becPollingCall.data?.NewUsers?.length || 0}
+                >
+                  <Typography variant="body2" gutterBottom>
+                    {getUserMessage()}
+                  </Typography>
+                  {becPollingCall.data?.NewUsers?.length > 0 && (
+                    <Box mt={2} sx={{ maxHeight: 300, overflowY: "auto" }}>
+                      <PropertyList>
+                        {becPollingCall.data.NewUsers.map((user, index) => (
+                          <PropertyListItem
+                            key={index}
+                            sx={checkItemSx}
+                            align="horizontal"
+                            label={user?.userPrincipalName}
+                            value={user?.createdDateTime}
+                          />
+                        ))}
+                      </PropertyList>
+                    </Box>
                   )}
-                />
+                </BecCheckCard>
 
                 {/* Check 3: New Applications */}
                 <BecCheckCard
                   title="Check 3: New Applications"
-                  items={becPollingCall.data?.AddedApps}
-                  noItemsMessage="No new applications have been added recently."
-                  itemsFoundMessage="New applications have been found. Please verify these apps are authorized and legitimate."
-                  renderItem={(app, index) => (
-                    <PropertyListItem
-                      key={index}
-                      label={`${app?.displayName} - ${app?.appId}`}
-                      value={app?.createdDateTime}
-                    />
+                  count={becPollingCall.data?.AddedApps?.length || 0}
+                >
+                  <Typography variant="body2" gutterBottom>
+                    {getAppMessage()}
+                  </Typography>
+                  {becPollingCall.data?.AddedApps?.length > 0 && (
+                    <Box mt={2} sx={{ maxHeight: 300, overflowY: "auto" }}>
+                      <PropertyList>
+                        {becPollingCall.data.AddedApps.map((app, index) => (
+                          <PropertyListItem
+                            key={index}
+                            sx={checkItemSx}
+                            label={`${app?.displayName} - ${app?.appId}`}
+                            value={app?.createdDateTime}
+                          />
+                        ))}
+                      </PropertyList>
+                    </Box>
                   )}
-                />
+                </BecCheckCard>
 
                 {/* Check 4: Mailbox Permission Changes */}
                 <BecCheckCard
                   title="Check 4: Mailbox Permission Changes"
-                  items={becPollingCall.data?.MailboxPermissionChanges}
-                  noItemsMessage="No mailbox permission changes detected."
-                  itemsFoundMessage="Mailbox permission changes have been detected. Review to ensure these were authorized."
-                  renderItem={(permission, index) => (
-                    <PropertyListItem
-                      key={index}
-                      label={permission.UserKey}
-                      value={`${permission.Operation} - ${permission.Permissions}`}
-                    />
+                  count={becPollingCall.data?.MailboxPermissionChanges?.length || 0}
+                >
+                  <Typography variant="body2" gutterBottom>
+                    {getMailboxPermissionMessage()}
+                  </Typography>
+                  {becPollingCall.data?.MailboxPermissionChanges?.length > 0 && (
+                    <Box mt={2} sx={{ maxHeight: 300, overflowY: "auto" }}>
+                      <PropertyList>
+                        {becPollingCall.data.MailboxPermissionChanges.map((permission, index) => (
+                          <PropertyListItem
+                            key={index}
+                            sx={checkItemSx}
+                            label={permission.UserKey}
+                            value={`${permission.Operation} - ${permission.Permissions}`}
+                          />
+                        ))}
+                      </PropertyList>
+                    </Box>
                   )}
-                />
+                </BecCheckCard>
 
-                {/* Check 5: MFA Devices - Informational */}
+                {/* Check 5: Sent Messages */}
                 <BecCheckCard
-                  title="Check 5: MFA Devices"
-                  items={becPollingCall.data?.MFADevices}
-                  infoCheck={true}
-                  noItemsMessage="No MFA devices registered for this user."
-                  itemsFoundMessage="MFA Devices are registered for this user. Review to ensure no unauthorized devices have been added."
-                  renderItem={(device, index) => (
-                    <PropertyListItem
-                      key={index}
-                      label={device["@odata.type"]?.replace("#microsoft.graph.", "")}
-                      value={`${device?.displayName || "Unknown"} - Registered at ${device?.createdDateTime}`}
-                    />
+                  title="Check 5: Sent Messages"
+                  count={becPollingCall.data?.SentMessages?.length || 0}
+                >
+                  <Typography variant="body2" gutterBottom>
+                    {getSentMessagesMessage()}
+                  </Typography>
+                  {becPollingCall.data?.SentMessages?.length > 0 && (
+                    <Box mt={2}>
+                      <CippDataTable
+                        noCard={true}
+                        hideTitle={true}
+                        title="Sent Messages"
+                        data={becPollingCall.data.SentMessages}
+                        simpleColumns={["Subject", "RecipientAddress", "Status", "Received", "FromIP"]}
+                      />
+                    </Box>
                   )}
-                />
+                </BecCheckCard>
 
-                {/* Check 6: Password Changes - Informational */}
+                {/* Check 6: MFA Devices */}
                 <BecCheckCard
-                  title="Check 6: Password Changes"
-                  items={becPollingCall.data?.ChangedPasswords}
-                  infoCheck={true}
-                  noItemsMessage="No recent password changes detected."
-                  itemsFoundMessage="Recent password changes detected. Verify these were initiated by legitimate users."
-                  renderItem={(user, index) => (
-                    <PropertyListItem
-                      key={index}
-                      label={user?.displayName}
-                      value={user?.lastPasswordChangeDateTime}
-                    />
+                  title="Check 6: MFA Devices"
+                  count={becPollingCall.data?.MFADevices?.length || 0}
+                >
+                  <Typography variant="body2" gutterBottom>
+                    {becPollingCall.data?.MFADevices?.length > 0
+                      ? "MFA Devices are registered for this user. Review to ensure no unauthorized devices have been added."
+                      : "No MFA devices registered for this user."}
+                  </Typography>
+                  {becPollingCall.data?.MFADevices?.length > 0 && (
+                    <Box mt={2} sx={{ maxHeight: 300, overflowY: "auto" }}>
+                      <PropertyList>
+                        {becPollingCall.data.MFADevices.map((device, index) => (
+                          <PropertyListItem
+                            key={index}
+                            sx={checkItemSx}
+                            align="horizontal"
+                            label={device["@odata.type"]?.replace("#microsoft.graph.", "")}
+                            value={`${device?.displayName || "Unknown"} - Registered at ${device?.createdDateTime}`}
+                          />
+                        ))}
+                      </PropertyList>
+                    </Box>
                   )}
-                />
+                </BecCheckCard>
 
-                {/* Report Download Card */}
-                <CippButtonCard
-                  variant="outlined"
-                  isFetching={false}
-                  title={
-                    <Stack direction="row" justifyContent={"space-between"}>
-                      <Box>Download Report</Box>
-                      <SvgIcon color={becPollingCall.data ? "success" : "disabled"}>
-                        <CheckCircle />
-                      </SvgIcon>
-                    </Stack>
+                {/* Check 7: Password Changes */}
+                <BecCheckCard
+                  title="Check 7: Password Changes"
+                  count={becPollingCall.data?.ChangedPasswords?.length || 0}
+                >
+                  <Typography variant="body2" gutterBottom>
+                    {becPollingCall.data?.ChangedPasswords?.length > 0
+                      ? "Recent password changes detected. Verify these were initiated by legitimate users."
+                      : "No recent password changes detected."}
+                  </Typography>
+                  {becPollingCall.data?.ChangedPasswords?.length > 0 && (
+                    <Box mt={2} sx={{ maxHeight: 300, overflowY: "auto" }}>
+                      <PropertyList>
+                        {becPollingCall.data.ChangedPasswords.map((user, index) => (
+                          <PropertyListItem
+                            key={index}
+                            sx={checkItemSx}
+                            align="horizontal"
+                            label={user?.displayName}
+                            value={user?.lastPasswordChangeDateTime}
+                          />
+                        ))}
+                      </PropertyList>
+                    </Box>
+                  )}
+                </BecCheckCard>
+
+                {/* Check 8: Trusted & Blocked Senders */}
+                <BecCheckCard
+                  title="Check 8: Trusted & Blocked Senders"
+                  count={
+                    (becPollingCall.data?.TrustedSenders?.length || 0) +
+                    (becPollingCall.data?.BlockedSenders?.length || 0) +
+                    (becPollingCall.data?.SafelistChanges?.length || 0)
                   }
                 >
+                  <Typography variant="body2" gutterBottom>
+                    {getSafelistMessage()}
+                  </Typography>
+                  {senderRows.length > 0 && (
+                    <Box mt={2}>
+                      <CippDataTable
+                        noCard={true}
+                        hideTitle={true}
+                        title="Trusted & Blocked Senders"
+                        data={senderRows}
+                        simpleColumns={["Sender", "Type"]}
+                      />
+                    </Box>
+                  )}
+                  {becPollingCall.data?.SafelistChanges?.length > 0 && (
+                    <Box mt={2}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Changes in the last 7 days
+                      </Typography>
+                      <Box sx={{ maxHeight: 300, overflowY: "auto" }}>
+                        <PropertyList>
+                          {becPollingCall.data.SafelistChanges.map((change, index) => (
+                            <PropertyListItem
+                              key={index}
+                              sx={checkItemSx}
+                              label={`${change?.Operation} by ${change?.UserKey}`}
+                              value={`${change?.Date} | Trusted: ${formatSafelistValue(
+                                change?.Trusted,
+                              )} | Blocked: ${formatSafelistValue(change?.Blocked)}`}
+                            />
+                          ))}
+                        </PropertyList>
+                      </Box>
+                    </Box>
+                  )}
+                </BecCheckCard>
+
+                {/* Report Download Card */}
+                <BecCheckCard title="Download Report">
                   <Typography variant="body2" gutterBottom>
                     Generate a comprehensive PDF report for documentation, compliance, or end-user
                     review. The report includes detailed explanations suitable for non-technical
@@ -576,7 +764,7 @@ const Page = () => {
                       </Stack>
                     </Box>
                   )}
-                </CippButtonCard>
+                </BecCheckCard>
               </Stack>
             </Grid>
           </Grid>
