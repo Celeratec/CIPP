@@ -856,14 +856,18 @@ const CippAddEditUser = (props) => {
         </FormSection>
       )}
 
-      {/* Schedule Section - Only for Add mode */}
-      {formType === 'add' && (
+      {/* Schedule Section - creation (add) or this edit (edit) */}
+      {(formType === 'add' || formType === 'edit') && (
         <FormSection icon={Schedule} title="Scheduling">
           <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>
               <CippFormComponent
                 type="switch"
-                label="Schedule user creation for later"
+                label={
+                  formType === 'add'
+                    ? 'Schedule user creation for later'
+                    : 'Schedule this user edit for later'
+                }
                 name="Scheduled.enabled"
                 formControl={formControl}
               />
