@@ -759,6 +759,16 @@ export const nativeMenuItems = [
             permissions: ["Sharepoint.Admin.*"],
           },
           {
+            title: "Sharing Report",
+            path: "/teams-share/sharing-report",
+            permissions: ["Sharepoint.Site.*"],
+          },
+          {
+            title: "External Users",
+            path: "/teams-share/external-users",
+            permissions: ["Sharepoint.Site.*"],
+          },
+          {
             title: "Recycle Bin",
             path: "/teams-share/sharepoint/recycle-bin",
             permissions: ["Sharepoint.Site.ReadWrite"],
