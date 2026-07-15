@@ -174,6 +174,10 @@ const compareNullable = (aVal, bVal) => {
   return aVal > bVal ? 1 : -1;
 };
 
+// Stable ref so an undefined `data` prop doesn't create a fresh [] each render
+// and loop the static-data sync effect.
+const EMPTY_ARRAY = [];
+
 // Stable MRT helpers — module-level to avoid new object refs each render.
 const SORTING_FNS = {
   dateTimeNullsLast: (a, b, id) => {
@@ -1952,7 +1956,7 @@ const MobileCardView = (props) => <CardView {...props} isMobile={true} />;
 export const CippDataTable = (props) => {
   const {
     queryKey,
-    data = [],
+    data = EMPTY_ARRAY,
     columns = [],
     api = {},
     isFetching = false,
@@ -2648,13 +2652,20 @@ export const CippDataTable = (props) => {
                     <MenuItem
                       key={`${category}-${index}`}
                       onClick={() => {
-                        if (settings.currentTenant === "AllTenants" && row.original?.Tenant) {
-                          settings.handleUpdate({
-                            currentTenant: row.original.Tenant,
-                          });
-                        }
+                        // Only scope to the row's tenant for paths that execute immediately.
+                        // The standard dialog flow resolves the tenant itself, and eagerly
+                        // switching here left the wrong tenant selected when a dialog was
+                        // cancelled (upstream #6268).
+                        const scopeToRowTenant = () => {
+                          if (settings.currentTenant === "AllTenants" && row.original?.Tenant) {
+                            settings.handleUpdate({
+                              currentTenant: row.original.Tenant,
+                            });
+                          }
+                        };
 
                         if (action.noConfirm && action.customFunction) {
+                          scopeToRowTenant();
                           action.customFunction(row.original, action, {});
                           closeMenu();
                           return;
@@ -2662,6 +2673,7 @@ export const CippDataTable = (props) => {
 
                         // Handle custom component differently
                         if (typeof action.customComponent === "function") {
+                          scopeToRowTenant();
                           setCustomComponentData({ data: row.original, action: action });
                           setCustomComponentVisible(true);
                           closeMenu();

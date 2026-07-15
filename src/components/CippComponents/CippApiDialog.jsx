@@ -95,6 +95,18 @@ export const CippApiDialog = (props) => {
     },
   });
 
+  // Whenever the dialog is (re)opened, discard any results from a previous run
+  // so a freshly created window never shows stale output from an earlier action.
+  // The POST mutation and GET query retain their last result while this component
+  // stays mounted, so clear both alongside the streamed partial results.
+  useEffect(() => {
+    if (createDialog.open) {
+      setPartialResults([]);
+      actionPostRequest.reset();
+      setGetRequestInfo((prev) => ({ ...prev, waiting: false, queryKey: "" }));
+    }
+  }, [createDialog.open]);
+
   const processActionData = (dataObject, row, replacementBehaviour) => {
     if (typeof api?.dataFunction === "function") return api.dataFunction(row, dataObject);
 

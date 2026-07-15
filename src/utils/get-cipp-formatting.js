@@ -1118,15 +1118,31 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
     }
   }
 
-  //if string starts with http, return a link
+  //if string starts with http, return a link - but only when it parses as a real
+  //absolute http(s) URL. Defanged URLs (e.g. https[:]//bad.com from Check) fail to
+  //parse and would otherwise render as a link relative to the CIPP instance, so
+  //those are shown as plain text with only the copy button.
   if (typeof data === 'string' && data.toLowerCase().startsWith('http')) {
-    return isText ? (
-      data
-    ) : (
+    let isValidUrl = false
+    try {
+      const parsedUrl = new URL(data)
+      isValidUrl = parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
+    } catch {
+      isValidUrl = false
+    }
+    if (isText) {
+      return data
+    }
+    return isValidUrl ? (
       <>
         <Link href={data} target="_blank" rel="noreferrer">
           URL
         </Link>
+        <CippCopyToClipBoard text={data} />
+      </>
+    ) : (
+      <>
+        {data}
         <CippCopyToClipBoard text={data} />
       </>
     )
