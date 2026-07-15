@@ -220,7 +220,17 @@ export const AuthMethodCard = ({ data, isLoading, compact = false }) => {
     <Card sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
         title={
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box
+            onClick={() => router.push("/identity/reports/mfa-report")}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              cursor: "pointer",
+              width: "fit-content",
+              "&:hover": { textDecoration: "underline" },
+            }}
+          >
             <UsersIcon sx={{ fontSize: compact ? 20 : 24 }} />
             <Typography variant={titleVariant}>All users auth methods</Typography>
           </Box>

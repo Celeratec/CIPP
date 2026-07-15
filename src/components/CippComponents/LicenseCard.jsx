@@ -1,7 +1,9 @@
 import { Box, Card, CardHeader, CardContent, Typography, Skeleton, LinearProgress, Tooltip, Divider } from "@mui/material";
 import { CardMembership as CardMembershipIcon, CheckCircle, Cancel } from "@mui/icons-material";
+import { useRouter } from "next/router";
 
 export const LicenseCard = ({ data, isLoading, compact = false }) => {
+  const router = useRouter();
   const titleVariant = compact ? "subtitle1" : "h6";
   const statValueVariant = compact ? "h4" : "h3";
 
@@ -104,7 +106,17 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
     <Card sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
         title={
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box
+            onClick={() => router.push("/tenant/reports/list-licenses")}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              cursor: "pointer",
+              width: "fit-content",
+              "&:hover": { textDecoration: "underline" },
+            }}
+          >
             <CardMembershipIcon sx={{ fontSize: compact ? 20 : 24 }} />
             <Typography variant={titleVariant}>License Overview</Typography>
           </Box>
@@ -260,7 +272,15 @@ export const LicenseCard = ({ data, isLoading, compact = false }) => {
                   arrow
                   placement="top"
                 >
-                  <Box sx={{ flexShrink: 0 }}>
+                  <Box
+                    onClick={() =>
+                      router.push({
+                        pathname: "/tenant/reports/list-licenses",
+                        query: { filters: JSON.stringify([{ id: "License", value: license.name }]) },
+                      })
+                    }
+                    sx={{ flexShrink: 0, cursor: "pointer", "&:hover": { opacity: 0.8 } }}
+                  >
                     <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.25 }}>
                       <Typography variant="caption" noWrap sx={{ flex: 1, mr: 1, fontSize: compact ? "0.7rem" : "0.75rem" }}>
                         {license.name}
