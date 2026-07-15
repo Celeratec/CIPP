@@ -489,7 +489,9 @@ export const CippApiDialog = (props) => {
                   onClick={() => {
                     setIsFormSubmitted(false);
                     setPartialResults([]);
-                    formHook.reset(defaultvalues || {});
+                    formHook.reset(
+                      typeof defaultvalues === "function" ? defaultvalues(row) : defaultvalues || {},
+                    );
                   }}
                 >
                   {addAnotherLabel}

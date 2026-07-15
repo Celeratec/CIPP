@@ -187,6 +187,43 @@ const EditGroup = () => {
     },
   ];
 
+  // Members can be users or nested groups (owners remain users-only)
+  const memberPickerField = [
+    {
+      type: "autoComplete",
+      name: "UserID",
+      label: "Select User or Group",
+      multiple: false,
+      creatable: false,
+      api: {
+        url: "/api/ListUsersAndGroups",
+        data: { TenantFilter: tenantFilter },
+        dataKey: "Results",
+        queryKey: `ListUsersAndGroups-${tenantFilter}`,
+        labelField: (option) => {
+          if (option.userPrincipalName)
+            return `${option.displayName} (${option.userPrincipalName})`;
+          const groupType =
+            option.mailEnabled && !option.securityEnabled
+              ? "Distribution Group"
+              : option.mailEnabled && option.securityEnabled
+                ? "Mail-Enabled Security Group"
+                : "Security Group";
+          return `${option.displayName} (${groupType})`;
+        },
+        valueField: "id",
+        addedField: {
+          userPrincipalName: "userPrincipalName",
+          displayName: "displayName",
+          id: "id",
+        },
+      },
+      validators: {
+        validate: (value) => (!value ? "Please select a user or group" : true),
+      },
+    },
+  ];
+
   const contactPickerField = [
     {
       type: "autoComplete",
@@ -223,7 +260,7 @@ const EditGroup = () => {
       groupName,
       AddMember: [formData.UserID],
     }),
-    confirmText: "Select a user to add as a member to this group.",
+    confirmText: "Select a user or group to add as a member to this group.",
     relatedQueryKeys: [`ListGroups-${groupId}`],
   };
 
@@ -895,6 +932,19 @@ const EditGroup = () => {
                         header: "Email",
                         id: "userPrincipalName",
                         accessorKey: "userPrincipalName",
+                        // Nested groups have no UPN - show the group type instead
+                        Cell: ({ row: tableRow }) => {
+                          const m = tableRow.original;
+                          if (m.userPrincipalName) return m.userPrincipalName;
+                          if (m["@odata.type"] === "#microsoft.graph.group") {
+                            return m.mailEnabled && !m.securityEnabled
+                              ? "Distribution Group"
+                              : m.mailEnabled && m.securityEnabled
+                                ? "Mail-Enabled Security Group"
+                                : "Security Group";
+                          }
+                          return "";
+                        },
                       },
                     ]}
                     actions={memberActions}
@@ -1249,8 +1299,8 @@ const EditGroup = () => {
       {/* Dialogs */}
       <CippApiDialog
         createDialog={addMemberDialog}
-        title="Add Member"
-        fields={userPickerField}
+        title="Add Member (User or Group)"
+        fields={memberPickerField}
         api={addMemberApi}
         row={{}}
         relatedQueryKeys={[`ListGroups-${groupId}`]}
