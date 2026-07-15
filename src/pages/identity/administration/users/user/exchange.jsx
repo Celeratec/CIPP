@@ -45,10 +45,24 @@ import CippMailboxPermissionsDialog from "../../../../../components/CippComponen
 import CippCalendarPermissionsDialog from "../../../../../components/CippComponents/CippCalendarPermissionsDialog";
 import CippContactPermissionsDialog from "../../../../../components/CippComponents/CippContactPermissionsDialog";
 
+const permissionOptionGroupOrder = {
+  "System Users": 0,
+  Users: 1,
+  "Mail-enabled Security Groups": 2,
+};
+
+const sortPermissionOptions = (options) =>
+  options.sort(
+    (a, b) =>
+      permissionOptionGroupOrder[a.group] - permissionOptionGroupOrder[b.group] ||
+      a.label.localeCompare(b.label),
+  );
+
 const Page = () => {
   const userSettingsDefaults = useSettings();
   const [showDetails, setShowDetails] = useState(false);
   const [actionData, setActionData] = useState({ ready: false });
+  const [includeSecurityGroups, setIncludeSecurityGroups] = useState(false);
   const createDialog = useDialog();
   const aliasDialog = useDialog();
   const permissionsDialog = useDialog();
@@ -73,6 +87,15 @@ const Page = () => {
   const userRequest = ApiGetCall({
     url: `/api/ListUserMailboxDetails?UserId=${userId}&tenantFilter=${userSettingsDefaults.currentTenant}&userMail=${graphUserRequest.data?.[0]?.userPrincipalName}`,
     queryKey: `Mailbox-${userId}`,
+    waiting: router.isReady && !!userId && !!graphUserRequest.data?.[0]?.userPrincipalName,
+  });
+
+  const mailboxAccessRequest = ApiGetCall({
+    // Encode the UPN - guest UPNs contain #EXT#, which would truncate the query string
+    url: `/api/ListMailboxPermissions?tenantFilter=${userSettingsDefaults.currentTenant}&UseReportDB=true&ByUser=true&User=${encodeURIComponent(
+      graphUserRequest.data?.[0]?.userPrincipalName ?? "",
+    )}`,
+    queryKey: `MailboxAccess-${userId}`,
     waiting: router.isReady && !!userId && !!graphUserRequest.data?.[0]?.userPrincipalName,
   });
 
@@ -127,6 +150,7 @@ const Page = () => {
       $top: 999,
     },
     queryKey: `MailEnabledSecurityGroups-${userSettingsDefaults.currentTenant}`,
+    waiting: includeSecurityGroups,
   });
 
   // Memoized permission info resolver - avoids recreation on every render
@@ -194,7 +218,7 @@ const Page = () => {
   const aliasApiConfig = {
     type: "POST",
     url: "/api/EditUserAliases",
-    relatedQueryKeys: `ListUsers-${userId}`,
+    relatedQueryKeys: [`ListUsers-${userId}`, `Mailbox-${userId}`],
     confirmText: "Add the specified proxy addresses to this user?",
     customDataformatter: (row, action, formData) => {
       return {
@@ -313,6 +337,12 @@ const Page = () => {
   }, [permissionsDialog.open]);
 
   useEffect(() => {
+    if (!permissionsDialog.open && !calendarPermissionsDialog.open && !contactPermissionsDialog.open) {
+      setIncludeSecurityGroups(false);
+    }
+  }, [permissionsDialog.open, calendarPermissionsDialog.open, contactPermissionsDialog.open]);
+
+  useEffect(() => {
     if (oooRequest.isSuccess) {
       formControl.setValue("ooo.ExternalMessage", oooRequest.data?.ExternalMessage);
       formControl.setValue("ooo.InternalMessage", oooRequest.data?.InternalMessage);
@@ -387,24 +417,25 @@ const Page = () => {
           value: user.userPrincipalName,
           label: `${user.displayName} (${user.userPrincipalName})`,
           type: "user",
+          group: "Users",
         });
       });
     }
 
     // Add mail-enabled security groups
-    if (groupsList?.data?.Results) {
+    if (includeSecurityGroups && groupsList?.data?.Results) {
       groupsList.data.Results.forEach((group) => {
         options.push({
           value: group.mail,
           label: `${group.displayName} (${group.mail})`,
           type: "group",
+          group: "Mail-enabled Security Groups",
         });
       });
     }
 
-    // Sort alphabetically by label
-    return options.sort((a, b) => a.label.localeCompare(b.label));
-  }, [usersList?.data?.Results, groupsList?.data?.Results]);
+    return sortPermissionOptions(options);
+  }, [usersList?.data?.Results, groupsList?.data?.Results, includeSecurityGroups]);
 
   // Create options array for calendar permissions (includes system users)
   // Uses mail (primary SMTP) instead of UPN so Exchange can resolve recipients
@@ -415,6 +446,7 @@ const Page = () => {
       value: "Default",
       label: "Default",
       type: "system",
+      group: "System Users",
     });
 
     if (usersList?.data?.Results) {
@@ -425,26 +457,24 @@ const Page = () => {
             value: user.mail,
             label: `${user.displayName} (${user.mail})`,
             type: "user",
+            group: "Users",
           });
         });
     }
 
-    if (groupsList?.data?.Results) {
+    if (includeSecurityGroups && groupsList?.data?.Results) {
       groupsList.data.Results.forEach((group) => {
         options.push({
           value: group.mail,
           label: `${group.displayName} (${group.mail})`,
           type: "group",
+          group: "Mail-enabled Security Groups",
         });
       });
     }
 
-    return options.sort((a, b) => {
-      if (a.type === "system" && b.type !== "system") return -1;
-      if (b.type === "system" && a.type !== "system") return 1;
-      return a.label.localeCompare(b.label);
-    });
-  }, [usersList?.data?.Results, groupsList?.data?.Results]);
+    return sortPermissionOptions(options);
+  }, [usersList?.data?.Results, groupsList?.data?.Results, includeSecurityGroups]);
 
   const contactPermissionOptions = useMemo(() => {
     const options = [];
@@ -453,6 +483,7 @@ const Page = () => {
       value: "Default",
       label: "Default",
       type: "system",
+      group: "System Users",
     });
 
     if (usersList?.data?.Results) {
@@ -463,28 +494,27 @@ const Page = () => {
             value: user.mail,
             label: `${user.displayName} (${user.mail})`,
             type: "user",
+            group: "Users",
           });
         });
     }
 
-    if (groupsList?.data?.Results) {
+    if (includeSecurityGroups && groupsList?.data?.Results) {
       groupsList.data.Results.forEach((group) => {
         options.push({
           value: group.mail,
           label: `${group.displayName} (${group.mail})`,
           type: "group",
+          group: "Mail-enabled Security Groups",
         });
       });
     }
 
-    return options.sort((a, b) => {
-      if (a.type === "system" && b.type !== "system") return -1;
-      if (b.type === "system" && a.type !== "system") return 1;
-      return a.label.localeCompare(b.label);
-    });
-  }, [usersList?.data?.Results, groupsList?.data?.Results]);
+    return sortPermissionOptions(options);
+  }, [usersList?.data?.Results, groupsList?.data?.Results, includeSecurityGroups]);
 
-  const isUserGroupLoading = usersList.isFetching || groupsList.isFetching;
+  const isUserGroupLoading =
+    usersList.isFetching || (includeSecurityGroups && groupsList.isFetching);
 
   // Memoize subtitle to prevent recreation on every render
   const subtitle = useMemo(() => {
@@ -650,6 +680,67 @@ const Page = () => {
             );
           },
         },
+      },
+    },
+  ];
+
+  const mailboxAccessActions = [
+    {
+      label: "Remove Permission",
+      type: "POST",
+      icon: <Delete />,
+      url: "/api/ExecModifyMBPerms",
+      customDataformatter: (row, action, formData) => {
+        const rowArray = Array.isArray(row) ? row : [row];
+        return {
+          mailboxRequests: rowArray.map((r) => ({
+            userID: r.MailboxUPN,
+            permissions: [
+              {
+                UserID: graphUserRequest.data?.[0]?.userPrincipalName,
+                PermissionLevel: r.AccessRights,
+                Modification: "Remove",
+              },
+            ],
+          })),
+          tenantFilter: userSettingsDefaults.currentTenant,
+        };
+      },
+      confirmText: "Are you sure you want to remove this user's access to the selected mailboxes?",
+      multiPost: false,
+      relatedQueryKeys: [`MailboxAccess-${userId}`],
+    },
+  ];
+
+  const mailboxAccessData = mailboxAccessRequest.data?.[0]?.Permissions ?? [];
+
+  const mailboxAccessCard = [
+    {
+      id: 1,
+      cardLabelBox: {
+        cardLabelBoxHeader: mailboxAccessRequest.isFetching ? (
+          <CircularProgress size="25px" color="inherit" />
+        ) : mailboxAccessData.length !== 0 ? (
+          <Check />
+        ) : (
+          <Error />
+        ),
+      },
+      text: "Mailbox Access",
+      subtext: mailboxAccessRequest.isError
+        ? "Could not load the cached permission report - sync the mailbox permissions cache and try again"
+        : mailboxAccessData.length !== 0
+          ? "This user has access to other mailboxes (from the cached permission report)"
+          : "This user has no access to other mailboxes (from the cached permission report)",
+      statusColor: "green.main",
+      table: {
+        title: "Mailbox Access",
+        hideTitle: true,
+        data: mailboxAccessData,
+        refreshFunction: () => mailboxAccessRequest.refetch(),
+        isFetching: mailboxAccessRequest.isFetching,
+        simpleColumns: ["Mailbox", "MailboxUPN", "AccessRights"],
+        actions: mailboxAccessActions,
       },
     },
   ];
@@ -1195,8 +1286,8 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to make this the primary proxy address?",
       multiPost: false,
-      relatedQueryKeys: `ListUsers-${userId}`,
-      condition: (row) => row && row.Type !== "Primary",
+      relatedQueryKeys: [`ListUsers-${userId}`, `Mailbox-${userId}`],
+      condition: (row) => row && row.Type === "Alias",
       category: "edit",
     },
     {
@@ -1211,11 +1302,54 @@ const Page = () => {
       },
       confirmText: "Are you sure you want to remove this proxy address?",
       multiPost: false,
-      relatedQueryKeys: `ListUsers-${userId}`,
-      condition: (row) => row && row.Type !== "Primary",
+      relatedQueryKeys: [`ListUsers-${userId}`, `Mailbox-${userId}`],
+      condition: (row) => row && row.Type === "Alias",
       category: "danger",
     },
   ];
+
+  // Merge Entra ID proxyAddresses (fast, primary source) with the mailbox EmailAddresses
+  // from Exchange so forward-sync drift between the two directories is visible.
+  const graphProxyAddresses = (graphUserRequest.data?.[0]?.proxyAddresses || []).filter(
+    (address) => typeof address === "string",
+  );
+  // Mailbox serializes as an array with one element
+  const mailboxDetails = [].concat(userRequest.data?.[0]?.Mailbox || [])[0];
+  const exchangeProxyAddresses = []
+    .concat(mailboxDetails?.EmailAddresses || [])
+    .filter((address) => typeof address === "string");
+  // Only assess sync when Exchange returned addresses; a mailbox always has at least a primary
+  const exchangeAddressesLoaded = userRequest.isSuccess && exchangeProxyAddresses.length > 0;
+  const proxyAddressType = (address) =>
+    address.startsWith("SMTP:") ? "Primary" : address.startsWith("smtp:") ? "Alias" : address.split(":")[0];
+  const proxyAddressRows = (() => {
+    const rows = new Map();
+    graphProxyAddresses.forEach((address) => {
+      rows.set(address.toLowerCase(), { Address: address, inGraph: true, inExchange: false });
+    });
+    exchangeProxyAddresses.forEach((address) => {
+      const existing = rows.get(address.toLowerCase());
+      if (existing) {
+        existing.inExchange = true;
+      } else {
+        rows.set(address.toLowerCase(), { Address: address, inGraph: false, inExchange: true });
+      }
+    });
+    return [...rows.values()].map((row) => ({
+      Address: row.Address,
+      Type: proxyAddressType(row.Address),
+      Source: !exchangeAddressesLoaded
+        ? "Checking"
+        : row.inGraph && row.inExchange
+          ? "Entra ID & Exchange"
+          : row.inGraph
+            ? "Entra ID only"
+            : "Exchange only",
+    }));
+  })();
+  const mismatchedAddresses = exchangeAddressesLoaded
+    ? proxyAddressRows.filter((row) => row.Source !== "Entra ID & Exchange")
+    : [];
 
   const proxyAddressesCard = [
     {
@@ -1223,7 +1357,7 @@ const Page = () => {
       cardLabelBox: {
         cardLabelBoxHeader: graphUserRequest.isFetching ? (
           <CircularProgress size="25px" color="inherit" />
-        ) : graphUserRequest.data?.[0]?.proxyAddresses?.length > 1 ? (
+        ) : mismatchedAddresses.length === 0 && graphUserRequest.data?.[0]?.proxyAddresses?.length > 1 ? (
           <Check />
         ) : (
           <Error />
@@ -1231,9 +1365,11 @@ const Page = () => {
       },
       text: "Proxy Addresses",
       subtext:
-        graphUserRequest.data?.[0]?.proxyAddresses?.length > 1
-          ? "Proxy addresses are configured for this user"
-          : "No proxy addresses configured for this user",
+        mismatchedAddresses.length > 0
+          ? `${mismatchedAddresses.length} address(es) only exist in one of Entra ID or Exchange - Microsoft may still be propagating recent changes`
+          : graphUserRequest.data?.[0]?.proxyAddresses?.length > 1
+            ? "Proxy addresses are configured for this user"
+            : "No proxy addresses configured for this user",
       statusColor: "green.main",
       cardLabelBoxActions: (
         <Button
@@ -1249,14 +1385,13 @@ const Page = () => {
       table: {
         title: "Proxy Addresses",
         hideTitle: true,
-        data:
-          graphUserRequest.data?.[0]?.proxyAddresses?.map((address) => ({
-            Address: address,
-            Type: typeof address === "string" && address.startsWith("SMTP:") ? "Primary" : "Alias",
-          })) || [],
-        refreshFunction: () => graphUserRequest.refetch(),
+        data: proxyAddressRows,
+        refreshFunction: () => {
+          graphUserRequest.refetch();
+          userRequest.refetch();
+        },
         isFetching: graphUserRequest.isFetching,
-        simpleColumns: ["Address", "Type"],
+        simpleColumns: ["Address", "Type", "Source"],
         actions: proxyAddressActions,
         offCanvas: {
           children: (data) => {
@@ -1272,6 +1407,10 @@ const Page = () => {
                   {
                     label: "Type",
                     value: data.Type,
+                  },
+                  {
+                    label: "Source",
+                    value: data.Source,
                   },
                 ]}
                 actionItems={proxyAddressActions}
@@ -1368,6 +1507,11 @@ const Page = () => {
                       isCollapsible={true}
                     />
                     <CippBannerListCard
+                      isFetching={mailboxAccessRequest.isLoading}
+                      items={mailboxAccessCard}
+                      isCollapsible={true}
+                    />
+                    <CippBannerListCard
                       isFetching={calPermissions.isLoading}
                       items={calCard}
                       isCollapsible={true}
@@ -1447,6 +1591,8 @@ const Page = () => {
             formHook={formHook}
             combinedOptions={mailboxPermissionOptions}
             isUserGroupLoading={isUserGroupLoading}
+            includeGroups={includeSecurityGroups}
+            onIncludeGroupsChange={setIncludeSecurityGroups}
             defaultAutoMap={true}
           />
         )}
@@ -1464,6 +1610,8 @@ const Page = () => {
             formHook={formHook}
             combinedOptions={calendarPermissionOptions}
             isUserGroupLoading={isUserGroupLoading}
+            includeGroups={includeSecurityGroups}
+            onIncludeGroupsChange={setIncludeSecurityGroups}
           />
         )}
       </CippApiDialog>
@@ -1480,6 +1628,8 @@ const Page = () => {
             formHook={formHook}
             combinedOptions={contactPermissionOptions}
             isUserGroupLoading={isUserGroupLoading}
+            includeGroups={includeSecurityGroups}
+            onIncludeGroupsChange={setIncludeSecurityGroups}
           />
         )}
       </CippApiDialog>

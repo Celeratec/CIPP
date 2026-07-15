@@ -402,6 +402,12 @@ export const CippExchangeInfoCard = (props) => {
       securityRisk: "medium",
       recommendation: "Keep enabled for mobile device access unless using Outlook mobile app exclusively.",
     },
+    SMTP: {
+      fullName: "SMTP Client Authentication (Basic Auth)",
+      affectedApps: "Multifunction printers/scanners, line-of-business apps, and scripts that send mail with a username and password",
+      securityRisk: "high",
+      recommendation: "Disable unless a device or app must send mail with basic authentication.",
+    },
   };
 
   // Modern protocols (recommended)
@@ -413,9 +419,17 @@ export const CippExchangeInfoCard = (props) => {
   ];
   
   // Legacy protocols (security risk)
+  // SMTP client auth is inverted in EXO: SmtpClientAuthenticationDisabled true = secure,
+  // false = basic auth enabled (risk), null = follows the org-wide default (unknown here).
   const legacyProtocols = [
     { name: "IMAP", enabled: exchangeData?.MailboxImapEnabled, ...protocolInfo.IMAP },
     { name: "POP", enabled: exchangeData?.MailboxPopEnabled, ...protocolInfo.POP },
+    {
+      name: "SMTP",
+      enabled: exchangeData?.SmtpClientAuthenticationDisabled === false,
+      unknown: exchangeData?.SmtpClientAuthenticationDisabled == null,
+      ...protocolInfo.SMTP,
+    },
   ];
   
   // Combined for dialog lookups
@@ -425,7 +439,9 @@ export const CippExchangeInfoCard = (props) => {
   const anyLegacyEnabled = legacyProtocols.some(p => p.enabled);
   
   // Track if both IMAP and POP are enabled (for "disable both" button)
-  const bothLegacyEnabled = legacyProtocols.every(p => p.enabled);
+  const bothLegacyEnabled = legacyProtocols
+    .filter((p) => p.name === "IMAP" || p.name === "POP")
+    .every((p) => p.enabled);
   
   // State for legacy protocols section expansion
   const [legacyProtocolsExpanded, setLegacyProtocolsExpanded] = useState(anyLegacyEnabled);
@@ -945,39 +961,47 @@ export const CippExchangeInfoCard = (props) => {
                     </Typography>
                   )}
                   <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap alignItems="center">
-                    {legacyProtocols.map((protocol) => (
-                      <Tooltip 
-                        key={protocol.name} 
-                        title={userPrincipalName 
-                          ? `${protocol.fullName} - Click to ${protocol.enabled ? 'disable' : 'enable'}` 
-                          : `${protocol.fullName} - User info not available`}
-                      >
-                        <Chip
-                          label={protocol.name}
-                          icon={protocol.enabled ? <Warning /> : <CloseIcon />}
-                          color={protocol.enabled ? "error" : "default"}
-                          variant={protocol.enabled ? "filled" : "outlined"}
-                          size="small"
-                          onClick={userPrincipalName ? () => handleProtocolClick(protocol.name, protocol.enabled) : undefined}
-                          sx={{ 
-                            fontWeight: 500,
-                            cursor: userPrincipalName ? "pointer" : "default",
-                            "&:hover": userPrincipalName ? {
-                              opacity: 0.8,
-                              transform: "scale(1.02)",
-                            } : {},
-                            transition: "all 0.15s ease-in-out",
-                            ...(protocol.enabled && {
-                              bgcolor: alpha(theme.palette.error.main, 0.9),
-                              "&:hover": userPrincipalName ? {
-                                bgcolor: alpha(theme.palette.error.main, 0.75),
+                    {legacyProtocols.map((protocol) => {
+                      // SMTP client auth can only be disabled through the API (not re-enabled),
+                      // and shows neutral when the mailbox follows the org-wide default.
+                      const isSmtp = protocol.name === "SMTP";
+                      const clickable = userPrincipalName && !protocol.unknown && (!isSmtp || protocol.enabled);
+                      const tooltipTitle = protocol.unknown
+                        ? `${protocol.fullName} - Follows the organization default`
+                        : !userPrincipalName
+                          ? `${protocol.fullName} - User info not available`
+                          : isSmtp && !protocol.enabled
+                            ? `${protocol.fullName} - Disabled (can only be re-enabled tenant-wide)`
+                            : `${protocol.fullName} - Click to ${protocol.enabled ? "disable" : "enable"}`;
+                      return (
+                        <Tooltip key={protocol.name} title={tooltipTitle}>
+                          <Chip
+                            label={isSmtp ? "SMTP Auth" : protocol.name}
+                            icon={protocol.unknown ? undefined : protocol.enabled ? <Warning /> : <CloseIcon />}
+                            color={protocol.unknown ? "default" : protocol.enabled ? "error" : "default"}
+                            variant={protocol.enabled ? "filled" : "outlined"}
+                            size="small"
+                            onClick={clickable ? () => handleProtocolClick(protocol.name, protocol.enabled) : undefined}
+                            sx={{ 
+                              fontWeight: 500,
+                              cursor: clickable ? "pointer" : "default",
+                              "&:hover": clickable ? {
+                                opacity: 0.8,
                                 transform: "scale(1.02)",
                               } : {},
-                            }),
-                          }}
-                        />
-                      </Tooltip>
-                    ))}
+                              transition: "all 0.15s ease-in-out",
+                              ...(protocol.enabled && {
+                                bgcolor: alpha(theme.palette.error.main, 0.9),
+                                "&:hover": clickable ? {
+                                  bgcolor: alpha(theme.palette.error.main, 0.75),
+                                  transform: "scale(1.02)",
+                                } : {},
+                              }),
+                            }}
+                          />
+                        </Tooltip>
+                      );
+                    })}
                     {/* Disable Both button - only show when both are enabled */}
                     {bothLegacyEnabled && userPrincipalName && (
                       <Tooltip title="Disable both IMAP and POP protocols">

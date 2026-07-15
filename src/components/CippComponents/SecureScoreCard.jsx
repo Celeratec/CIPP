@@ -1,5 +1,6 @@
 import { Box, Card, CardHeader, CardContent, Typography, Divider, Skeleton } from "@mui/material";
 import { Security as SecurityIcon, TrendingUp, TrendingDown, TrendingFlat } from "@mui/icons-material";
+import { useRouter } from "next/router";
 import {
   RadialBarChart,
   RadialBar,
@@ -41,6 +42,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
+  const router = useRouter();
   const chartContainerRef = useRef(null);
   const [containerReady, setContainerReady] = useState(false);
   const titleVariant = compact ? "subtitle1" : "h6";
@@ -131,7 +133,17 @@ export const SecureScoreCard = ({ data, isLoading, compact = false }) => {
     <Card sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
         title={
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box
+            onClick={() => router.push("/tenant/administration/securescore")}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              cursor: "pointer",
+              width: "fit-content",
+              "&:hover": { textDecoration: "underline" },
+            }}
+          >
             <SecurityIcon sx={{ fontSize: compact ? 20 : 24 }} />
             <Typography variant={titleVariant}>Secure Score</Typography>
           </Box>
