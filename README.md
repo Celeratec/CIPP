@@ -10,7 +10,7 @@
 
 ---
 
-> **Last synced with upstream:** July 2026 — light-delta intake from CIPP v10.5.5 / CIPP-API v10.5.6 (**Manage365 v5.15.2**, upstream baseline **10.5.5**)
+> **Last synced with upstream:** July 2026 — v10.6.1 intake series (major delta plus nine feature intakes: Copilot & AI, SAM cert, SharePoint suite, BEC UI, Exchange/Mailbox, UserActions + nested groups, MEM devices, scheduled edit + dashboard alerts, odds & ends) (**Manage365 v5.25.0**, upstream baseline **10.6.1**)
 >
 > Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. Upstream changes are merged selectively to preserve Manage365-specific UI and workflows. See [Upstream Integration](#upstream-integration) below.
 
@@ -30,6 +30,8 @@ Manage365 includes the complete CIPP feature set:
 
 ### Identity Management
 - User administration (create, edit, delete, offboard with orchestrator-based batch processing and scheduler-routed task tracking)
+- Schedulable user edits — apply an edit now or schedule it for a future date via the task scheduler
+- Policy-aware Temporary Access Pass creation (lifetime/usage options validated against the tenant's TAP policy)
 - User form validation with field-level constraints (max length, required, pattern)
 - User patching with manager and sponsor property support
 - Vacation mode wizard with mailbox permissions, calendar delegation, and out-of-office scheduling with timezone-aware response formatting
@@ -41,12 +43,15 @@ Manage365 includes the complete CIPP feature set:
 - Per-user device view on the View User page (Entra device cards and Intune managed devices in one place)
 - Role management and JIT Admin with usage location support and TAP lifetime policy bounds
 - Reports: MFA (with role-targeted CA policy detection), inactive users, sign-in logs, Entra Connect, risk detections, BEC remediation
+- BEC remediation checks include inbox-rule change auditing, sent-message review, and trusted/blocked sender changes (Manage365 implements the backend data collection for the sender check)
+- Copilot & AI management pages
 
 ### Tenant Administration
 - Multi-tenant management and configuration
 - Upgraded tenant onboarding experience with type selection and Indirect Reseller Link support
 - Alert configuration and audit logs (group membership change, Defender severity filtering, inactive users, TAP creation alerts)
 - Alert snooze dialog and snoozed alerts management
+- Dashboard Alerts card — active and snoozed alert instances at a glance with per-item snooze
 - Secure Score monitoring
 - Application management, consent requests, and app management policies
 - App registration and enterprise app detail pages with permissions viewer
@@ -509,9 +514,33 @@ Manage365 tracks [KelvinTegelaar/CIPP](https://github.com/KelvinTegelaar/CIPP) a
 
 Start a cycle: `./Tools/Start-UpstreamSyncCycle.ps1 -Repo CIPP` (and the same script from CIPP-API with `-Repo CIPP-API`).
 
-The June 2026 v10.5 intake was **selective** — upstream fixes and improvements were ported surgically rather than merging whole files, so fork-specific behavior stays intact.
+All intakes are **selective** — upstream fixes and improvements are ported surgically rather than merging whole files, so fork-specific behavior stays intact.
 
-### Taken from upstream (v10.5 / v10.5.1)
+### Taken from upstream (v10.6.1 intake series — July 2026)
+
+The July 2026 cycle absorbed the upstream 10.6.x line as a major delta plus nine
+dedicated feature intakes (checkpoint docs in `docs/upstream-sync/`):
+
+| Intake | What changed |
+|--------|----------------|
+| **Copilot & AI** (v5.18.0) | Copilot & AI management pages and menu section |
+| **SAM certificate auth** | Certificate-based SAM authentication support (API) |
+| **SharePoint suite** (v5.19.0) | Upstream SharePoint improvements merged into fork's site management |
+| **BEC UI family** (v5.20.0) | Compact accordion check cards, inbox-rule change auditing, Sent Messages check, Trusted & Blocked Senders check (fork implemented the missing backend data producer), updated PDF report; fork's rich page states preserved |
+| **Exchange/Mailbox family** (v5.21.0) | Mailbox Access card, proxy-address drift (Source column), mail-enabled security groups in permission pickers, SMTP Auth chip on the Exchange info card, report-DB mailbox permissions page; guest-UPN retry logic preserved in `ExecModifyMBPerms` |
+| **UserActions + nested groups** (v5.22.0) | Policy-aware TAP creation form, pre-selection + no-op guards on Sign-In State and Source of Authority actions, users-and-groups member picker for group edit (nested group memberships) |
+| **MEM devices + component fixes** (v5.23.0) | Shared `CippIntuneDeviceActions` (built from the fork's richer action list) consumed by both device pages; defanged-URL rendering fix; bar-chart tooltip fix; AllTenants tenant-scoping fix on row actions; stale dialog results cleared on reopen |
+| **Scheduled edit + dashboard alerts** (v5.24.0) | Dashboard Alerts card (active + snoozed alert instances with per-item snooze), schedulable user edits via new shared `Set-CIPPUser` (API), bulk API results rolled up per action with an X-of-Y summary alert |
+| **Odds & ends** (v5.25.0) | Menu section permission fixes (Device Management, Transport, Spam Filter, Resource Management), top-nav tooltips + shortcut hints, Next.js build-trace skip (~67s → ~24s builds), dependency bumps (react-query family, apexcharts, mui-tiptap, reduxjs/toolkit, dompurify as direct dep) |
+
+**Deferred from this cycle:** the SSO/CIPP-users family (architecturally
+incompatible — upstream's implementation depends on a container runtime and
+EasyAuth migration that don't exist in the fork's Static Web Apps + Function App
+deployment), MCP support, Custom Test Alerting overhaul, Purview DLP standard,
+Intune policy sync, Sherweb client changes, and assorted small items listed in
+the checkpoint docs.
+
+### Taken from upstream (v10.5 / v10.5.1 — June 2026)
 
 | Area | What changed |
 |------|----------------|
@@ -552,7 +581,7 @@ After each upstream intake, bump both and redeploy:
 
 ```powershell
 # Frontend (CIPP repo)
-./Tools/Update-Version.ps1 -UpstreamVersion 10.5.5 -Manage365Version 5.15.2
+./Tools/Update-Version.ps1 -UpstreamVersion 10.6.1 -Manage365Version 5.25.0
 
 # Backend (CIPP-API repo) — set both copies to the same upstream baseline
 # version_latest.txt
@@ -561,7 +590,7 @@ After each upstream intake, bump both and redeploy:
 
 Then **redeploy the Static Web App and every Function App slot** (main API, processor, standards, audit log, user tasks). Until redeployed, the settings page may still show old versions and function apps may appear "out of sync" in the Version table.
 
-Out-of-date toast notifications compare your deployed `version.json` / `version_latest.txt` against [KelvinTegelaar/CIPP](https://github.com/KelvinTegelaar/CIPP) and [KelvinTegelaar/CIPP-API](https://github.com/KelvinTegelaar/CIPP-API) on GitHub. They clear once your deployed baseline matches upstream (currently **10.5.5**).
+Out-of-date toast notifications compare your deployed `version.json` / `version_latest.txt` against [KelvinTegelaar/CIPP](https://github.com/KelvinTegelaar/CIPP) and [KelvinTegelaar/CIPP-API](https://github.com/KelvinTegelaar/CIPP-API) on GitHub. They clear once your deployed baseline matches upstream (currently **10.6.1**).
 
 ### GitHub "Sync fork" button
 
