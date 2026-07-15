@@ -293,10 +293,13 @@ const Page = () => {
         add: "!false",
         URL: `!${webUrl}`,
         SharePointType: `!${rootWebTemplate}`,
-        user: "fields.EMail",
-        loginName: "fields.Name",
+        user: "UserPrincipalName",
+        loginName: "LoginName",
+        Role: "Group",
+        MemberType: "Type",
       },
       confirmText: "Remove this user from the site?",
+      condition: (row) => ["Owners", "Members", "Visitors"].includes(row.Group),
       category: "danger",
     },
   ];
@@ -586,39 +589,27 @@ const Page = () => {
                 title="Site Members"
                 queryKey={`site-members-${siteId}`}
                 api={{
-                  url: "/api/ListGraphRequest",
+                  url: "/api/ListSiteMembers",
                   data: {
-                    Endpoint: `/sites/${siteId}/lists/User%20Information%20List/items`,
-                    AsApp: "true",
-                    $expand: "fields",
-                    $filter: "fields/ContentType eq 'Person'",
+                    SiteId: siteId,
+                    SiteUrl: webUrl,
                     tenantFilter: tenantFilter,
                   },
                   dataKey: "Results",
-                  dataFilter: (data) =>
-                    data.filter((item) => {
-                      const email = item.fields?.EMail;
-                      const title = (item.fields?.Title || "").toLowerCase();
-                      const excluded = ["system account", "sharepoint app", "nt service", "everyone"];
-                      const isSys = excluded.some((ex) => title.includes(ex) || title.startsWith("nt "));
-                      return email && !isSys;
-                    }),
                 }}
                 columns={[
                   {
-                    id: "fields.Title",
+                    id: "Title",
                     header: "Name",
-                    accessorFn: (row) => row.fields?.Title || "",
+                    accessorFn: (row) => row.Title || "",
                     size: 200,
                     Cell: ({ row }) => {
-                      const isAdmin = row.original.fields?.IsSiteAdmin;
-                      const email = (row.original.fields?.EMail || "").toLowerCase();
-                      const loginName = (row.original.fields?.Name || "").toLowerCase();
-                      const isGuest = email.includes("#ext#") || loginName.includes("#ext#") || email.includes("_ext_@");
+                      const isAdmin = row.original.IsSiteAdmin;
+                      const isGuest = row.original.IsGuest;
                       return (
                         <Stack direction="row" alignItems="center" spacing={1}>
                           <Typography variant="body2" sx={{ fontWeight: isAdmin ? 600 : 400 }}>
-                            {row.original.fields?.Title || "—"}
+                            {row.original.Title || "—"}
                           </Typography>
                           {isAdmin && (
                             <Chip
@@ -638,44 +629,22 @@ const Page = () => {
                     },
                   },
                   {
-                    id: "fields.EMail",
+                    id: "Email",
                     header: "Email",
-                    accessorFn: (row) => row.fields?.EMail || "",
+                    accessorFn: (row) => row.Email || "",
                     size: 220,
                   },
                   {
-                    id: "createdBy",
-                    header: "Created By",
-                    accessorFn: (row) => row.createdBy?.user?.displayName || "",
+                    id: "Group",
+                    header: "Site Role",
+                    accessorFn: (row) => row.Group || "",
+                    size: 130,
+                  },
+                  {
+                    id: "Type",
+                    header: "Type",
+                    accessorFn: (row) => row.Type || "",
                     size: 160,
-                  },
-                  {
-                    id: "createdDateTime",
-                    header: "Created",
-                    accessorFn: (row) => row.createdDateTime || "",
-                    size: 140,
-                    Cell: ({ cell }) => {
-                      const val = cell.getValue();
-                      if (!val) return "—";
-                      return new Date(val).toLocaleDateString();
-                    },
-                  },
-                  {
-                    id: "lastModifiedBy",
-                    header: "Modified By",
-                    accessorFn: (row) => row.lastModifiedBy?.user?.displayName || "",
-                    size: 160,
-                  },
-                  {
-                    id: "lastModifiedDateTime",
-                    header: "Modified",
-                    accessorFn: (row) => row.lastModifiedDateTime || "",
-                    size: 140,
-                    Cell: ({ cell }) => {
-                      const val = cell.getValue();
-                      if (!val) return "—";
-                      return new Date(val).toLocaleDateString();
-                    },
                   },
                 ]}
                 actions={memberActions}
