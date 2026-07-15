@@ -14,6 +14,8 @@ import {
   IconButton,
   Stack,
   SvgIcon,
+  Tooltip,
+  Typography,
   useMediaQuery,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -163,13 +165,15 @@ export const TopNav = memo((props) => {
         </Stack>
         <Stack alignItems="center" direction="row" spacing={mdDown ? 0.5 : 1.5}>
           {!mdDown && (
-            <IconButton
-              onClick={() => openUniversalSearch("Users")}
-              title="Universal search — users, groups, apps (Ctrl/Cmd+Shift+F)"
-              sx={{ color: "text.secondary" }}
-            >
-              <TravelExploreIcon fontSize="small" />
-            </IconButton>
+            <Tooltip title="Universal search — users, groups, apps (Ctrl/Cmd+Shift+F)">
+              <IconButton
+                onClick={() => openUniversalSearch("Users")}
+                aria-label="Open universal search (Ctrl/Cmd+Shift+F)"
+                sx={{ color: "text.secondary" }}
+              >
+                <TravelExploreIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           )}
           {!mdDown && (
             <IconButton onClick={handleThemeSwitch} sx={{ color: "text.secondary" }}>
@@ -178,18 +182,20 @@ export const TopNav = memo((props) => {
               </SvgIcon>
             </IconButton>
           )}
-          <IconButton
-            onClick={() => openUniversalSearch("Pages")}
-            title="Page search (Ctrl/Cmd+K)"
-            sx={{
-              color: "text.secondary",
-              ...(mdDown && { minWidth: 44, minHeight: 44 }),
-            }}
-          >
-            <SvgIcon fontSize={mdDown ? "medium" : "small"}>
-              <MagnifyingGlassIcon />
-            </SvgIcon>
-          </IconButton>
+          <Tooltip title="Page search (Ctrl/Cmd+K)">
+            <IconButton
+              onClick={() => openUniversalSearch("Pages")}
+              aria-label="Open page search (Ctrl/Cmd+K)"
+              sx={{
+                color: "text.secondary",
+                ...(mdDown && { minWidth: 44, minHeight: 44 }),
+              }}
+            >
+              <SvgIcon fontSize={mdDown ? "medium" : "small"}>
+                <MagnifyingGlassIcon />
+              </SvgIcon>
+            </IconButton>
+          </Tooltip>
           <Dialog
             open={universalSearchDialog.open}
             onClose={closeUniversalSearch}
@@ -204,7 +210,21 @@ export const TopNav = memo((props) => {
               },
             }}
           >
-            <DialogTitle sx={{ px: 3, pt: 2, pb: 1 }}>Manage365 Search</DialogTitle>
+            <DialogTitle sx={{ px: 3, pt: 2, pb: 1 }}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                flexWrap="wrap"
+                useFlexGap
+                spacing={1}
+              >
+                <span>Manage365 Search</span>
+                <Typography variant="caption" color="text.secondary">
+                  Pages: Ctrl/Cmd+K · Users: Ctrl/Cmd+Shift+F
+                </Typography>
+              </Stack>
+            </DialogTitle>
             <DialogContent sx={{ px: 3, pt: 1, pb: 3 }}>
               <Box>
                 <CippUniversalSearchV2
