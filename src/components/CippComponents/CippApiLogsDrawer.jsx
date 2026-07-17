@@ -76,7 +76,7 @@ export const CippApiLogsDrawer = ({
             simple={false}
             api={{
               url: apiUrl,
-              dataKey: '',
+              dataKey: 'Results',
             }}
             queryKey={`APILogs-${apiFilter || 'All'}-${tenantFilter || 'AllTenants'}-${
               standardFilter || 'NoStandard'

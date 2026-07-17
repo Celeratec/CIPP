@@ -267,10 +267,10 @@ const Page = () => {
     if (daysDifference > 10) {
       return (
         <Grid size={{ sm: 12, md: 8 }}>
-          <Alert severity="warning" icon={<ExclamationTriangleIcon style={{ width: 20 }} />}>
+          <Alert severity="info" icon={<InformationCircleIcon style={{ width: 20 }} />}>
             You have selected a date range of <strong>{Math.ceil(daysDifference)} days</strong>.
-            Large date ranges may cause timeouts or errors due to the amount of data being
-            processed. Consider narrowing your date range if you encounter issues.
+            Results load progressively in small batches (newest first), so the full range may
+            take a moment to finish loading.
           </Alert>
         </Grid>
       );
@@ -567,6 +567,7 @@ const Page = () => {
       }
       title={pageTitle}
       apiUrl={apiUrl}
+      apiDataKey="Results"
       columns={columns}
       queryKey={`Listlogs-${startDate}-${endDate}-${username}-${severity}-${filterEnabled}-${currentTenant}`}
       tenantInTitle={true}
@@ -577,6 +578,10 @@ const Page = () => {
         Severity: severity,
         Filter: filterEnabled,
         Tenant: currentTenant,
+        // ListLogs pages date ranges via Metadata.nextLink. tenantFilter must not be
+        // "AllTenants" or getNextPageParam stops pagination after the first batch
+        // (that guard is for queued Graph AllTenants requests, which don't apply here).
+        tenantFilter: null,
       }}
       actions={actions}
       spacing={1}
