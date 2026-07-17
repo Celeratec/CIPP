@@ -17,6 +17,8 @@ import {
   CloudSync,
   GroupSharp,
   GroupAdd,
+  PersonAdd,
+  ContactMail,
 } from "@mui/icons-material";
 import { HeaderedTabbedLayout } from "../../../../../layouts/HeaderedTabbedLayout";
 import tabOptions from "./tabOptions";
@@ -212,6 +214,109 @@ const Page = () => {
       }
     : null;
 
+  const effectiveTenantFilter = router.query.tenantFilter ?? userSettingsDefaults.currentTenant;
+  const supportsContacts =
+    calculatedGroupType === "distribution" || calculatedGroupType === "mailenabledsecurity";
+
+  // --- Add Member / Add Contact ---
+  const addMemberDialog = useDialog();
+  const addContactDialog = useDialog();
+
+  const memberPickerFields = [
+    {
+      type: "autoComplete",
+      name: "UserID",
+      label: "Select User",
+      multiple: false,
+      creatable: false,
+      validators: { required: "Please select a user" },
+      api: {
+        url: "/api/ListGraphRequest",
+        data: {
+          Endpoint: "users",
+          $select: "id,displayName,userPrincipalName",
+          $top: 999,
+          $count: true,
+        },
+        queryKey: "ListUsersAutoComplete",
+        dataKey: "Results",
+        labelField: (user) => `${user.displayName} (${user.userPrincipalName})`,
+        valueField: "userPrincipalName",
+        addedField: {
+          id: "id",
+          userPrincipalName: "userPrincipalName",
+          displayName: "displayName",
+        },
+        showRefresh: true,
+      },
+    },
+  ];
+
+  const contactPickerFields = [
+    {
+      type: "autoComplete",
+      name: "ContactID",
+      label: "Select Contact",
+      multiple: false,
+      creatable: false,
+      validators: { required: "Please select a contact" },
+      api: {
+        url: "/api/ListContacts",
+        labelField: (option) =>
+          `${option.displayName || option.DisplayName} (${
+            option.mail || option.WindowsEmailAddress
+          })`,
+        valueField: "WindowsEmailAddress",
+        addedField: {
+          Guid: "Guid",
+          displayName: "displayName",
+          WindowsEmailAddress: "WindowsEmailAddress",
+        },
+      },
+    },
+  ];
+
+  const addMemberApiConfig = {
+    type: "POST",
+    url: "/api/EditGroup",
+    customDataformatter: (row, action, formData) => {
+      const user = formData.UserID;
+      return {
+        AddMember: [
+          {
+            label: user?.addedFields?.displayName ?? user?.label,
+            value: user?.addedFields?.id ?? user?.value,
+            addedFields: {
+              id: user?.addedFields?.id,
+              userPrincipalName: user?.addedFields?.userPrincipalName ?? user?.value,
+              displayName: user?.addedFields?.displayName ?? user?.label,
+            },
+          },
+        ],
+        tenantFilter: effectiveTenantFilter,
+        groupId: row.id,
+        groupType: row.groupType,
+        groupName: row.displayName,
+      };
+    },
+    confirmText: "Select a user to add as a member of '[displayName]'.",
+    onSuccess: () => refreshFunction(),
+  };
+
+  const addContactApiConfig = {
+    type: "POST",
+    url: "/api/EditGroup",
+    customDataformatter: (row, action, formData) => ({
+      AddContact: [formData.ContactID],
+      tenantFilter: effectiveTenantFilter,
+      groupId: row.id,
+      groupType: row.groupType,
+      groupName: row.displayName,
+    }),
+    confirmText: "Select a contact to add to '[displayName]'.",
+    onSuccess: () => refreshFunction(),
+  };
+
   // Calculate group type for display
   const getGroupType = () => {
     if (!groupData) return "N/A";
@@ -247,6 +352,27 @@ const Page = () => {
         icon: <Edit />,
         category: "edit",
         showInActionsMenu: true,
+      },
+      {
+        label: "Add Member",
+        icon: <PersonAdd />,
+        fields: memberPickerFields,
+        ...addMemberApiConfig,
+        multiPost: false,
+        category: "edit",
+        showInActionsMenu: true,
+      },
+      {
+        label: "Add Contact",
+        icon: <ContactMail />,
+        fields: contactPickerFields,
+        ...addContactApiConfig,
+        multiPost: false,
+        category: "edit",
+        showInActionsMenu: true,
+        condition: (row) =>
+          row?.calculatedGroupType === "distribution" ||
+          row?.calculatedGroupType === "mailenabledsecurity",
       },
       {
         label: "Set Global Address List Visibility",
@@ -652,6 +778,31 @@ const Page = () => {
   ];
 
   // Prepare members items
+  const memberCardActions = (
+    <Stack direction="row" spacing={1}>
+      <Button
+        startIcon={<PersonAdd />}
+        onClick={() => addMemberDialog.handleOpen()}
+        variant="outlined"
+        color="primary"
+        size="small"
+      >
+        Add Member
+      </Button>
+      {supportsContacts && (
+        <Button
+          startIcon={<ContactMail />}
+          onClick={() => addContactDialog.handleOpen()}
+          variant="outlined"
+          color="primary"
+          size="small"
+        >
+          Add Contact
+        </Button>
+      )}
+    </Stack>
+  );
+
   const membersItems =
     groupMembers.length > 0
       ? [
@@ -664,6 +815,7 @@ const Page = () => {
             subtext: "List of members in this group",
             statusText: ` ${groupMembers.length} Member(s)`,
             statusColor: "info.main",
+            cardLabelBoxActions: memberCardActions,
             table: {
               title: "Members",
               hideTitle: true,
@@ -703,6 +855,7 @@ const Page = () => {
             subtext: "This group has no members.",
             statusColor: "warning.main",
             statusText: "No Members",
+            cardLabelBoxActions: memberCardActions,
             propertyItems: [],
           },
         ];
@@ -1004,6 +1157,24 @@ const Page = () => {
       >
         {({ formHook }) => <CippAliasDialog formHook={formHook} entityLabel="group" />}
       </CippApiDialog>
+      <CippApiDialog
+        createDialog={addMemberDialog}
+        title="Add Member"
+        fields={memberPickerFields}
+        api={addMemberApiConfig}
+        row={data ?? {}}
+        allowAddAnother
+      />
+      {supportsContacts && (
+        <CippApiDialog
+          createDialog={addContactDialog}
+          title="Add Contact"
+          fields={contactPickerFields}
+          api={addContactApiConfig}
+          row={data ?? {}}
+          allowAddAnother
+        />
+      )}
     </HeaderedTabbedLayout>
   );
 };
