@@ -222,6 +222,12 @@ const Page = () => {
     return permission.User;
   }, []);
 
+  // Exchange ACL often stores the ACE as the display-name string from Get-MailboxFolderPermission
+  const getFolderPermissionAclUserName = useCallback((permission) => {
+    if (!permission) return undefined;
+    return permission.User || undefined;
+  }, []);
+
   const getFolderPermissionEmailLabel = useCallback((permission) => {
     if (!permission) return "";
     if (permission.UserAmbiguous) {
@@ -826,6 +832,7 @@ const Page = () => {
                   const raw = item._raw || item;
                   permissions.push({
                     UserID: getFolderPermissionUserId(raw),
+                    UserAclName: getFolderPermissionAclUserName(raw),
                     PermissionLevel: item.AccessRights,
                     FolderName: item.FolderName,
                     Modification: "Remove",
@@ -835,6 +842,7 @@ const Page = () => {
                 const raw = row._raw || row;
                 permissions.push({
                   UserID: getFolderPermissionUserId(raw),
+                    UserAclName: getFolderPermissionAclUserName(raw),
                   PermissionLevel: row.AccessRights,
                   FolderName: row.FolderName,
                   Modification: "Remove",
@@ -896,6 +904,7 @@ const Page = () => {
                       permissions: [
                         {
                           UserID: getFolderPermissionUserId(raw),
+                    UserAclName: getFolderPermissionAclUserName(raw),
                           PermissionLevel: data.AccessRights,
                           FolderName: data.FolderName,
                           Modification: "Remove",
@@ -976,6 +985,7 @@ const Page = () => {
                   const raw = item._raw || item;
                   permissions.push({
                     UserID: getFolderPermissionUserId(raw),
+                    UserAclName: getFolderPermissionAclUserName(raw),
                     PermissionLevel: item.AccessRights,
                     FolderName: item.FolderName,
                     Modification: "Remove",
@@ -985,6 +995,7 @@ const Page = () => {
                 const raw = row._raw || row;
                 permissions.push({
                   UserID: getFolderPermissionUserId(raw),
+                    UserAclName: getFolderPermissionAclUserName(raw),
                   PermissionLevel: row.AccessRights,
                   FolderName: row.FolderName,
                   Modification: "Remove",
@@ -1046,6 +1057,7 @@ const Page = () => {
                       permissions: [
                         {
                           UserID: getFolderPermissionUserId(raw),
+                    UserAclName: getFolderPermissionAclUserName(raw),
                           PermissionLevel: data.AccessRights,
                           FolderName: data.FolderName,
                           Modification: "Remove",
