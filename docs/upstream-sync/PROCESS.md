@@ -212,6 +212,7 @@ Use this for **new upstream capabilities** (not small delta fixes). Each item ge
 |---------|--------|--------|-------|
 | Instance SSO (self-hosted, capability-only) | Planned | Pending spec | Super Admin SSO page + backend; no prod migration until chosen |
 | MCP (internal team) | **Intaken** (flag off) | [MCP_INTAKE_20260803.md](./MCP_INTAKE_20260803.md) | API client toggle + ExecMcp; enable `MCPServer` after smoke |
+| Baselines (drift-first engine) | **Intaken** (flag off) | [BASELINES_INTAKE_20260814.md](./BASELINES_INTAKE_20260814.md) | Timer gated; pages at `/tenant/baselines`; enable after orch smoke |
 | Worker health page | Deferred | — | Needs WorkerMetricsBridge (Craft) |
 | CIPP Users / Container super-admin pages | Hygiene done | — | 404 tabs removed from `tabOptions.json`; full pages still deferred |
 | Teams V2 | Deferred | — | Large blast radius; module removal needs dedicated migration |
