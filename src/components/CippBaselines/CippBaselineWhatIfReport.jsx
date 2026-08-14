@@ -12,14 +12,7 @@ import {
   Typography,
 } from '@mui/material'
 import { Download, PictureAsPdf } from '@mui/icons-material'
-import {
-  Document,
-  Page,
-  PDFViewer,
-  StyleSheet,
-  Text,
-  View,
-} from '@react-pdf/renderer'
+import { Document, Page, PDFViewer, StyleSheet, Text, View } from '@react-pdf/renderer'
 import { parseCippDate } from '../../utils/parse-cipp-date'
 
 const operatorLabels = {
@@ -132,12 +125,7 @@ const styles = StyleSheet.create({
   },
 })
 
-const WhatIfDocument = ({
-  tenant,
-  stageStates,
-  simulatedTemplate,
-  catalogByName,
-}) => {
+const WhatIfDocument = ({ tenant, stageStates, simulatedTemplate, catalogByName }) => {
   const generatedAt = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -160,18 +148,15 @@ const WhatIfDocument = ({
         <View style={styles.accentBar} />
         <Text style={styles.title}>Baseline What-If Report</Text>
         <Text style={styles.subtitle}>
-          {tenant.displayName} ({tenant.tenantFilter}) - generated {generatedAt}
-          . No changes have been made; this report previews what applying the
-          configured standards would change.
+          {tenant.displayName} ({tenant.tenantFilter}) - generated {generatedAt}. No changes have
+          been made; this report previews what applying the configured standards would change.
         </Text>
 
         <Text style={styles.sectionTitle}>Where you stand today</Text>
         <View style={styles.statRow}>
           <View style={styles.statBox}>
             <Text style={styles.statValue}>{tenant.alignedPercentage}%</Text>
-            <Text style={styles.statLabel}>
-              Compliant incl. accepted deviations
-            </Text>
+            <Text style={styles.statLabel}>Compliant incl. accepted deviations</Text>
           </View>
           <View style={styles.statBox}>
             <Text style={styles.statValue}>{tenant.verifiedPercentage}%</Text>
@@ -187,41 +172,33 @@ const WhatIfDocument = ({
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>
-          Changes we would make now ({changesNow.length})
-        </Text>
+        <Text style={styles.sectionTitle}>Changes we would make now ({changesNow.length})</Text>
         {changesNow.length === 0 && (
           <Text style={styles.itemText}>
-            Nothing to change - every enforced standard is already in its
-            expected state.
+            Nothing to change - every enforced standard is already in its expected state.
           </Text>
         )}
         {changesNow.map((row) => (
           <View key={row.standardName} style={styles.item} wrap={false}>
             <Text style={styles.itemTitle}>{row.standardLabel}</Text>
             <Text style={styles.itemText}>
-              {catalogByName[row.standardName]?.executiveText ??
-                row.standardLabel}
+              {catalogByName[row.standardName]?.executiveText ?? row.standardLabel}
             </Text>
             <Text style={styles.meta}>
               {row.impact}
               {row.secureScoreImpact > 0
                 ? ` - increases Secure Score by up to ${row.secureScoreImpact} points`
                 : ''}
-              {row.status?.startsWith('Denied')
-                ? ' - deviation denied, fix pending'
-                : ''}
+              {row.status?.startsWith('Denied') ? ' - deviation denied, fix pending' : ''}
             </Text>
           </View>
         ))}
 
-        <Text style={styles.sectionTitle}>
-          Planned future changes (staged rollout)
-        </Text>
+        <Text style={styles.sectionTitle}>Planned future changes (staged rollout)</Text>
         {plannedStages.length === 0 && (
           <Text style={styles.itemText}>
-            This tenant is in the final stage of every assigned baseline - no
-            further staged changes are planned.
+            This tenant is in the final stage of every assigned baseline - no further staged changes
+            are planned.
           </Text>
         )}
         {plannedStages.map((state) => {
@@ -244,32 +221,21 @@ const WhatIfDocument = ({
               })
             : null
           return (
-            <View
-              key={state.templateId}
-              style={{ marginBottom: 8 }}
-              wrap={false}
-            >
+            <View key={state.templateId} style={{ marginBottom: 8 }} wrap={false}>
               <Text style={styles.itemTitle}>{state.templateName}</Text>
               <Text style={styles.itemText}>
-                Currently in Stage {state.currentStage} of {state.totalStages} (
-                {state.stageName}). Next: Stage {state.currentStage + 1} (
-                {state.nextStageName}) - advances when{' '}
+                Currently in Stage {state.currentStage} of {state.totalStages} ({state.stageName}).
+                Next: Stage {state.currentStage + 1} ({state.nextStageName}) - advances when{' '}
                 {describeStageConditions(state.nextStage)}
                 {estimatedAt ? `, estimated around ${estimatedAt}` : ''}.
               </Text>
               {state.nextStage.standards.map((standardName) => {
-                const standard = catalogByName[standardName]
+                const standard = catalogByName[standardName.split('#')[0]]
                 if (!standard) return null
                 return (
-                  <View
-                    key={standardName}
-                    style={[styles.item, { marginTop: 4 }]}
-                    wrap={false}
-                  >
+                  <View key={standardName} style={[styles.item, { marginTop: 4 }]} wrap={false}>
                     <Text style={styles.itemTitle}>{standard.label}</Text>
-                    <Text style={styles.itemText}>
-                      {standard.executiveText}
-                    </Text>
+                    <Text style={styles.itemText}>{standard.executiveText}</Text>
                   </View>
                 )
               })}
@@ -280,13 +246,11 @@ const WhatIfDocument = ({
         {simulatedTemplate && (
           <>
             <Text style={styles.sectionTitle}>
-              What-if: additionally assigning the{' '}
-              {simulatedTemplate.templateName} baseline
+              What-if: additionally assigning the {simulatedTemplate.templateName} baseline
             </Text>
             <Text style={styles.itemText}>
-              {simulatedTemplate.description}. This baseline is not assigned to
-              the tenant today - below is what assigning it would roll out,
-              stage by stage.
+              {simulatedTemplate.description}. This baseline is not assigned to the tenant today -
+              below is what assigning it would roll out, stage by stage.
             </Text>
             {simulatedTemplate.stages.map((stage, index) => (
               <View key={stage.name} style={{ marginBottom: 6 }} wrap={false}>
@@ -296,25 +260,15 @@ const WhatIfDocument = ({
                     ? ' - applies immediately'
                     : ` - advances when ${describeStageConditions(stage)}`}
                 </Text>
-                {[
-                  ...new Set(stage.standards.map((key) => key.split('#')[0])),
-                ].map((name) => {
+                {[...new Set(stage.standards.map((key) => key.split('#')[0]))].map((name) => {
                   const standard = catalogByName[name]
                   if (!standard) return null
-                  const currentRow = tenant.rows.find(
-                    (row) => row.standardName === name
-                  )
+                  const currentRow = tenant.rows.find((row) => row.standardName === name)
                   const alreadyAligned = currentRow?.status === 'Compliant'
                   return (
-                    <View
-                      key={name}
-                      style={[styles.item, { marginTop: 4 }]}
-                      wrap={false}
-                    >
+                    <View key={name} style={[styles.item, { marginTop: 4 }]} wrap={false}>
                       <Text style={styles.itemTitle}>{standard.label}</Text>
-                      <Text style={styles.itemText}>
-                        {standard.executiveText}
-                      </Text>
+                      <Text style={styles.itemText}>{standard.executiveText}</Text>
                       <Text style={styles.meta}>
                         {alreadyAligned
                           ? `No change - already aligned today (configured by ${currentRow.sourceTemplate})`
@@ -351,23 +305,15 @@ const WhatIfDocument = ({
 }
 
 // Button + preview dialog in the style of the Executive Report button.
-export const CippBaselineWhatIfReport = ({
-  tenant,
-  stageStates,
-  baselines = [],
-  catalog = [],
-}) => {
+export const CippBaselineWhatIfReport = ({ tenant, stageStates, baselines = [], catalog = [] }) => {
   const [open, setOpen] = useState(false)
   const [simulatedTemplate, setSimulatedTemplate] = useState(null)
 
-  const catalogByName = Object.fromEntries(
-    catalog.map((standard) => [standard.name, standard])
-  )
+  const catalogByName = Object.fromEntries(catalog.map((standard) => [standard.name, standard]))
 
   // Baselines not currently rolled out to this tenant can be simulated in the report.
   const availableTemplates = baselines.filter(
-    (template) =>
-      !stageStates.some((state) => state.templateId === template.GUID)
+    (template) => !stageStates.some((state) => state.templateId === template.GUID)
   )
 
   const reportDocument = (
@@ -399,20 +345,11 @@ export const CippBaselineWhatIfReport = ({
   return (
     <>
       <Tooltip title="Preview what applying the configured standards would change for this tenant, including upcoming stages">
-        <Button
-          variant="contained"
-          startIcon={<PictureAsPdf />}
-          onClick={() => setOpen(true)}
-        >
+        <Button variant="contained" startIcon={<PictureAsPdf />} onClick={() => setOpen(true)}>
           What-If Report
         </Button>
       </Tooltip>
-      <Dialog
-        open={open}
-        onClose={() => setOpen(false)}
-        maxWidth="xl"
-        fullWidth
-      >
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xl" fullWidth>
         <DialogTitle>What-If Report - {tenant.displayName}</DialogTitle>
         <DialogContent
           sx={{
@@ -430,10 +367,7 @@ export const CippBaselineWhatIfReport = ({
               value={simulatedTemplate}
               onChange={(event, value) => setSimulatedTemplate(value)}
               renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Simulate assigning an additional baseline"
-                />
+                <TextField {...params} label="Simulate assigning an additional baseline" />
               )}
               sx={{ maxWidth: 460 }}
             />
@@ -449,20 +383,13 @@ export const CippBaselineWhatIfReport = ({
             </PDFViewer>
           )}
         </DialogContent>
-        <DialogActions
-          sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', gap: 1 }}
-        >
+        <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', gap: 1 }}>
           <Box sx={{ flex: 1 }}>
             <Typography variant="caption" color="text.secondary">
-              Exec-friendly preview - safe to send to customers. No changes are
-              made.
+              Exec-friendly preview - safe to send to customers. No changes are made.
             </Typography>
           </Box>
-          <Button
-            variant="contained"
-            startIcon={<Download />}
-            onClick={handleDownload}
-          >
+          <Button variant="contained" startIcon={<Download />} onClick={handleDownload}>
             Download PDF
           </Button>
           <Button variant="outlined" onClick={() => setOpen(false)}>

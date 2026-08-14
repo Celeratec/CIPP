@@ -70,7 +70,9 @@ const LeaderboardCard = ({ title, subheader, rows, isFetching }) => (
         </Stack>
       ) : rows.length === 0 ? (
         <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-          No scored tenants yet
+          {title === 'Top 5' && rows.length === 0
+            ? 'Portfolio has fewer than six scored tenants'
+            : 'No scored tenants yet'}
         </Typography>
       ) : (
         <Stack spacing={0.5}>
