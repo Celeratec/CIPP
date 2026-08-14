@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useQueries } from '@tanstack/react-query'
+import axios from 'axios'
 import { CippFormComponent } from './CippFormComponent'
-import { ApiGetCall } from '../../api/ApiCall'
+import { ApiGetCall, STALE_TIMES } from '../../api/ApiCall'
+import { buildVersionedHeaders } from '../../utils/cippVersion'
 
 /**
  * A tenant selector scoped to the tenants applicable to a given standards template.
@@ -47,14 +50,23 @@ export const CippFormTemplateTenantSelector = ({
   })
 
   // Fetch each group's members (one request per group)
-  const groupRequests = groupIds.map((id) =>
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    ApiGetCall({
-      url: `/api/ListTenantGroups?groupId=${id}`,
-      queryKey: `TenantGroup-${id}`,
-      waiting: groupIds.length > 0,
-    })
-  )
+  const groupRequests = useQueries({
+    queries: groupIds.map((id) => ({
+      queryKey: [`TenantGroup-${id}`],
+      queryFn: async ({ signal }) => {
+        const response = await axios.get(`/api/ListTenantGroups?groupId=${id}`, {
+          signal,
+          headers: await buildVersionedHeaders(),
+        })
+        return response.data
+      },
+      enabled: groupIds.length > 0,
+      staleTime: STALE_TIMES.DEFAULT,
+      refetchOnWindowFocus: false,
+      refetchOnMount: true,
+      refetchOnReconnect: true,
+    })),
+  })
 
   useEffect(() => {
     const built = [{ label: 'All Tenants in Template', value: 'allTenants', group: 'All Tenants' }]
