@@ -907,6 +907,11 @@ export const nativeMenuItems = [
             permissions: ["Endpoint.Device.*"],
           },
           {
+            title: "BitLocker Key Search",
+            path: "/endpoint/MEM/bitlocker-search",
+            permissions: ["Endpoint.Device.*"],
+          },
+          {
             title: "Policies",
             permissions: ["Endpoint.MEM.*"],
             items: [
@@ -961,6 +966,11 @@ export const nativeMenuItems = [
           {
             title: "Scripts",
             path: "/endpoint/MEM/list-scripts",
+            permissions: ["Endpoint.MEM.*"],
+          },
+          {
+            title: "MAA Requests",
+            path: "/endpoint/MEM/approval-requests",
             permissions: ["Endpoint.MEM.*"],
           },
         ],
@@ -1149,6 +1159,14 @@ export const nativeMenuItems = [
             path: "/tenant/standards/alignment",
             permissions: ["Tenant.Standards.*"],
           },
+          // Baselines preview — pages shipped; scheduled timer gated by FeatureFlags.Baselines.
+          // Uncomment nav after smoke test, or open /tenant/baselines directly.
+          // {
+          //   title: "Baselines (Preview)",
+          //   path: "/tenant/baselines",
+          //   permissions: ["Tenant.Standards.*"],
+          //   scope: "global",
+          // },
           {
             title: "Best Practice Analyser",
             path: "/tenant/standards/bpa-report",

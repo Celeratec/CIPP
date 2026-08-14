@@ -10,7 +10,7 @@
 
 ---
 
-> **Last synced with upstream:** August 2026 — v10.7.5 baseline; Manage365 **v5.32.0** adds MCP server capability (feature-flagged off) and removes dead super-admin tabs (CIPP Users / SSO / Container). Prior 10.7.5 sync: AzBobbyTables large-entity wrappers, Intune template drift fixes, device Add-to-Group, disableNesting, snooze reason, partner webhook hostname warning, audit log V2.
+> **Last synced with upstream:** August 2026 — v**10.8.5** baseline (**Manage365 v5.33.0**): Baselines engine (feature-flagged off), Intune MAA requests, BitLocker search page, Secure Score report API, nested ListRoles/TABL, ExecSetDefaultMFAMethod. Prior: v10.7.5 + MCP 5.32.x.
 >
 > Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. Upstream changes are merged selectively to preserve Manage365-specific UI and workflows. See [Upstream Integration](#upstream-integration) below.
 
