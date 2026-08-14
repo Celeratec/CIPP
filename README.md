@@ -10,7 +10,7 @@
 
 ---
 
-> **Last synced with upstream:** August 2026 — v**10.8.5** baseline (**Manage365 v5.33.0**): Baselines engine (feature-flagged off), Intune MAA requests, BitLocker search page, Secure Score report API, nested ListRoles/TABL, ExecSetDefaultMFAMethod. Prior: v10.7.5 + MCP 5.32.x.
+> **Last synced with upstream:** August 2026 — v**10.8.5** baseline (**Manage365 v5.33.0**): Baselines engine (feature-flagged off), Intune MAA requests, BitLocker search page, Secure Score AllTenants report, nested ListRoles/TABL, ExecSetDefaultMFAMethod API. See [Upstream Integration](#upstream-integration). Prior: v10.7.5 + MCP 5.32.x.
 >
 > Manage365 is built on top of the [CyberDrain Improved Partner Portal (CIPP)](https://cipp.app). CIPP is actively developed and may implement similar features over time. Upstream changes are merged selectively to preserve Manage365-specific UI and workflows. See [Upstream Integration](#upstream-integration) below.
 
@@ -52,12 +52,13 @@ Manage365 includes the complete CIPP feature set:
 - Alert configuration and audit logs (group membership change, Defender severity filtering, inactive users, TAP creation alerts)
 - Alert snooze dialog and snoozed alerts management
 - Dashboard Alerts card — active and snoozed alert instances at a glance with per-item snooze
-- Secure Score monitoring
+- Secure Score monitoring (including AllTenants report via `ListSecureScoreReport`)
 - Application management, consent requests, and app management policies
 - App registration and enterprise app detail pages with permissions viewer
 - GDAP relationship management with GDAP trace and AI Administrator role support
 - Tenant group management with usage reporting
 - Standards alignment and drift detection (including device registration local admin controls, CIS7 alignment, and CA template package tags)
+- **Baselines** (preview) — drift-first baseline engine parallel to Applied Standards; feature-flagged off by default (see [Baselines](#baselines-manage365-v5330) below)
 - Standards with custom variable support, requiredCapabilities filtering, and license capability presets
 - Group-based licensing for security groups and templates
 - Alert-only license exclusions (exclude licenses from alerting without removing them from standards checks)
@@ -90,6 +91,8 @@ Manage365 includes the complete CIPP feature set:
 - Application management and deployment queue (including Win32/custom apps)
 - Application assignment filter options
 - Managed device administration with NinjaOne hardware enrichment (CPU, RAM, agent status)
+- **BitLocker Key Search** — dedicated Device Management page for key lookup
+- **MAA Requests** — Multi Admin Approval request visibility with handoff to Intune (approve/reject stay in-tenant)
 - Device detail page with Intune policy setting descriptions (hover to see what each setting does) for both Settings Catalog and Administrative Templates
 - DEP sync
 - Autopilot device management, profiles, and status pages
@@ -497,6 +500,17 @@ Model Context Protocol (MCP) support for internal team use — expose CIPP's rea
 
 Intake notes: [docs/upstream-sync/MCP_INTAKE_20260803.md](docs/upstream-sync/MCP_INTAKE_20260803.md).
 
+### Baselines (Manage365 v5.33.0)
+
+Drift-first **Baselines** engine from upstream 10.8.x — parallel to Applied Standards, not a replacement. SWA-safe (Durable Functions + Azure Tables; no Craft).
+
+- **Pages** -- Fleet overview, alignment, and templates under `/tenant/baselines` (nav entry commented until smoke; open the URL directly)
+- **Backend** -- baseline modules, orchestrator (`Start-CIPPBaselineOrchestrator` on the standards processor), HTTP List/Add/Run/Stage/Override/Alignment APIs, and `Config/BaselineStandards/**` definitions
+- **Feature flag** -- `Baselines` ships **disabled**; flag gates the **scheduled 12h timer** only. Enable in Feature Flags after orchestrator smoke, then optionally uncomment the Standards & Drift nav item
+- **Preserved fork standards** -- Applied Standards / drift UI and Manage365 scoring workflows are unchanged
+
+Intake notes: [docs/upstream-sync/BASELINES_INTAKE_20260814.md](docs/upstream-sync/BASELINES_INTAKE_20260814.md). Checkpoint: [docs/upstream-sync/SYNC_20260814.md](docs/upstream-sync/SYNC_20260814.md).
+
 ### Backend Enhancements
 
 - **Stack overflow protection** in Intune policy comparison with depth-tracking recursion and O(1) index-based lookups
@@ -523,12 +537,22 @@ Manage365 tracks [KelvinTegelaar/CIPP](https://github.com/KelvinTegelaar/CIPP) a
 |---------|------|--------|
 | **Light delta** | Monthly | Low-risk bugfixes, JSON data, tests |
 | **Major cycle** | Quarterly | Full delta inventory + dependency review |
-| **Feature intake** | Backlog | New capabilities (e.g. SSO) — design first; MCP intaken in v5.32.0 |
+| **Feature intake** | Backlog | New capabilities (e.g. SSO) — design first; MCP intaken in v5.32.0; Baselines intaken in v5.33.0 |
 | **Hotfix** | As needed | Critical upstream security fixes |
 
 Start a cycle: `./Tools/Start-UpstreamSyncCycle.ps1 -Repo CIPP` (and the same script from CIPP-API with `-Repo CIPP-API`).
 
 All intakes are **selective** — upstream fixes and improvements are ported surgically rather than merging whole files, so fork-specific behavior stays intact.
+
+### Taken from upstream (v10.8.5 — August 2026)
+
+| Intake | What changed |
+|--------|----------------|
+| **Major delta 10.8.5** (v5.33.0) | Secure Score report API + AllTenants helpers; Intune MAA requests + BitLocker search page; nested ListRoles / TABL; `ExecSetDefaultMFAMethod` API; ConversionTable / M365Licenses; selective standards hardening |
+| **Baselines feature intake** (v5.33.0) | Full baselines engine + FE pages; FeatureFlags timer **off** by default — see [Baselines](#baselines-manage365-v5330) |
+| **Partial** | Branding list/presets APIs and community template catalog (Manage365 branding UI and full community-repos rewrite deferred) |
+
+**Still deferred from this cycle:** Node/jsdom engine bumps; full BEC/user-detail rewrite and Default MFA UI wire-up; full branding settings JSX replace; SSO / container / Craft family; Teams V2. Checkpoint: [docs/upstream-sync/SYNC_20260814.md](docs/upstream-sync/SYNC_20260814.md).
 
 ### Taken from upstream (v10.7.5 + MCP — August 2026)
 
@@ -589,7 +613,7 @@ the checkpoint docs. (MCP was deferred here and later intaken in v5.32.0.)
 
 ### Deferred (not merged)
 
-Full-file replacements for Applied Standards, CippDataTable, top-nav, and `package.json` were skipped where they would remove the items above. Worker health / container management UI and SSO migration repair remain deferred (Craft bridges / EasyAuth migration). MCP UI was intaken in v5.32.0 with the feature flag off.
+Full-file replacements for Applied Standards, CippDataTable, top-nav, and `package.json` were skipped where they would remove the items above. Worker health / container management UI and SSO migration repair remain deferred (Craft bridges / EasyAuth migration). MCP and Baselines were intaken with feature flags **off** (v5.32.0 / v5.33.0). From the 10.8.5 cycle, Node engine bumps, full BEC/user UI rewrite, Default MFA UI wire-up, and full branding JSX replace remain deferred Adapt work.
 
 ### Version tracking and out-of-date alerts
 
@@ -604,7 +628,7 @@ After each upstream intake, bump both and redeploy:
 
 ```powershell
 # Frontend (CIPP repo)
-./Tools/Update-Version.ps1 -UpstreamVersion 10.7.5 -Manage365Version 5.32.0
+./Tools/Update-Version.ps1 -UpstreamVersion 10.8.5 -Manage365Version 5.33.0
 
 # Backend (CIPP-API repo) — set both copies to the same upstream baseline
 # version_latest.txt
@@ -613,7 +637,7 @@ After each upstream intake, bump both and redeploy:
 
 Then **redeploy the Static Web App and every Function App slot** (main API, processor, standards, audit log, user tasks). Until redeployed, the settings page may still show old versions and function apps may appear "out of sync" in the Version table.
 
-Out-of-date toast notifications compare your deployed `version.json` / `version_latest.txt` against [KelvinTegelaar/CIPP](https://github.com/KelvinTegelaar/CIPP) and [KelvinTegelaar/CIPP-API](https://github.com/KelvinTegelaar/CIPP-API) on GitHub. They clear once your deployed baseline matches upstream (currently **10.7.5**).
+Out-of-date toast notifications compare your deployed `version.json` / `version_latest.txt` against [KelvinTegelaar/CIPP](https://github.com/KelvinTegelaar/CIPP) and [KelvinTegelaar/CIPP-API](https://github.com/KelvinTegelaar/CIPP-API) on GitHub. They clear once your deployed baseline matches upstream (currently **10.8.5**).
 
 ### GitHub "Sync fork" button
 
