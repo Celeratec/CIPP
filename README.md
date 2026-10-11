@@ -8,6 +8,10 @@
   An enhanced Microsoft 365 multi-tenant management portal based on the <a href="https://cipp.app">CIPP</a> open-source project.
 </p>
 
+> **End of life.** This repository is Manage365 v1, the frontend half of the two-repo install. The last release here is **v5.33.0** on CIPP **10.8.5**. Production has moved to the monorepo [Celeratec/Manage365](https://github.com/Celeratec/Manage365), release **6.1.3**, CIPP baseline **11.0.2**, deployed as one Linux container.
+>
+> Do not deploy this repository. New work belongs in Manage365. The production cutover has already been run: the storage account, tables, blobs, queues, and Key Vault stayed, and the Static Web App and Function Apps were removed. Migration notes: [Monorepo migration](https://github.com/Celeratec/Manage365/blob/main/docs/upstream-sync/MONOREPO_MIGRATION_20260815.md). Cutover record: [cutover runbook](https://github.com/Celeratec/Manage365/blob/main/docs/upstream-sync/CUTOVER_RUNBOOK_20260815.md). The backend half of v1 is [Celeratec/CIPP-API](https://github.com/Celeratec/CIPP-API), also end of life.
+
 ---
 
 > **Last synced with upstream:** August 2026 — v**10.8.5** baseline (**Manage365 v5.33.0**): Baselines engine (feature-flagged off), Intune MAA requests, BitLocker search page, Secure Score AllTenants report, nested ListRoles/TABL, ExecSetDefaultMFAMethod API. See [Upstream Integration](#upstream-integration). Prior: v10.7.5 + MCP 5.32.x.
